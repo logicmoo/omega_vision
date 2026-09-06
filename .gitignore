@@ -346,3 +346,19 @@ __pycache__/
 .codex/*
 !.codex/.gitkeep
 data/workbench.db
+
+# Web-scraped character/TV imagery stays local-only (copyright); users
+# re-fetch via the tracked manifest.json/provenance.json source_url entries.
+data/omega_vision/recognition_reduce/pool/*
+data/omega_vision/recognition_reduce/chips/*
+data/omega_vision/recognition_reduce/stages/*
+!data/omega_vision/recognition_reduce/pool/.gitkeep
+!data/omega_vision/recognition_reduce/chips/.gitkeep
+!data/omega_vision/recognition_reduce/stages/.gitkeep
+data/omega_vision/recognition_reduce/.reduce_pool.lock
+data/omega_vision/arc3_games/curated/recognition_reduce/
+data/omega_vision/arc3_games/curated/recognition_chips/
+data/omega_vision/arc3_games/curated/objects_library/
+data/omega_vision/arc3_games/curated/reid_scene_picks/
+data/omega_vision/vision_frames/video/guess-the-201-*/
+data/omega_vision/vision_frames/video/mr-bean-*/
