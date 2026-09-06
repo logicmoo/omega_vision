@@ -122,7 +122,7 @@ class SemanticGridCaptureObserver:
         if pipeline is not None and pipeline.semantic_store is None:
             pipeline.semantic_store = self.symbolic_store
         if turtle_form_factory is None:
-            bridge = SWIPrologBridge(PROJECT_ROOT / "prolog" / "arc3_agent.pl")
+            bridge = SWIPrologBridge(PROJECT_ROOT / "prolog" / "omega_vision" / "arc3_agent.pl")
             turtle_form_factory = lambda source: GenerativeForm(source, swi_bridge=bridge)
         self.turtle_form_factory = turtle_form_factory
         self._latest_by_candidate: dict[str, str] = {}

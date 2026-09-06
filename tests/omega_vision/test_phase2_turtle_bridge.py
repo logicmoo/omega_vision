@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _bridge() -> SWIPrologBridge:
-    return SWIPrologBridge(ROOT / "prolog" / "arc3_agent.pl")
+    return SWIPrologBridge(ROOT / "prolog" / "omega_vision" / "arc3_agent.pl")
 
 
 def test_cell_logo_form_executes_extracted_program_through_swi_prolog() -> None:

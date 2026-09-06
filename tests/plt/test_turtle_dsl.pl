@@ -1,7 +1,7 @@
 :- begin_tests(turtle_dsl_pen_width).
 
-:- use_module(turtle_dsl).
-:- use_module(world_state).
+:- use_module('../../prolog/omega_vision/turtle_dsl').
+:- use_module('../../prolog/omega_vision/world_state').
 
 program_cells(Program, SortedCells) :-
     initial_state(State0),

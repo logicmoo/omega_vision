@@ -1,11 +1,11 @@
 :- begin_tests(object_memory).
 
-:- use_module(object_memory_contract, []).
-:- use_module(residual_gate).
-:- use_module(single_writer).
-:- use_module(prediction_ledger).
-:- use_module(transition_rules).
-:- use_module(game_object_learner_api).
+:- use_module('../../prolog/omega_vision/object_memory_contract', []).
+:- use_module('../../prolog/omega_vision/residual_gate').
+:- use_module('../../prolog/omega_vision/single_writer').
+:- use_module('../../prolog/omega_vision/prediction_ledger').
+:- use_module('../../prolog/omega_vision/transition_rules').
+:- use_module('../../prolog/omega_vision/game_object_learner_api').
 
 reset_state :-
     retractall(object_memory_contract:candidate_object(_, _)),

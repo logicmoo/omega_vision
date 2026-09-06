@@ -2888,10 +2888,7 @@ def run_reduce(
         re-extracting frames, calling the LLM, or touching the registry."""
         try:
             import importlib  # noqa: PLC0415
-            _gvp = os.path.join(os.path.dirname(__file__), "generative_vision", "prolog")
-            if _gvp not in sys.path:
-                sys.path.insert(0, _gvp)
-            _sa = importlib.import_module("symbolic_arc")
+            _sa = importlib.import_module("omega_vision.perception.symbolic_arc")
 
             def _load_parts(paths: list) -> list:
                 out = []
@@ -3244,10 +3241,7 @@ def run_reduce(
                 if not llm_only:
                   try:
                     import importlib  # noqa: PLC0415
-                    _gvp = os.path.join(os.path.dirname(__file__), "generative_vision", "prolog")
-                    if _gvp not in sys.path:
-                        sys.path.insert(0, _gvp)
-                    _sa = importlib.import_module("symbolic_arc")
+                    _sa = importlib.import_module("omega_vision.perception.symbolic_arc")
                     _pms = time.monotonic()
                     pr = _sa.extract_frame(str(src_path), slug, str(partner) if partner else None)
                     _pms = int((time.monotonic() - _pms) * 1000)
@@ -3322,11 +3316,8 @@ def run_reduce(
     if (pair_mode or carry_mode or prolog_only) and not llm_only:
         try:
             import importlib  # noqa: PLC0415
-            _gvp = os.path.join(os.path.dirname(__file__), "generative_vision", "prolog")
-            if _gvp not in sys.path:
-                sys.path.insert(0, _gvp)
-            _sa = importlib.import_module("symbolic_arc")
-            _ss = importlib.import_module("scene_split")
+            _sa = importlib.import_module("omega_vision.perception.symbolic_arc")
+            _ss = importlib.import_module("omega_vision.perception.scene_split")
             groups: dict[str, list] = {}
             for e in entries:
                 idv = e["id"]

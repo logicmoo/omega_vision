@@ -1,5 +1,5 @@
-:- use_module(turtle_dsl).
-:- use_module(world_state).
+:- use_module('../../prolog/omega_vision/turtle_dsl').
+:- use_module('../../prolog/omega_vision/world_state').
 
 %% Visual test runner for wide pen (pen_width) functionality
 %% Similar to arc2_runner.pl - displays visual output of various pen widths
