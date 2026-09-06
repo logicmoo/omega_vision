@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 
-SERVER_ROOT = Path(__file__).resolve().parents[1] / "workbench" / "server"
+SERVER_ROOT = Path(__file__).resolve().parents[2] / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER_ROOT))
 
 from store import WorkbenchStore  # noqa: E402

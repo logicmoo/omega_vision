@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 import service_monitor_api  # noqa: E402
@@ -103,7 +103,7 @@ def test_singleton_service_does_not_launch_when_matching_process_exists(monkeypa
 
 
 def test_settings_ui_exposes_process_controls_and_log_streams() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
     assert '"/workbench/system/services?include_hidden=true":"/workbench/system/services"' in source
     assert "Hidden-process monitor" in source
     assert "Recent stdout / stderr" in source
@@ -119,7 +119,7 @@ def test_settings_ui_exposes_process_controls_and_log_streams() -> None:
     assert "parentWorkingDirectory" in source
     assert "process-tree-parent-evidence" in source
     assert "process-parent-readiness" not in source
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert ".process-tree-parent-evidence b,.process-tree-parent-evidence code,.process-tree-parent-evidence small,.process-tree-details code{overflow:visible;text-overflow:clip;white-space:normal" in styles
     assert "grid-template-columns:auto minmax(100px,.45fr) auto auto minmax(160px,.7fr) auto minmax(260px,1.3fr) auto" in styles
     assert ">Relaunch PID<" in source

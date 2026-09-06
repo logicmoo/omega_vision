@@ -4,8 +4,8 @@ import sys
 import pytest
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 from pddl_plan import grounded_plan_to_workflow  # noqa: E402
@@ -65,8 +65,8 @@ def test_temporal_pddl_plan_rejects_out_of_order_start_times() -> None:
 
 
 def test_active_workflow_editor_exposes_unsaved_pddl_conversion() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    panel = (ROOT / "workbench" / "frontend" / "src" / "components" / "PddlPlanImportPanel.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    panel = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "PddlPlanImportPanel.tsx").read_text(encoding="utf-8")
     compact = "".join(page.split())
     assert 'view==="editor"&&workflow&&(' in compact
     assert '<PddlPlanImportPanelworkspaceId={workspace.id}' in compact

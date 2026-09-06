@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 from backend_library import load_workspace_backend_records  # noqa: E402
@@ -14,7 +14,7 @@ from model_discovery import discover_backend_models  # noqa: E402
 
 
 def test_shared_asi_backends_load_with_expected_credentials_and_endpoints() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     backends = {
         str((record.get("document") or {}).get("id")): record.get("document") or {}
         for record in load_workspace_backend_records(shared)
@@ -49,7 +49,7 @@ def test_shared_asi_backends_load_with_expected_credentials_and_endpoints() -> N
 
 
 def test_asi_and_singularitynet_model_list_requests_use_their_declared_keys(monkeypatch) -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     backends = {
         str((record.get("document") or {}).get("id")): record.get("document") or {}
         for record in load_workspace_backend_records(shared)

@@ -6,9 +6,6 @@ duplicate)."""
 import sys
 from pathlib import Path
 
-_SERVER = Path(__file__).resolve().parents[1] / "workbench" / "server" / "generative_vision" / "prolog"
-sys.path.insert(0, str(_SERVER))
-
 from omega_vision.perception import symbolic_arc as sa  # noqa: E402
 
 

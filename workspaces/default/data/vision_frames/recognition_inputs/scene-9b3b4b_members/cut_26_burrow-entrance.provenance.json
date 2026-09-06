@@ -1,0 +1,212 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_26_burrow-entrance.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_26_burrow-entrance.provenance.json",
+  "createdAt": "2026-09-03T12:21:42.423159Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 50,
+    "height": 50
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "burrow entrance"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_burrow-entrance_edc615a4d0c5.png",
+      "geometryHash": "edc615a4d0c5432ee86bd92a9bdbac65381de445038f8935381f193b86a95c0d",
+      "traceVerified": true
+    },
+    "cropBox": [
+      308,
+      220,
+      358,
+      270
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          310,
+          239
+        ],
+        [
+          314,
+          229
+        ],
+        [
+          323,
+          223
+        ],
+        [
+          336,
+          222
+        ],
+        [
+          347,
+          228
+        ],
+        [
+          354,
+          240
+        ],
+        [
+          355,
+          253
+        ],
+        [
+          349,
+          262
+        ],
+        [
+          339,
+          268
+        ],
+        [
+          326,
+          266
+        ],
+        [
+          315,
+          259
+        ],
+        [
+          311,
+          250
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_26_burrow-entrance.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 50,
+        "height": 50
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_burrow-entrance_edc615a4d0c5.png",
+          "geometryHash": "edc615a4d0c5432ee86bd92a9bdbac65381de445038f8935381f193b86a95c0d",
+          "traceVerified": true
+        },
+        "cropBox": [
+          308,
+          220,
+          358,
+          270
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              310,
+              239
+            ],
+            [
+              314,
+              229
+            ],
+            [
+              323,
+              223
+            ],
+            [
+              336,
+              222
+            ],
+            [
+              347,
+              228
+            ],
+            [
+              354,
+              240
+            ],
+            [
+              355,
+              253
+            ],
+            [
+              349,
+              262
+            ],
+            [
+              339,
+              268
+            ],
+            [
+              326,
+              266
+            ],
+            [
+              315,
+              259
+            ],
+            [
+              311,
+              250
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:42.423159Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_26_burrow-entrance.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_26_burrow-entrance.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_26_burrow-entrance.turtle.provenance.json"
+  }
+}

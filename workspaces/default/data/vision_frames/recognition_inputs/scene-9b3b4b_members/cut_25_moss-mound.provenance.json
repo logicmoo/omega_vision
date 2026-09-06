@@ -1,0 +1,370 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_25_moss-mound.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_25_moss-mound.provenance.json",
+  "createdAt": "2026-09-03T12:21:41.117599Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 387,
+    "height": 123
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "moss mound"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_moss-mound_3447f383edd1.png",
+      "geometryHash": "3447f383edd1da819d6de5cdcf4babc6554028a41fcde913db0b657129c98c7e",
+      "traceVerified": true
+    },
+    "cropBox": [
+      102,
+      179,
+      489,
+      302
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          104,
+          270
+        ],
+        [
+          127,
+          251
+        ],
+        [
+          151,
+          229
+        ],
+        [
+          181,
+          208
+        ],
+        [
+          222,
+          192
+        ],
+        [
+          267,
+          184
+        ],
+        [
+          312,
+          181
+        ],
+        [
+          354,
+          189
+        ],
+        [
+          390,
+          207
+        ],
+        [
+          422,
+          228
+        ],
+        [
+          453,
+          248
+        ],
+        [
+          476,
+          270
+        ],
+        [
+          487,
+          288
+        ],
+        [
+          455,
+          296
+        ],
+        [
+          403,
+          299
+        ],
+        [
+          351,
+          294
+        ],
+        [
+          302,
+          299
+        ],
+        [
+          249,
+          295
+        ],
+        [
+          198,
+          300
+        ],
+        [
+          151,
+          295
+        ],
+        [
+          119,
+          284
+        ]
+      ]
+    ],
+    "holes": [
+      [
+        [
+          310,
+          234
+        ],
+        [
+          318,
+          224
+        ],
+        [
+          332,
+          221
+        ],
+        [
+          345,
+          225
+        ],
+        [
+          355,
+          236
+        ],
+        [
+          357,
+          252
+        ],
+        [
+          351,
+          263
+        ],
+        [
+          338,
+          268
+        ],
+        [
+          323,
+          265
+        ],
+        [
+          312,
+          256
+        ]
+      ]
+    ]
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_25_moss-mound.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 387,
+        "height": 123
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_moss-mound_3447f383edd1.png",
+          "geometryHash": "3447f383edd1da819d6de5cdcf4babc6554028a41fcde913db0b657129c98c7e",
+          "traceVerified": true
+        },
+        "cropBox": [
+          102,
+          179,
+          489,
+          302
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              104,
+              270
+            ],
+            [
+              127,
+              251
+            ],
+            [
+              151,
+              229
+            ],
+            [
+              181,
+              208
+            ],
+            [
+              222,
+              192
+            ],
+            [
+              267,
+              184
+            ],
+            [
+              312,
+              181
+            ],
+            [
+              354,
+              189
+            ],
+            [
+              390,
+              207
+            ],
+            [
+              422,
+              228
+            ],
+            [
+              453,
+              248
+            ],
+            [
+              476,
+              270
+            ],
+            [
+              487,
+              288
+            ],
+            [
+              455,
+              296
+            ],
+            [
+              403,
+              299
+            ],
+            [
+              351,
+              294
+            ],
+            [
+              302,
+              299
+            ],
+            [
+              249,
+              295
+            ],
+            [
+              198,
+              300
+            ],
+            [
+              151,
+              295
+            ],
+            [
+              119,
+              284
+            ]
+          ]
+        ],
+        "holes": [
+          [
+            [
+              310,
+              234
+            ],
+            [
+              318,
+              224
+            ],
+            [
+              332,
+              221
+            ],
+            [
+              345,
+              225
+            ],
+            [
+              355,
+              236
+            ],
+            [
+              357,
+              252
+            ],
+            [
+              351,
+              263
+            ],
+            [
+              338,
+              268
+            ],
+            [
+              323,
+              265
+            ],
+            [
+              312,
+              256
+            ]
+          ]
+        ]
+      },
+      "createdAt": "2026-09-03T12:21:41.117599Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_25_moss-mound.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_25_moss-mound.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_25_moss-mound.turtle.provenance.json"
+  }
+}

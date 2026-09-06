@@ -1,0 +1,351 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-tree-tru_5661a11a8421.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-tree-tru_5661a11a8421.provenance.json",
+  "createdAt": "2026-09-03T12:14:46.293308Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left background tree trunks"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          105,
+          157
+        ],
+        [
+          110,
+          157
+        ],
+        [
+          110,
+          208
+        ],
+        [
+          105,
+          211
+        ]
+      ],
+      [
+        [
+          116,
+          156
+        ],
+        [
+          121,
+          157
+        ],
+        [
+          120,
+          204
+        ],
+        [
+          115,
+          208
+        ]
+      ],
+      [
+        [
+          128,
+          153
+        ],
+        [
+          134,
+          153
+        ],
+        [
+          133,
+          207
+        ],
+        [
+          127,
+          211
+        ]
+      ],
+      [
+        [
+          196,
+          128
+        ],
+        [
+          205,
+          130
+        ],
+        [
+          207,
+          188
+        ],
+        [
+          199,
+          195
+        ]
+      ],
+      [
+        [
+          218,
+          126
+        ],
+        [
+          225,
+          127
+        ],
+        [
+          218,
+          188
+        ],
+        [
+          211,
+          193
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 164,
+        "y": 437
+      },
+      {
+        "op": "line",
+        "x": 164,
+        "y": 588
+      },
+      {
+        "op": "move",
+        "x": 181,
+        "y": 435
+      },
+      {
+        "op": "line",
+        "x": 180,
+        "y": 579
+      },
+      {
+        "op": "move",
+        "x": 200,
+        "y": 426
+      },
+      {
+        "op": "line",
+        "x": 199,
+        "y": 588
+      },
+      {
+        "op": "move",
+        "x": 313,
+        "y": 357
+      },
+      {
+        "op": "line",
+        "x": 316,
+        "y": 543
+      },
+      {
+        "op": "move",
+        "x": 346,
+        "y": 351
+      },
+      {
+        "op": "line",
+        "x": 335,
+        "y": 538
+      }
+    ],
+    "geometryHash": "5661a11a8421cc0646d432d14aabc56746ac98e9ee174983d17f0c9b74134e16",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.7436
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-tree-tru_5661a11a8421.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              105,
+              157
+            ],
+            [
+              110,
+              157
+            ],
+            [
+              110,
+              208
+            ],
+            [
+              105,
+              211
+            ]
+          ],
+          [
+            [
+              116,
+              156
+            ],
+            [
+              121,
+              157
+            ],
+            [
+              120,
+              204
+            ],
+            [
+              115,
+              208
+            ]
+          ],
+          [
+            [
+              128,
+              153
+            ],
+            [
+              134,
+              153
+            ],
+            [
+              133,
+              207
+            ],
+            [
+              127,
+              211
+            ]
+          ],
+          [
+            [
+              196,
+              128
+            ],
+            [
+              205,
+              130
+            ],
+            [
+              207,
+              188
+            ],
+            [
+              199,
+              195
+            ]
+          ],
+          [
+            [
+              218,
+              126
+            ],
+            [
+              225,
+              127
+            ],
+            [
+              218,
+              188
+            ],
+            [
+              211,
+              193
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 164,
+            "y": 437
+          },
+          {
+            "op": "line",
+            "x": 164,
+            "y": 588
+          },
+          {
+            "op": "move",
+            "x": 181,
+            "y": 435
+          },
+          {
+            "op": "line",
+            "x": 180,
+            "y": 579
+          },
+          {
+            "op": "move",
+            "x": 200,
+            "y": 426
+          },
+          {
+            "op": "line",
+            "x": 199,
+            "y": 588
+          },
+          {
+            "op": "move",
+            "x": 313,
+            "y": 357
+          },
+          {
+            "op": "line",
+            "x": 316,
+            "y": 543
+          },
+          {
+            "op": "move",
+            "x": 346,
+            "y": 351
+          },
+          {
+            "op": "line",
+            "x": 335,
+            "y": 538
+          }
+        ],
+        "geometryHash": "5661a11a8421cc0646d432d14aabc56746ac98e9ee174983d17f0c9b74134e16",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.7436
+      },
+      "createdAt": "2026-09-03T12:14:46.293308Z"
+    }
+  ]
+}

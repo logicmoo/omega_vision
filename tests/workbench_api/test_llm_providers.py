@@ -8,7 +8,7 @@ from llm_model_catalog import CatalogAwareLlmProviderRouter
 from llm_providers import DEFAULT_CONFIG_PATH, LlmProviderRouter, _anthropic_blocks
 from project_paths import prompts_path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class FakeResponses:

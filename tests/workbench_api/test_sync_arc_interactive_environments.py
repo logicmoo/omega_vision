@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PYTHON_ROOT = ROOT / "python"
 SCRIPTS = ROOT / "scripts"
 if str(PYTHON_ROOT) not in sys.path:
@@ -97,7 +97,7 @@ def test_plan_sync_raises_for_missing_source(tmp_path: Path) -> None:
 
 def test_sync_defaults_point_at_sibling_arc_interactive_repo() -> None:
     assert sync_mod.DEFAULT_SOURCE == ROOT.parent / "arc-interactive" / "environment_files"
-    assert sync_mod.DEFAULT_DEST == ROOT / "workbench" / "server" / "environment_files"
+    assert sync_mod.DEFAULT_DEST == ROOT / "python" / "workbench_api_server" / "environment_files"
 
 
 def test_sync_summary_copies_and_reports_when_source_available(tmp_path: Path) -> None:

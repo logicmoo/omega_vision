@@ -1,13 +1,13 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-COMPONENT = ROOT / "workbench/frontend/src/components/Arc3B1B2PipelinePage.tsx"
-STYLES = ROOT / "workbench/frontend/src/styles/arc3_prompt_prolog.css"
-WORKBENCH = ROOT / "workbench/frontend/src/pages/FilesystemWorkbenchPage.tsx"
-PAGE = ROOT / "workbench/workspaces/arc3_random_player/design/workflow_pages/b1_b2_pipeline.workflow_page.json"
-MARKDOWN_DOCUMENT = ROOT / "workbench/frontend/src/components/MarkdownDocument.tsx"
-HELP_TABS = ROOT / "workbench/frontend/src/components/HelpDocumentTabs.tsx"
+ROOT = Path(__file__).resolve().parents[2]
+COMPONENT = ROOT / "frontend/packages/omega_vision_ui/src/components/Arc3B1B2PipelinePage.tsx"
+STYLES = ROOT / "frontend/packages/omega_vision_ui/src/styles/arc3_prompt_prolog.css"
+WORKBENCH = ROOT / "frontend/apps/workbench/src/pages/FilesystemWorkbenchPage.tsx"
+PAGE = ROOT / "workspaces/arc3_random_player/design/workflow_pages/b1_b2_pipeline.workflow_page.json"
+MARKDOWN_DOCUMENT = ROOT / "frontend/apps/workbench/src/components/MarkdownDocument.tsx"
+HELP_TABS = ROOT / "frontend/apps/workbench/src/components/HelpDocumentTabs.tsx"
 
 
 def test_markdown_document_is_shared_help_renderer() -> None:
@@ -238,7 +238,7 @@ def test_b1_b2_setup_switch_expands_selected_to_full() -> None:
 
 
 def test_b1_b2_setup_image_members_keep_natural_height() -> None:
-    css = (ROOT / "workbench/frontend/src/styles/arc3_prompt_prolog.css").read_text(encoding="utf-8")
+    css = (ROOT / "frontend/packages/omega_vision_ui/src/styles/arc3_prompt_prolog.css").read_text(encoding="utf-8")
     # Full-mode setup images must not shrink, so expanding one pushes the setups
     # below it down instead of overlapping them.
     assert '.arc3-b1b2-page .three-state-accordion-member[data-accordion-member^="image-"]' in css

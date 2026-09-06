@@ -1,0 +1,196 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_07_left-large-stone.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_07_left-large-stone.provenance.json",
+  "createdAt": "2026-09-03T12:14:44.707623Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 52,
+    "height": 32
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left large stone"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-large-stone_4455bead4116.png",
+      "geometryHash": "4455bead411695f78c542087e172b1547c495dda788cf1501ce79abbc9718fe4",
+      "traceVerified": true
+    },
+    "cropBox": [
+      172,
+      232,
+      224,
+      264
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          174,
+          249
+        ],
+        [
+          181,
+          240
+        ],
+        [
+          194,
+          235
+        ],
+        [
+          209,
+          234
+        ],
+        [
+          220,
+          239
+        ],
+        [
+          221,
+          248
+        ],
+        [
+          215,
+          256
+        ],
+        [
+          202,
+          261
+        ],
+        [
+          188,
+          261
+        ],
+        [
+          178,
+          257
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_07_left-large-stone.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 52,
+        "height": 32
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-large-stone_4455bead4116.png",
+          "geometryHash": "4455bead411695f78c542087e172b1547c495dda788cf1501ce79abbc9718fe4",
+          "traceVerified": true
+        },
+        "cropBox": [
+          172,
+          232,
+          224,
+          264
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              174,
+              249
+            ],
+            [
+              181,
+              240
+            ],
+            [
+              194,
+              235
+            ],
+            [
+              209,
+              234
+            ],
+            [
+              220,
+              239
+            ],
+            [
+              221,
+              248
+            ],
+            [
+              215,
+              256
+            ],
+            [
+              202,
+              261
+            ],
+            [
+              188,
+              261
+            ],
+            [
+              178,
+              257
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:44.707623Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_07_left-large-stone.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_07_left-large-stone.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_07_left-large-stone.turtle.provenance.json"
+  }
+}

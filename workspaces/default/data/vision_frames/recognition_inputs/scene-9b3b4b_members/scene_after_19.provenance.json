@@ -1,0 +1,105 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/scene_after_19.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/scene_after_19.provenance.json",
+  "createdAt": "2026-09-03T12:21:38.275873Z",
+  "operation": "remove_object_from_scene",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left background trunk three",
+    "cutout": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.png",
+    "fillInstructions": {}
+  },
+  "transform": {
+    "fill": "inpaint",
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-trunk-th_041627cea99d.png",
+      "geometryHash": "041627cea99d639d75eb3bafd3122ad7fe2a33c9270c538d1328f2da378798a9",
+      "traceVerified": true
+    },
+    "removedBox": [
+      133,
+      73,
+      156,
+      214
+    ],
+    "maskScale": 4,
+    "fillInstructions": {},
+    "imageGeneration": {
+      "renderer": "boundary_diffusion"
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/scene_after_19.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "fill": "inpaint",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-trunk-th_041627cea99d.png",
+          "geometryHash": "041627cea99d639d75eb3bafd3122ad7fe2a33c9270c538d1328f2da378798a9",
+          "traceVerified": true
+        },
+        "removedBox": [
+          133,
+          73,
+          156,
+          214
+        ],
+        "maskScale": 4,
+        "fillInstructions": {},
+        "imageGeneration": {
+          "renderer": "boundary_diffusion"
+        }
+      },
+      "createdAt": "2026-09-03T12:21:38.275873Z"
+    }
+  ]
+}

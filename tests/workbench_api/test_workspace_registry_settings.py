@@ -194,7 +194,7 @@ def test_each_managed_service_is_an_independent_resource() -> None:
 
 
 def test_settings_ui_embeds_synchronized_startup_policy_source_editor() -> None:
-    source = (Path(__file__).parents[1] / "workbench" / "frontend" / "src" / "components" / "WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
+    source = (Path(__file__).parents[2] / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
     assert "<ResourceSourceEditor" in source
     assert 'label="Edit start, window visibility, and Process Viewer overrides"' in source
     assert "changeStartupPolicy" in source
@@ -211,7 +211,7 @@ def test_settings_ui_embeds_synchronized_startup_policy_source_editor() -> None:
 
 
 def test_workspace_chooser_has_enumerate_resource_counts_button() -> None:
-    source = (Path(__file__).parents[1] / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (Path(__file__).parents[2] / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     assert "workspace-count-actions" in source
     assert "workspace-count-enumerate" in source
     assert "Enumerate resource counts" in source
@@ -221,6 +221,6 @@ def test_workspace_chooser_has_enumerate_resource_counts_button() -> None:
 
 
 def test_workspace_chooser_enumerate_button_is_styled() -> None:
-    source = (Path(__file__).parents[1] / "workbench" / "frontend" / "src" / "styles" / "workspace_backed.css").read_text(encoding="utf-8")
+    source = (Path(__file__).parents[2] / "frontend" / "apps" / "workbench" / "src" / "styles" / "workspace_backed.css").read_text(encoding="utf-8")
     assert ".workspace-count-actions" in source
     assert ".workspace-count-enumerate" in source

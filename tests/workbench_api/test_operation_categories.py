@@ -4,8 +4,8 @@ from resource_store import get_filesystem_provider
 from resource_relationships import relationship_ids
 
 
-ROOT = Path(__file__).resolve().parents[1]
-WORKSPACES = ROOT / "workbench" / "workspaces"
+ROOT = Path(__file__).resolve().parents[2]
+WORKSPACES = ROOT / "workspaces"
 
 
 def test_every_operation_has_at_least_one_topic() -> None:

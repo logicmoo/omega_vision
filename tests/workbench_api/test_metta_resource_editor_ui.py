@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-FRONTEND = Path(__file__).resolve().parents[1] / "workbench" / "frontend" / "src"
+FRONTEND = Path(__file__).resolve().parents[2] / "frontend" / "apps" / "workbench" / "src"
 
 
 def test_active_resource_editors_share_metta_json_source_editor() -> None:

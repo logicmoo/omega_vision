@@ -2,15 +2,15 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 from policy_library import load_workspace_policy_records, policy_hierarchy  # noqa: E402
 
 
 def test_shared_policy_directory_loads_real_resources() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     records = load_workspace_policy_records(shared)
     hierarchy = policy_hierarchy(records)
     assert len(records) >= 13
@@ -37,8 +37,8 @@ def test_workspace_policy_overrides_shared_id(tmp_path: Path) -> None:
 
 
 def test_design_policy_navigation_uses_rich_editor() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "PolicyLibraryEditor.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "PolicyLibraryEditor.tsx").read_text(encoding="utf-8")
     compact = "".join(page.split())
     assert 'label:"Policies",view:"policies"' in compact
     assert 'view==="policies"&&(' in compact

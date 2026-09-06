@@ -9,7 +9,7 @@ import pytest
 from resource_store import FilesystemProvider, get_filesystem_provider
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_singleton_provider_delegates_json_files_to_disk(tmp_path: Path) -> None:
@@ -160,7 +160,7 @@ def test_running_server_resource_io_stays_behind_filesystem_provider() -> None:
         r"\.(?:read_text|write_text|read_bytes|write_bytes|glob|rglob|iterdir|mkdir|unlink)\("
     )
     offenders: list[str] = []
-    server = ROOT / "workbench" / "server"
+    server = ROOT / "python" / "workbench_api_server"
 
     for path in sorted(server.glob("*.py")):
         if path.name == "resource_store.py" or path.name.startswith("test_"):

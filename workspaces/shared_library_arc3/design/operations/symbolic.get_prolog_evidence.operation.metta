@@ -126,7 +126,7 @@
   ))
   (python (
     (importMode file)
-    (file python/visual_image_diff_operations.py)
+    (file workspaces/shared_library_arc3/visual_image_diff_operations.py)
     (callable collect_prolog_evidence)
   ))
   (implements (

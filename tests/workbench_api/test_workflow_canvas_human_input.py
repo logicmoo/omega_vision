@@ -1,9 +1,9 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-PAGE = ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
-HISTORY = ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx"
+ROOT = Path(__file__).resolve().parents[2]
+PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
+HISTORY = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx"
 
 
 def test_active_workflow_canvas_reuses_typed_human_input_form_and_drafts():

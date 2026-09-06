@@ -5,7 +5,7 @@ from swipl_bridge import SWIPrologBridge
 from omega_vision.perception.grid_analysis import DEFAULT_GRID, analyze_grid
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def _bridge() -> SWIPrologBridge:

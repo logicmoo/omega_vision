@@ -1,0 +1,105 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/scene_after_30.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/scene_after_30.provenance.json",
+  "createdAt": "2026-09-03T12:21:43.811343Z",
+  "operation": "remove_object_from_scene",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "small right mound stone",
+    "cutout": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_30_small-right-mound-stone.png",
+    "fillInstructions": {}
+  },
+  "transform": {
+    "fill": "inpaint",
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_small-right-mound-stone_c64bfd481f1e.png",
+      "geometryHash": "c64bfd481f1e9d9d4dfbeed1b64da6f6362eaf5d0f64b67b23d13b3dd946bb3b",
+      "traceVerified": true
+    },
+    "removedBox": [
+      445,
+      238,
+      466,
+      260
+    ],
+    "maskScale": 4,
+    "fillInstructions": {},
+    "imageGeneration": {
+      "renderer": "boundary_diffusion"
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/scene_after_30.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "fill": "inpaint",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_small-right-mound-stone_c64bfd481f1e.png",
+          "geometryHash": "c64bfd481f1e9d9d4dfbeed1b64da6f6362eaf5d0f64b67b23d13b3dd946bb3b",
+          "traceVerified": true
+        },
+        "removedBox": [
+          445,
+          238,
+          466,
+          260
+        ],
+        "maskScale": 4,
+        "fillInstructions": {},
+        "imageGeneration": {
+          "renderer": "boundary_diffusion"
+        }
+      },
+      "createdAt": "2026-09-03T12:21:43.811343Z"
+    }
+  ]
+}

@@ -11,8 +11,8 @@ from model_library import resolve_model_records
 from operation_library import load_workspace_operation_implementation_records
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SHARED = ROOT / "workbench" / "workspaces" / "shared_library_system"
+ROOT = Path(__file__).resolve().parents[2]
+SHARED = ROOT / "workspaces" / "shared_library_system"
 
 
 def test_shared_query_categories_are_valid_and_tree_scoped() -> None:

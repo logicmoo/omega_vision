@@ -1,0 +1,217 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_blue-gray-background-tre_44d8c9ef6de2.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_blue-gray-background-tre_44d8c9ef6de2.provenance.json",
+  "createdAt": "2026-09-03T12:21:38.462437Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "blue-gray background tree"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          196,
+          112
+        ],
+        [
+          207,
+          109
+        ],
+        [
+          210,
+          151
+        ],
+        [
+          222,
+          132
+        ],
+        [
+          229,
+          132
+        ],
+        [
+          220,
+          161
+        ],
+        [
+          219,
+          208
+        ],
+        [
+          203,
+          210
+        ],
+        [
+          202,
+          158
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 307,
+        "y": 304
+      },
+      {
+        "op": "line",
+        "x": 324,
+        "y": 304
+      },
+      {
+        "op": "line",
+        "x": 329,
+        "y": 421
+      },
+      {
+        "op": "line",
+        "x": 358,
+        "y": 368
+      },
+      {
+        "op": "line",
+        "x": 344,
+        "y": 448
+      },
+      {
+        "op": "line",
+        "x": 343,
+        "y": 579
+      },
+      {
+        "op": "line",
+        "x": 318,
+        "y": 585
+      }
+    ],
+    "geometryHash": "44d8c9ef6de278f4be763f642d35e209d01f650b3ba9ab4decb34593d06d9413",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.6566
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_blue-gray-background-tre_44d8c9ef6de2.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              196,
+              112
+            ],
+            [
+              207,
+              109
+            ],
+            [
+              210,
+              151
+            ],
+            [
+              222,
+              132
+            ],
+            [
+              229,
+              132
+            ],
+            [
+              220,
+              161
+            ],
+            [
+              219,
+              208
+            ],
+            [
+              203,
+              210
+            ],
+            [
+              202,
+              158
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 307,
+            "y": 304
+          },
+          {
+            "op": "line",
+            "x": 324,
+            "y": 304
+          },
+          {
+            "op": "line",
+            "x": 329,
+            "y": 421
+          },
+          {
+            "op": "line",
+            "x": 358,
+            "y": 368
+          },
+          {
+            "op": "line",
+            "x": 344,
+            "y": 448
+          },
+          {
+            "op": "line",
+            "x": 343,
+            "y": 579
+          },
+          {
+            "op": "line",
+            "x": 318,
+            "y": 585
+          }
+        ],
+        "geometryHash": "44d8c9ef6de278f4be763f642d35e209d01f650b3ba9ab4decb34593d06d9413",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.6566
+      },
+      "createdAt": "2026-09-03T12:21:38.462437Z"
+    }
+  ]
+}

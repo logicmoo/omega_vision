@@ -1,0 +1,268 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_14_right-blue-flowers.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_14_right-blue-flowers.provenance.json",
+  "createdAt": "2026-09-03T12:14:46.954314Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 121,
+    "height": 30
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "right blue flowers"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-blue-flowers_b606efc0b340.png",
+      "geometryHash": "b606efc0b34062a63d0336b0b6b1a244382bc3611b99ae89fb8f570c8e99a006",
+      "traceVerified": true
+    },
+    "cropBox": [
+      412,
+      195,
+      533,
+      225
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          414,
+          211
+        ],
+        [
+          421,
+          202
+        ],
+        [
+          428,
+          208
+        ],
+        [
+          433,
+          198
+        ],
+        [
+          440,
+          207
+        ],
+        [
+          447,
+          196
+        ],
+        [
+          454,
+          205
+        ],
+        [
+          461,
+          197
+        ],
+        [
+          468,
+          207
+        ],
+        [
+          476,
+          199
+        ],
+        [
+          484,
+          209
+        ],
+        [
+          492,
+          200
+        ],
+        [
+          500,
+          211
+        ],
+        [
+          508,
+          202
+        ],
+        [
+          516,
+          211
+        ],
+        [
+          524,
+          204
+        ],
+        [
+          531,
+          214
+        ],
+        [
+          526,
+          222
+        ],
+        [
+          414,
+          222
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_14_right-blue-flowers.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 121,
+        "height": 30
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-blue-flowers_b606efc0b340.png",
+          "geometryHash": "b606efc0b34062a63d0336b0b6b1a244382bc3611b99ae89fb8f570c8e99a006",
+          "traceVerified": true
+        },
+        "cropBox": [
+          412,
+          195,
+          533,
+          225
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              414,
+              211
+            ],
+            [
+              421,
+              202
+            ],
+            [
+              428,
+              208
+            ],
+            [
+              433,
+              198
+            ],
+            [
+              440,
+              207
+            ],
+            [
+              447,
+              196
+            ],
+            [
+              454,
+              205
+            ],
+            [
+              461,
+              197
+            ],
+            [
+              468,
+              207
+            ],
+            [
+              476,
+              199
+            ],
+            [
+              484,
+              209
+            ],
+            [
+              492,
+              200
+            ],
+            [
+              500,
+              211
+            ],
+            [
+              508,
+              202
+            ],
+            [
+              516,
+              211
+            ],
+            [
+              524,
+              204
+            ],
+            [
+              531,
+              214
+            ],
+            [
+              526,
+              222
+            ],
+            [
+              414,
+              222
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:46.954314Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_14_right-blue-flowers.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_14_right-blue-flowers.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_14_right-blue-flowers.turtle.provenance.json"
+  }
+}

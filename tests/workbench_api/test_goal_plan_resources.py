@@ -3,8 +3,8 @@ import json
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 if str(SERVER) not in sys.path:
     sys.path.insert(0, str(SERVER))
 
@@ -45,7 +45,7 @@ def test_plan_variant_uses_parent_link_and_base_kind_suffix(tmp_path: Path) -> N
 
 
 def test_shared_workspace_contains_goal_and_plan_examples() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     goals = load_workspace_symbolic_records(shared, "goal")
     plans = load_workspace_symbolic_records(shared, "plan")
     assert {record["document"]["kind"] for record in goals} == {"goal"}
@@ -55,7 +55,7 @@ def test_shared_workspace_contains_goal_and_plan_examples() -> None:
 
 
 def test_shared_design_examples_are_domain_neutral_and_runnable() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     resources = get_filesystem_provider()
     design_dirs = [shared / "design" / name for name in ("goals", "planning_strategies", "workflows")]
     documents = [document for directory in design_dirs for path in directory.glob("*.metta") for document in resources.read_json_documents(path.with_suffix(".json"))]
@@ -66,7 +66,7 @@ def test_shared_design_examples_are_domain_neutral_and_runnable() -> None:
 
 
 def test_shared_workspace_contains_bidirectional_context_examples() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     contexts = load_workspace_symbolic_records(shared, "context")
     by_id = {record["document"]["id"]: record["document"] for record in contexts}
     assert {document["kind"] for document in by_id.values()} == {"atomspace"}
@@ -92,17 +92,17 @@ def test_goal_run_api_accepts_atomspace_context_kind(monkeypatch, tmp_path: Path
 
 
 def test_goal_plan_editor_preserves_rich_hierarchy_features() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
     for token in ("HierarchyResourceEditor", "PREFERRED IMPLEMENTATION", "Split view", "+ Implementation", "+ Abstract", "ResourceSourceEditor", "preferredImplementation"):
         assert token in source
     assert 'const endpoint = family === "plan" ? "plans" : directory' in source
 
 
 def test_goal_plan_and_context_pages_load_their_shared_right_panel_docs() -> None:
-    components = ROOT / "workbench" / "frontend" / "src" / "components"
+    components = ROOT / "frontend" / "apps" / "workbench" / "src" / "components"
     help_source = (components / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
     markdown_source = (components / "MarkdownDocument.tsx").read_text(encoding="utf-8")
-    page_source = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    page_source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     help_compact = "".join(help_source.split())
     page_compact = "".join(page_source.split())
     assert '{id:"goals",label:"Goals",path:"docs/goals.md"}' in help_compact
@@ -113,14 +113,14 @@ def test_goal_plan_and_context_pages_load_their_shared_right_panel_docs() -> Non
     assert '<pre className="mini-code relationship-markdown">' not in help_source
     assert 'view==="goals"?"goals":view==="plans"?"plans"' in page_compact
     assert 'view==="goals"||view==="plans"' in page_compact
-    assert (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "goals.md").is_file()
-    assert (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "plans.md").is_file()
-    assert (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "contexts.md").is_file()
+    assert (ROOT / "workspaces" / "shared_library_system" / "docs" / "goals.md").is_file()
+    assert (ROOT / "workspaces" / "shared_library_system" / "docs" / "plans.md").is_file()
+    assert (ROOT / "workspaces" / "shared_library_system" / "docs" / "contexts.md").is_file()
 
 
 def test_pddl_vocabulary_maps_plans_to_workflows() -> None:
-    docs = (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "plans.md").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    docs = (ROOT / "workspaces" / "shared_library_system" / "docs" / "plans.md").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     compact = "".join(page.split())
     assert "| Plan | Workflow |" in docs
     assert "| Ground action | Workflow step |" in docs
@@ -135,7 +135,7 @@ def test_pddl_vocabulary_maps_plans_to_workflows() -> None:
 
 
 def test_same_kind_goal_plan_and_atomspace_children_are_labeled_implementations() -> None:
-    editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
+    editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
     assert "PREFERRED IMPLEMENTATION" in editor
     assert "IMPLEMENTATION`" in editor
     assert "variants · shared inheritance" not in editor

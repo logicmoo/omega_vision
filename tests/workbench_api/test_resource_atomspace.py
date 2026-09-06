@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 import workspace_api  # noqa: E402
@@ -77,16 +77,18 @@ def test_resource_atomspace_contains_all_canonical_relationships(
 def test_resource_atomspace_page_is_real_and_navigable() -> None:
     component = (
         ROOT
-        / "workbench"
         / "frontend"
+        / "apps"
+        / "workbench"
         / "src"
         / "components"
         / "ResourceAtomspacePage.tsx"
     ).read_text(encoding="utf-8")
     shell = (
         ROOT
-        / "workbench"
         / "frontend"
+        / "apps"
+        / "workbench"
         / "src"
         / "pages"
         / "FilesystemWorkbenchPage.tsx"

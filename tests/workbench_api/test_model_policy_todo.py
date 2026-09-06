@@ -4,8 +4,8 @@ import sys
 import json
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 from model_policy_todo_api import get_model_policy_mockup, get_model_policy_todo  # noqa: E402
@@ -27,8 +27,8 @@ def test_model_policy_mockup_endpoint_returns_checked_in_png() -> None:
 
 
 def test_active_model_policy_page_uses_live_filesystem_policy_api() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
-    shell = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    shell = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     shell_compact = "".join(shell.split())
     assert "/model-policy`" in page
     assert "/model-policy/ping`" in page
@@ -39,7 +39,7 @@ def test_active_model_policy_page_uses_live_filesystem_policy_api() -> None:
 
 
 def test_model_policy_embeds_real_backend_creation_and_discovery() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
 
     assert "/backends`" in page
     assert "/models/discover/${encodeURIComponent(discoveryBackend)}`" in page
@@ -53,7 +53,7 @@ def test_model_policy_embeds_real_backend_creation_and_discovery() -> None:
 
 
 def test_model_policy_history_supports_result_aggregation() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
 
     assert 'aria-label="Performance history aggregation"' in page
     assert 'value="chronological">Every result' in page
@@ -64,7 +64,7 @@ def test_model_policy_history_supports_result_aggregation() -> None:
 
 
 def test_shared_policy_examples_form_a_resolvable_reference_graph() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     paths = [
         shared / "policies" / "default_model_runtime.model_policy.json",
         shared / "policies" / "balanced_model_runtime.model_policy_variant.json",

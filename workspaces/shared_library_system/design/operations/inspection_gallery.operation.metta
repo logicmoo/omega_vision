@@ -90,7 +90,7 @@
   ))
   (python (
     (importMode file)
-    (file python/collection_operations.py)
+    (file workspaces/shared_library_system/collection_operations.py)
     (callable curate_gallery_resource)
   ))
   (parameters (

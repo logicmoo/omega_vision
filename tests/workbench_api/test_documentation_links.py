@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import tomllib
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 ROOT_DOCUMENTS = (
     "DEBUGGER.md",

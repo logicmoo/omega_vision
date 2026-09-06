@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 
-ROOT = Path(__file__).resolve().parents[1]
-ACTIVE_PAGE = ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
-APP = ROOT / "workbench" / "frontend" / "src" / "App.tsx"
+ROOT = Path(__file__).resolve().parents[2]
+ACTIVE_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
+APP = ROOT / "frontend" / "apps" / "workbench" / "src" / "App.tsx"
 
 
 class SourceText(str):
@@ -61,8 +61,8 @@ def test_removed_workflow_v2_route_redirects_to_the_active_workflow_page() -> No
     assert 'return "workflowV2"' not in source
     assert 'return "canvas"' in source
     assert "WorkflowWorkbenchV2" not in source
-    assert not (ROOT / "workbench/frontend/src/components/WorkflowWorkbenchV2.tsx").exists()
-    assert not (ROOT / "workbench/frontend/src/styles/workflow_v2.css").exists()
+    assert not (ROOT / "frontend/apps/workbench/src/components/WorkflowWorkbenchV2.tsx").exists()
+    assert not (ROOT / "frontend/apps/workbench/src/styles/workflow_v2.css").exists()
 
 
 def test_navigation_v2_has_required_groups_and_labels() -> None:
@@ -130,7 +130,7 @@ def test_plugin_contributed_rail_items_collapse_past_a_threshold() -> None:
 
 def test_every_navigation_heading_is_a_persisted_disclosure() -> None:
     source = ACTIVE_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench/frontend/src/styles/workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/apps/workbench/src/styles/workbench.css").read_text(encoding="utf-8")
 
     assert "workbench.collapsedNavigationGroups" in source
     assert "collapsedNavigationGroups[section.group]" in source
@@ -142,7 +142,7 @@ def test_every_navigation_heading_is_a_persisted_disclosure() -> None:
 
 
 def test_navigation_scrollbar_reserves_space_inside_the_app_menu() -> None:
-    styles = (ROOT / "workbench/frontend/src/styles/workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/apps/workbench/src/styles/workbench.css").read_text(encoding="utf-8")
 
     assert ".rail.navigation-v2" in styles
     assert "box-sizing: border-box" in styles
@@ -152,8 +152,8 @@ def test_navigation_scrollbar_reserves_space_inside_the_app_menu() -> None:
 
 def test_navigation_menu_is_resizable_and_persistent() -> None:
     source = ACTIVE_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench/frontend/src/styles/workbench.css").read_text(encoding="utf-8")
-    workflow_layout = (ROOT / "workbench/frontend/src/styles/workflow_layout.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/apps/workbench/src/styles/workbench.css").read_text(encoding="utf-8")
+    workflow_layout = (ROOT / "frontend/apps/workbench/src/styles/workflow_layout.css").read_text(encoding="utf-8")
 
     assert "workbench.navigationWidth" in source
     assert "workbench.navigationExpandedWidth" in source
@@ -191,7 +191,7 @@ def test_navigation_menu_is_resizable_and_persistent() -> None:
 
 
 def test_acceptance_debug_outlines_cover_all_control_types() -> None:
-    styles = (ROOT / "workbench/frontend/src/styles/workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/apps/workbench/src/styles/workbench.css").read_text(encoding="utf-8")
 
     for selector in (
         ".workbench.tsx-debug-enabled button",
@@ -205,7 +205,7 @@ def test_acceptance_debug_outlines_cover_all_control_types() -> None:
     assert "RETAIN THROUGH 2026-09-02" in styles
     assert ".workbench.tsx-debug-enabled [class]" in styles
     assert "outline:1px dashed #b36bff" in styles
-    popup = (ROOT / "workbench/frontend/src/components/TsxSourceLocationPopup.tsx").read_text(encoding="utf-8")
+    popup = (ROOT / "frontend/apps/workbench/src/components/TsxSourceLocationPopup.tsx").read_text(encoding="utf-8")
     assert 'closest("[data-tsx-source]")' in popup
     assert "target.location" in popup
     assert "event.clientX" in popup
@@ -214,7 +214,7 @@ def test_acceptance_debug_outlines_cover_all_control_types() -> None:
     assert "translateX(-100%)" in popup
     assert "<TsxSourceLocationPopup />" in ACTIVE_PAGE.read_text(encoding="utf-8")
     assert "[data-tsx-source-popup]" in styles
-    vite = (ROOT / "workbench/frontend/vite.config.ts").read_text(encoding="utf-8")
+    vite = (ROOT / "frontend/apps/workbench/vite.config.ts").read_text(encoding="utf-8")
     assert "workbench-tsx-source-locations" in vite
     assert 'from "@babel/parser"' in vite
     assert 'node.type === "JSXOpeningElement"' in vite
@@ -261,8 +261,8 @@ def test_navigation_accepts_menu_as_a_deep_link_alias() -> None:
 
 def test_overview_and_system_settings_have_distinct_responsibilities() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    overview = (ROOT / "workbench/frontend/src/components/WorkspaceOverview.tsx").read_text(encoding="utf-8")
-    settings = (ROOT / "workbench/frontend/src/components/WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
+    overview = (ROOT / "frontend/apps/workbench/src/components/WorkspaceOverview.tsx").read_text(encoding="utf-8")
+    settings = (ROOT / "frontend/apps/workbench/src/components/WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
     assert 'local · {counts.inherited' in overview
     assert "INHERITED WORKSPACES" in overview
     assert 'mode="workspace"' in page
@@ -281,7 +281,7 @@ def test_right_inspector_is_documentation_on_every_page() -> None:
 
 def test_artifact_editors_keep_the_resizable_resource_and_documentation_shell() -> None:
     source = ACTIVE_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert 'relationshipView?"artifact-focused":""' in source
     assert 'workbench.resourceBrowserWidth' in source
     assert 'aria-label="Resize Resource Browser"' in source
@@ -291,8 +291,8 @@ def test_artifact_editors_keep_the_resizable_resource_and_documentation_shell() 
 
 def test_workflow_editor_keeps_the_resource_tree_visible() -> None:
     source = ACTIVE_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
-    layout_styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    layout_styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     relationship = source.split("const relationshipView=", 1)[1].split(";", 1)[0]
     artifact_focused = source.split("const artifactFocused=", 1)[1].split(";", 1)[0]
     assert "workflowCombinedView" in relationship
@@ -307,11 +307,11 @@ def test_workflow_editor_keeps_the_resource_tree_visible() -> None:
 
 def test_workflow_designer_shows_filesystem_documentation_in_right_panel() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    help_tabs = (ROOT / "workbench" / "frontend" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
-    playground = (ROOT / "workbench" / "frontend" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
-    controls = (ROOT / "workbench" / "frontend" / "src" / "components" / "UniversalExecutionControls.tsx").read_text(encoding="utf-8")
-    playground_styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "operation_playground.css").read_text(encoding="utf-8")
-    workflow_docs = ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "workflows.md"
+    help_tabs = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
+    playground = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
+    controls = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "UniversalExecutionControls.tsx").read_text(encoding="utf-8")
+    playground_styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_playground.css").read_text(encoding="utf-8")
+    workflow_docs = ROOT / "workspaces" / "shared_library_system" / "docs" / "workflows.md"
 
     assert "workflowCombinedView" in page.split("const relationshipView=", 1)[1].split(";", 1)[0]
     assert '{id:"workflows",label:"Workflows",path:"docs/workflows.md"}' in help_tabs
@@ -352,7 +352,7 @@ def test_navigation_reuses_current_rich_editors() -> None:
 
 
 def test_source_code_language_tabs_are_deep_linkable() -> None:
-    source = (ROOT / "workbench/frontend/src/components/SourceCodeEditor.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend/apps/workbench/src/components/SourceCodeEditor.tsx").read_text(encoding="utf-8")
     compact = "".join(source.split())
     assert 'get("sourceLanguage")' in source
     assert 'url.searchParams.set("sourceLanguage",next)' in source
@@ -392,10 +392,10 @@ def test_workflow_runs_are_combined_with_the_workflow_page() -> None:
     assert 'if(view!=="workflowRuns")return;setWorkflowPaneFocus("runs");setView("canvas")' in source
     assert 'view==="canvas"||view==="editor"||view==="workflowRuns"' in source
     assert 'mode={view==="states"?"states":"workflowRuns"}' in compact
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert 'grid-template-columns:minmax(0,calc(var(--workflow-editor-percent) - 3px)) 6px' in styles
     assert 'className="workflow-pane-divider"' in source
-    runtime_history = (ROOT / "workbench/frontend/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    runtime_history = (ROOT / "frontend/apps/workbench/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert 'aria-label="Filter workflow runs by status"' in runtime_history
     assert 'setRunStatusFilter("running")' in runtime_history
     assert 'setRunStatusFilter("failed")' in runtime_history
@@ -412,7 +412,7 @@ def test_workflow_runs_are_combined_with_the_workflow_page() -> None:
     assert 'aria-label="Resize Workflow Editor and Workflow Runs"' in source
     assert 'controlsLabel="CENTER STACK"' in source
     assert '<ThreeStateAccordionStack id="center-stack" controlsLabel="CENTER STACK">' in source
-    workflow_layout = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    workflow_layout = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert "grid-row: 2 !important" in workflow_layout
     assert "grid-row: 3 !important" in workflow_layout
     assert "grid-row: 4 !important" in workflow_layout
@@ -422,9 +422,9 @@ def test_workflow_runs_are_combined_with_the_workflow_page() -> None:
 
 def test_state_uuid_deep_link_selects_a_durable_state_record() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    runtime_history = (ROOT / "workbench/frontend/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    engine = (ROOT / "workbench/server/workflow_engine.py").read_text(encoding="utf-8")
-    api = (ROOT / "workbench/server/workflow_engine_api.py").read_text(encoding="utf-8")
+    runtime_history = (ROOT / "frontend/apps/workbench/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    engine = (ROOT / "python/workbench_api_server/workflow_engine.py").read_text(encoding="utf-8")
+    api = (ROOT / "python/workbench_api_server/workflow_engine_api.py").read_text(encoding="utf-8")
     page_compact = "".join(page.split())
     runtime_compact = "".join(runtime_history.split())
 
@@ -450,7 +450,7 @@ def test_workflow_canvas_and_editor_share_one_navigation_destination() -> None:
 
 
 def test_workflow_operations_link_to_the_full_rich_editor() -> None:
-    playground = (ROOT / "workbench" / "frontend" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
+    playground = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
     assert 'view=operations&resource=${encodeURIComponent(operation.id)}' in playground
     assert '>Edit Operation</a>' in playground
     for capability in ("alternatives", "tabs", "split comparison", "raw source", "save", "executable playground"):
@@ -458,7 +458,7 @@ def test_workflow_operations_link_to_the_full_rich_editor() -> None:
 
 
 def test_every_workflow_operation_step_uses_tab_panes() -> None:
-    playground = (ROOT / "workbench" / "frontend" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
+    playground = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
     assert 'activePane,setActivePane]=useState<"run"|"edit">("run")' in playground
     assert 'className="operation-step-tabs"' in playground
     assert '>Run Workflow Step</button>' in playground
@@ -472,8 +472,8 @@ def test_every_workflow_operation_step_uses_tab_panes() -> None:
 
 def test_workflow_step_controls_do_not_leak_into_operation_pages() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    playground = (ROOT / "workbench" / "frontend" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    playground = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "OperationPlayground.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert '<main className={`workbench ${debugUiEnabled ? "tsx-debug-enabled" : ""}`} data-view={view}>' in page
     assert 'Workflow Step controls are only available in Workflow Editor.' in page
     assert 'workflowStep?"▶ Run Workflow Step":"▶ Run Operation"' in playground
@@ -482,8 +482,8 @@ def test_workflow_step_controls_do_not_leak_into_operation_pages() -> None:
 
 def test_workflow_editor_has_complete_runner_setup_surface() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    launcher = (ROOT / "workbench" / "frontend" / "src" / "components" / "DurableRunLauncher.tsx").read_text(encoding="utf-8")
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    launcher = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "DurableRunLauncher.tsx").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert 'className="workflow-runner-setup"' not in page
     assert 'stackId="left-stack"' in launcher
     assert 'data-accordion-stack="left-stack"' in history
@@ -495,8 +495,8 @@ def test_workflow_editor_has_complete_runner_setup_surface() -> None:
 
 def test_systems_are_separate_from_model_backends() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
-    api = (ROOT / "workbench" / "server" / "workspace_api.py").read_text(encoding="utf-8")
+    editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    api = (ROOT / "python" / "workbench_api_server" / "workspace_api.py").read_text(encoding="utf-8")
     assert 'label:"Systems",view:"systems"' in page
     assert 'catalogMode="systems"' in page
     assert 'if(value==="backends")return "llms"' in page
@@ -509,9 +509,9 @@ def test_systems_are_separate_from_model_backends() -> None:
     assert "SYSTEM CONFIGURATION" in editor
     assert '<SystemConfigForm source={doc.source}' in editor
     assert '<ResourceExecutionPlayground workspaceId={workspaceId} resource={document}' in editor
-    help_tabs = (ROOT / "workbench" / "frontend" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
+    help_tabs = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
     assert '{id:"systems",label:"Systems",path:"docs/systems.md"}' in help_tabs
-    systems_docs = ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "systems.md"
+    systems_docs = ROOT / "workspaces" / "shared_library_system" / "docs" / "systems.md"
     assert systems_docs.is_file()
     documentation = systems_docs.read_text(encoding="utf-8")
     assert "Systems are not model backends" in documentation
@@ -521,22 +521,22 @@ def test_systems_are_separate_from_model_backends() -> None:
     assert 'view==="sourceCode"?"sourceCode":view==="prompts"?"prompts"' in page
     assert '"systems": _load_systems(workspace)' in api
     for system_id in ("python", "prolog", "metta", "llm", "omegaclaw", "codex", "mailbox"):
-        assert (ROOT / "workbench" / "workspaces" / "shared_library_system" / "design" / "systems" / f"{system_id}.system.metta").is_file()
+        assert (ROOT / "workspaces" / "shared_library_system" / "design" / "systems" / f"{system_id}.system.metta").is_file()
 
 
 def test_source_code_editor_reuses_prompt_and_operation_source_editors() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "SourceCodeEditor.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "SourceCodeEditor.tsx").read_text(encoding="utf-8")
     for label in ("Prompts", "Prolog", "MeTTa", "Python"):
         assert f'label:"{label}"' in source
     assert '<PromptLibraryEditor workspaceId={workspaceId}/>' in source
     assert '<OperationLibraryEditor workspaceId={workspaceId} sourceLanguage={tab}/>' in source
-    operation_editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "OperationLibraryEditor.tsx").read_text(encoding="utf-8")
+    operation_editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "OperationLibraryEditor.tsx").read_text(encoding="utf-8")
     assert 'sourceLanguage?:SourceLanguage' in operation_editor
     assert 'implementation?.startsWith(sourceLanguage)' in operation_editor
 
 
 def test_workspace_settings_manage_keys_without_rendering_secret_values() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
     assert "BACKEND CREDENTIALS" in source
     assert 'type="password"' in source
     assert "/credentials/${encodeURIComponent(name)}" in source
@@ -577,23 +577,23 @@ def test_pending_pages_are_derived_from_workspace_or_runtime_state() -> None:
 
 def test_benchmarks_route_uses_a_distinct_filesystem_backed_catalog_view() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    policy = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "benchmark_catalog.css").read_text(encoding="utf-8")
+    policy = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "benchmark_catalog.css").read_text(encoding="utf-8")
     assert 'mode="benchmarks"' in page
     assert '"Benchmark Definitions & Results"' in policy
     assert '"SYSTEM · FILESYSTEM BENCHMARKS"' in policy
     assert ".benchmark-catalog-page .vendor-card" in styles
     assert ".benchmark-catalog-page .matrix-card" in styles
     assert 'view === "benchmarks"' in page and '? "benchmarks"' in page
-    help_tabs = (ROOT / "workbench" / "frontend" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
+    help_tabs = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
     assert 'id:"benchmarks",label:"Benchmarks",path:"docs/benchmarks.md"' in help_tabs
 
 
 def test_source_code_has_dedicated_help_and_atomspace_paths_are_current() -> None:
-    help_tabs = (ROOT / "workbench" / "frontend" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    source_code = (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "source_code.md").read_text(encoding="utf-8")
-    atomspaces = (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "contexts.md").read_text(encoding="utf-8")
+    help_tabs = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source_code = (ROOT / "workspaces" / "shared_library_system" / "docs" / "source_code.md").read_text(encoding="utf-8")
+    atomspaces = (ROOT / "workspaces" / "shared_library_system" / "docs" / "contexts.md").read_text(encoding="utf-8")
     assert 'id:"sourceCode",label:"Source Code",path:"docs/source_code.md"' in help_tabs
     assert 'view === "sourceCode"' in page and '? "sourceCode"' in page
     assert all(language in source_code for language in ("Prolog", "MeTTa", "Python"))
@@ -601,27 +601,27 @@ def test_source_code_has_dedicated_help_and_atomspace_paths_are_current() -> Non
 
 
 def test_operations_use_one_categorized_hierarchy_renderer() -> None:
-    editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "OperationLibraryEditor.tsx").read_text(encoding="utf-8")
+    editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "OperationLibraryEditor.tsx").read_text(encoding="utf-8")
     assert editor.count("<CategorizedArtifactTree") == 1
     assert "(snapshot.operations||[]).map(operation=>" not in editor
     assert "same-kind parent is a concrete implementation alternative" in editor
 
 
 def test_operations_are_capabilities_and_runtime_attempts_are_executions() -> None:
-    guide = (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "operations.md").read_text(encoding="utf-8")
-    architecture = ROOT / "workbench" / "docs" / "design" / "OPERATIONS_AND_EXECUTIONS.md"
+    guide = (ROOT / "workspaces" / "shared_library_system" / "docs" / "operations.md").read_text(encoding="utf-8")
+    architecture = ROOT / "docs" / "design" / "OPERATIONS_AND_EXECUTIONS.md"
     assert "durable capability specification" in guide
     assert "durable delayed task" not in guide
     assert architecture.is_file()
     content = architecture.read_text(encoding="utf-8")
     assert "An Execution is one runtime attempt" in content
     assert "Codex task or thread is a separate collaboration record" in content
-    assert not (ROOT / "workbench" / "docs" / "design" / "OPERATIONS_AS_DELAYED_AGENT_TASKS.md").exists()
+    assert not (ROOT / "docs" / "design" / "OPERATIONS_AS_DELAYED_AGENT_TASKS.md").exists()
 
 
 def test_runtime_artifacts_deep_link_to_datatype_resources() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    data_editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "DataCatalogPanel.tsx").read_text(encoding="utf-8")
+    data_editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "DataCatalogPanel.tsx").read_text(encoding="utf-8")
     assert 'kind:"operation"|"model"|"datatype"' in page
     assert 'kind==="model"?"llms":kind==="goal"?"goals"' in page
     assert 'kind==="context"?"contexts":"data"' in page
@@ -630,7 +630,7 @@ def test_runtime_artifacts_deep_link_to_datatype_resources() -> None:
 
 
 def test_workspace_entry_does_not_wait_for_capability_diagnostics() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     load_workspace = source.split("const loadWorkspaceById =", 1)[1].split("const loadWorkspace =", 1)[0]
     assert "setWorkspace(next.workspace)" in load_workspace
     assert "currentWorkspaceId.current=next.workspace.id" in load_workspace
@@ -639,7 +639,7 @@ def test_workspace_entry_does_not_wait_for_capability_diagnostics() -> None:
 
 def test_goal_runs_use_durable_goal_plan_context_contract() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    component = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    component = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert '<RuntimeHistoryView mode="goalRuns"' in page
     assert "/workbench/goal-runs" in component
     assert "goalId" in component and "planId" in component and "contextId" in component
@@ -662,7 +662,7 @@ def test_goal_runs_use_durable_goal_plan_context_contract() -> None:
 
 
 def test_atomspace_editor_uses_atomspace_language_for_new_resources() -> None:
-    component = (ROOT / "workbench" / "frontend" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
+    component = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
     assert 'family === "context" ? "AtomSpace" : family' in component
     assert "`Abstract ${familyNoun} specification.`" in component
     assert "`Concrete ${familyNoun} alternative.`" in component
@@ -670,7 +670,7 @@ def test_atomspace_editor_uses_atomspace_language_for_new_resources() -> None:
 
 def test_topbar_offers_persistent_workbench_themes() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert 'aria-label="Workbench theme"' in page
     assert 'localStorage.getItem("workbench.theme")' in page
     assert 'localStorage.setItem("workbench.theme",theme)' in page
@@ -706,7 +706,7 @@ def test_theme_selector_runs_from_darkest_to_lightest() -> None:
 
 
 def test_design_trees_show_effective_enablement() -> None:
-    components = ROOT / "workbench" / "frontend" / "src" / "components"
+    components = ROOT / "frontend" / "apps" / "workbench" / "src" / "components"
     helper = (components / "resourceEnablement.tsx").read_text(encoding="utf-8")
     assert 'source: "self" | "dependency" | "default"' in helper
     assert 'resource?.enabled === true' in helper
@@ -727,7 +727,7 @@ def test_design_trees_show_effective_enablement() -> None:
         assert "enablementClass" in source
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
     assert "stage-button ${enablementClass(itemEnablement)}" in page
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert ".operation-tree-row.resource-disabled" in styles
     assert ".stage-button.resource-disabled" in styles
 
@@ -741,8 +741,8 @@ def test_workflows_use_a_stable_shareable_view_url() -> None:
 
 def test_workflow_editor_children_reflow_with_the_split_column() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
-    playground_styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "operation_playground.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    playground_styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_playground.css").read_text(encoding="utf-8")
     assert "container:workflow-editor-column/size" in styles
     assert "@container workflow-editor-column (max-width:760px)" in styles
     assert "runner.style.width" not in page
@@ -751,7 +751,7 @@ def test_workflow_editor_children_reflow_with_the_split_column() -> None:
 
 
 def test_detected_memory_values_preserve_the_global_object_prefill() -> None:
-    component = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    component = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert 'title="DETECTED MEMORY VALUES"' not in component
     for scope in ("VALUES OF STEPS", "VALUES OF CHAPTER", "VALUES OF GAME", "VALUES OF ALL TIME", "VALUES POST-MORTEM"):
         assert f'title: "{scope}"' in component
@@ -781,14 +781,14 @@ def test_workflow_runner_bootstraps_editable_state_value_definitions() -> None:
         assert token in page
     assert "allowRedefinition:false" in page
     assert "allowRedefinition:true" in page
-    api = (ROOT / "workbench" / "server" / "workflow_engine_api.py").read_text(encoding="utf-8")
+    api = (ROOT / "python" / "workbench_api_server" / "workflow_engine_api.py").read_text(encoding="utf-8")
     assert "state_values=body.get('stateValues') or []" in api
 
 
 def test_repeated_outputs_create_preflight_value_groups_and_spline_loops() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    engine = (ROOT / "workbench" / "server" / "workflow_engine.py").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    engine = (ROOT / "python" / "workbench_api_server" / "workflow_engine.py").read_text(encoding="utf-8")
     assert "captureGroupIds" in page
     assert "WorkflowPreflightSpline" in page
     assert "PREFLIGHT SPLINE" in page
@@ -796,7 +796,7 @@ def test_repeated_outputs_create_preflight_value_groups_and_spline_loops() -> No
     assert "run.captureGroups" in history
     assert "_infer_capture_group_plan" in engine
     assert "_infer_capture_groups" in engine
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert "BootstrappedStateValues" in runtime
     assert "displayedStateValues" in runtime
     assert "Frozen with the selected run" in runtime
@@ -804,7 +804,7 @@ def test_repeated_outputs_create_preflight_value_groups_and_spline_loops() -> No
 
 
 def test_resource_browser_layout_responds_to_its_own_width() -> None:
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert "container-name: resource-browser" in css
     assert "@container resource-browser (max-width: 360px)" in css
     assert "@container resource-browser (max-width: 210px)" in css
@@ -813,7 +813,7 @@ def test_resource_browser_layout_responds_to_its_own_width() -> None:
 
 
 def test_workflow_editor_and_runs_stack_in_right_middle_column() -> None:
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert "Reserved left middle column" in css
     assert "grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) !important" in css
     assert "> .canvas-view" in css
@@ -826,12 +826,12 @@ def test_workflow_runner_is_a_parent_sized_vertical_control_stack() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
     assert 'className="workflow-runner-setup"' not in page
     assert "WorkflowLaunchControl" not in page
-    assert ".left-durable-run-launcher-slot" in (ROOT / "workbench" / "frontend" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
+    assert ".left-durable-run-launcher-slot" in (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
 
 
 def test_selected_stage_uses_the_shared_three_state_accordion_contract() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
     assert 'baseClass="selected-stage-accordion"' in page
     assert 'stackId="left-stack"' in page
     assert "onChange={setSelectedStageDisplayMode}" in page
@@ -840,7 +840,7 @@ def test_selected_stage_uses_the_shared_three_state_accordion_contract() -> None
 
 def test_dead_workflow_launch_replacements_are_deleted() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert "WorkflowLaunchControl" not in page
     assert "workflowRunInsert" not in page
     assert "modernWorkflowRuns" not in history
@@ -848,14 +848,14 @@ def test_dead_workflow_launch_replacements_are_deleted() -> None:
 
 
 def test_workflow_runs_scrolls_records_without_scrolling_header() -> None:
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert "Workflow Runs keeps its controls fixed" in css
     assert ".workflow-run-list-pane > .resource-heading" in css
     assert ".workflow-run-list-pane > .runtime-history-tools" in css
     assert ".workflow-run-list-pane > .resource-table" in css
     assert "overflow: hidden auto !important" in css
-    isolated = (ROOT / "workbench" / "frontend" / "src" / "styles" / "durable_runs_accordion.css").read_text(encoding="utf-8")
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    isolated = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "durable_runs_accordion.css").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert ".durable-runs-accordion" in isolated
     assert ".durable-runs-accordion.three-state-accordion-full .durable-runs-records" in isolated
     assert 'useState<AccordionDisplayMode>("scroll")' in history
@@ -870,9 +870,9 @@ def test_workflow_runs_scrolls_records_without_scrolling_header() -> None:
 
 def test_isolated_durable_run_launcher_sits_above_workflow_runs() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    component = (ROOT / "workbench" / "frontend" / "src" / "components" / "DurableRunLauncher.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
-    isolated_css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "durable_run_launcher.css").read_text(encoding="utf-8")
+    component = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "DurableRunLauncher.tsx").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    isolated_css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "durable_run_launcher.css").read_text(encoding="utf-8")
     assert "<DurableRunLauncher" in page
     assert "durable-run-launcher" in component
     assert "workflow-runner-setup" not in component
@@ -883,8 +883,8 @@ def test_isolated_durable_run_launcher_sits_above_workflow_runs() -> None:
     assert "overflow:hidden auto" in isolated_css
     assert '<ThreeStateAccordionMember' in component
     assert 'stackId="left-stack"' in component
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    shared = (ROOT / "workbench" / "frontend" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    shared = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
     assert "launcherDisplayMode" in history
     assert '"strip" | "scroll" | "full"' in shared
     assert "ThreeStateAccordionMember" in component
@@ -896,8 +896,8 @@ def test_isolated_durable_run_launcher_sits_above_workflow_runs() -> None:
 
 
 def test_right_column_has_shared_three_state_master_controls() -> None:
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    shared = (ROOT / "workbench" / "frontend" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    shared = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
     assert 'type AccordionDisplayMode = "strip" | "scroll" | "full"' in shared
     assert "ThreeStateAccordionStripSummary" in shared
     assert 'className={`three-state-accordion-strip-summary ${alwaysVisible ? "always-visible" : ""}`.trim()}' in shared
@@ -913,13 +913,13 @@ def test_right_column_has_shared_three_state_master_controls() -> None:
 
 
 def test_all_strip_mode_keeps_nested_detected_objects_visible() -> None:
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
-    layout = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
+    layout = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert ":has(>.three-state-accordion-nested>.three-state-accordion){height:68px!important" in css
     assert ">.three-state-accordion-nested>.three-state-accordion{display:flex!important" in css
     assert ">.three-state-accordion-nested>.three-state-accordion>.three-state-accordion-strip-summary{display:flex!important" in css
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    runs_control = (ROOT / "workbench" / "frontend" / "src" / "components" / "WorkflowRunsControl.tsx").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    runs_control = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkflowRunsControl.tsx").read_text(encoding="utf-8")
     assert 'label="WORKFLOW RUNS"' in runs_control
     assert 'label="DETECTED OBJECTS"' in history
     for title in ("VALUES OF STEPS", "VALUES OF CHAPTER", "VALUES OF GAME", "VALUES OF ALL TIME", "VALUES POST-MORTEM"):
@@ -928,17 +928,17 @@ def test_all_strip_mode_keeps_nested_detected_objects_visible() -> None:
 
 
 def test_global_scroll_and_full_modes_have_distinct_overflow_contracts() -> None:
-    shared_css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    shared_css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert "overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain" in shared_css
     assert "style={{ minWidth: width }}" in history
     assert "style={{ minWidth: chronologyWidth }}" in history
     assert ".workflow-runner-reference.three-state-accordion-strip{height:38px!important;min-height:38px!important;align-self:end}" in shared_css
-    layout = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    layout = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert "grid-template-rows: 38px minmax(34px, 30%) minmax(68px, 1fr) 0 var(--run-spline-track) 38px" in layout
     assert ".workflow-runner-reference.three-state-accordion-scroll{display:flex;min-height:0;flex-direction:column}" in shared_css
-    reference = (ROOT / "workbench" / "frontend" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
-    accordion = (ROOT / "workbench" / "frontend" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    reference = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
+    accordion = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
     assert "ThreeStateAccordionMember" in reference
     assert "onDoubleClick={cycle}" in accordion
     assert "onChange(nextAccordionMode(mode))" in accordion
@@ -954,8 +954,8 @@ def test_global_scroll_and_full_modes_have_distinct_overflow_contracts() -> None
     assert "overflow:hidden auto;overscroll-behavior:contain" in shared_css
     assert "overflow-x: hidden !important" in layout
     assert ".durable-runs-accordion.three-state-accordion-strip) > .runtime-history-view > .workflow-run-object-workspace" in layout
-    runs_css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "durable_runs_accordion.css").read_text(encoding="utf-8")
-    layout = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    runs_css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "durable_runs_accordion.css").read_text(encoding="utf-8")
+    layout = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert ".workflow-run-object-workspace.three-state-accordion-scroll>.detected-memory-accordion-body{display:flex" in shared_css
     assert ".three-state-accordion-scroll>.three-state-accordion-member-body{overflow:hidden auto}" in shared_css
     assert ".three-state-accordion-full>.three-state-accordion-member-body{height:max-content;overflow:visible}" in shared_css
@@ -965,8 +965,8 @@ def test_global_scroll_and_full_modes_have_distinct_overflow_contracts() -> None
 
 
 def test_three_state_accordion_selected_mode_stays_highlighted() -> None:
-    component = (ROOT / "workbench/frontend/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "workbench/frontend/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
+    component = (ROOT / "frontend/apps/workbench/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    css = (ROOT / "frontend/apps/workbench/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
 
     assert 'className={mode === "strip" ? "active" : ""}' in component
     assert 'className={mode === "scroll" ? "active" : ""}' in component
@@ -976,9 +976,9 @@ def test_three_state_accordion_selected_mode_stays_highlighted() -> None:
 
 
 def test_accordion_drag_temporarily_uses_strip_list_and_restores_saved_frames() -> None:
-    component = (ROOT / "workbench/frontend/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "workbench/frontend/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
-    layout = (ROOT / "workbench/frontend/src/styles/workflow_layout.css").read_text(encoding="utf-8")
+    component = (ROOT / "frontend/apps/workbench/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    css = (ROOT / "frontend/apps/workbench/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
+    layout = (ROOT / "frontend/apps/workbench/src/styles/workflow_layout.css").read_text(encoding="utf-8")
 
     assert 'const effectiveMode = activeAccordionDrag?.stackId === stackId ? "strip" : mode' in component
     assert "publishAccordionChange({ stackId, label: orderKey })" in component
@@ -996,8 +996,8 @@ def test_accordion_drag_temporarily_uses_strip_list_and_restores_saved_frames() 
 
 
 def test_memory_value_scopes_use_workflow_runs_peer_strips() -> None:
-    history = (ROOT / "workbench/frontend/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "workbench/frontend/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
+    history = (ROOT / "frontend/apps/workbench/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    css = (ROOT / "frontend/apps/workbench/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
 
     assert "<ThreeStateAccordionMember" in history
     assert "label={section.title}" in history
@@ -1013,8 +1013,8 @@ def test_memory_value_scopes_use_workflow_runs_peer_strips() -> None:
 
 
 def test_accordion_member_api_owns_strip_header_body_and_footer() -> None:
-    component = (ROOT / "workbench/frontend/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "workbench/frontend/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
+    component = (ROOT / "frontend/apps/workbench/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    css = (ROOT / "frontend/apps/workbench/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
 
     for region in (
         "three-state-accordion-member-strip",
@@ -1035,7 +1035,7 @@ def test_accordion_member_api_owns_strip_header_body_and_footer() -> None:
 
 def test_left_workflow_stack_uses_the_shared_member_renderer() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    launcher = (ROOT / "workbench/frontend/src/components/DurableRunLauncher.tsx").read_text(encoding="utf-8")
+    launcher = (ROOT / "frontend/apps/workbench/src/components/DurableRunLauncher.tsx").read_text(encoding="utf-8")
 
     assert '<ThreeStateAccordionStack id="left-stack"' in page
     assert 'label={`STAGE ${currentStepNumber} OF ${workflow?.steps.length || 0}`}' in page
@@ -1046,8 +1046,8 @@ def test_left_workflow_stack_uses_the_shared_member_renderer() -> None:
 
 def test_resource_browser_is_one_accordion_and_left_steps_are_members() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    branch = (ROOT / "workbench" / "frontend" / "src" / "components" / "ArtifactTreeBranch.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
+    branch = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ArtifactTreeBranch.tsx").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "three_state_accordion.css").read_text(encoding="utf-8")
     assert "workflowStepDisplayModes" in page
     assert 'accordionPanelClass("resource-browser-contents", resourceBrowserDisplayMode)' in page
     assert 'title="RESOURCE BROWSER CONTENTS"' in page
@@ -1063,8 +1063,8 @@ def test_resource_browser_is_one_accordion_and_left_steps_are_members() -> None:
 
 def test_legacy_workflow_has_requested_outer_and_memory_scope_stacks() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    css = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workflow_layout.css").read_text(encoding="utf-8")
     assert 'controlsLabel="CENTER STACK"' in page
     assert 'id="left-stack"' in page
     assert 'id="right-stack"' in history
@@ -1078,15 +1078,15 @@ def test_legacy_workflow_has_requested_outer_and_memory_scope_stacks() -> None:
     assert 'label="SELECTED RUN SPLINE"' in history
     assert 'className="run-projection-modes"' in history
     assert 'className="run-projection-mode-description">SPLINE VIEW' in history
-    reference = (ROOT / "workbench" / "frontend" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
+    reference = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
     assert 'stackId="center-stack"' in reference
     assert 'label="RUNNER DESIGN REFERENCE"' in reference
 
 
 def test_accordion_members_register_with_shared_stack_and_strip_accessories() -> None:
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
-    history = (ROOT / "workbench/frontend/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    shared = (ROOT / "workbench/frontend/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    history = (ROOT / "frontend/apps/workbench/src/components/RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    shared = (ROOT / "frontend/apps/workbench/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
 
     assert "export function ThreeStateAccordionStack" in shared
     assert "data-accordion-stack={id}" in shared
@@ -1101,7 +1101,7 @@ def test_accordion_members_register_with_shared_stack_and_strip_accessories() ->
 
 
 def test_workflow_composition_does_not_render_left_detected_memory_panel() -> None:
-    history = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    history = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     rendered = history.split("return (", 1)[-1]
     assert "<BootstrappedStateValues" not in rendered
     assert 'ThreeStateAccordionStack id="right-stack"' in history

@@ -5,13 +5,13 @@ from operation_api import invoke_operation
 from resource_store import get_filesystem_provider
 
 
-ROOT = Path(__file__).resolve().parents[1]
-PAGE = ROOT / "workbench/frontend/src/components/VisualImageDiffPage.tsx"
-SHELL = ROOT / "workbench/frontend/src/pages/FilesystemWorkbenchPage.tsx"
-MANIFEST = ROOT / "workbench/workspaces/arc3_random_player/design/visual_image_diffs/default.visual_image_diff.json"
-PROMPTS = ROOT / "workbench/workspaces/shared_library_arc3/design/prompts/visual_image_diff_steps.prompt.metta"
-ASSETS = ROOT / "workbench/workspaces/arc3_random_player/runtime/artifacts/visual_image_diff"
-PAGE_DEFINITION = ROOT / "workbench/workspaces/arc3_random_player/design/workflow_pages/visual_sequencing.workflow_page.json"
+ROOT = Path(__file__).resolve().parents[2]
+PAGE = ROOT / "frontend/packages/omega_vision_ui/src/components/VisualImageDiffPage.tsx"
+SHELL = ROOT / "frontend/apps/workbench/src/pages/FilesystemWorkbenchPage.tsx"
+MANIFEST = ROOT / "workspaces/arc3_random_player/design/visual_image_diffs/default.visual_image_diff.json"
+PROMPTS = ROOT / "workspaces/shared_library_arc3/design/prompts/visual_image_diff_steps.prompt.metta"
+ASSETS = ROOT / "workspaces/arc3_random_player/runtime/artifacts/visual_image_diff"
+PAGE_DEFINITION = ROOT / "workspaces/arc3_random_player/design/workflow_pages/visual_sequencing.workflow_page.json"
 
 
 def test_visual_image_diff_is_a_deep_linked_three_structural_stack_page() -> None:
@@ -106,7 +106,7 @@ def test_operation_playground_pulls_declared_inputs_from_left_stack_data() -> No
 
 def test_visual_image_diff_columns_start_center_weighted_and_have_persistent_drag_boundaries() -> None:
     page = PAGE.read_text(encoding="utf-8")
-    visual_styles = (ROOT / "workbench/frontend/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
+    visual_styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
 
     assert "DEFAULT_VISUAL_COLUMN_RATIOS: VisualColumnRatios = { left: 1, center: 2.8, right: 1.9 }" in page
     assert 'VISUAL_COLUMN_RATIOS_STORAGE = "workbench.visualImageDiff.columnRatios.v2"' in page
@@ -138,7 +138,7 @@ def test_sequence_comes_from_a_manifest_and_workspace_assets() -> None:
     assert [command["label"] for command in manifest["commands"]] == ["ACTION3", "ACTION1"]
     assert len(manifest["frames"]) == 3
     for frame in manifest["frames"]:
-        assert (ROOT / "workbench/workspaces/arc3_random_player" / frame["assetPath"]).is_file()
+        assert (ROOT / "workspaces/arc3_random_player" / frame["assetPath"]).is_file()
     assert "/asset?path=" in page
     assert "ACTION3" not in page
     assert "ACTION1" not in page
@@ -182,8 +182,8 @@ def test_expanded_transaction_groups_embed_the_real_workflow_item_operation_debu
     page = PAGE.read_text(encoding="utf-8")
     shell = SHELL.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    system_operation_root = ROOT / "workbench/workspaces/shared_library_system/design/operations"
-    arc3_operation_root = ROOT / "workbench/workspaces/shared_library_arc3/design/operations"
+    system_operation_root = ROOT / "workspaces/shared_library_system/design/operations"
+    arc3_operation_root = ROOT / "workspaces/shared_library_arc3/design/operations"
 
     operation_files = {
         "vision.extract_scene_objects": system_operation_root / "vision.extract_scene_objects.operation.metta",
@@ -248,7 +248,7 @@ def test_nested_composer_and_selected_group_share_the_operation_playground_surfa
 def test_prolog_transaction_can_switch_from_prompted_llm_to_python(tmp_path: Path) -> None:
     operation_source = (
         ROOT
-        / "workbench/workspaces/shared_library_arc3/design/operations/symbolic.get_prolog_evidence.operation.metta"
+        / "workspaces/shared_library_arc3/design/operations/symbolic.get_prolog_evidence.operation.metta"
     ).read_text(encoding="utf-8")
     node = tmp_path / "node"
     node.mkdir()
@@ -270,7 +270,7 @@ def test_prolog_transaction_can_switch_from_prompted_llm_to_python(tmp_path: Pat
     assert "visual_image_diff.pipeline.cherry_pick" in operation_source
     assert "(id symbolic.get_prolog_evidence.python)" in operation_source
     assert "(implementation python.callable)" in operation_source
-    assert "python/visual_image_diff_operations.py" in operation_source
+    assert "workspaces/shared_library_arc3/visual_image_diff_operations.py" in operation_source
 
     result = invoke_operation(
         "arc3_random_player",
@@ -351,9 +351,9 @@ def test_pipeline_and_old_analysis_references_are_merged_into_one_starting_group
 
 def test_visual_generator_keeps_only_the_nested_composer_inside_the_center_accordion() -> None:
     page = PAGE.read_text(encoding="utf-8")
-    accordion = (ROOT / "workbench/frontend/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
-    accordion_styles = (ROOT / "workbench/frontend/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
-    visual_styles = (ROOT / "workbench/frontend/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
+    accordion = (ROOT / "frontend/apps/workbench/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    accordion_styles = (ROOT / "frontend/apps/workbench/src/styles/three_state_accordion.css").read_text(encoding="utf-8")
+    visual_styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
 
     assert 'VisualPipelineComposer: () =>' not in page
     assert 'VisualPipelineSubaccordion: () =>' in page
@@ -392,8 +392,8 @@ def test_visual_generator_keeps_only_the_nested_composer_inside_the_center_accor
 
 def test_visual_generator_uses_the_nested_subaccordion_as_its_only_version() -> None:
     page = PAGE.read_text(encoding="utf-8")
-    accordion = (ROOT / "workbench/frontend/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
-    visual_styles = (ROOT / "workbench/frontend/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
+    accordion = (ROOT / "frontend/apps/workbench/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    visual_styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
 
     assert 'VisualPipelineComposer: () =>' not in page
     assert 'VisualPipelineSubaccordion: () =>' in page
@@ -456,7 +456,7 @@ def test_visual_image_diff_runs_composed_prompts_with_submitted_images() -> None
 
 def test_graph_mode_edits_the_same_generation_order_as_columns() -> None:
     page = PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench/frontend/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
 
     assert 'useState<"columns" | "graph">("columns")' in page
     assert "VisualPipelineGraph" in page
@@ -500,7 +500,7 @@ def test_graph_mode_edits_the_same_generation_order_as_columns() -> None:
 
 def test_touching_an_individual_pipeline_item_opens_its_full_prompt_in_the_right_stack() -> None:
     page = PAGE.read_text(encoding="utf-8")
-    visual_styles = (ROOT / "workbench/frontend/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
+    visual_styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
 
     assert 'const [inspectedPromptId, setInspectedPromptId] = useState("")' in page
     assert "onPointerDown={inspect}" in page
@@ -525,7 +525,7 @@ def test_touching_an_individual_pipeline_item_opens_its_full_prompt_in_the_right
 
 
 def test_accordion_strip_click_cycles_through_all_three_states() -> None:
-    accordion = (ROOT / "workbench/frontend/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    accordion = (ROOT / "frontend/apps/workbench/src/components/ThreeStateAccordion.tsx").read_text(encoding="utf-8")
 
     assert 'const ACCORDION_MODE_CYCLE: AccordionDisplayMode[] = ["strip", "scroll", "full"]' in accordion
     assert "nextAccordionMode(collectiveMode)" in accordion
@@ -558,7 +558,7 @@ def test_visual_sequencing_exposes_the_resolved_page_specification_json() -> Non
 
 def test_resource_outputs_generates_missing_left_datafield_editors_from_center_prompts() -> None:
     page = PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench/frontend/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/visual_image_diff.css").read_text(encoding="utf-8")
     documents = get_filesystem_provider().read_json_documents(PROMPTS)
     actual_fields = {
         field

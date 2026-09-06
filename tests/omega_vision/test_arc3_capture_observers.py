@@ -150,7 +150,7 @@ def test_standard_semantic_observer_accepts_a_learner_plugin() -> None:
 
 
 def test_canonical_runners_enable_semantic_capture_with_an_explicit_opt_out() -> None:
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     interactive = (root / "python" / "interactive_runner.py").read_text(encoding="utf-8")
     prolog = (root / "scripts" / "prolog_controlled_runner.py").read_text(encoding="utf-8")
 

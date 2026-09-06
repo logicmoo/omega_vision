@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_env_example_parses_and_covers_runtime_configuration() -> None:

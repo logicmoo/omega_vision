@@ -13,7 +13,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-SCRIPTS_ROOT = Path(__file__).resolve().parents[1] / "scripts"
+SCRIPTS_ROOT = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
 import meet_caption_bridge as bridge  # noqa: E402

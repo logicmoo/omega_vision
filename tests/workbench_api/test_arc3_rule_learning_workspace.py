@@ -4,8 +4,8 @@ import workspace_api
 from operation_resolution import materialize_workflow
 
 
-ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE = ROOT / "workbench" / "workspaces" / "arc3_rule_learning_demo"
+ROOT = Path(__file__).resolve().parents[2]
+WORKSPACE = ROOT / "workspaces" / "arc3_rule_learning_demo"
 
 
 def test_arc3_rule_learning_demo_is_loadable_and_materializes_every_operation() -> None:

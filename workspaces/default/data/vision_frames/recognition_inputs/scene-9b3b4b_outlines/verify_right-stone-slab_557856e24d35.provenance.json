@@ -1,0 +1,193 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-stone-slab_557856e24d35.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-stone-slab_557856e24d35.provenance.json",
+  "createdAt": "2026-09-03T12:14:47.215432Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "right stone slab"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          551,
+          259
+        ],
+        [
+          558,
+          241
+        ],
+        [
+          568,
+          226
+        ],
+        [
+          581,
+          215
+        ],
+        [
+          639,
+          214
+        ],
+        [
+          639,
+          259
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 862,
+        "y": 721
+      },
+      {
+        "op": "line",
+        "x": 873,
+        "y": 671
+      },
+      {
+        "op": "line",
+        "x": 889,
+        "y": 630
+      },
+      {
+        "op": "line",
+        "x": 909,
+        "y": 599
+      },
+      {
+        "op": "line",
+        "x": 1000,
+        "y": 596
+      },
+      {
+        "op": "line",
+        "x": 1000,
+        "y": 721
+      },
+      {
+        "op": "line",
+        "x": 862,
+        "y": 721
+      }
+    ],
+    "geometryHash": "557856e24d35ac4a36b0f507621ff245261fafa95b6cbb6ce86e83e704449088",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.9857
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-stone-slab_557856e24d35.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              551,
+              259
+            ],
+            [
+              558,
+              241
+            ],
+            [
+              568,
+              226
+            ],
+            [
+              581,
+              215
+            ],
+            [
+              639,
+              214
+            ],
+            [
+              639,
+              259
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 862,
+            "y": 721
+          },
+          {
+            "op": "line",
+            "x": 873,
+            "y": 671
+          },
+          {
+            "op": "line",
+            "x": 889,
+            "y": 630
+          },
+          {
+            "op": "line",
+            "x": 909,
+            "y": 599
+          },
+          {
+            "op": "line",
+            "x": 1000,
+            "y": 596
+          },
+          {
+            "op": "line",
+            "x": 1000,
+            "y": 721
+          },
+          {
+            "op": "line",
+            "x": 862,
+            "y": 721
+          }
+        ],
+        "geometryHash": "557856e24d35ac4a36b0f507621ff245261fafa95b6cbb6ce86e83e704449088",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.9857
+      },
+      "createdAt": "2026-09-03T12:14:47.215432Z"
+    }
+  ]
+}

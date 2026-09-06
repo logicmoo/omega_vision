@@ -1,18 +1,19 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 VIDEO_IMPORT_PAGE = (
     ROOT
-    / "workbench"
     / "frontend"
+    / "packages"
+    / "omega_vision_ui"
     / "src"
     / "components"
     / "VideoImportPage.tsx"
 )
-MODEL_OPTION_DISPLAY = ROOT / "workbench" / "frontend" / "src" / "components" / "modelOptionDisplay.ts"
-COLORED_COMBOBOX = ROOT / "workbench" / "frontend" / "src" / "components" / "ColoredTagCombobox.tsx"
-CHAT_CONVERSATION = ROOT / "workbench" / "frontend" / "src" / "components" / "ChatConversation.tsx"
+MODEL_OPTION_DISPLAY = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "modelOptionDisplay.ts"
+COLORED_COMBOBOX = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ColoredTagCombobox.tsx"
+CHAT_CONVERSATION = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ChatConversation.tsx"
 
 
 def test_colored_combobox_is_shared_by_chat_and_video_models() -> None:
@@ -93,7 +94,7 @@ def test_each_video_import_image_collection_has_a_distinct_gallery_name() -> Non
 
 def test_status_controls_have_their_own_top_row() -> None:
     source = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "packages" / "omega_vision_ui" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
 
     controls = source.index('className="video-import-activity-controls"')
     lower = source.index('className="video-import-activity-lower"', controls)
@@ -111,7 +112,7 @@ def test_status_controls_have_their_own_top_row() -> None:
 
 
 def test_center_scroller_reserves_its_scrollbar_gutter() -> None:
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "packages" / "omega_vision_ui" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
 
     page_rule = styles[styles.index(".video-import-page {"):styles.index("}", styles.index(".video-import-page {"))]
     assert "scrollbar-gutter: stable" in page_rule
@@ -137,7 +138,7 @@ def test_model_responses_are_persistently_cached_by_prompt_and_image() -> None:
 
 def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     source = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "packages" / "omega_vision_ui" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
 
     assert "SCENE OBJECTS TEXTUAL DESCRIPTION." in source
     assert "Describe this image, then list only its direct visually separable child objects." in source
@@ -560,7 +561,7 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
 
 def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tree() -> None:
     source = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "packages" / "omega_vision_ui" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
 
     assert 'aria-label="Video Import pipeline forks"' in source
     assert 'aria-label="Recursive object workflow tree"' in source
@@ -636,7 +637,7 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
 
 def test_alt_hover_gives_image_and_context_separate_half_page_panes() -> None:
     source = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "packages" / "omega_vision_ui" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
 
     assert "type AltImageZoom" in source
     assert "hoveredImageRef" in source

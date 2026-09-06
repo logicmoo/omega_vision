@@ -1,0 +1,140 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_19_left-background-trunk-th.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_19_left-background-trunk-th.provenance.json",
+  "createdAt": "2026-09-03T12:21:38.238136Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 227,
+    "height": 817
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.provenance.json"
+  },
+  "source": {
+    "objectName": "left background trunk three"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 23,
+      "height": 141
+    },
+    "scale": 5,
+    "resizedDimensions": {
+      "width": 115,
+      "height": 705
+    },
+    "padding": {
+      "left": 56,
+      "top": 56,
+      "right": 56,
+      "bottom": 56
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 23,
+        "height": 141
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-trunk-th_041627cea99d.png",
+          "geometryHash": "041627cea99d639d75eb3bafd3122ad7fe2a33c9270c538d1328f2da378798a9",
+          "traceVerified": true
+        },
+        "cropBox": [
+          133,
+          73,
+          156,
+          214
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              145,
+              78
+            ],
+            [
+              153,
+              75
+            ],
+            [
+              143,
+              211
+            ],
+            [
+              135,
+              211
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:38.221298Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_19_left-background-trunk-th.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 227,
+        "height": 817
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 23,
+          "height": 141
+        },
+        "scale": 5,
+        "resizedDimensions": {
+          "width": 115,
+          "height": 705
+        },
+        "padding": {
+          "left": 56,
+          "top": 56,
+          "right": 56,
+          "bottom": 56
+        }
+      },
+      "createdAt": "2026-09-03T12:21:38.238136Z"
+    }
+  ]
+}

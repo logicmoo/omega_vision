@@ -1,11 +1,11 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_workflow_actions_are_stacked_above_preflight_and_columns() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     actions = source.index('label="ENGLISH SPECIFICATION EDITOR"')
     preflight = source.index("<WorkflowPreflightSpline")
     columns = source.index('label="LEFT + RIGHT"')
@@ -31,7 +31,7 @@ def test_workflow_actions_are_stacked_above_preflight_and_columns() -> None:
     assert "showDesignReference={false}" in source
     assert "<WorkflowRunnerTodoReference displayMode={workflowReferenceDisplayMode}" in source
     assert source.index('label="LEFT + RIGHT"') < source.index("<WorkflowRunnerTodoReference displayMode={workflowReferenceDisplayMode}")
-    reference = (ROOT / "workbench" / "frontend" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
+    reference = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
     assert 'stackId="center-stack" initialIndex={7} label="RUNNER DESIGN REFERENCE"' in reference
     for label in (
         "ENGLISH SPECIFICATION EDITOR",
@@ -46,8 +46,8 @@ def test_workflow_actions_are_stacked_above_preflight_and_columns() -> None:
 
 
 def test_workflow_actions_default_to_top_but_remain_draggable() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     assert '<ThreeStateAccordionStack id="center-stack" controlsLabel="CENTER STACK">' in page
     assert 'stackId="center-stack" initialIndex={0} label="ENGLISH SPECIFICATION EDITOR"' in page
     assert 'stackId="center-stack" initialIndex={4} label="APPLY TO WORKFLOW"' in page
@@ -59,7 +59,7 @@ def test_workflow_actions_default_to_top_but_remain_draggable() -> None:
 
 
 def test_workflow_authoring_members_are_owned_by_the_accordion_stack() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     section = page[page.index('<ThreeStateAccordionStack id="center-stack" controlsLabel="CENTER STACK">'):page.index("<WorkflowPreflightSpline")]
     assert section.count('stackId="center-stack"') == 5
     assert "workflow-authoring-${operation.id}" not in section
@@ -68,9 +68,9 @@ def test_workflow_authoring_members_are_owned_by_the_accordion_stack() -> None:
 
 
 def test_workflow_runner_is_first_in_the_left_stack() -> None:
-    launcher = (ROOT / "workbench" / "frontend" / "src" / "components" / "DurableRunLauncher.tsx").read_text(encoding="utf-8")
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    launcher = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "DurableRunLauncher.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     assert 'stackId="left-stack"' in launcher
     assert "initialIndex={0}" in launcher
     assert 'initialPlacementVersion="runner-first-v1"' in launcher
@@ -79,8 +79,8 @@ def test_workflow_runner_is_first_in_the_left_stack() -> None:
 
 
 def test_workflow_page_has_only_center_left_and_right_stacks() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert '<ThreeStateAccordionStack id="center-stack" controlsLabel="CENTER STACK">' in page
     assert '<ThreeStateAccordionStack id="left-stack"' in page
     assert '<ThreeStateAccordionStack id="right-stack"' in runtime
@@ -96,8 +96,8 @@ def test_workflow_page_has_only_center_left_and_right_stacks() -> None:
 
 
 def test_center_stack_has_one_native_control_for_all_members() -> None:
-    accordion = (ROOT / "workbench" / "frontend" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    accordion = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ThreeStateAccordion.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     assert 'controlsLabel="CENTER STACK"' in page
     assert "publishAccordionMode(id, mode)" in accordion
     assert "Array.from(accordionModeListeners.get(stackId)" in accordion
@@ -106,14 +106,14 @@ def test_center_stack_has_one_native_control_for_all_members() -> None:
 
 
 def test_count_to_ten_declares_editable_english_description() -> None:
-    workspace = ROOT / "workbench" / "workspaces" / "generate_count_to_ten"
+    workspace = ROOT / "workspaces" / "generate_count_to_ten"
     workflow = (workspace / "design" / "workflows" / "generate_count_to_ten.workflow.metta").read_text(encoding="utf-8")
     assert "englishDescriptionPath docs/WORKFLOW_DESCRIPTION.md" in workflow
     assert (workspace / "docs" / "WORKFLOW_DESCRIPTION.md").is_file()
 
 
 def test_english_workflow_prompts_require_complete_single_resource_and_operation_prototypes() -> None:
-    prompt_root = ROOT / "workbench" / "workspaces" / "shared_library_system" / "design" / "prompts"
+    prompt_root = ROOT / "workspaces" / "shared_library_system" / "design" / "prompts"
     for name in ("generate_workflow_from_english.json.prompt.metta", "generate_workflow_from_english.metta.prompt.metta"):
         source = (prompt_root / name).read_text(encoding="utf-8")
         assert "full operation prototypes" in source or "operation prototypes" in source

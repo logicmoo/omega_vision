@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def _batch(name: str) -> str:
@@ -46,8 +46,8 @@ def test_missing_json_repair_message_is_copy_pasteable_on_windows() -> None:
 
 
 def test_workbench_launchers_share_the_root_environment() -> None:
-    launcher = (ROOT / "workbench" / "run_demo.bat").read_text(encoding="utf-8")
-    api = (ROOT / "workbench" / "scripts" / "run_api_server.bat").read_text(encoding="utf-8")
+    launcher = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
+    api = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_api_server.bat").read_text(encoding="utf-8")
 
     assert 'set "WORKBENCH_PYTHON=%REPO_ROOT%\\.venv\\Scripts\\python.exe"' in launcher
     assert 'set "PYTHON_EXE=%REPO_ROOT%\\.venv\\Scripts\\python.exe"' in api
@@ -57,8 +57,8 @@ def test_workbench_launchers_share_the_root_environment() -> None:
 
 
 def test_api_server_uses_explicit_batched_restarts() -> None:
-    api = (ROOT / "workbench" / "scripts" / "run_api_server.bat").read_text(encoding="utf-8")
-    runner = (ROOT / "workbench" / "scripts" / "run_api_server.py").read_text(encoding="utf-8")
+    api = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_api_server.bat").read_text(encoding="utf-8")
+    runner = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_api_server.py").read_text(encoding="utf-8")
 
     assert '"%ROOT%\\scripts\\run_api_server.py"' in api
     assert "reload=False" in runner

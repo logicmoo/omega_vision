@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from fastapi import HTTPException
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 import repository_docs_api  # noqa: E402
@@ -158,13 +158,13 @@ def test_repository_images_are_exposed_as_renderable_assets(tmp_path: Path, monk
 
 
 def test_help_view_intercepts_repository_markdown_links() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
     assert "/workbench/repository/markdown?path=" in source
     assert "resolveMarkdownPath(document.path,href)" in source
     assert "← Back" in source
     # Link clicks are intercepted by the shared markdown renderer, which the
     # help view delegates to via onNavigateRepositoryDoc (see MarkdownDocument).
-    shared = (ROOT / "workbench" / "frontend" / "src" / "components" / "MarkdownDocument.tsx").read_text(encoding="utf-8")
+    shared = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "MarkdownDocument.tsx").read_text(encoding="utf-8")
     assert "MarkdownDocument" in source
     assert "event.preventDefault()" in shared
 
@@ -187,7 +187,7 @@ def test_repository_markdown_index_and_ui_links(tmp_path: Path, monkeypatch) -> 
     assert repository_docs_api.list_repository_markdown()["documents"][0]["path"] == "docs/GUIDE.md"
     monkeypatch.setattr(provider, "read_text", original_read_text)
 
-    components = ROOT / "workbench" / "frontend" / "src" / "components"
+    components = ROOT / "frontend" / "apps" / "workbench" / "src" / "components"
     help_source = (components / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
     markdown_source = (components / "MarkdownDocument.tsx").read_text(encoding="utf-8")
     docs_source = (components / "RepositoryDocsPage.tsx").read_text(encoding="utf-8")
@@ -231,7 +231,7 @@ def test_repository_markdown_index_and_ui_links(tmp_path: Path, monkeypatch) -> 
     assert '<SuperControl appearance="embedded" control={repositoryControl(document)}' in docs_source
     assert "FILESYSTEM DOCUMENT" not in docs_source
     assert "saveLabel" not in docs_source
-    docs_styles = (ROOT / "workbench/frontend/src/styles/repository_docs.css").read_text(encoding="utf-8")
+    docs_styles = (ROOT / "frontend/apps/workbench/src/styles/repository_docs.css").read_text(encoding="utf-8")
     assert ".repository-doc-view.has-documents" in docs_styles
     assert ".repository-document-workspace" in docs_styles
     assert "width:100%;height:100%" in docs_styles
@@ -264,12 +264,12 @@ def test_repository_markdown_index_and_ui_links(tmp_path: Path, monkeypatch) -> 
     assert "ignored_names=IGNORED_DIRECTORIES" in (SERVER / "repository_docs_api.py").read_text(encoding="utf-8")
     assert "scrollbar-gutter:stable" in docs_styles
     assert "padding-right:16px" in docs_styles
-    data_docs = (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "data.md").read_text(encoding="utf-8")
+    data_docs = (ROOT / "workspaces" / "shared_library_system" / "docs" / "data.md").read_text(encoding="utf-8")
     assert "[Browse Data documents](?docs=data)" in data_docs
     assert "[Browse datatype documents](?docs=datatype)" in data_docs
     assert 'new CustomEvent("workbench:open-docs"' in markdown_source
-    page_source = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    page_source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert 'classList.toggle("docs-focused", view === "docs")' in page_source
     assert "body.docs-focused .workspace>.stages-panel" in styles
     assert "body.docs-focused .workspace>.inspector-resizer" in styles
@@ -279,7 +279,7 @@ def test_repository_markdown_index_and_ui_links(tmp_path: Path, monkeypatch) -> 
 
 
 def test_help_view_loads_only_the_active_document() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
     assert 'if(active==="context"||docs[active]||errors[active])return' in source
     assert "tabs.find(tab=>tab.id===active)" in source
     assert "for(const tab of docTabs)" not in source

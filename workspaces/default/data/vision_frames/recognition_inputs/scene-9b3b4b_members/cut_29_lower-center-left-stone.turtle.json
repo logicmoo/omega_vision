@@ -1,0 +1,104 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_29_lower-center-left-stone.png",
+  "subjectName": "lower center-left stone",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#454b46\",\n  \"penWidth\": 4,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          444.0,\n          671.0\n        ],\n        [\n          452.0,\n          643.0\n        ],\n        [\n          468.0,\n          630.0\n        ],\n        [\n          482.0,\n          646.0\n        ],\n        [\n          488.0,\n          677.0\n        ],\n        [\n          480.0,\n          705.0\n        ],\n        [\n          463.0,\n          716.0\n        ],\n        [\n          447.0,\n          702.0\n        ]\n      ],\n      \"fill\": \"#666c65\"\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          452.0,\n          651.0\n        ],\n        [\n          468.0,\n          635.0\n        ],\n        [\n          477.0,\n          649.0\n        ],\n        [\n          469.0,\n          676.0\n        ],\n        [\n          448.0,\n          679.0\n        ]\n      ],\n      \"fill\": \"#84897e\"\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          469.0,\n          676.0\n        ],\n        [\n          485.0,\n          677.0\n        ],\n        [\n          478.0,\n          702.0\n        ],\n        [\n          463.0,\n          712.0\n        ]\n      ],\n      \"fill\": \"#505751\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#454b46",
+    "penWidth": 4,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            444.0,
+            671.0
+          ],
+          [
+            452.0,
+            643.0
+          ],
+          [
+            468.0,
+            630.0
+          ],
+          [
+            482.0,
+            646.0
+          ],
+          [
+            488.0,
+            677.0
+          ],
+          [
+            480.0,
+            705.0
+          ],
+          [
+            463.0,
+            716.0
+          ],
+          [
+            447.0,
+            702.0
+          ]
+        ],
+        "fill": "#666c65"
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            452.0,
+            651.0
+          ],
+          [
+            468.0,
+            635.0
+          ],
+          [
+            477.0,
+            649.0
+          ],
+          [
+            469.0,
+            676.0
+          ],
+          [
+            448.0,
+            679.0
+          ]
+        ],
+        "fill": "#84897e"
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            469.0,
+            676.0
+          ],
+          [
+            485.0,
+            677.0
+          ],
+          [
+            478.0,
+            702.0
+          ],
+          [
+            463.0,
+            712.0
+          ]
+        ],
+        "fill": "#505751"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:30:03.563755Z"
+}

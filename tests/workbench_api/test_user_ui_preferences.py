@@ -1,8 +1,8 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-FRONTEND = ROOT / "workbench" / "frontend" / "src"
+ROOT = Path(__file__).resolve().parents[2]
+FRONTEND = ROOT / "frontend" / "apps" / "workbench" / "src"
 
 
 def test_user_ui_preference_is_personal_and_browser_persisted():

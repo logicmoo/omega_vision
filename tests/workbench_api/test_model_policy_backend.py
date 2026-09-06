@@ -11,8 +11,8 @@ from urllib.error import HTTPError
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 import policy_api  # noqa: E402
@@ -37,7 +37,7 @@ from resource_relationships import (  # noqa: E402
 
 
 def test_emullm_backend_is_explicitly_enabled_in_every_active_layer() -> None:
-    workspaces = ROOT / "workbench" / "workspaces"
+    workspaces = ROOT / "workspaces"
     for workspace_id in ("shared_library_system", "arc3_random_player"):
         record = next(
             row
@@ -206,13 +206,13 @@ def test_explicit_model_override_can_reenable_vendor_child() -> None:
 
 
 def test_vendor_change_cascades_to_children_in_policy_editor() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
     assert "filter(model=>model.vendorId===vendor.vendorId)" in source
     assert "next[model.id]" in source
 
 
 def test_model_discovery_has_bulk_selection_controls() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
     assert "Select new/changed" in source
     assert "Select missing" in source
     assert "Clear selection" in source
@@ -227,8 +227,8 @@ def test_model_discovery_has_bulk_selection_controls() -> None:
 
 
 def test_collapsed_artifact_branches_do_not_mount_hidden_children() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ArtifactTreeBranch.tsx").read_text(encoding="utf-8")
-    editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "UniversalArtifactEditor.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ArtifactTreeBranch.tsx").read_text(encoding="utf-8")
+    editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "UniversalArtifactEditor.tsx").read_text(encoding="utf-8")
     assert "initialCollapsed = false" in source
     assert "useState(initialCollapsed)" in source
     assert 'hasChildren && (controlled ? displayMode !== "strip" : !collapsed)' in source
@@ -468,9 +468,9 @@ def test_llm_complete_surfaces_provider_error_detail(monkeypatch, tmp_path: Path
 
 
 def test_example_executor_is_shared_by_models_and_prompts() -> None:
-    panel = (ROOT / "workbench" / "frontend" / "src" / "components" / "ExampleExecutePanel.tsx").read_text(encoding="utf-8")
-    models = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
-    prompts = (ROOT / "workbench" / "frontend" / "src" / "components" / "PromptLibraryEditor.tsx").read_text(encoding="utf-8")
+    panel = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ExampleExecutePanel.tsx").read_text(encoding="utf-8")
+    models = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    prompts = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "PromptLibraryEditor.tsx").read_text(encoding="utf-8")
     assert "EXAMPLE EXECUTE" in panel and "Run example" in panel
     assert 'type="checkbox"' in panel and 'type="number"' in panel
     assert 'kind==="choice"' in panel and "arg.options" in panel
@@ -479,7 +479,7 @@ def test_example_executor_is_shared_by_models_and_prompts() -> None:
 
 
 def test_model_discovery_grid_supports_json_property_filters_and_sorting() -> None:
-    models = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    models = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
     assert 'placeholder="Filter: +key=val, ~key=val, +text, ~text..."' in models
     assert 'JSON.stringify(propertyValue)' in models
     assert 'part.startsWith("~")' in models and 'part.startsWith("+")' in models
@@ -493,7 +493,7 @@ def test_model_discovery_grid_supports_json_property_filters_and_sorting() -> No
 
 
 def test_open_model_resource_has_a_persistent_enable_disable_control() -> None:
-    models = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    models = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
     assert "setResourceEnabled" in models
     assert 'typeof doc.record.resolved?.enabled === "boolean"' in models
     assert "document.enabled !== false" in models
@@ -503,10 +503,10 @@ def test_open_model_resource_has_a_persistent_enable_disable_control() -> None:
 
 
 def test_open_model_resource_has_the_universal_execution_runner() -> None:
-    models = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
-    runner = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelResourcePlayground.tsx").read_text(encoding="utf-8")
-    trace_viewer = (ROOT / "workbench" / "frontend" / "src" / "components" / "InvocationDebugTrace.tsx").read_text(encoding="utf-8")
-    api = (ROOT / "workbench" / "server" / "policy_api.py").read_text(encoding="utf-8")
+    models = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    runner = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelResourcePlayground.tsx").read_text(encoding="utf-8")
+    trace_viewer = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "InvocationDebugTrace.tsx").read_text(encoding="utf-8")
+    api = (ROOT / "python" / "workbench_api_server" / "policy_api.py").read_text(encoding="utf-8")
     assert "<ModelResourcePlayground" in models
     assert "!backend && !system && document && resourceEnabled" in models
     assert "system && document && resourceEnabled" in models
@@ -526,8 +526,8 @@ def test_open_model_resource_has_the_universal_execution_runner() -> None:
 
 
 def test_model_policy_history_charts_real_persisted_results() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "model_policy_todo.css").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "model_policy_todo.css").read_text(encoding="utf-8")
     assert "function PerformanceHistoryChart" in source
     assert "historyResults.flatMap" in source
     assert "Number.isFinite(Date.parse(recordedAt))" in source
@@ -537,7 +537,7 @@ def test_model_policy_history_charts_real_persisted_results() -> None:
 
 
 def test_model_policy_keeps_model_presets_and_prompt_profiles_independent() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
     assert "<span>Benchmark Dimensions</span>" in source
     assert "Model preset · inherited invocation defaults" in source
     assert "Prompt Profile · ordered prompt composition independent of model settings" in source
@@ -549,8 +549,8 @@ def test_model_policy_keeps_model_presets_and_prompt_profiles_independent() -> N
 
 
 def test_model_catalog_infers_presets_and_keeps_disabled_implementations_visible() -> None:
-    models = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "models_editor.css").read_text(encoding="utf-8")
+    models = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "models_editor.css").read_text(encoding="utf-8")
     assert 'type NodeKind="system"|"backend"|"model"|"preset"' in models
     assert 'document.kind==="profile"' in models  # legacy compatibility only
     assert 'backendIds.has(modelParent(document))' in models
@@ -633,7 +633,7 @@ def test_vendor_probe_is_single_flight_but_persists_each_model(tmp_path: Path) -
 
 
 def test_model_policy_ui_calls_real_ping_executor() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
     assert "/model-policy/ping" in source
     assert "setTimeout(resolve,500)" in source
     assert '["queued","running"]' in source
@@ -668,8 +668,8 @@ def test_ping_background_failure_becomes_terminal_job(tmp_path: Path, monkeypatc
 
 
 def test_model_policy_ui_edits_and_filters_dynamic_registry() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "model_policy_todo.css").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "model_policy_todo.css").read_text(encoding="utf-8")
     for token in ("Filesystem Load", "Filesystem Save", "Ping Selected", "Manage Backends, Models &amp; Presets", "Benchmark Dimensions", "Select Visible", "Clear Selection", "All capabilities", "All runtime", "All benchmark", "dynamicColumns", "toggleSort", "Shift+click adds a secondary sort", "setSorts"):
         assert token in source
     assert 'scope==="selected"?[...selected]' in source
@@ -726,7 +726,7 @@ def test_benchmark_prompt_profiles_are_an_independent_cross_product_dimension(tm
 
 
 def test_model_policy_ui_exposes_explicit_benchmark_run() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ModelPolicyPage.tsx").read_text(encoding="utf-8")
     assert "/model-policy/benchmarks/" in source
     assert "Run Benchmark" in source
     assert 'aria-label="Benchmark policy"' in source

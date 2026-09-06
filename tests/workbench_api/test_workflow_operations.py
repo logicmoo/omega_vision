@@ -17,7 +17,7 @@ from workflow_operations import (
     select_arc3_world,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_PATH = ROOT / "config" / "llm_workflows.json"
 GRAPH_PATH = ROOT / "config" / "workflow_datatypes.svg"
 

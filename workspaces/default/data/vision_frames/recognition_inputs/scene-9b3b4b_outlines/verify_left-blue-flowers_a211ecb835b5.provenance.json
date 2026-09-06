@@ -1,0 +1,265 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-blue-flowers_a211ecb835b5.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-blue-flowers_a211ecb835b5.provenance.json",
+  "createdAt": "2026-09-03T12:14:46.619487Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left blue flowers"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          20,
+          217
+        ],
+        [
+          24,
+          211
+        ],
+        [
+          29,
+          215
+        ],
+        [
+          27,
+          221
+        ]
+      ],
+      [
+        [
+          31,
+          214
+        ],
+        [
+          35,
+          208
+        ],
+        [
+          40,
+          213
+        ],
+        [
+          38,
+          219
+        ]
+      ],
+      [
+        [
+          43,
+          215
+        ],
+        [
+          47,
+          210
+        ],
+        [
+          52,
+          214
+        ],
+        [
+          50,
+          220
+        ]
+      ],
+      [
+        [
+          56,
+          212
+        ],
+        [
+          60,
+          207
+        ],
+        [
+          65,
+          212
+        ],
+        [
+          62,
+          218
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 31,
+        "y": 604
+      },
+      {
+        "op": "line",
+        "x": 102,
+        "y": 604
+      },
+      {
+        "op": "line",
+        "x": 97,
+        "y": 618
+      },
+      {
+        "op": "line",
+        "x": 42,
+        "y": 616
+      },
+      {
+        "op": "line",
+        "x": 31,
+        "y": 604
+      }
+    ],
+    "geometryHash": "a211ecb835b5f83285182eaf8bc5d28481e5f6ed996816bdc38aa1bd36d070b2",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.5907
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-blue-flowers_a211ecb835b5.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              20,
+              217
+            ],
+            [
+              24,
+              211
+            ],
+            [
+              29,
+              215
+            ],
+            [
+              27,
+              221
+            ]
+          ],
+          [
+            [
+              31,
+              214
+            ],
+            [
+              35,
+              208
+            ],
+            [
+              40,
+              213
+            ],
+            [
+              38,
+              219
+            ]
+          ],
+          [
+            [
+              43,
+              215
+            ],
+            [
+              47,
+              210
+            ],
+            [
+              52,
+              214
+            ],
+            [
+              50,
+              220
+            ]
+          ],
+          [
+            [
+              56,
+              212
+            ],
+            [
+              60,
+              207
+            ],
+            [
+              65,
+              212
+            ],
+            [
+              62,
+              218
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 31,
+            "y": 604
+          },
+          {
+            "op": "line",
+            "x": 102,
+            "y": 604
+          },
+          {
+            "op": "line",
+            "x": 97,
+            "y": 618
+          },
+          {
+            "op": "line",
+            "x": 42,
+            "y": 616
+          },
+          {
+            "op": "line",
+            "x": 31,
+            "y": 604
+          }
+        ],
+        "geometryHash": "a211ecb835b5f83285182eaf8bc5d28481e5f6ed996816bdc38aa1bd36d070b2",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.5907
+      },
+      "createdAt": "2026-09-03T12:14:46.619487Z"
+    }
+  ]
+}

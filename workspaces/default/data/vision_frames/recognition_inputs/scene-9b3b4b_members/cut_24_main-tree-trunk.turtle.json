@@ -1,0 +1,116 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.png",
+  "subjectName": "main tree trunk",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#5d4a35\",\n  \"penWidth\": 5,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          479.0,\n          259.0\n        ],\n        [\n          546.0,\n          256.0\n        ],\n        [\n          554.0,\n          357.0\n        ],\n        [\n          538.0,\n          446.0\n        ],\n        [\n          518.0,\n          504.0\n        ],\n        [\n          476.0,\n          526.0\n        ],\n        [\n          437.0,\n          493.0\n        ],\n        [\n          457.0,\n          421.0\n        ],\n        [\n          469.0,\n          340.0\n        ]\n      ],\n      \"fill\": \"#806344\"\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          500.0,\n          265.0\n        ],\n        [\n          531.0,\n          262.0\n        ],\n        [\n          530.0,\n          368.0\n        ],\n        [\n          511.0,\n          457.0\n        ],\n        [\n          485.0,\n          493.0\n        ],\n        [\n          467.0,\n          479.0\n        ],\n        [\n          485.0,\n          398.0\n        ]\n      ],\n      \"fill\": \"#a17d50\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          505.0,\n          273.0\n        ],\n        [\n          500.0,\n          359.0\n        ],\n        [\n          483.0,\n          443.0\n        ],\n        [\n          467.0,\n          487.0\n        ]\n      ],\n      \"fill\": \"transparent\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#5d4a35",
+    "penWidth": 5,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            479.0,
+            259.0
+          ],
+          [
+            546.0,
+            256.0
+          ],
+          [
+            554.0,
+            357.0
+          ],
+          [
+            538.0,
+            446.0
+          ],
+          [
+            518.0,
+            504.0
+          ],
+          [
+            476.0,
+            526.0
+          ],
+          [
+            437.0,
+            493.0
+          ],
+          [
+            457.0,
+            421.0
+          ],
+          [
+            469.0,
+            340.0
+          ]
+        ],
+        "fill": "#806344"
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            500.0,
+            265.0
+          ],
+          [
+            531.0,
+            262.0
+          ],
+          [
+            530.0,
+            368.0
+          ],
+          [
+            511.0,
+            457.0
+          ],
+          [
+            485.0,
+            493.0
+          ],
+          [
+            467.0,
+            479.0
+          ],
+          [
+            485.0,
+            398.0
+          ]
+        ],
+        "fill": "#a17d50"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            505.0,
+            273.0
+          ],
+          [
+            500.0,
+            359.0
+          ],
+          [
+            483.0,
+            443.0
+          ],
+          [
+            467.0,
+            487.0
+          ]
+        ],
+        "fill": "transparent"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:29:59.302871Z"
+}

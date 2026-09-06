@@ -1,10 +1,10 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx"
-GENERIC_SOURCE = ROOT / "workbench" / "frontend" / "src" / "components" / "ResourceSourceEditor.tsx"
-FILE_CONTROLS = ROOT / "workbench" / "frontend" / "src" / "components" / "WorkspaceResourceFileControls.tsx"
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx"
+GENERIC_SOURCE = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ResourceSourceEditor.tsx"
+FILE_CONTROLS = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkspaceResourceFileControls.tsx"
 
 
 def test_new_backend_is_immediately_savable() -> None:

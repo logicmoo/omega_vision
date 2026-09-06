@@ -1,0 +1,70 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_16_left-edge-tree-trunk.png",
+  "subjectName": "left edge tree trunk",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#3e352b\",\n  \"penWidth\": 5,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          0.0,\n          532.0\n        ],\n        [\n          22.0,\n          529.0\n        ],\n        [\n          36.0,\n          568.0\n        ],\n        [\n          31.0,\n          630.0\n        ],\n        [\n          19.0,\n          655.0\n        ],\n        [\n          0.0,\n          655.0\n        ]\n      ],\n      \"fill\": \"#514334\"\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          0.0,\n          554.0\n        ],\n        [\n          12.0,\n          549.0\n        ],\n        [\n          20.0,\n          632.0\n        ],\n        [\n          0.0,\n          649.0\n        ]\n      ],\n      \"fill\": \"#685440\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#3e352b",
+    "penWidth": 5,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            0.0,
+            532.0
+          ],
+          [
+            22.0,
+            529.0
+          ],
+          [
+            36.0,
+            568.0
+          ],
+          [
+            31.0,
+            630.0
+          ],
+          [
+            19.0,
+            655.0
+          ],
+          [
+            0.0,
+            655.0
+          ]
+        ],
+        "fill": "#514334"
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            0.0,
+            554.0
+          ],
+          [
+            12.0,
+            549.0
+          ],
+          [
+            20.0,
+            632.0
+          ],
+          [
+            0.0,
+            649.0
+          ]
+        ],
+        "fill": "#685440"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:29:53.125874Z"
+}

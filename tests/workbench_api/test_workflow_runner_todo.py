@@ -12,7 +12,7 @@ from workflow_runner_todo_api import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class SourceText(str):
@@ -63,7 +63,7 @@ def test_workflow_runner_reference_is_read_from_checked_in_files() -> None:
 
 
 def test_workflow_runs_page_displays_reference_without_replacing_history() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert 'mode === "workflowRuns" && showDesignReference && (' in source
     assert '<WorkflowRunnerTodoReference displayMode={referenceDisplayMode} onDisplayModeChange={setReferenceDisplayMode}/></Suspense>' in source
     assert '<WorkflowRunSplineWorkspace run={selectedRun} workflow={frozenWorkflow}' in source
@@ -92,14 +92,14 @@ def test_workflow_runs_page_displays_reference_without_replacing_history() -> No
 
 
 def test_workflow_runner_reference_is_collapsed_after_real_projection_exists() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkflowRunnerTodoReference.tsx").read_text(encoding="utf-8")
     assert '<ThreeStateAccordionMember' in source
     assert 'stackId="center-stack"' in source
     assert 'value="Mockups and TODO"' in source
 
 
 def test_goal_run_human_pause_uses_the_frozen_step_form_contract() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert "function HumanInputForm" in source
     assert "waitingStepDefinition" in source
     assert "step?.form" in source
@@ -127,8 +127,8 @@ def test_goal_run_human_pause_uses_the_frozen_step_form_contract() -> None:
 
 
 def test_runner_panels_are_user_resizable() -> None:
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert ".run-topology-scroll,.run-chronology-scroll,.run-visual-comparison,.run-projection-inspector{resize:vertical" in styles
     assert 'className="run-chronology-edge"' in source
     assert 'className={`run-chronology-node' in source
@@ -137,7 +137,7 @@ def test_runner_panels_are_user_resizable() -> None:
 
 
 def test_runtime_history_initial_load_is_bounded_and_expandable() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert '[runLimit, setRunLimit] = useState(50)' in source
     assert "limit=${runLimit}" in source
     assert "Load 50 older runs" in source
@@ -150,10 +150,10 @@ def test_runtime_history_initial_load_is_bounded_and_expandable() -> None:
 
 
 def test_runtime_records_link_back_to_executable_resources() -> None:
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    shell = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    operations = (ROOT / "workbench" / "frontend" / "src" / "components" / "OperationLibraryEditor.tsx").read_text(encoding="utf-8")
-    models = (ROOT / "workbench" / "frontend" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    shell = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    operations = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "OperationLibraryEditor.tsx").read_text(encoding="utf-8")
+    models = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "LlmModelsEditor.tsx").read_text(encoding="utf-8")
 
     assert "Open Operation ·" in runtime
     assert "Open producing Model ·" in runtime
@@ -168,18 +168,18 @@ def test_runtime_records_link_back_to_executable_resources() -> None:
 
 
 def test_human_input_submission_has_a_durable_link_event() -> None:
-    engine = (ROOT / "workbench" / "server" / "workflow_engine.py").read_text(encoding="utf-8")
+    engine = (ROOT / "python" / "workbench_api_server" / "workflow_engine.py").read_text(encoding="utf-8")
     assert "'human_input.received'" in engine
     assert "'artifactIds': artifact_ids" in engine
     assert "'redactedFields': redacted_fields" in engine
     assert "'payload': '[REDACTED]' if sensitive" in engine
     assert "self._resolve_public(run_id, binding)" in engine
-    assert 'item.redacted ? " · REDACTED"' in (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    assert 'item.redacted ? " · REDACTED"' in (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
 
 
 def test_detected_objects_link_to_persisted_provenance_resources() -> None:
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    engine = (ROOT / "workbench" / "server" / "workflow_engine.py").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    engine = (ROOT / "python" / "workbench_api_server" / "workflow_engine.py").read_text(encoding="utf-8")
     assert "DETECTED OBJECTS" in runtime
     assert "function objectArtifactRecords" in runtime
     assert '["objects", "entities", "objectAnnotations"]' in runtime
@@ -189,7 +189,7 @@ def test_detected_objects_link_to_persisted_provenance_resources() -> None:
 
 
 def test_runner_selection_survives_reload_through_deep_links() -> None:
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert 'initialParameters.get("runStep")' in runtime
     assert 'initialParameters.get("runEvent")' in runtime
     assert 'url.searchParams.set("runStep", stepId)' in runtime
@@ -199,7 +199,7 @@ def test_runner_selection_survives_reload_through_deep_links() -> None:
 
 
 def test_waiting_workflow_runs_expose_durable_human_input_forms() -> None:
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert "workflowWaitingStep" in runtime
     assert "workflowWaitingDefinition" in runtime
     assert 'className="human-pause workflow-run-human"' in runtime
@@ -210,7 +210,7 @@ def test_waiting_workflow_runs_expose_durable_human_input_forms() -> None:
 
 
 def test_runtime_history_rows_open_exact_persisted_records() -> None:
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
     assert 'mode === "states" ? "state" : "runtimeRecord"' in runtime
     assert 'url.searchParams.set("runtimeRecord", row.key)' in runtime
     assert 'url.searchParams.set("state", row.key)' in runtime
@@ -221,9 +221,9 @@ def test_runtime_history_rows_open_exact_persisted_records() -> None:
 
 
 def test_runtime_context_and_goal_runs_link_to_design_resources() -> None:
-    runtime = (ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    editor = (ROOT / "workbench" / "frontend" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
+    runtime = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    editor = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
     assert 'onOpenResource("context", context.contextId' in runtime
     assert 'onOpenResource("goal", selectedGoalRun.goalVariantId' in runtime
     assert 'onOpenResource("plan", selectedGoalRun.planVariantId' in runtime

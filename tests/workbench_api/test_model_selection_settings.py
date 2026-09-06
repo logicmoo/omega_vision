@@ -60,7 +60,7 @@ def test_system_model_can_be_forced_or_used_only_as_fallback(
 
 
 def test_settings_and_workspace_overview_expose_model_selection_controls() -> None:
-    source = Path("workbench/frontend/src/components/WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
+    source = Path("frontend/apps/workbench/src/components/WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
     assert "Global fallback and pervasive model" in source
     assert "Pervasive — always use this model" in source
     assert 'aria-label="Pervasive model selection"' in source

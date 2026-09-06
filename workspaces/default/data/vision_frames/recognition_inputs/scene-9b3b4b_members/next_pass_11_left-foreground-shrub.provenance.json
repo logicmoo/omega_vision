@@ -1,0 +1,160 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_11_left-foreground-shrub.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_11_left-foreground-shrub.provenance.json",
+  "createdAt": "2026-09-03T12:14:46.059141Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 726,
+    "height": 796
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_11_left-foreground-shrub.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_11_left-foreground-shrub.provenance.json"
+  },
+  "source": {
+    "objectName": "left foreground shrub"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 44,
+      "height": 49
+    },
+    "scale": 14,
+    "resizedDimensions": {
+      "width": 616,
+      "height": 686
+    },
+    "padding": {
+      "left": 55,
+      "top": 55,
+      "right": 55,
+      "bottom": 55
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_11_left-foreground-shrub.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 44,
+        "height": 49
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-foreground-shrub_0a218f003637.png",
+          "geometryHash": "0a218f0036379f33c602435f1bd81ccef52e67a939d4b2f37c3d7beca15d074a",
+          "traceVerified": true
+        },
+        "cropBox": [
+          71,
+          181,
+          115,
+          230
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              73,
+              210
+            ],
+            [
+              78,
+              196
+            ],
+            [
+              88,
+              185
+            ],
+            [
+              99,
+              183
+            ],
+            [
+              108,
+              192
+            ],
+            [
+              112,
+              207
+            ],
+            [
+              107,
+              221
+            ],
+            [
+              96,
+              228
+            ],
+            [
+              83,
+              224
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:45.988099Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_11_left-foreground-shrub.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 726,
+        "height": 796
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 44,
+          "height": 49
+        },
+        "scale": 14,
+        "resizedDimensions": {
+          "width": 616,
+          "height": 686
+        },
+        "padding": {
+          "left": 55,
+          "top": 55,
+          "right": 55,
+          "bottom": 55
+        }
+      },
+      "createdAt": "2026-09-03T12:14:46.059141Z"
+    }
+  ]
+}

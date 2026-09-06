@@ -1,8 +1,8 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-COMPONENTS = ROOT / "workbench" / "frontend" / "src" / "components"
+ROOT = Path(__file__).resolve().parents[2]
+COMPONENTS = ROOT / "frontend" / "apps" / "workbench" / "src" / "components"
 
 
 def _text(name: str) -> str:
@@ -69,7 +69,7 @@ def test_operations_delegate_the_document_and_source_tabs_to_super_control() -> 
     operations = _text("OperationLibraryEditor.tsx")
     universal = _text("UniversalArtifactEditor.tsx")
     operation_control = _text("OperationDocumentControl.tsx")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "super_control.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "super_control.css").read_text(encoding="utf-8")
 
     assert '<SuperControl key={doc.key} appearance="embedded" control={control}' in operations
     assert "ResourceSourceEditor" not in operations
@@ -95,7 +95,7 @@ def test_operations_delegate_the_document_and_source_tabs_to_super_control() -> 
 def test_topics_use_only_the_standard_super_control_editors() -> None:
     topics = _text("TopicsResourceEditor.tsx")
     universal = _text("UniversalArtifactEditor.tsx")
-    sub_controls = (ROOT / "workbench" / "frontend" / "src" / "lib" / "subControls.ts").read_text(encoding="utf-8")
+    sub_controls = (ROOT / "frontend" / "apps" / "workbench" / "src" / "lib" / "subControls.ts").read_text(encoding="utf-8")
 
     assert "<SuperControl" in topics
     assert 'appearance="embedded"' in topics
@@ -122,7 +122,7 @@ def test_super_control_hides_registered_tabs_without_renderers() -> None:
 def test_resource_and_inheritance_restores_structured_resource_fields() -> None:
     universal = _text("UniversalArtifactEditor.tsx")
     fields = _text("ResourceFieldsEditor.tsx")
-    styles = (ROOT / "workbench/frontend/src/styles/super_control.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/apps/workbench/src/styles/super_control.css").read_text(encoding="utf-8")
 
     assert "super-control-resource-inheritance" in universal
     assert "<ResourceFieldsEditor" in universal
@@ -293,7 +293,7 @@ def test_operation_playground_formats_structured_datatype_contracts() -> None:
 
 def test_tab_runner_input_editors_grow_to_content_within_the_page() -> None:
     auto_grow = _text("AutoGrowingTextarea.tsx")
-    styles = (ROOT / "workbench/frontend/src/styles/operation_playground.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/apps/workbench/src/styles/operation_playground.css").read_text(encoding="utf-8")
 
     assert "node.scrollHeight" in auto_grow
     assert "boundary?.getBoundingClientRect().bottom" in auto_grow
@@ -365,8 +365,8 @@ def test_operation_playground_can_run_default_and_populate_from_runtime_artifact
 
 
 def test_operation_playground_displays_persisted_complete_debug_trace() -> None:
-    source = (ROOT / "workbench/frontend/src/components/OperationPlayground.tsx").read_text(encoding="utf-8")
-    trace_viewer = (ROOT / "workbench/frontend/src/components/InvocationDebugTrace.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend/apps/workbench/src/components/OperationPlayground.tsx").read_text(encoding="utf-8")
+    trace_viewer = (ROOT / "frontend/apps/workbench/src/components/InvocationDebugTrace.tsx").read_text(encoding="utf-8")
     assert "<InvocationDebugTrace" in source
     assert "COMPLETE DEBUG TRACE" in trace_viewer
     assert "collectStringBlocks" in trace_viewer
@@ -428,7 +428,7 @@ def test_universal_shell_keeps_tabs_compare_inspector_and_docks() -> None:
 
 def test_universal_tree_is_collapsible_and_independently_scrollable() -> None:
     source = _text("UniversalArtifactEditor.tsx")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "operation_editor.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_editor.css").read_text(encoding="utf-8")
     assert 'aria-expanded={!navigatorCollapsed}' in source
     assert "navigator-collapsed" in source
     assert ".artifact-navigator-content" in styles
@@ -440,7 +440,7 @@ def test_universal_tree_is_collapsible_and_independently_scrollable() -> None:
     assert ".variants-hidden .operation-tree-children" in styles
     assert ".main-stage>.operation-hierarchy-page" in styles
     assert "overflow-y:scroll" in styles
-    workbench_styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    workbench_styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert ".main-stage{min-height:0;overflow:hidden}" in workbench_styles
 
 
@@ -464,7 +464,7 @@ def test_all_artifact_trees_share_filter_and_parent_path_controls() -> None:
     assert "searchValue" in _text("ArtifactTreeBranch.tsx")
     for component in ("OperationLibraryEditor.tsx", "DataCatalogPanel.tsx", "PromptLibraryEditor.tsx", "GoalPlanLibraryEditor.tsx", "LlmModelsEditor.tsx"):
         assert "tree-search" in _text(component) or "searchValue" in _text(component)
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "operation_editor.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_editor.css").read_text(encoding="utf-8")
     assert '[data-filter-own-match="false"]>.inheritance-row' in styles
 
 
@@ -499,7 +499,7 @@ def test_universal_tree_exposes_composable_tri_state_view_controls() -> None:
     universal = _text("UniversalArtifactEditor.tsx")
     controls = _text("TreeViewControls.tsx")
     filtering = _text("useArtifactTreeFilter.ts")
-    styles = (ROOT / "workbench/frontend/src/styles/operation_editor.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend/apps/workbench/src/styles/operation_editor.css").read_text(encoding="utf-8")
     assert 'TreeVisibilityRule = "show" | "hide" | "unspecified"' in filtering
     assert 'TreeRepeatMode = "first" | "all" | "last"' in filtering
     assert 'TreeRelationshipMode = "implementation" | "inheritance" | "dependency"' in filtering
@@ -589,7 +589,7 @@ def test_all_hierarchy_editors_switch_real_relationship_forests() -> None:
 
 def test_first_class_categories_are_visually_distinct_from_virtual_folders() -> None:
     category_tree = _text("CategorizedArtifactTree.tsx")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "operation_editor.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_editor.css").read_text(encoding="utf-8")
     assert '"First-class topic" : "Virtual topic"' in category_tree
     assert 'firstClass ? "category-first-class" : "category-virtual"' in category_tree
     assert "/artifact-categories" in category_tree

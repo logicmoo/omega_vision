@@ -183,8 +183,8 @@ def _git_repository_scan_roots(
     }
     resources = get_filesystem_provider()
     collections = [
-        REPOSITORY_ROOT / "workbench" / "plugins",
-        REPOSITORY_ROOT / "workbench" / "workspaces",
+        REPOSITORY_ROOT / "plugins",
+        REPOSITORY_ROOT / "workspaces",
         REPOSITORY_ROOT / "vendor",
     ]
     for name in terminal_names:

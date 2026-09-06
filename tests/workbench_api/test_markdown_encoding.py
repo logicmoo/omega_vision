@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "normalize_markdown_encoding.py"
 sys.path.insert(0, str(SCRIPT.parent))
 SPEC = spec_from_file_location("normalize_markdown_encoding", SCRIPT)

@@ -1,11 +1,11 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_workspace_opening_preferences_are_scoped_and_default_to_overview():
-    source = (ROOT / "workbench/frontend/src/lib/workspacePagePreferences.ts").read_text(encoding="utf-8")
+    source = (ROOT / "frontend/apps/workbench/src/lib/workspacePagePreferences.ts").read_text(encoding="utf-8")
 
     assert "metta-workbench.workspace-page-preferences.v1" in source
     assert "openingPageByWorkspace" in source
@@ -17,7 +17,7 @@ def test_workspace_opening_preferences_are_scoped_and_default_to_overview():
 
 
 def test_missing_view_uses_workspace_preference_but_explicit_view_wins():
-    source = (ROOT / "workbench/frontend/src/pages/FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend/apps/workbench/src/pages/FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
 
     assert "const workspaceOpeningViewFromLocation = (inheritedWorkspaceIds: string[] = []): View =>" in source
     assert "const explicitView = viewFromLocation();" in source
@@ -28,7 +28,7 @@ def test_missing_view_uses_workspace_preference_but_explicit_view_wins():
 
 
 def test_settings_expose_workspace_opening_page_choice():
-    source = (ROOT / "workbench/frontend/src/components/WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend/apps/workbench/src/components/WorkspaceSettingsPanel.tsx").read_text(encoding="utf-8")
 
     assert "THIS WORKSPACE · OPENING PAGE" in source
     assert "WORKSPACE_OPENING_PAGE_OPTIONS" in source

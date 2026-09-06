@@ -53,7 +53,7 @@
   ))
   (python (
     (importMode file)
-    (file python/collection_operations.py)
+    (file workspaces/shared_library_system/collection_operations.py)
     (callable random_list_element)
   ))
   (parameters (

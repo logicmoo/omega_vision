@@ -4,9 +4,6 @@ across GAMES by default, and shareable across games on request."""
 import sys
 from pathlib import Path
 
-_SERVER = Path(__file__).resolve().parents[1] / "workbench" / "server" / "generative_vision" / "prolog"
-sys.path.insert(0, str(_SERVER))
-
 from omega_vision.perception import symbolic_arc as sa  # noqa: E402
 
 _OFF = [(0, 0), (1, 0), (0, 1), (1, 1)]  # tetromino_O

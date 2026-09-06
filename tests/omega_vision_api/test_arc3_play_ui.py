@@ -1,16 +1,16 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-COMPONENT = ROOT / "workbench/frontend/src/components/Arc3PlayPage.tsx"
-STYLES = ROOT / "workbench/frontend/src/styles/arc3_play.css"
-WORKBENCH = ROOT / "workbench/frontend/src/pages/FilesystemWorkbenchPage.tsx"
-WORKBENCH_STYLES = ROOT / "workbench/frontend/src/styles/workbench.css"
-TASK_REGISTRY = ROOT / "workbench/frontend/src/taskRegistry.tsx"
-APP_TSX = ROOT / "workbench/frontend/src/App.tsx"
-PAGE = ROOT / "workbench/workspaces/arc3_random_player/design/workflow_pages/arc3_play.workflow_page.json"
-API = ROOT / "workbench/server/arc3_play_api.py"
-APP = ROOT / "workbench/server/app.py"
+ROOT = Path(__file__).resolve().parents[2]
+COMPONENT = ROOT / "frontend/packages/omega_vision_ui/src/components/Arc3PlayPage.tsx"
+STYLES = ROOT / "frontend/packages/omega_vision_ui/src/styles/arc3_play.css"
+WORKBENCH = ROOT / "frontend/apps/workbench/src/pages/FilesystemWorkbenchPage.tsx"
+WORKBENCH_STYLES = ROOT / "frontend/apps/workbench/src/styles/workbench.css"
+TASK_REGISTRY = ROOT / "frontend/apps/workbench/src/taskRegistry.tsx"
+APP_TSX = ROOT / "frontend/apps/workbench/src/App.tsx"
+PAGE = ROOT / "workspaces/arc3_random_player/design/workflow_pages/arc3_play.workflow_page.json"
+API = ROOT / "python/workbench_api_server/arc3_play_api.py"
+APP = ROOT / "python/workbench_api_server/app.py"
 
 
 def test_play_page_uses_dedicated_renderer() -> None:
@@ -195,7 +195,7 @@ def test_play_page_embeds_b1b2_runner_stack_in_left_column() -> None:
     assert "<Arc3B1B2PipelinePage" in source
     assert "arc3-play-b1b2-column" in source
 
-    b1b2_source = (ROOT / "workbench/frontend/src/components/Arc3B1B2PipelinePage.tsx").read_text(encoding="utf-8")
+    b1b2_source = (ROOT / "frontend/packages/omega_vision_ui/src/components/Arc3B1B2PipelinePage.tsx").read_text(encoding="utf-8")
     assert "export type ModelChoice" in b1b2_source
     assert "export type WorkspaceFileRecord" in b1b2_source
     assert "export type Props" in b1b2_source
@@ -346,7 +346,7 @@ def test_play_page_recordings_path_can_be_set_from_the_right_panel() -> None:
 
 
 def test_games_gallery_page_exists_and_is_wired_into_navigation() -> None:
-    gallery_component = (ROOT / "workbench/frontend/src/components/Arc3GamesGalleryPage.tsx").read_text(encoding="utf-8")
+    gallery_component = (ROOT / "frontend/apps/workbench/src/components/Arc3GamesGalleryPage.tsx").read_text(encoding="utf-8")
     assert "export function Arc3GamesGalleryPage(" in gallery_component
     assert "/workbench/arc3-play/games" in gallery_component
     assert "/preview" in gallery_component
@@ -358,12 +358,12 @@ def test_games_gallery_page_exists_and_is_wired_into_navigation() -> None:
     # jump straight into Play & Record for that game.
     assert "onDoubleClick={onPlayGame ? () => onPlayGame(shortId) : undefined}" in gallery_component
 
-    gallery_styles = (ROOT / "workbench/frontend/src/styles/arc3_games_gallery.css").read_text(encoding="utf-8")
+    gallery_styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/arc3_games_gallery.css").read_text(encoding="utf-8")
     assert ".arc3-gallery-grid" in gallery_styles
     assert ".arc3-gallery-thumb" in gallery_styles
 
     gallery_page_json = (
-        ROOT / "workbench/workspaces/arc3_random_player/design/workflow_pages/arc3_games_gallery.workflow_page.json"
+        ROOT / "workspaces/arc3_random_player/design/workflow_pages/arc3_games_gallery.workflow_page.json"
     ).read_text(encoding="utf-8")
     assert '"id": "arc3.games_gallery"' in gallery_page_json
     assert '"routeView": "arc3GamesGallery"' in gallery_page_json

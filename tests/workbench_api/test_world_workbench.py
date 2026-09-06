@@ -4,9 +4,9 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "python"))
-sys.path.insert(0, str(ROOT / "workbench" / "server"))
+sys.path.insert(0, str(ROOT / "python" / "workbench_api_server"))
 
 from resource_store import get_filesystem_provider  # noqa: E402
 
@@ -156,7 +156,7 @@ def test_human_demonstration_mode_observes_without_selecting_actions() -> None:
 
 
 def test_domain_neutral_manifests_keep_arc3_at_the_adapter_boundary() -> None:
-    shared_config = ROOT / "workbench" / "workspaces" / "shared_library_system" / "design" / "configs"
+    shared_config = ROOT / "workspaces" / "shared_library_system" / "design" / "configs"
     semantic_dir = shared_config.parent / "semantic_datatypes"
     resources = get_filesystem_provider()
     semantic = [

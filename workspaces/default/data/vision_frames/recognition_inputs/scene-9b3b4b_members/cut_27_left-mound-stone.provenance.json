@@ -1,0 +1,196 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_27_left-mound-stone.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_27_left-mound-stone.provenance.json",
+  "createdAt": "2026-09-03T12:21:42.757206Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 52,
+    "height": 32
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left mound stone"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-mound-stone_c250af44946e.png",
+      "geometryHash": "c250af44946e19246eea6ba0a39d003e8023c79658876b2e8c4669f4df33200b",
+      "traceVerified": true
+    },
+    "cropBox": [
+      172,
+      231,
+      224,
+      263
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          174,
+          249
+        ],
+        [
+          181,
+          240
+        ],
+        [
+          194,
+          234
+        ],
+        [
+          209,
+          233
+        ],
+        [
+          221,
+          238
+        ],
+        [
+          221,
+          247
+        ],
+        [
+          212,
+          255
+        ],
+        [
+          198,
+          261
+        ],
+        [
+          184,
+          260
+        ],
+        [
+          176,
+          256
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_27_left-mound-stone.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 52,
+        "height": 32
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-mound-stone_c250af44946e.png",
+          "geometryHash": "c250af44946e19246eea6ba0a39d003e8023c79658876b2e8c4669f4df33200b",
+          "traceVerified": true
+        },
+        "cropBox": [
+          172,
+          231,
+          224,
+          263
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              174,
+              249
+            ],
+            [
+              181,
+              240
+            ],
+            [
+              194,
+              234
+            ],
+            [
+              209,
+              233
+            ],
+            [
+              221,
+              238
+            ],
+            [
+              221,
+              247
+            ],
+            [
+              212,
+              255
+            ],
+            [
+              198,
+              261
+            ],
+            [
+              184,
+              260
+            ],
+            [
+              176,
+              256
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:42.757206Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_27_left-mound-stone.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_27_left-mound-stone.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_27_left-mound-stone.turtle.provenance.json"
+  }
+}

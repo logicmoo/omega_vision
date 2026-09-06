@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "workbench" / "scripts"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "python" / "workbench_api_server" / "scripts"))
 
 import stop_workbench  # noqa: E402
 
@@ -21,7 +21,7 @@ def test_shutdown_targets_only_declared_workbench_listener_ports(monkeypatch) ->
     monkeypatch.setattr(stop_workbench, "PROCESS_LEDGER", ROOT / "does-not-exist.json")
     assert stop_workbench.stop_targets(17777, 16666) == 0
 
-    source = (ROOT / "workbench" / "scripts" / "stop_workbench.py").read_text(encoding="utf-8")
+    source = (ROOT / "python" / "workbench_api_server" / "scripts" / "stop_workbench.py").read_text(encoding="utf-8")
     for port in (3456, 20128, 46667):
         assert f", {port}," in source
     assert ", 18800," not in source
@@ -31,22 +31,22 @@ def test_shutdown_targets_only_declared_workbench_listener_ports(monkeypatch) ->
 
 
 def test_launcher_routes_mailbox_relay_through_startup_policy_and_pid_ledger() -> None:
-    demo = (ROOT / "workbench" / "run_demo.bat").read_text(encoding="utf-8")
-    starter = (ROOT / "workbench" / "scripts" / "start_with_policy.py").read_text(encoding="utf-8")
+    demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
+    starter = (ROOT / "python" / "workbench_api_server" / "scripts" / "start_with_policy.py").read_text(encoding="utf-8")
     assert "--service mailbox_server" in demo
     assert "mailbox-server.cmd" in demo
     assert "PROCESS_LEDGER" in starter
     assert "_record_started_process(args.service, process, list(args.command), args.cwd)" in starter
     assert '"rawCommand": command' in starter
     assert '"terminationScope": "process-tree"' in starter
-    service = (ROOT / "workbench" / "workspaces" / "shared_library_system" / "design" / "services" / "channel_relay.managed_service.metta").read_text(encoding="utf-8")
-    policy = (ROOT / "workbench" / "workspaces" / "shared_library_system" / "policies" / "workbench_startup.workbench_startup_policy.metta").read_text(encoding="utf-8")
+    service = (ROOT / "workspaces" / "shared_library_system" / "design" / "services" / "channel_relay.managed_service.metta").read_text(encoding="utf-8")
+    policy = (ROOT / "workspaces" / "shared_library_system" / "policies" / "workbench_startup.workbench_startup_policy.metta").read_text(encoding="utf-8")
     assert "(defaultStartup ((start true)" in service
     assert "(mailbox_server ((start true)" in policy
 
 
 def test_every_long_running_demo_service_uses_the_python_process_launcher() -> None:
-    demo = (ROOT / "workbench" / "run_demo.bat").read_text(encoding="utf-8")
+    demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
     for service in (
         "mailbox_server", "clawrouter", "omniroute",
         "workbench-api", "workbench-web",
@@ -65,7 +65,7 @@ def test_managed_batch_files_submit_expanded_final_commands_to_api() -> None:
         "run_vite_server.bat": ("--service workbench-web", "npm.cmd run dev"),
         "run_channel_relay.bat": ("--service mailbox_server", "-m mailbox_channels.server"),
     }
-    scripts = ROOT / "workbench" / "scripts"
+    scripts = ROOT / "python" / "workbench_api_server" / "scripts"
     for filename, fragments in expected.items():
         source = (scripts / filename).read_text(encoding="utf-8")
         assert "submit_managed_command.py" in source
@@ -77,7 +77,7 @@ def test_managed_batch_files_submit_expanded_final_commands_to_api() -> None:
 
 
 def test_api_startup_reconciles_enabled_missing_daemons(monkeypatch) -> None:
-    sys.path.insert(0, str(ROOT / "workbench" / "server"))
+    sys.path.insert(0, str(ROOT / "python" / "workbench_api_server"))
     import service_monitor_api
 
     enabled = service_monitor_api.ServiceDefinition("enabled", "Enabled", "", 31001, "/", Path("launcher.bat"), True)
@@ -101,14 +101,14 @@ def test_api_startup_reconciles_enabled_missing_daemons(monkeypatch) -> None:
 
 
 def test_startup_reconciliation_log_is_raw_json_not_a_resource_document() -> None:
-    monitor = (ROOT / "workbench" / "server" / "service_monitor_api.py").read_text(encoding="utf-8")
+    monitor = (ROOT / "python" / "workbench_api_server" / "service_monitor_api.py").read_text(encoding="utf-8")
     assert 'provider.write_bytes(LOG_ROOT / "startup-reconciliation.json"' in monitor
     assert 'write_text(\n            LOG_ROOT / "startup-reconciliation.json"' not in monitor
 
 
 def test_api_launch_ledger_uses_unique_temp_files_and_deduplicates_pending_requests() -> None:
-    monitor = (ROOT / "workbench" / "server" / "service_monitor_api.py").read_text(encoding="utf-8")
-    starter = (ROOT / "workbench" / "scripts" / "start_with_policy.py").read_text(encoding="utf-8")
+    monitor = (ROOT / "python" / "workbench_api_server" / "service_monitor_api.py").read_text(encoding="utf-8")
+    starter = (ROOT / "python" / "workbench_api_server" / "scripts" / "start_with_policy.py").read_text(encoding="utf-8")
     assert "_PENDING_LAUNCHES" in monitor
     assert '"status": "launch-pending"' in monitor
     assert "with _LAUNCH_LOCK:" in monitor
@@ -119,13 +119,13 @@ def test_api_launch_ledger_uses_unique_temp_files_and_deduplicates_pending_reque
 
 
 def test_api_submitted_commands_forward_only_service_allowlisted_environment() -> None:
-    monitor = (ROOT / "workbench" / "server" / "service_monitor_api.py").read_text(encoding="utf-8")
+    monitor = (ROOT / "python" / "workbench_api_server" / "service_monitor_api.py").read_text(encoding="utf-8")
     assert "_validated_environment" in monitor
     assert '"omniroute": {"PORT", "DASHBOARD_PORT"}' in monitor
     assert '"workbench-web": {"WORKBENCH_WEB_HOST", "WORKBENCH_WEB_PORT", "WORKBENCH_API_TARGET"}' in monitor
     assert '"mailbox_server": {"PYTHONPATH"}' in monitor
     assert "env={**os.environ, **environment}" in monitor
-    demo = (ROOT / "workbench" / "run_demo.bat").read_text(encoding="utf-8")
+    demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
     assert demo.count("wait_for_managed_service.py") == 3
-    waiter = (ROOT / "workbench" / "scripts" / "wait_for_managed_service.py").read_text(encoding="utf-8")
+    waiter = (ROOT / "python" / "workbench_api_server" / "scripts" / "wait_for_managed_service.py").read_text(encoding="utf-8")
     assert "exited before becoming healthy" in waiter

@@ -4,15 +4,15 @@ from pathlib import Path
 from resource_relationships import implements_resource
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 from backend_library import backend_record_index, load_workspace_backend_records  # noqa: E402
 from model_library import resolve_model_records  # noqa: E402
 
 
-SHARED_WORKSPACE = ROOT / "workbench" / "workspaces" / "shared_library_system"
+SHARED_WORKSPACE = ROOT / "workspaces" / "shared_library_system"
 
 
 def test_shared_snet_backend_uses_environment_backed_credentials() -> None:

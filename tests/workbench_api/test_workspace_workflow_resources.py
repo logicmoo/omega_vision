@@ -3,8 +3,8 @@ from pathlib import Path
 from resource_store import get_filesystem_provider
 
 
-ROOT = Path(__file__).resolve().parents[1]
-WORKSPACES = ROOT / "workbench" / "workspaces"
+ROOT = Path(__file__).resolve().parents[2]
+WORKSPACES = ROOT / "workspaces"
 
 
 def test_editable_workspace_workflows_do_not_claim_runtime_versions() -> None:

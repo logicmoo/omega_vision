@@ -1,8 +1,8 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-ACTIVE_PAGE = ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
+ROOT = Path(__file__).resolve().parents[2]
+ACTIVE_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
 
 
 def test_artifact_explorer_uses_durable_engine_artifact_fields():

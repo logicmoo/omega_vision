@@ -1,0 +1,531 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_moss-mound_fdebc97b1176.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_moss-mound_fdebc97b1176.provenance.json",
+  "createdAt": "2026-09-03T12:14:42.630288Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "moss mound"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          81,
+          276
+        ],
+        [
+          107,
+          269
+        ],
+        [
+          127,
+          253
+        ],
+        [
+          151,
+          245
+        ],
+        [
+          169,
+          222
+        ],
+        [
+          196,
+          207
+        ],
+        [
+          224,
+          193
+        ],
+        [
+          252,
+          187
+        ],
+        [
+          281,
+          190
+        ],
+        [
+          307,
+          196
+        ],
+        [
+          335,
+          192
+        ],
+        [
+          362,
+          200
+        ],
+        [
+          389,
+          212
+        ],
+        [
+          412,
+          227
+        ],
+        [
+          433,
+          243
+        ],
+        [
+          461,
+          254
+        ],
+        [
+          483,
+          272
+        ],
+        [
+          512,
+          284
+        ],
+        [
+          537,
+          296
+        ],
+        [
+          550,
+          318
+        ],
+        [
+          513,
+          325
+        ],
+        [
+          466,
+          324
+        ],
+        [
+          420,
+          329
+        ],
+        [
+          374,
+          324
+        ],
+        [
+          329,
+          330
+        ],
+        [
+          280,
+          324
+        ],
+        [
+          236,
+          329
+        ],
+        [
+          192,
+          321
+        ],
+        [
+          147,
+          322
+        ],
+        [
+          111,
+          310
+        ]
+      ]
+    ],
+    "holes": [
+      [
+        [
+          310,
+          231
+        ],
+        [
+          317,
+          221
+        ],
+        [
+          333,
+          218
+        ],
+        [
+          347,
+          223
+        ],
+        [
+          355,
+          235
+        ],
+        [
+          356,
+          251
+        ],
+        [
+          347,
+          262
+        ],
+        [
+          331,
+          266
+        ],
+        [
+          316,
+          259
+        ],
+        [
+          308,
+          247
+        ]
+      ]
+    ],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 127,
+        "y": 769
+      },
+      {
+        "op": "line",
+        "x": 199,
+        "y": 705
+      },
+      {
+        "op": "line",
+        "x": 307,
+        "y": 577
+      },
+      {
+        "op": "line",
+        "x": 440,
+        "y": 529
+      },
+      {
+        "op": "line",
+        "x": 566,
+        "y": 557
+      },
+      {
+        "op": "line",
+        "x": 677,
+        "y": 677
+      },
+      {
+        "op": "line",
+        "x": 800,
+        "y": 791
+      },
+      {
+        "op": "line",
+        "x": 861,
+        "y": 886
+      },
+      {
+        "op": "line",
+        "x": 731,
+        "y": 903
+      },
+      {
+        "op": "line",
+        "x": 515,
+        "y": 919
+      },
+      {
+        "op": "line",
+        "x": 299,
+        "y": 894
+      },
+      {
+        "op": "line",
+        "x": 174,
+        "y": 864
+      },
+      {
+        "op": "line",
+        "x": 127,
+        "y": 769
+      }
+    ],
+    "geometryHash": "fdebc97b1176af1aeef896b52397ab4041f2f5a518c8b4cb407f4508941925fd",
+    "traceAgreement": 0.9896,
+    "boundaryCoverage": 0.6792
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_moss-mound_fdebc97b1176.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              81,
+              276
+            ],
+            [
+              107,
+              269
+            ],
+            [
+              127,
+              253
+            ],
+            [
+              151,
+              245
+            ],
+            [
+              169,
+              222
+            ],
+            [
+              196,
+              207
+            ],
+            [
+              224,
+              193
+            ],
+            [
+              252,
+              187
+            ],
+            [
+              281,
+              190
+            ],
+            [
+              307,
+              196
+            ],
+            [
+              335,
+              192
+            ],
+            [
+              362,
+              200
+            ],
+            [
+              389,
+              212
+            ],
+            [
+              412,
+              227
+            ],
+            [
+              433,
+              243
+            ],
+            [
+              461,
+              254
+            ],
+            [
+              483,
+              272
+            ],
+            [
+              512,
+              284
+            ],
+            [
+              537,
+              296
+            ],
+            [
+              550,
+              318
+            ],
+            [
+              513,
+              325
+            ],
+            [
+              466,
+              324
+            ],
+            [
+              420,
+              329
+            ],
+            [
+              374,
+              324
+            ],
+            [
+              329,
+              330
+            ],
+            [
+              280,
+              324
+            ],
+            [
+              236,
+              329
+            ],
+            [
+              192,
+              321
+            ],
+            [
+              147,
+              322
+            ],
+            [
+              111,
+              310
+            ]
+          ]
+        ],
+        "holes": [
+          [
+            [
+              310,
+              231
+            ],
+            [
+              317,
+              221
+            ],
+            [
+              333,
+              218
+            ],
+            [
+              347,
+              223
+            ],
+            [
+              355,
+              235
+            ],
+            [
+              356,
+              251
+            ],
+            [
+              347,
+              262
+            ],
+            [
+              331,
+              266
+            ],
+            [
+              316,
+              259
+            ],
+            [
+              308,
+              247
+            ]
+          ]
+        ],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 127,
+            "y": 769
+          },
+          {
+            "op": "line",
+            "x": 199,
+            "y": 705
+          },
+          {
+            "op": "line",
+            "x": 307,
+            "y": 577
+          },
+          {
+            "op": "line",
+            "x": 440,
+            "y": 529
+          },
+          {
+            "op": "line",
+            "x": 566,
+            "y": 557
+          },
+          {
+            "op": "line",
+            "x": 677,
+            "y": 677
+          },
+          {
+            "op": "line",
+            "x": 800,
+            "y": 791
+          },
+          {
+            "op": "line",
+            "x": 861,
+            "y": 886
+          },
+          {
+            "op": "line",
+            "x": 731,
+            "y": 903
+          },
+          {
+            "op": "line",
+            "x": 515,
+            "y": 919
+          },
+          {
+            "op": "line",
+            "x": 299,
+            "y": 894
+          },
+          {
+            "op": "line",
+            "x": 174,
+            "y": 864
+          },
+          {
+            "op": "line",
+            "x": 127,
+            "y": 769
+          }
+        ],
+        "geometryHash": "fdebc97b1176af1aeef896b52397ab4041f2f5a518c8b4cb407f4508941925fd",
+        "traceAgreement": 0.9896,
+        "boundaryCoverage": 0.6792
+      },
+      "createdAt": "2026-09-03T12:14:42.630288Z"
+    }
+  ]
+}

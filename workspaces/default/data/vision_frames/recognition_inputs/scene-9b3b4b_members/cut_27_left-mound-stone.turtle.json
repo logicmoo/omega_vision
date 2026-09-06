@@ -1,0 +1,94 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_27_left-mound-stone.png",
+  "subjectName": "left mound stone",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#575548\",\n  \"penWidth\": 4,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          272.0,\n          694.0\n        ],\n        [\n          283.0,\n          669.0\n        ],\n        [\n          304.0,\n          652.0\n        ],\n        [\n          327.0,\n          649.0\n        ],\n        [\n          346.0,\n          663.0\n        ],\n        [\n          346.0,\n          688.0\n        ],\n        [\n          332.0,\n          710.0\n        ],\n        [\n          310.0,\n          727.0\n        ],\n        [\n          288.0,\n          724.0\n        ],\n        [\n          275.0,\n          713.0\n        ]\n      ],\n      \"fill\": \"#777264\"\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          283.0,\n          683.0\n        ],\n        [\n          304.0,\n          660.0\n        ],\n        [\n          330.0,\n          655.0\n        ],\n        [\n          341.0,\n          668.0\n        ],\n        [\n          316.0,\n          677.0\n        ],\n        [\n          293.0,\n          693.0\n        ]\n      ],\n      \"fill\": \"#9b9580\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#575548",
+    "penWidth": 4,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            272.0,
+            694.0
+          ],
+          [
+            283.0,
+            669.0
+          ],
+          [
+            304.0,
+            652.0
+          ],
+          [
+            327.0,
+            649.0
+          ],
+          [
+            346.0,
+            663.0
+          ],
+          [
+            346.0,
+            688.0
+          ],
+          [
+            332.0,
+            710.0
+          ],
+          [
+            310.0,
+            727.0
+          ],
+          [
+            288.0,
+            724.0
+          ],
+          [
+            275.0,
+            713.0
+          ]
+        ],
+        "fill": "#777264"
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            283.0,
+            683.0
+          ],
+          [
+            304.0,
+            660.0
+          ],
+          [
+            330.0,
+            655.0
+          ],
+          [
+            341.0,
+            668.0
+          ],
+          [
+            316.0,
+            677.0
+          ],
+          [
+            293.0,
+            693.0
+          ]
+        ],
+        "fill": "#9b9580"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:30:02.008270Z"
+}

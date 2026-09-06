@@ -1,10 +1,10 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-COMPONENTS = ROOT / "workbench" / "frontend" / "src" / "components"
-EXAMPLE = ROOT / "workbench" / "workspaces" / "shared_library_system" / "knowledge" / "data" / "examples" / "resource_runner_example.json"
-ARTIFACT_EXAMPLE = ROOT / "workbench" / "workspaces" / "shared_library_system" / "knowledge" / "artifacts" / "examples" / "data_inspection_result.json"
+ROOT = Path(__file__).resolve().parents[2]
+COMPONENTS = ROOT / "frontend" / "apps" / "workbench" / "src" / "components"
+EXAMPLE = ROOT / "workspaces" / "shared_library_system" / "knowledge" / "data" / "examples" / "resource_runner_example.json"
+ARTIFACT_EXAMPLE = ROOT / "workspaces" / "shared_library_system" / "knowledge" / "artifacts" / "examples" / "data_inspection_result.json"
 
 
 def test_data_and_artifact_explorers_use_the_workspace_file_runner() -> None:

@@ -14,7 +14,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/arc3_random_player/arc3_random_player.py)
     (callable initialize_played_games)
   ))
   (parameters (

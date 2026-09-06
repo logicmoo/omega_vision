@@ -1,0 +1,156 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_29_lower-center-left-stone.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_29_lower-center-left-stone.provenance.json",
+  "createdAt": "2026-09-03T12:21:43.457905Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 733,
+    "height": 771
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_29_lower-center-left-stone.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_29_lower-center-left-stone.provenance.json"
+  },
+  "source": {
+    "objectName": "lower center-left stone"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 33,
+      "height": 35
+    },
+    "scale": 19,
+    "resizedDimensions": {
+      "width": 627,
+      "height": 665
+    },
+    "padding": {
+      "left": 53,
+      "top": 53,
+      "right": 53,
+      "bottom": 53
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_29_lower-center-left-stone.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 33,
+        "height": 35
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_lower-center-left-stone_b5cfa2cbaeee.png",
+          "geometryHash": "b5cfa2cbaeee015c6af6dd822035b31e2d8a92c82ac775c88abe4bd3f2f281be",
+          "traceVerified": true
+        },
+        "cropBox": [
+          282,
+          224,
+          315,
+          259
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              284,
+              241
+            ],
+            [
+              289,
+              231
+            ],
+            [
+              299,
+              226
+            ],
+            [
+              308,
+              232
+            ],
+            [
+              312,
+              243
+            ],
+            [
+              307,
+              253
+            ],
+            [
+              296,
+              257
+            ],
+            [
+              286,
+              252
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:43.397696Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_29_lower-center-left-stone.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 733,
+        "height": 771
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 33,
+          "height": 35
+        },
+        "scale": 19,
+        "resizedDimensions": {
+          "width": 627,
+          "height": 665
+        },
+        "padding": {
+          "left": 53,
+          "top": 53,
+          "right": 53,
+          "bottom": 53
+        }
+      },
+      "createdAt": "2026-09-03T12:21:43.457905Z"
+    }
+  ]
+}

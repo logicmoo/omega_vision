@@ -1,0 +1,70 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_30_small-right-mound-stone.png",
+  "subjectName": "small right mound stone",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#566059\",\n  \"penWidth\": 3,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          699.0,\n          669.0\n        ],\n        [\n          710.0,\n          669.0\n        ],\n        [\n          720.0,\n          685.0\n        ],\n        [\n          726.0,\n          708.0\n        ],\n        [\n          716.0,\n          719.0\n        ],\n        [\n          704.0,\n          710.0\n        ]\n      ],\n      \"fill\": \"#747b70\"\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          705.0,\n          673.0\n        ],\n        [\n          714.0,\n          681.0\n        ],\n        [\n          718.0,\n          696.0\n        ],\n        [\n          706.0,\n          699.0\n        ]\n      ],\n      \"fill\": \"#929587\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#566059",
+    "penWidth": 3,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            699.0,
+            669.0
+          ],
+          [
+            710.0,
+            669.0
+          ],
+          [
+            720.0,
+            685.0
+          ],
+          [
+            726.0,
+            708.0
+          ],
+          [
+            716.0,
+            719.0
+          ],
+          [
+            704.0,
+            710.0
+          ]
+        ],
+        "fill": "#747b70"
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            705.0,
+            673.0
+          ],
+          [
+            714.0,
+            681.0
+          ],
+          [
+            718.0,
+            696.0
+          ],
+          [
+            706.0,
+            699.0
+          ]
+        ],
+        "fill": "#929587"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:30:04.161907Z"
+}

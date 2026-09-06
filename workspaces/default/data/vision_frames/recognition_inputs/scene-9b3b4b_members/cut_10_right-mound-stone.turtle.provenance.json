@@ -1,0 +1,142 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_10_right-mound-stone.turtle.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_10_right-mound-stone.turtle.provenance.json",
+  "createdAt": "2026-09-03T12:29:46.406057Z",
+  "operation": "render_turtle_program",
+  "dimensions": {
+    "width": 26,
+    "height": 25
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_10_right-mound-stone.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_10_right-mound-stone.provenance.json"
+  },
+  "source": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_10_right-mound-stone.turtle.json"
+  },
+  "transform": {
+    "coordinateSpace": [
+      1000,
+      1000
+    ],
+    "sourceDimensions": {
+      "width": 26,
+      "height": 25
+    },
+    "renderScale": 1.0,
+    "commandCount": 19
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_10_right-mound-stone.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 26,
+        "height": 25
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-mound-stone_039374d8e73c.png",
+          "geometryHash": "039374d8e73ce485def1a6b83015766d9ec799f6d8df9d32e9caf9bb0dbbc4d3",
+          "traceVerified": true
+        },
+        "cropBox": [
+          445,
+          239,
+          471,
+          264
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              447,
+              248
+            ],
+            [
+              452,
+              241
+            ],
+            [
+              459,
+              242
+            ],
+            [
+              465,
+              249
+            ],
+            [
+              468,
+              258
+            ],
+            [
+              462,
+              262
+            ],
+            [
+              454,
+              257
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:45.675245Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_10_right-mound-stone.turtle.png",
+      "operation": "render_turtle_program",
+      "dimensions": {
+        "width": 26,
+        "height": 25
+      },
+      "transform": {
+        "coordinateSpace": [
+          1000,
+          1000
+        ],
+        "sourceDimensions": {
+          "width": 26,
+          "height": 25
+        },
+        "renderScale": 1.0,
+        "commandCount": 19
+      },
+      "createdAt": "2026-09-03T12:29:46.406057Z"
+    }
+  ]
+}

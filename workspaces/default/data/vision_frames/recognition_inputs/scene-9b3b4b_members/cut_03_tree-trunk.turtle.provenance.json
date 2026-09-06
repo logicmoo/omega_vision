@@ -1,0 +1,182 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_03_tree-trunk.turtle.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_03_tree-trunk.turtle.provenance.json",
+  "createdAt": "2026-09-03T12:28:55.266133Z",
+  "operation": "render_turtle_program",
+  "dimensions": {
+    "width": 114,
+    "height": 120
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_03_tree-trunk.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_03_tree-trunk.provenance.json"
+  },
+  "source": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_03_tree-trunk.turtle.json"
+  },
+  "transform": {
+    "coordinateSpace": [
+      1000,
+      1000
+    ],
+    "sourceDimensions": {
+      "width": 114,
+      "height": 120
+    },
+    "renderScale": 1.0,
+    "commandCount": 30
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_03_tree-trunk.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 114,
+        "height": 120
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_tree-trunk_81d220fae557.png",
+          "geometryHash": "81d220fae557cb92116770f16f596ee354c1aa00032a3bf8e64bc71876c1423a",
+          "traceVerified": true
+        },
+        "cropBox": [
+          256,
+          87,
+          370,
+          207
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              304,
+              91
+            ],
+            [
+              347,
+              89
+            ],
+            [
+              354,
+              111
+            ],
+            [
+              349,
+              132
+            ],
+            [
+              361,
+              155
+            ],
+            [
+              352,
+              174
+            ],
+            [
+              368,
+              193
+            ],
+            [
+              349,
+              202
+            ],
+            [
+              328,
+              191
+            ],
+            [
+              313,
+              205
+            ],
+            [
+              292,
+              195
+            ],
+            [
+              275,
+              204
+            ],
+            [
+              258,
+              193
+            ],
+            [
+              271,
+              178
+            ],
+            [
+              282,
+              166
+            ],
+            [
+              286,
+              145
+            ],
+            [
+              296,
+              126
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:41.891880Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_03_tree-trunk.turtle.png",
+      "operation": "render_turtle_program",
+      "dimensions": {
+        "width": 114,
+        "height": 120
+      },
+      "transform": {
+        "coordinateSpace": [
+          1000,
+          1000
+        ],
+        "sourceDimensions": {
+          "width": 114,
+          "height": 120
+        },
+        "renderScale": 1.0,
+        "commandCount": 30
+      },
+      "createdAt": "2026-09-03T12:28:55.266133Z"
+    }
+  ]
+}

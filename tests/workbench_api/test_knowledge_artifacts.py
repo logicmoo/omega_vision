@@ -1,12 +1,12 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_knowledge_artifacts_are_separate_from_the_active_run_explorer() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    explorer = (ROOT / "workbench" / "frontend" / "src" / "components" / "KnowledgeArtifactExplorer.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    explorer = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "KnowledgeArtifactExplorer.tsx").read_text(encoding="utf-8")
     compact = "".join(page.split())
 
     assert 'label:"Artifacts",view:"knowledgeArtifacts"' in compact
@@ -18,4 +18,4 @@ def test_knowledge_artifacts_are_separate_from_the_active_run_explorer() -> None
     assert "artifacts?|outputs?" in explorer
     assert "/asset?path=" in explorer
     assert 'view === "knowledgeArtifacts"' in page and '? "artifacts"' in page
-    assert (ROOT / "workbench" / "workspaces" / "shared_library_system" / "docs" / "artifacts.md").is_file()
+    assert (ROOT / "workspaces" / "shared_library_system" / "docs" / "artifacts.md").is_file()

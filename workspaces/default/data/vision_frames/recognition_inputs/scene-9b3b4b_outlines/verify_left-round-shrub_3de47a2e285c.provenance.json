@@ -1,0 +1,219 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-round-shrub_3de47a2e285c.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-round-shrub_3de47a2e285c.provenance.json",
+  "createdAt": "2026-09-03T12:21:38.757377Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left round shrub"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          69,
+          176
+        ],
+        [
+          87,
+          165
+        ],
+        [
+          103,
+          166
+        ],
+        [
+          111,
+          178
+        ],
+        [
+          109,
+          197
+        ],
+        [
+          96,
+          211
+        ],
+        [
+          75,
+          210
+        ],
+        [
+          63,
+          197
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 108,
+        "y": 490
+      },
+      {
+        "op": "line",
+        "x": 136,
+        "y": 460
+      },
+      {
+        "op": "line",
+        "x": 161,
+        "y": 462
+      },
+      {
+        "op": "line",
+        "x": 174,
+        "y": 496
+      },
+      {
+        "op": "line",
+        "x": 171,
+        "y": 549
+      },
+      {
+        "op": "line",
+        "x": 150,
+        "y": 588
+      },
+      {
+        "op": "line",
+        "x": 117,
+        "y": 585
+      },
+      {
+        "op": "line",
+        "x": 99,
+        "y": 549
+      }
+    ],
+    "geometryHash": "3de47a2e285c10567ca61719be769d8f252a87a8ba5e14875f97fa8a8d98bba1",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.9213
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-round-shrub_3de47a2e285c.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              69,
+              176
+            ],
+            [
+              87,
+              165
+            ],
+            [
+              103,
+              166
+            ],
+            [
+              111,
+              178
+            ],
+            [
+              109,
+              197
+            ],
+            [
+              96,
+              211
+            ],
+            [
+              75,
+              210
+            ],
+            [
+              63,
+              197
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 108,
+            "y": 490
+          },
+          {
+            "op": "line",
+            "x": 136,
+            "y": 460
+          },
+          {
+            "op": "line",
+            "x": 161,
+            "y": 462
+          },
+          {
+            "op": "line",
+            "x": 174,
+            "y": 496
+          },
+          {
+            "op": "line",
+            "x": 171,
+            "y": 549
+          },
+          {
+            "op": "line",
+            "x": 150,
+            "y": 588
+          },
+          {
+            "op": "line",
+            "x": 117,
+            "y": 585
+          },
+          {
+            "op": "line",
+            "x": 99,
+            "y": 549
+          }
+        ],
+        "geometryHash": "3de47a2e285c10567ca61719be769d8f252a87a8ba5e14875f97fa8a8d98bba1",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.9213
+      },
+      "createdAt": "2026-09-03T12:21:38.757377Z"
+    }
+  ]
+}

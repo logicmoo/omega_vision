@@ -1,0 +1,166 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_31_foreground-grass.turtle.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_31_foreground-grass.turtle.provenance.json",
+  "createdAt": "2026-09-03T12:30:04.742517Z",
+  "operation": "render_turtle_program",
+  "dimensions": {
+    "width": 640,
+    "height": 105
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_31_foreground-grass.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_31_foreground-grass.provenance.json"
+  },
+  "source": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_31_foreground-grass.turtle.json"
+  },
+  "transform": {
+    "coordinateSpace": [
+      1000,
+      1000
+    ],
+    "sourceDimensions": {
+      "width": 640,
+      "height": 105
+    },
+    "renderScale": 1.0,
+    "commandCount": 5
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_31_foreground-grass.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 640,
+        "height": 105
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_foreground-grass_a25482cec7a7.png",
+          "geometryHash": "a25482cec7a74d5df76228644609b715eaea96f6111cb9e84e914c97685ea761",
+          "traceVerified": true
+        },
+        "cropBox": [
+          0,
+          255,
+          640,
+          360
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              0,
+              263
+            ],
+            [
+              65,
+              257
+            ],
+            [
+              127,
+              265
+            ],
+            [
+              193,
+              276
+            ],
+            [
+              256,
+              286
+            ],
+            [
+              320,
+              291
+            ],
+            [
+              384,
+              285
+            ],
+            [
+              448,
+              278
+            ],
+            [
+              511,
+              269
+            ],
+            [
+              575,
+              263
+            ],
+            [
+              639,
+              263
+            ],
+            [
+              639,
+              359
+            ],
+            [
+              0,
+              359
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:44.070882Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_31_foreground-grass.turtle.png",
+      "operation": "render_turtle_program",
+      "dimensions": {
+        "width": 640,
+        "height": 105
+      },
+      "transform": {
+        "coordinateSpace": [
+          1000,
+          1000
+        ],
+        "sourceDimensions": {
+          "width": 640,
+          "height": 105
+        },
+        "renderScale": 1.0,
+        "commandCount": 5
+      },
+      "createdAt": "2026-09-03T12:30:04.742517Z"
+    }
+  ]
+}

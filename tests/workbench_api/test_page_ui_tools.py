@@ -1,8 +1,8 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-FRONTEND = ROOT / "workbench" / "frontend" / "src"
+ROOT = Path(__file__).resolve().parents[2]
+FRONTEND = ROOT / "frontend" / "apps" / "workbench" / "src"
 
 
 def test_active_shell_places_shared_ui_tools_on_every_page():
@@ -74,7 +74,7 @@ def test_chat_from_and_to_allow_explicit_null_endpoints():
 
 
 def test_ui_reload_is_explicit_not_file_watched():
-    vite = (ROOT / "workbench" / "frontend" / "vite.config.ts").read_text(encoding="utf-8")
+    vite = (ROOT / "frontend" / "apps" / "workbench" / "vite.config.ts").read_text(encoding="utf-8")
     page = (FRONTEND / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     assert "hmr: false" in vite
     assert "workbench:surgical-ui-change" not in vite
@@ -85,7 +85,7 @@ def test_restart_button_reports_pending_lifecycle_phase():
     shell = (FRONTEND / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     lifecycle = (FRONTEND / "lib" / "uiRestartLifecycle.ts").read_text(encoding="utf-8")
     activity = (FRONTEND / "lib" / "pageProcessActivity.ts").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     assert "useUiRestartStatus" in shell
     assert "getUiRestartStatus().pending" in shell
     assert "Saving UI state…" in shell

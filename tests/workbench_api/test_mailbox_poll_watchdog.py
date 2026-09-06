@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "mailbox_poll_watchdog.py"
+MODULE_PATH = Path(__file__).parents[2] / "scripts" / "mailbox_poll_watchdog.py"
 SPEC = importlib.util.spec_from_file_location("mailbox_poll_watchdog", MODULE_PATH)
 assert SPEC and SPEC.loader
 watchdog = importlib.util.module_from_spec(SPEC)

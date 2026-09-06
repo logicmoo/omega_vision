@@ -1,0 +1,148 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_30_small-right-mound-stone.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_30_small-right-mound-stone.provenance.json",
+  "createdAt": "2026-09-03T12:21:43.777154Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 736,
+    "height": 766
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_30_small-right-mound-stone.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_30_small-right-mound-stone.provenance.json"
+  },
+  "source": {
+    "objectName": "small right mound stone"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 21,
+      "height": 22
+    },
+    "scale": 30,
+    "resizedDimensions": {
+      "width": 630,
+      "height": 660
+    },
+    "padding": {
+      "left": 53,
+      "top": 53,
+      "right": 53,
+      "bottom": 53
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_30_small-right-mound-stone.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 21,
+        "height": 22
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_small-right-mound-stone_c64bfd481f1e.png",
+          "geometryHash": "c64bfd481f1e9d9d4dfbeed1b64da6f6362eaf5d0f64b67b23d13b3dd946bb3b",
+          "traceVerified": true
+        },
+        "cropBox": [
+          445,
+          238,
+          466,
+          260
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              447,
+              243
+            ],
+            [
+              454,
+              240
+            ],
+            [
+              460,
+              246
+            ],
+            [
+              464,
+              254
+            ],
+            [
+              458,
+              258
+            ],
+            [
+              450,
+              255
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:43.719520Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_30_small-right-mound-stone.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 736,
+        "height": 766
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 21,
+          "height": 22
+        },
+        "scale": 30,
+        "resizedDimensions": {
+          "width": 630,
+          "height": 660
+        },
+        "padding": {
+          "left": 53,
+          "top": 53,
+          "right": 53,
+          "bottom": 53
+        }
+      },
+      "createdAt": "2026-09-03T12:21:43.777154Z"
+    }
+  ]
+}

@@ -5,8 +5,8 @@ from pathlib import Path
 from resource_store import get_filesystem_provider
 
 
-ROOT = Path(__file__).resolve().parents[1]
-WORKSPACES = ROOT / "workbench" / "workspaces"
+ROOT = Path(__file__).resolve().parents[2]
+WORKSPACES = ROOT / "workspaces"
 
 IMPLEMENTED_KIND_BY_CHILD = {
     "representation_datatype": "semantic_datatype",

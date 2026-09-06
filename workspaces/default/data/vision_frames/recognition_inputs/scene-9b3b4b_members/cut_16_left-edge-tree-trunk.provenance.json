@@ -1,0 +1,164 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_16_left-edge-tree-trunk.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_16_left-edge-tree-trunk.provenance.json",
+  "createdAt": "2026-09-03T12:21:37.342551Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 26,
+    "height": 50
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left edge tree trunk"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-edge-tree-trunk_8672e3efe56c.png",
+      "geometryHash": "8672e3efe56ce9d1b50a747a5fcf111c7f161578ab8a0a6da6971c531fa43370",
+      "traceVerified": true
+    },
+    "cropBox": [
+      0,
+      188,
+      26,
+      238
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          0,
+          191
+        ],
+        [
+          14,
+          190
+        ],
+        [
+          23,
+          204
+        ],
+        [
+          20,
+          226
+        ],
+        [
+          12,
+          235
+        ],
+        [
+          0,
+          235
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_16_left-edge-tree-trunk.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 26,
+        "height": 50
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-edge-tree-trunk_8672e3efe56c.png",
+          "geometryHash": "8672e3efe56ce9d1b50a747a5fcf111c7f161578ab8a0a6da6971c531fa43370",
+          "traceVerified": true
+        },
+        "cropBox": [
+          0,
+          188,
+          26,
+          238
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              0,
+              191
+            ],
+            [
+              14,
+              190
+            ],
+            [
+              23,
+              204
+            ],
+            [
+              20,
+              226
+            ],
+            [
+              12,
+              235
+            ],
+            [
+              0,
+              235
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:37.342551Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_16_left-edge-tree-trunk.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_16_left-edge-tree-trunk.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_16_left-edge-tree-trunk.turtle.provenance.json"
+  }
+}

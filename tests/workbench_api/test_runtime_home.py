@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_PATH = ROOT / "scripts" / "_runtime.py"
 _RUNTIME_ENV_NAMES = (
     "ARC3_RUNTIME_HOME",

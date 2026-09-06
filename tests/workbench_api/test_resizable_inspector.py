@@ -1,12 +1,12 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_workspace_inspector_has_persistent_drag_resize_support() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    styles = (ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    styles = (ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css").read_text(encoding="utf-8")
     for token in ('role="separator"', 'aria-label="Resize Documentation"', "beginInspectorResize", "workbench.inspectorWidth", "onDoubleClick"):
         assert token in page
     assert "var(--inspector-width)" in styles
@@ -15,7 +15,7 @@ def test_workspace_inspector_has_persistent_drag_resize_support() -> None:
 
 
 def test_video_import_temporarily_minimizes_both_side_frames() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
 
     assert "previousShellViewRef" in page
     assert 'if (view === "videoImport")' in page

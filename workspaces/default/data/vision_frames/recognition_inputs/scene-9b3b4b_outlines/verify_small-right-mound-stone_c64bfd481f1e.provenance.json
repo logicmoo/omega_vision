@@ -1,0 +1,183 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_small-right-mound-stone_c64bfd481f1e.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_small-right-mound-stone_c64bfd481f1e.provenance.json",
+  "createdAt": "2026-09-03T12:21:43.678543Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "small right mound stone"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          447,
+          243
+        ],
+        [
+          454,
+          240
+        ],
+        [
+          460,
+          246
+        ],
+        [
+          464,
+          254
+        ],
+        [
+          458,
+          258
+        ],
+        [
+          450,
+          255
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 699,
+        "y": 669
+      },
+      {
+        "op": "line",
+        "x": 710,
+        "y": 669
+      },
+      {
+        "op": "line",
+        "x": 720,
+        "y": 685
+      },
+      {
+        "op": "line",
+        "x": 726,
+        "y": 708
+      },
+      {
+        "op": "line",
+        "x": 716,
+        "y": 719
+      },
+      {
+        "op": "line",
+        "x": 704,
+        "y": 710
+      }
+    ],
+    "geometryHash": "c64bfd481f1e9d9d4dfbeed1b64da6f6362eaf5d0f64b67b23d13b3dd946bb3b",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.9108
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_small-right-mound-stone_c64bfd481f1e.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              447,
+              243
+            ],
+            [
+              454,
+              240
+            ],
+            [
+              460,
+              246
+            ],
+            [
+              464,
+              254
+            ],
+            [
+              458,
+              258
+            ],
+            [
+              450,
+              255
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 699,
+            "y": 669
+          },
+          {
+            "op": "line",
+            "x": 710,
+            "y": 669
+          },
+          {
+            "op": "line",
+            "x": 720,
+            "y": 685
+          },
+          {
+            "op": "line",
+            "x": 726,
+            "y": 708
+          },
+          {
+            "op": "line",
+            "x": 716,
+            "y": 719
+          },
+          {
+            "op": "line",
+            "x": 704,
+            "y": 710
+          }
+        ],
+        "geometryHash": "c64bfd481f1e9d9d4dfbeed1b64da6f6362eaf5d0f64b67b23d13b3dd946bb3b",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.9108
+      },
+      "createdAt": "2026-09-03T12:21:43.678543Z"
+    }
+  ]
+}

@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 if str(SERVER) not in sys.path:
     sys.path.insert(0, str(SERVER))
 
@@ -13,9 +13,9 @@ from representation_planner import plan_representation_conversion
 from resource_relationships import relationship_ids
 
 
-SHARED = ROOT / "workbench" / "workspaces" / "shared_library_system"
-ARC3 = ROOT / "workbench" / "workspaces" / "shared_library_arc3"
-ARC3_OBSERVE = ROOT / "workbench" / "workspaces" / "vision_observe_choose_record"
+SHARED = ROOT / "workspaces" / "shared_library_system"
+ARC3 = ROOT / "workspaces" / "shared_library_arc3"
+ARC3_OBSERVE = ROOT / "workspaces" / "vision_observe_choose_record"
 
 
 def test_image_is_abstract_datatype_with_multiple_representations() -> None:

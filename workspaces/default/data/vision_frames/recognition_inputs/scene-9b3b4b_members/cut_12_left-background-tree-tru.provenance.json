@@ -1,0 +1,292 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_12_left-background-tree-tru.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_12_left-background-tree-tru.provenance.json",
+  "createdAt": "2026-09-03T12:14:46.334986Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 124,
+    "height": 89
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left background tree trunks"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-tree-tru_5661a11a8421.png",
+      "geometryHash": "5661a11a8421cc0646d432d14aabc56746ac98e9ee174983d17f0c9b74134e16",
+      "traceVerified": true
+    },
+    "cropBox": [
+      104,
+      124,
+      228,
+      213
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          105,
+          157
+        ],
+        [
+          110,
+          157
+        ],
+        [
+          110,
+          208
+        ],
+        [
+          105,
+          211
+        ]
+      ],
+      [
+        [
+          116,
+          156
+        ],
+        [
+          121,
+          157
+        ],
+        [
+          120,
+          204
+        ],
+        [
+          115,
+          208
+        ]
+      ],
+      [
+        [
+          128,
+          153
+        ],
+        [
+          134,
+          153
+        ],
+        [
+          133,
+          207
+        ],
+        [
+          127,
+          211
+        ]
+      ],
+      [
+        [
+          196,
+          128
+        ],
+        [
+          205,
+          130
+        ],
+        [
+          207,
+          188
+        ],
+        [
+          199,
+          195
+        ]
+      ],
+      [
+        [
+          218,
+          126
+        ],
+        [
+          225,
+          127
+        ],
+        [
+          218,
+          188
+        ],
+        [
+          211,
+          193
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_12_left-background-tree-tru.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 124,
+        "height": 89
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-tree-tru_5661a11a8421.png",
+          "geometryHash": "5661a11a8421cc0646d432d14aabc56746ac98e9ee174983d17f0c9b74134e16",
+          "traceVerified": true
+        },
+        "cropBox": [
+          104,
+          124,
+          228,
+          213
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              105,
+              157
+            ],
+            [
+              110,
+              157
+            ],
+            [
+              110,
+              208
+            ],
+            [
+              105,
+              211
+            ]
+          ],
+          [
+            [
+              116,
+              156
+            ],
+            [
+              121,
+              157
+            ],
+            [
+              120,
+              204
+            ],
+            [
+              115,
+              208
+            ]
+          ],
+          [
+            [
+              128,
+              153
+            ],
+            [
+              134,
+              153
+            ],
+            [
+              133,
+              207
+            ],
+            [
+              127,
+              211
+            ]
+          ],
+          [
+            [
+              196,
+              128
+            ],
+            [
+              205,
+              130
+            ],
+            [
+              207,
+              188
+            ],
+            [
+              199,
+              195
+            ]
+          ],
+          [
+            [
+              218,
+              126
+            ],
+            [
+              225,
+              127
+            ],
+            [
+              218,
+              188
+            ],
+            [
+              211,
+              193
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:46.334986Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_12_left-background-tree-tru.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_12_left-background-tree-tru.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_12_left-background-tree-tru.turtle.provenance.json"
+  }
+}

@@ -1,0 +1,40 @@
+[
+  {
+    "title": "Big Buck Bunny (Blender, CC-BY)",
+    "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+    "note": "Animated short, bright scenes"
+  },
+  {
+    "title": "Elephants Dream (Blender, CC-BY)",
+    "url": "https://www.youtube.com/watch?v=TLkA0RELQ1g",
+    "note": "First open movie"
+  },
+  {
+    "title": "Tears of Steel (Blender, CC-BY)",
+    "url": "https://www.youtube.com/watch?v=R6MlUcmOul8",
+    "note": "Live action + VFX open movie"
+  },
+  {
+    "title": "Sintel (Blender, CC-BY)",
+    "url": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+    "note": "Animated short with real cuts and named characters",
+    "downloadedAt": "2026-09-02T11:35:14.140050Z",
+    "downloadedPath": "data/video_import/sintel-blender-cc-by/video.mp4",
+    "extractions": [
+      {
+        "kind": "scenes",
+        "count": 403,
+        "threshold": 28.0,
+        "elapsedSeconds": 65.1,
+        "at": "2026-09-02T11:39:06.822834Z"
+      },
+      {
+        "kind": "scenes",
+        "count": 403,
+        "threshold": 28.0,
+        "elapsedSeconds": 75.3,
+        "at": "2026-09-02T11:46:20.081600Z"
+      }
+    ]
+  }
+]

@@ -323,9 +323,9 @@ def test_generic_gallery_resource_preserves_source_for_humans_and_ai() -> None:
 
 
 def test_workbench_exposes_insertable_gallery_and_human_renderer() -> None:
-    root = Path(__file__).resolve().parents[1]
-    page = (root / "workbench/frontend/src/pages/FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    playground = (root / "workbench/frontend/src/components/OperationPlayground.tsx").read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[2]
+    page = (root / "frontend/apps/workbench/src/pages/FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    playground = (root / "frontend/apps/workbench/src/components/OperationPlayground.tsx").read_text(encoding="utf-8")
     assert "INSERT OPERATION AFTER SELECTED STEP" in page
     assert "insertOperationStep" in page
     assert "completedPlaygrounds" in page
@@ -401,8 +401,7 @@ def test_player_persists_catalog_events_history_summary_and_learning(tmp_path: P
 
 def test_random_player_workspace_is_discoverable_and_operation_backed(tmp_path: Path) -> None:
     root = (
-        Path(__file__).resolve().parents[1]
-        / "workbench"
+        Path(__file__).resolve().parents[2]
         / "workspaces"
         / "arc3_random_player"
     )

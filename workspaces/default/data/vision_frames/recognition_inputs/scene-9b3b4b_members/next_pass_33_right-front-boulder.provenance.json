@@ -1,0 +1,156 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_33_right-front-boulder.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_33_right-front-boulder.provenance.json",
+  "createdAt": "2026-09-03T12:21:45.690284Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 844,
+    "height": 732
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_33_right-front-boulder.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_33_right-front-boulder.provenance.json"
+  },
+  "source": {
+    "objectName": "right front boulder"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 91,
+      "height": 77
+    },
+    "scale": 8,
+    "resizedDimensions": {
+      "width": 728,
+      "height": 616
+    },
+    "padding": {
+      "left": 58,
+      "top": 58,
+      "right": 58,
+      "bottom": 58
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_33_right-front-boulder.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 91,
+        "height": 77
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-front-boulder_0ffa76e77daa.png",
+          "geometryHash": "0ffa76e77daa16f908afe007a7f1dda22cee3ad570a4086b995f78e49aef1f65",
+          "traceVerified": true
+        },
+        "cropBox": [
+          549,
+          185,
+          640,
+          262
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              551,
+              226
+            ],
+            [
+              561,
+              205
+            ],
+            [
+              579,
+              190
+            ],
+            [
+              606,
+              187
+            ],
+            [
+              630,
+              195
+            ],
+            [
+              639,
+              211
+            ],
+            [
+              639,
+              259
+            ],
+            [
+              551,
+              259
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:45.609681Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_33_right-front-boulder.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 844,
+        "height": 732
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 91,
+          "height": 77
+        },
+        "scale": 8,
+        "resizedDimensions": {
+          "width": 728,
+          "height": 616
+        },
+        "padding": {
+          "left": 58,
+          "top": 58,
+          "right": 58,
+          "bottom": 58
+        }
+      },
+      "createdAt": "2026-09-03T12:21:45.690284Z"
+    }
+  ]
+}

@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 if str(SERVER) not in sys.path:
     sys.path.insert(0, str(SERVER))
 
@@ -136,12 +136,12 @@ def test_three_column_page_source_requires_its_own_json_inspector() -> None:
 
 
 def test_active_ui_requests_shell_snapshot() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     assert source.count("/snapshot?scope=shell") == 3
 
 
 def test_workspace_chooser_exposes_resource_counting_toggle_state() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     assert "WORKSPACE_RESOURCE_COUNTING_STORAGE_KEY" in source
     assert "workbench.workspaceResourceCountingEnabled" in source
     assert "WORKSPACE RESOURCE COUNTING DISABLED" in source
@@ -216,14 +216,14 @@ def test_direct_workspace_file_resolution_skips_catalog_counts(tmp_path: Path, m
 
 
 def test_workspace_file_endpoint_uses_lightweight_resolution() -> None:
-    source = (ROOT / "workbench" / "server" / "workspace_api.py").read_text(encoding="utf-8")
+    source = (ROOT / "python" / "workbench_api_server" / "workspace_api.py").read_text(encoding="utf-8")
     endpoint = source.split("def read_workspace_file", 1)[1].split("@router.get", 1)[0]
     assert "_resolve_workspace_without_counts(workspace_id)" in endpoint
     assert "_resolve_workspace(workspace_id)" not in endpoint
 
 
 def test_shell_snapshot_endpoint_uses_lightweight_resolution() -> None:
-    source = (ROOT / "workbench" / "server" / "workspace_api.py").read_text(encoding="utf-8")
+    source = (ROOT / "python" / "workbench_api_server" / "workspace_api.py").read_text(encoding="utf-8")
     endpoint = source.split("def workspace_snapshot", 1)[1].split("def _collect_shell_files", 1)[0]
     assert "_resolve_workspace_without_counts(workspace_id)" in endpoint
     assert "_resolve_workspace(workspace_id)" not in endpoint

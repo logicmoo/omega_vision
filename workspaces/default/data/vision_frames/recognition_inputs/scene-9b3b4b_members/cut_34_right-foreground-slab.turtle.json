@@ -1,0 +1,62 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_34_right-foreground-slab.png",
+  "subjectName": "right foreground slab",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#514f4a\",\n  \"penWidth\": 4,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          901.0,\n          663.0\n        ],\n        [\n          945.0,\n          630.0\n        ],\n        [\n          1000.0,\n          624.0\n        ],\n        [\n          1000.0,\n          719.0\n        ],\n        [\n          901.0,\n          721.0\n        ]\n      ],\n      \"fill\": \"#66635d\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          910.0,\n          675.0\n        ],\n        [\n          952.0,\n          648.0\n        ],\n        [\n          1000.0,\n          647.0\n        ]\n      ],\n      \"fill\": \"transparent\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#514f4a",
+    "penWidth": 4,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            901.0,
+            663.0
+          ],
+          [
+            945.0,
+            630.0
+          ],
+          [
+            1000.0,
+            624.0
+          ],
+          [
+            1000.0,
+            719.0
+          ],
+          [
+            901.0,
+            721.0
+          ]
+        ],
+        "fill": "#66635d"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            910.0,
+            675.0
+          ],
+          [
+            952.0,
+            648.0
+          ],
+          [
+            1000.0,
+            647.0
+          ]
+        ],
+        "fill": "transparent"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:30:07.385103Z"
+}

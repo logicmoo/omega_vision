@@ -7,8 +7,8 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "workbench" / "server" / "generative_vision" / "prolog"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "python" / "workbench_api_server" / "generative_vision" / "prolog"))
 
 from omega_vision.perception import symbolic_arc as sa  # noqa: E402
 

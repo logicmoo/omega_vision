@@ -1,0 +1,148 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_15_right-stone-slab.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_15_right-stone-slab.provenance.json",
+  "createdAt": "2026-09-03T12:14:47.344898Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 844,
+    "height": 516
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_15_right-stone-slab.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_15_right-stone-slab.provenance.json"
+  },
+  "source": {
+    "objectName": "right stone slab"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 91,
+      "height": 50
+    },
+    "scale": 8,
+    "resizedDimensions": {
+      "width": 728,
+      "height": 400
+    },
+    "padding": {
+      "left": 58,
+      "top": 58,
+      "right": 58,
+      "bottom": 58
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_15_right-stone-slab.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 91,
+        "height": 50
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-stone-slab_557856e24d35.png",
+          "geometryHash": "557856e24d35ac4a36b0f507621ff245261fafa95b6cbb6ce86e83e704449088",
+          "traceVerified": true
+        },
+        "cropBox": [
+          549,
+          212,
+          640,
+          262
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              551,
+              259
+            ],
+            [
+              558,
+              241
+            ],
+            [
+              568,
+              226
+            ],
+            [
+              581,
+              215
+            ],
+            [
+              639,
+              214
+            ],
+            [
+              639,
+              259
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:47.259786Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_15_right-stone-slab.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 844,
+        "height": 516
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 91,
+          "height": 50
+        },
+        "scale": 8,
+        "resizedDimensions": {
+          "width": 728,
+          "height": 400
+        },
+        "padding": {
+          "left": 58,
+          "top": 58,
+          "right": 58,
+          "bottom": 58
+        }
+      },
+      "createdAt": "2026-09-03T12:14:47.344898Z"
+    }
+  ]
+}

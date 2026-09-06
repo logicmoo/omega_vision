@@ -1,8 +1,8 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "workbench/frontend/src/components/Arc3PromptPrologPage.tsx"
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "frontend/packages/omega_vision_ui/src/components/Arc3PromptPrologPage.tsx"
 
 
 def test_two_image_prolog_has_overlay_gap_loop_contract() -> None:

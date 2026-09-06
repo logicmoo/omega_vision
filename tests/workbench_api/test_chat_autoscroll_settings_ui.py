@@ -1,9 +1,9 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "workbench" / "frontend" / "src" / "components" / "ChatConversation.tsx"
-STYLES = ROOT / "workbench" / "frontend" / "src" / "styles" / "chat.css"
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ChatConversation.tsx"
+STYLES = ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "chat.css"
 
 
 def test_chat_autoscroll_supports_global_policy_and_stream_override() -> None:

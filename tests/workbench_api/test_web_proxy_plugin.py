@@ -9,8 +9,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 if str(SERVER) not in sys.path:
     sys.path.insert(0, str(SERVER))
 
@@ -195,7 +195,7 @@ def test_chat_page_queries_every_declared_mailbox_server() -> None:
     queries each declared endpoint instead of only ws_collab."""
 
     source = (
-        ROOT / "workbench" / "frontend" / "src" / "components" / "ChatConversation.tsx"
+        ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ChatConversation.tsx"
     ).read_text(encoding="utf-8")
     assert "discoverMailboxEndpoints" in source
     assert "plugin.mailboxEndpoint" in source
@@ -204,7 +204,7 @@ def test_chat_page_queries_every_declared_mailbox_server() -> None:
     assert "mailboxApiBase(option)" in source
     for manifest_name in ("ws_collab", "mailbox_chat", "emullm"):
         manifest = json.loads(
-            (ROOT / "workbench" / "plugins" / manifest_name / "plugin.json").read_text(encoding="utf-8"),
+            (ROOT / "plugins" / manifest_name / "plugin.json").read_text(encoding="utf-8"),
         )
         endpoint = manifest["mailboxEndpoint"]
         assert endpoint["path"].startswith("/"), manifest_name
@@ -229,8 +229,8 @@ def test_plugin_scan_policy_validation() -> None:
 
 
 def test_plugins_navigation_and_page_are_wired() -> None:
-    source = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "components" / "PluginManagerPage.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "PluginManagerPage.tsx").read_text(encoding="utf-8")
     assert 'group: "PLUGINS"' in source
     assert '{ label: "Plugins", view: "plugins"' in source
     assert 'view === "plugins" && <PluginManagerPage />' in source
@@ -300,7 +300,7 @@ def test_plugin_init_mounts_the_requested_path_through_web_proxy() -> None:
     assert all(result["applied"] for result in results), results
     assert results[0]["command"] == "web_proxy"
     manifest = json.loads(
-        (ROOT / "workbench" / "plugins" / "web_proxy" / "plugin.json").read_text(encoding="utf-8")
+        (ROOT / "plugins" / "web_proxy" / "plugin.json").read_text(encoding="utf-8")
     )
     assert any(mount["path"] == "/ws_collab" for mount in manifest["mounts"])
     assert mounted.status_code == 200
@@ -336,7 +336,7 @@ def test_web_proxy_admin_reports_initialization_requirements() -> None:
 
 def test_web_proxy_admin_rejects_an_invalid_timeout_and_keeps_the_manifest() -> None:
     app_module = importlib.import_module("app")
-    manifest = ROOT / "workbench" / "plugins" / "web_proxy" / "plugin.json"
+    manifest = ROOT / "plugins" / "web_proxy" / "plugin.json"
     before = manifest.read_text(encoding="utf-8")
     with TestClient(app_module.app) as client:
         response = client.put(
@@ -348,7 +348,7 @@ def test_web_proxy_admin_rejects_an_invalid_timeout_and_keeps_the_manifest() -> 
 
 def test_web_proxy_admin_saves_settings_to_plain_json_not_a_metta_sibling() -> None:
     app_module = importlib.import_module("app")
-    directory = ROOT / "workbench" / "plugins" / "web_proxy"
+    directory = ROOT / "plugins" / "web_proxy"
     manifest = directory / "plugin.json"
     before = manifest.read_text(encoding="utf-8")
     try:
@@ -368,8 +368,8 @@ def test_web_proxy_admin_saves_settings_to_plain_json_not_a_metta_sibling() -> N
 
 
 def test_plugin_admin_panel_renders_the_descriptor_natively() -> None:
-    panel = (ROOT / "workbench" / "frontend" / "src" / "components" / "PluginAdminPanel.tsx").read_text(encoding="utf-8")
-    page = (ROOT / "workbench" / "frontend" / "src" / "components" / "PluginManagerPage.tsx").read_text(encoding="utf-8")
+    panel = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "PluginAdminPanel.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "PluginManagerPage.tsx").read_text(encoding="utf-8")
     assert "Initialize plugin" in panel
     assert "`${adminPath}/settings`" in panel
     assert "`${adminPath}/initialize`" in panel
@@ -383,7 +383,7 @@ def test_vite_forwards_proxy_http_and_websockets_to_the_backend() -> None:
     """The dev/preview proxy is generated from the plugin manifests, and anything
     the web server does not own falls back to the API."""
 
-    source = (ROOT / "workbench" / "frontend" / "vite.config.ts").read_text(encoding="utf-8")
+    source = (ROOT / "frontend" / "apps" / "workbench" / "vite.config.ts").read_text(encoding="utf-8")
     assert "pluginProxyPrefixes" in source
     assert "manifest.routePrefix" in source
     assert "manifest.mounts" in source
@@ -395,7 +395,7 @@ def test_vite_forwards_proxy_http_and_websockets_to_the_backend() -> None:
 def test_every_plugin_route_prefix_uses_the_plugin_identifier() -> None:
     """A plugin's route prefix matches its id, so links stay predictable."""
 
-    for manifest_path in sorted((ROOT / "workbench" / "plugins").glob("*/plugin.json")):
+    for manifest_path in sorted((ROOT / "plugins").glob("*/plugin.json")):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
         assert manifest["routePrefix"] == f"/{manifest['id']}", manifest_path
 

@@ -48,7 +48,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable discover_games)
   ))
   (parameters (
@@ -127,7 +127,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable curate_viewable_gallery)
   ))
   (parameters (
@@ -152,7 +152,7 @@
  ))
   (description "Start this workflow run with an empty ordered list of played ARC game IDs.")
   (implementation python.callable) (inputs ()) (outputs ((played_games Array)))
-  (python ((importMode file) (file python/arc3_random_player.py) (callable initialize_played_games)))
+  (python ((importMode file) (file workspaces/shared_library_arc3/arc3_random_player.py) (callable initialize_played_games)))
   (parameters ((outputBinding played_games)))
 )
 (
@@ -162,7 +162,7 @@
  ))
   (description "Remove games already selected in this run; begin a new cycle only after the catalog is exhausted.")
   (implementation python.callable) (inputs ((games Array) (played_games Array))) (outputs ((games Array)))
-  (python ((importMode file) (file python/arc3_random_player.py) (callable filter_unplayed_games)))
+  (python ((importMode file) (file workspaces/shared_library_arc3/arc3_random_player.py) (callable filter_unplayed_games)))
   (parameters ((outputBinding games)))
 )
 (
@@ -172,7 +172,7 @@
  ))
   (description "Append the selected game ID to the ordered played-games list without duplicates.")
   (implementation python.callable) (inputs ((played_games Array) (game Any))) (outputs ((played_games Array)))
-  (python ((importMode file) (file python/arc3_random_player.py) (callable remember_played_game)))
+  (python ((importMode file) (file workspaces/shared_library_arc3/arc3_random_player.py) (callable remember_played_game)))
   (parameters ((outputBinding played_games)))
 )
 (
@@ -247,7 +247,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable select_random_game)
   ))
   (delegatesTo collection.random_list_element)
@@ -362,7 +362,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable load_game_metta_data)
   ))
   (implements (
@@ -435,7 +435,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable initialize_selected_game)
   ))
   (implements (
@@ -510,7 +510,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable reset_selected_game)
   ))
   (example_execute (
@@ -614,7 +614,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable pick_random_move_and_execute)
   ))
   (example_execute (
@@ -697,7 +697,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable capture_observation)
   ))
   (parameters (
@@ -793,7 +793,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable choose_action)
   ))
   (parameters (
@@ -968,7 +968,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable execute_action)
   ))
   (parameters (
@@ -1005,7 +1005,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable assess_transition)
   ))
   (parameters (
@@ -1129,7 +1129,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable update_learning_memory)
   ))
   (parameters (
@@ -1272,7 +1272,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable should_rotate)
   ))
   (parameters (
@@ -1354,7 +1354,7 @@
   ))
   (python (
     (importMode file)
-    (file python/arc3_random_player.py)
+    (file workspaces/shared_library_arc3/arc3_random_player.py)
     (callable run_random_arc3_session)
   ))
   (example_execute (

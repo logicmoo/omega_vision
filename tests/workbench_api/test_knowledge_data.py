@@ -8,8 +8,8 @@ import pytest
 from fastapi import HTTPException
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 import workspace_api  # noqa: E402
@@ -43,8 +43,8 @@ def test_binary_data_import_requires_explicit_overwrite(tmp_path: Path, monkeypa
 
 
 def test_knowledge_data_page_imports_selects_and_previews_workspace_values() -> None:
-    page = (ROOT / "workbench" / "frontend" / "src" / "components" / "KnowledgeDataExplorer.tsx").read_text(encoding="utf-8")
-    shell = (ROOT / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    page = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "KnowledgeDataExplorer.tsx").read_text(encoding="utf-8")
+    shell = (ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
 
     assert 'busy?"Importing…":"Import Data"' in page
     assert 'type="file" multiple' in page

@@ -1,9 +1,9 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-HISTORY = ROOT / "workbench" / "frontend" / "src" / "components" / "RuntimeHistoryView.tsx"
-STYLES = ROOT / "workbench" / "frontend" / "src" / "styles" / "workbench.css"
+ROOT = Path(__file__).resolve().parents[2]
+HISTORY = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "RuntimeHistoryView.tsx"
+STYLES = ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "workbench.css"
 
 
 def test_runtime_topology_projects_declared_while_edges_and_persisted_iterations() -> None:

@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 sys.path.insert(0, str(SERVER))
 
 from backend_library import load_workspace_backend_records  # noqa: E402
@@ -25,7 +25,7 @@ from workspace_credentials import (  # noqa: E402
 
 
 def test_supported_router_backends_load_without_retired_development_routers() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     backends = {
         str((record.get("document") or {}).get("id")): record.get("document") or {}
         for record in load_workspace_backend_records(shared)
@@ -80,8 +80,8 @@ def test_supported_router_backends_load_without_retired_development_routers() ->
     assert omniroute_model["model"] == "auto/best-free"
 
 def test_windows_clawrouter_launcher_uses_the_workbench_port_and_free_route() -> None:
-    launcher = (ROOT / "workbench" / "scripts" / "run_clawrouter.bat").read_text(encoding="utf-8")
-    demo = (ROOT / "workbench" / "run_demo.bat").read_text(encoding="utf-8")
+    launcher = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_clawrouter.bat").read_text(encoding="utf-8")
+    demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
     assert 'if exist "C:\\snet\\setkeys.bat" call "C:\\snet\\setkeys.bat"' in launcher
     assert "@blockrun/clawrouter --port %CLAWROUTER_PORT%" in launcher
     assert "Default workbench model: blockrun/free" in launcher
@@ -90,9 +90,9 @@ def test_windows_clawrouter_launcher_uses_the_workbench_port_and_free_route() ->
 
 
 def test_windows_omniroute_launcher_uses_the_official_gateway_and_bootstrap() -> None:
-    launcher = (ROOT / "workbench" / "scripts" / "run_omniroute.bat").read_text(encoding="utf-8")
-    bootstrap = (ROOT / "workbench" / "scripts" / "bootstrap_omniroute.py").read_text(encoding="utf-8")
-    demo = (ROOT / "workbench" / "run_demo.bat").read_text(encoding="utf-8")
+    launcher = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_omniroute.bat").read_text(encoding="utf-8")
+    bootstrap = (ROOT / "python" / "workbench_api_server" / "scripts" / "bootstrap_omniroute.py").read_text(encoding="utf-8")
+    demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
     assert "npm.cmd install -g omniroute" in launcher
     assert 'set "PORT=%OMNIROUTE_PORT%"' in launcher
     assert 'set "DASHBOARD_PORT=%OMNIROUTE_PORT%"' in launcher
@@ -103,9 +103,9 @@ def test_windows_omniroute_launcher_uses_the_official_gateway_and_bootstrap() ->
 
 
 def test_retired_development_routers_have_no_launcher_or_startup_hook() -> None:
-    demo = (ROOT / "workbench" / "run_demo.bat").read_text(encoding="utf-8")
-    assert not (ROOT / "workbench" / "scripts" / "run_freerouter.bat").exists()
-    assert not (ROOT / "workbench" / "config" / "freerouter.config.json").exists()
+    demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
+    assert not (ROOT / "python" / "workbench_api_server" / "scripts" / "run_freerouter.bat").exists()
+    assert not (ROOT / "python" / "workbench_api_server" / "config" / "freerouter.config.json").exists()
     assert "freerouter" not in demo.lower()
     assert "openrouter" not in demo.lower()
 

@@ -58,7 +58,7 @@ def test_create_workspace_can_copy_another_workspace(tmp_path: Path, monkeypatch
 
 
 def test_workspace_picker_explains_template_and_library_roles() -> None:
-    source = (Path(__file__).resolve().parents[1] / "workbench" / "frontend" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    source = (Path(__file__).resolve().parents[2] / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
     compact = "".join(source.split())
     assert "Create A New Workspace" in source
     assert "Create Workspace" in source
@@ -71,7 +71,7 @@ def test_workspace_picker_explains_template_and_library_roles() -> None:
 
 
 def test_canonical_shared_workspaces_are_classified_as_libraries(monkeypatch) -> None:
-    workspaces_root = Path(__file__).resolve().parents[1] / "workbench" / "workspaces"
+    workspaces_root = Path(__file__).resolve().parents[2] / "workspaces"
     monkeypatch.setattr(workspace_api, "_workspace_roots", lambda: [workspaces_root])
     workspace_api.invalidate_workspace_discovery()
 
@@ -85,7 +85,7 @@ def test_canonical_shared_workspaces_are_classified_as_libraries(monkeypatch) ->
 
 
 def test_visual_learning_projects_are_disk_backed_and_chooser_discoverable(monkeypatch) -> None:
-    workspaces_root = Path(__file__).resolve().parents[1] / "workbench" / "workspaces"
+    workspaces_root = Path(__file__).resolve().parents[2] / "workspaces"
     expected = {
         "visual_learning_from_examples": "Visual Learning from Examples",
         "image_perception_to_recognizable_memory_and_arc3": "Image Perception to Recognizable Memory and ARC3",
@@ -116,7 +116,7 @@ def test_visual_learning_projects_are_disk_backed_and_chooser_discoverable(monke
 
 
 def test_project_workflows_are_loaded_and_engine_valid(tmp_path: Path) -> None:
-    workspaces_root = Path(__file__).resolve().parents[1] / "workbench" / "workspaces"
+    workspaces_root = Path(__file__).resolve().parents[2] / "workspaces"
     expected = {
         "visual_learning_from_examples": "examples_to_visual_memory",
         "image_perception_to_recognizable_memory_and_arc3": "image_to_recognizable_arc3_memory",
@@ -141,7 +141,7 @@ def test_project_workflows_are_loaded_and_engine_valid(tmp_path: Path) -> None:
 
 
 def test_atom_ant_symbolic_reasoning_has_bounded_repair_control_flow_and_runs(tmp_path: Path) -> None:
-    workspaces_root = Path(__file__).resolve().parents[1] / "workbench" / "workspaces"
+    workspaces_root = Path(__file__).resolve().parents[2] / "workspaces"
     workspace = workspace_api._workspace_from_directory(
         workspaces_root / "atom_ant",
         include_counts=False,
@@ -181,7 +181,7 @@ def test_atom_ant_symbolic_reasoning_has_bounded_repair_control_flow_and_runs(tm
 
 
 def test_omegaclaw_places_weaker_model_memory_controls_after_persistence_and_runs(tmp_path: Path) -> None:
-    workspaces_root = Path(__file__).resolve().parents[1] / "workbench" / "workspaces"
+    workspaces_root = Path(__file__).resolve().parents[2] / "workspaces"
     workspace = workspace_api._workspace_from_directory(
         workspaces_root / "omegaclaw_microatomspacing",
         include_counts=False,
@@ -223,7 +223,7 @@ def test_omegaclaw_places_weaker_model_memory_controls_after_persistence_and_run
 
 
 def test_project_workflows_resolve_shared_operations_and_memory_datatypes() -> None:
-    workspaces_root = Path(__file__).resolve().parents[1] / "workbench" / "workspaces"
+    workspaces_root = Path(__file__).resolve().parents[2] / "workspaces"
     workspace_ids = (
         "visual_learning_from_examples",
         "image_perception_to_recognizable_memory_and_arc3",

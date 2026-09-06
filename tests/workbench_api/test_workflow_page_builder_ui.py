@@ -1,10 +1,10 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-BUILDER = ROOT / "workbench/frontend/src/components/WorkflowPageBuilder.tsx"
-SHELL = ROOT / "workbench/frontend/src/pages/FilesystemWorkbenchPage.tsx"
-STYLES = ROOT / "workbench/frontend/src/styles/workflow_page_builder.css"
+ROOT = Path(__file__).resolve().parents[2]
+BUILDER = ROOT / "frontend/apps/workbench/src/components/WorkflowPageBuilder.tsx"
+SHELL = ROOT / "frontend/apps/workbench/src/pages/FilesystemWorkbenchPage.tsx"
+STYLES = ROOT / "frontend/apps/workbench/src/styles/workflow_page_builder.css"
 
 
 def test_workflow_page_builder_is_reachable_and_deep_linkable() -> None:

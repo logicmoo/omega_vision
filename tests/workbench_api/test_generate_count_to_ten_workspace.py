@@ -5,13 +5,13 @@ from pathlib import Path
 import workspace_api
 
 
-ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE = ROOT / "workbench" / "workspaces" / "generate_count_to_ten"
-SHARED_ROOT = ROOT / "workbench" / "workspaces" / "shared_library_system"
+ROOT = Path(__file__).resolve().parents[2]
+WORKSPACE = ROOT / "workspaces" / "generate_count_to_ten"
+SHARED_ROOT = ROOT / "workspaces" / "shared_library_system"
 
 
 def test_generate_count_to_ten_is_a_real_discoverable_generation_project(monkeypatch) -> None:
-    monkeypatch.setattr(workspace_api, "_workspace_roots", lambda: [ROOT / "workbench" / "workspaces"])
+    monkeypatch.setattr(workspace_api, "_workspace_roots", lambda: [ROOT / "workspaces"])
     workspace_api.invalidate_workspace_discovery()
     discovered = {item["id"]: item for item in workspace_api.discover_workspaces(force=True, include_counts=False)}
     project = discovered["generate_count_to_ten"]

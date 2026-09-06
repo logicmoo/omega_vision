@@ -2,8 +2,8 @@ from pathlib import Path
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
+ROOT = Path(__file__).resolve().parents[2]
+SERVER = ROOT / "python" / "workbench_api_server"
 if str(SERVER) not in sys.path:
     sys.path.insert(0, str(SERVER))
 
@@ -11,7 +11,7 @@ from workspace_api import _load_systems  # noqa: E402
 
 
 def test_shared_callable_systems_are_not_model_backends() -> None:
-    shared = ROOT / "workbench" / "workspaces" / "shared_library_system"
+    shared = ROOT / "workspaces" / "shared_library_system"
     records = _load_systems({"id": "shared_library_system", "root": str(shared)})
     documents = {record["document"]["id"]: record["document"] for record in records}
 
