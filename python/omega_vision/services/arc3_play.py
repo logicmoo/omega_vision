@@ -596,8 +596,12 @@ class PlaySession:
         )
 
     def _relative(self, path: Path) -> str:
+        # data_rel_of tries the workspace root first, then maps files living
+        # in any visible data home to their workspace-facing data/... path --
+        # recordings live in the global data home, so plain relative_to would
+        # leak an absolute path the asset route cannot serve.
         try:
-            return path.relative_to(self.workspace_root).as_posix()
+            return _data_rel_of(self.workspace_root, path)
         except ValueError:
             return path.as_posix()
 
@@ -936,7 +940,12 @@ def _game_catalog(refresh: bool = False) -> list[dict[str, Any]]:
     for game in games:
         game["short_id"] = _game_slug(str(game.get("game_id") or ""))
     games.sort(key=lambda game: str(game.get("short_id") or ""))
-    _catalog_cache = (now, games)
+    if games:
+        _catalog_cache = (now, games)
+    elif _catalog_cache:
+        # Transient empty read (engine hiccup): keep serving the last good
+        # catalog instead of caching emptiness for the whole TTL.
+        return _catalog_cache[1]
     return games
 
 
@@ -2455,7 +2464,10 @@ def import_recording(body: dict[str, Any] = Body(default_factory=dict)) -> dict[
         raise HTTPException(status_code=400, detail="workspaceId and path are required")
     root = _workspace_root(workspace_id)
     label = body.get("label")
-    target = root / rel_path
+    try:
+        target = _safe_workspace_child(root, rel_path)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
     if target.is_dir() and (target / "workspace" / "log.txt").is_file():
         return _import_release_run(root, rel_path, str(label) if label else None)
     return _import_recording(root, rel_path, str(label) if label else None)
@@ -2475,7 +2487,10 @@ def import_movelist(body: dict[str, Any] = Body(default_factory=dict)) -> dict[s
         raise HTTPException(status_code=400, detail="workspaceId and path are required")
     root = _workspace_root(workspace_id)
     label = body.get("label")
-    target = root / rel_path
+    try:
+        target = _safe_workspace_child(root, rel_path)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
     if target.is_dir() and (target / "workspace" / "log.txt").is_file():
         return _import_release_run_as_movelist(root, rel_path, str(label) if label else None)
     return _import_recording_as_movelist(root, rel_path, str(label) if label else None)

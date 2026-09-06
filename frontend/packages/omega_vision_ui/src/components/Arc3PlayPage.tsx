@@ -236,14 +236,17 @@ export function Arc3PlayPage({
     [workspaceId],
   );
 
-  const loadGames = useCallback(async (refresh: boolean) => {
+  const loadGames = useCallback(async (refresh: boolean): Promise<number> => {
     setGamesLoading(true);
     setError("");
     try {
       const payload = await request(`/workbench/arc3-play/games${refresh ? "?refresh=true" : ""}`);
-      setGames((payload.games as GameInfo[]) || []);
+      const list = (payload.games as GameInfo[]) || [];
+      setGames(list);
+      return list.length;
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
+      return -1;
     } finally {
       setGamesLoading(false);
     }
@@ -263,7 +266,21 @@ export function Arc3PlayPage({
   }, []);
 
   useEffect(() => {
-    void loadGames(false);
+    // The catalog request can race a restarting API server (or a transient
+    // engine hiccup) at mount: retry a few times before leaving the picker
+    // stuck on "No games returned by the ARC engine."
+    let cancelled = false;
+    void (async () => {
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const count = await loadGames(attempt > 0);
+        if (cancelled || count > 0) return;
+        await new Promise((resolve) => setTimeout(resolve, 2500 * (attempt + 1)));
+        if (cancelled) return;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [loadGames]);
 
   // Deep-link support: the games gallery page's "Play & Record" button
@@ -302,13 +319,22 @@ export function Arc3PlayPage({
         const lastRecording = matchingRecordings[matchingRecordings.length - 1];
         let savepointId: string | null = null;
         if (lastRecording) {
-          const imported = await request("/workbench/arc3-play/import-recording", {
-            method: "POST",
-            body: JSON.stringify({ workspaceId, path: lastRecording.path }),
-          });
-          savepointId = (imported.savepoint as { id?: string } | undefined)?.id || null;
-          const refreshed = await request(`/workbench/arc3-play/savepoints?workspaceId=${encodeURIComponent(workspaceId)}`);
-          setSavepoints((refreshed.savepoints as PlaySavepoint[]) || []);
+          // Best-effort: a stale/unparseable importable must not block
+          // opening the game fresh, so fall through to save-points on error.
+          try {
+            const imported = await request("/workbench/arc3-play/import-recording", {
+              method: "POST",
+              body: JSON.stringify({ workspaceId, path: lastRecording.path }),
+            });
+            savepointId = (imported.savepoint as { id?: string } | undefined)?.id || null;
+            const refreshed = await request(`/workbench/arc3-play/savepoints?workspaceId=${encodeURIComponent(workspaceId)}`);
+            setSavepoints((refreshed.savepoints as PlaySavepoint[]) || []);
+          } catch (importReason) {
+            setImportNote(
+              `auto-resume skipped ${lastRecording.name}: ` +
+                (importReason instanceof Error ? importReason.message : String(importReason)),
+            );
+          }
         }
         if (!savepointId) {
           // Savepoints are already newest-first from the server, so the
