@@ -29,7 +29,7 @@ from plugin_admin import (
 
 
 
-PLUGINS_ROOT = Path(__file__).resolve().parents[1] / "plugins"
+PLUGINS_ROOT = Path(__file__).resolve().parents[2] / "plugins"
 POLICY_PATH = PLUGINS_ROOT / "plugins.json"
 API_PREFIX = "/workbench"
 router = APIRouter(prefix="/plugins", tags=["plugins"])

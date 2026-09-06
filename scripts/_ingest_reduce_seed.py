@@ -9,8 +9,10 @@ import sys
 import json
 from pathlib import Path
 
-SERVER = r"C:\snet\PeTTa\repos\symbolic_learner_workbench\workbench\server"
-sys.path.insert(0, SERVER)
+_REPO = Path(__file__).resolve().parents[1]
+for _p in (_REPO / "python", _REPO / "python" / "workbench_api_server"):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 from omega_vision.services import video_import_api as vip  # noqa: E402
 from omega_vision.services.video_import_pipeline import load_state  # noqa: E402

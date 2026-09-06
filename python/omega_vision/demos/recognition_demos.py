@@ -16,14 +16,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-_PROLOG_DIR = Path(__file__).resolve().parent / "generative_vision" / "prolog"
-if str(_PROLOG_DIR) not in sys.path:
-    sys.path.insert(0, str(_PROLOG_DIR))
 # The Phase 3 object-memory contract package lives in <repo>/python.
-_PY_DIR = Path(__file__).resolve().parents[2] / "python"
+_PY_DIR = Path(__file__).resolve().parents[3] / "python"
 if str(_PY_DIR) not in sys.path:
     sys.path.insert(0, str(_PY_DIR))
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 _BLUE = "#7c9cff"
 _RED = "#e0483f"
@@ -912,12 +909,12 @@ def _demo_input_video():
                            "committed object, not re-minted per frame."}
 
 
-_LS20_DIR = (Path(__file__).resolve().parents[1] / "workspaces" / "arc3_random_player" / "data"
+_LS20_DIR = (_REPO_ROOT / "data" / "omega_vision"
              / "vision_frames" / "arc_recordings" / "data-arc3_games-recordings-ls20-saved_001")
 # Raw per-frame recordings (each frame is a numbered subfolder holding image.png).
 # The long "release run" ls20 playthroughs (hundreds of moves) live here, split
 # across attempt segments; we concatenate a base id's attempts into one sequence.
-_RAW_LS20_DIR = (Path(__file__).resolve().parents[1] / "workspaces" / "arc3_random_player" / "data"
+_RAW_LS20_DIR = (_REPO_ROOT / "data" / "omega_vision"
                  / "arc3_games" / "recordings" / "ls20")
 
 _ls20_selected: str | None = None   # user-chosen recording key (else default = longest)

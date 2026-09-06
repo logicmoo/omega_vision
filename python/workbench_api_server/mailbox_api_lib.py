@@ -45,7 +45,7 @@ except Exception:  # pragma: no cover - client absent in some envs
         # installed in this environment.
         import sys as _sys
 
-        _bundled_src = Path(__file__).resolve().parents[1] / "plugins" / "mailbox_chat" / "src"
+        _bundled_src = Path(__file__).resolve().parents[2] / "plugins" / "mailbox_chat" / "src"
         if _bundled_src.is_dir() and str(_bundled_src) not in _sys.path:
             _sys.path.insert(0, str(_bundled_src))
         from mailbox_chat import agent_mailbox as _bundled_agent_mailbox

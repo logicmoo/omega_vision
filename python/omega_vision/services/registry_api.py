@@ -13,10 +13,7 @@ from fastapi import APIRouter, Body, Query, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
-_PROLOG_DIR = Path(__file__).resolve().parent / "generative_vision" / "prolog"
-if str(_PROLOG_DIR) not in sys.path:
-    sys.path.insert(0, str(_PROLOG_DIR))
-_PY_DIR = Path(__file__).resolve().parents[2] / "python"
+_PY_DIR = Path(__file__).resolve().parents[3] / "python"
 if str(_PY_DIR) not in sys.path:
     sys.path.insert(0, str(_PY_DIR))
 

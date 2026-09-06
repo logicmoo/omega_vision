@@ -14,9 +14,9 @@ from typing import Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 STATIC_ROOT = Path(__file__).resolve().parent / "static"
-RUNNER = PROJECT_ROOT / "scripts" / "interactive_runner.py"
+RUNNER = Path(__file__).resolve().parents[1] / "cli" / "interactive_runner.py"
 
 
 class TerminalProcess:

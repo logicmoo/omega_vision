@@ -6,7 +6,7 @@ from typing import Any
 from resource_store import get_filesystem_provider
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 WORKSPACES_ROOT = ROOT / "workbench" / "workspaces"
 SYSTEM_POLICY_PATH = (
     WORKSPACES_ROOT

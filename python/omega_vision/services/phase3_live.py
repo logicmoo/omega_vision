@@ -20,16 +20,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 _HERE = Path(__file__).resolve()
-_PROLOG_DIR = _HERE.parent / "generative_vision" / "prolog"
-if str(_PROLOG_DIR) not in sys.path:
-    sys.path.insert(0, str(_PROLOG_DIR))
 # The Phase 3 package lives in <repo>/python/omega_vision.
-_REPO_ROOT = _HERE.parents[2]
+_REPO_ROOT = _HERE.parents[3]
 _PY_DIR = _REPO_ROOT / "python"
 if str(_PY_DIR) not in sys.path:
     sys.path.insert(0, str(_PY_DIR))
 
-_LS20_DIR = (_HERE.parents[1] / "workspaces" / "arc3_random_player" / "data"
+_LS20_DIR = (_REPO_ROOT / "data" / "omega_vision"
              / "vision_frames" / "arc_recordings"
              / "data-arc3_games-recordings-ls20-saved_001")
 

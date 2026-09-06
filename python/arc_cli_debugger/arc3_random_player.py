@@ -749,7 +749,7 @@ class RandomArc3Player:
 
 
 def run_random_arc3_session(
-    workspace_root: str = "workbench/workspaces/arc3_random_player",
+    workspace_root: str = "workspaces/arc3_random_player",
     seconds_per_game: float = 600.0,
     max_games: int | None = None,
     move_limit: int | None = 10,

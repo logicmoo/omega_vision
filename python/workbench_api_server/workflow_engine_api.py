@@ -38,7 +38,7 @@ class WorkspaceAwareWorkflowEngine(AdvancedWorkflowEngine):
 
 
 router = APIRouter(prefix='/engine', tags=['workflow-engine'])
-_db = Path(os.getenv('WORKFLOW_ENGINE_DB', Path(__file__).resolve().parents[1] / 'data' / 'workflow_engine.db'))
+_db = Path(os.getenv('WORKFLOW_ENGINE_DB', Path(__file__).resolve().parents[2] / 'data' / 'workflow_engine.db'))
 engine = WorkspaceAwareWorkflowEngine(_db)
 register_real_providers(engine.registry)
 

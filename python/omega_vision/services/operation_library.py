@@ -10,8 +10,8 @@ from workspace_inheritance import effective_workspace_layers, layer_source
 from resource_store import get_filesystem_provider
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_WORKSPACES_ROOT = REPOSITORY_ROOT / "workbench" / "workspaces"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_WORKSPACES_ROOT = REPOSITORY_ROOT / "workspaces"
 SHARED_WORKSPACE_ID = "shared_library_system"
 # Concrete implementations are operations whose same-kind parent is another
 # operation.  Keep the legacy spelling readable during migration, but never
@@ -332,5 +332,5 @@ def legacy_catalog_view(documents: Iterable[dict[str, Any]]) -> list[dict[str, A
         left = " + ".join(inputs) or "∅"
         right = " + ".join(outputs) or "∅"
         routes = str(document.get("preferredImplementation") or document.get("implementation") or "")
-        result.append({"id": document["id"], "label": document.get("label") or document["id"], "ports": f"{left} → {right}", "routes": routes, "definition": document, "source": "workbench/workspaces/shared_library_system/design/operations"})
+        result.append({"id": document["id"], "label": document.get("label") or document["id"], "ports": f"{left} → {right}", "routes": routes, "definition": document, "source": "workspaces/shared_library_system/design/operations"})
     return sorted(result, key=lambda item: str(item["label"]).lower())

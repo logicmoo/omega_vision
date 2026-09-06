@@ -127,7 +127,7 @@ class WorkbenchStore:
 
     def __init__(self, database_path: str | Path | None = None) -> None:
         configured = os.getenv("WORKBENCH_DB")
-        default = Path(__file__).resolve().parents[1] / "data" / "workbench.db"
+        default = Path(__file__).resolve().parents[2] / "data" / "workbench.db"
         self.database_path = Path(database_path or configured or default)
         get_filesystem_provider().make_directory(self.database_path.parent)
         self._initialize()

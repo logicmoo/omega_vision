@@ -15,7 +15,7 @@ environment) plus a downloaded Vosk model. By default this looks for
 ``--model`` or set ``STT_VOSK_MODEL_DIR`` to point elsewhere.
 
 Transcripts are delivered through the bundled ``mailbox_chat`` agent-mailbox
-client (``workbench/plugins/mailbox_chat``), which writes directly to the
+client (``plugins/mailbox_chat``), which writes directly to the
 local mailbox store -- no relay/server process is required. If the sibling
 ``mailbox_channels`` package (the standalone mailbox_channel project) is
 importable instead, that is used verbatim so a shared/remote mailbox
@@ -55,13 +55,13 @@ def _mailbox_client() -> Any:
         return client
     except Exception:
         pass
-    plugin_src = ROOT / "workbench" / "plugins" / "mailbox_chat" / "src"
+    plugin_src = ROOT / "plugins" / "mailbox_chat" / "src"
     if str(plugin_src) not in sys.path:
         sys.path.insert(0, str(plugin_src))
     # mailbox_chat.agent_mailbox.mailbox_dir() defaults to Path.cwd()/"mailbox",
     # which only matches the workbench Chat UI's store when this script happens
     # to be launched from the repository root. Every other consumer of the
-    # bundled mailbox_chat copy (workbench/server/mailbox_api_lib.py's fallback
+    # bundled mailbox_chat copy (python/workbench_api_server/mailbox_api_lib.py's fallback
     # shim, in-process inside the API server) pins the same repo-root-relative
     # directory, so anchor it here too -- AGENT_MAILBOX_DIR still overrides.
     os.environ.setdefault("AGENT_MAILBOX_DIR", str(ROOT / "mailbox"))

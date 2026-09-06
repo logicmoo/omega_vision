@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _environment(primary: str, legacy: str) -> str:
@@ -80,7 +80,7 @@ def config_root() -> Path:
         if candidate.is_file():
             return candidate.parent.resolve()
 
-    return (PROJECT_ROOT / "config").resolve()
+    return (PROJECT_ROOT / "python" / "arc_cli_debugger" / "config").resolve()
 
 
 def llm_config_path() -> Path:

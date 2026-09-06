@@ -12,7 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Mapping
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "llm_providers.json"
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config" / "llm_providers.json"
 _DATA_URL_RE = re.compile(r"^data:([^;,]+);base64,(.*)$", re.DOTALL)
 
 

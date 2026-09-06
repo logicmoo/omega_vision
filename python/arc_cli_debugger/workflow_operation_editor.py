@@ -7,7 +7,7 @@ from typing import Any, Mapping
 from llm_workflows import LlmWorkflowEngine, run_workflow_menu
 from workflow_operations import DEFAULT_DATATYPE_PATH, DEFAULT_OPERATION_PATH, OperationAwareWorkflowRouter
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
 EXAMPLE=ROOT/"config"/"example_typed_operation_workflow.json"
 GRAPH=ROOT/"config"/"workflow_datatypes.svg"
 

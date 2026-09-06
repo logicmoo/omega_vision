@@ -13,6 +13,7 @@ have the rights to import is the caller's responsibility.
 
 from __future__ import annotations
 
+import os
 import asyncio
 import base64
 import hashlib
@@ -200,11 +201,17 @@ def _rewrite_data_paths(paths: list[Path], replacements: list[tuple[str, str]]) 
                 path.write_text(migrated, encoding="utf-8")
 
 
+_VISION_DATA_ROOT = Path(
+    os.environ.get("OMEGA_VISION_DATA")
+    or (Path(__file__).resolve().parents[3] / "data" / "omega_vision")
+)
+
+
 def _imports_root(root: Path) -> Path:
     resolved_root = root.resolve()
-    canonical = root / "data" / "video_import"
-    legacy = root / "data" / "VideoImports"
-    vision_root = root / "data" / "vision_frames"
+    canonical = _VISION_DATA_ROOT / "video_import"
+    legacy = _VISION_DATA_ROOT / "VideoImports"
+    vision_root = _VISION_DATA_ROOT / "vision_frames"
     with _data_layout_lock:
         if resolved_root in _migrated_data_roots:
             return canonical
@@ -238,7 +245,7 @@ def _imports_root(root: Path) -> Path:
                         f"data/vision_frames/video/{destination.name}/",
                     )
                 )
-        curated_root = root / "data" / "arc3_games" / "curated"
+        curated_root = _VISION_DATA_ROOT / "arc3_games" / "curated"
         if curated_root.is_dir():
             replacements.extend(
                 (
@@ -254,7 +261,7 @@ def _imports_root(root: Path) -> Path:
 
 
 def _vision_frames_root(root: Path) -> Path:
-    path = root / "data" / "vision_frames"
+    path = _VISION_DATA_ROOT / "vision_frames"
     path.mkdir(parents=True, exist_ok=True)
     return path
 

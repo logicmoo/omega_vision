@@ -161,12 +161,13 @@ def _resolve_llm_config(
     for root, source in candidates:
         if root is None:
             continue
-        path = root / "config" / "llm_providers.json"
-        if path.is_file():
-            return path.resolve(), source
+        for rel in (("config",), ("python", "arc_cli_debugger", "config")):
+            path = root.joinpath(*rel) / "llm_providers.json"
+            if path.is_file():
+                return path.resolve(), source
 
     raise RuntimeError(
-        "Unable to locate config/llm_providers.json from the launch directory, "
+        "Unable to locate llm_providers.json (config/ or python/arc_cli_debugger/config/) from the launch directory, "
         "ARC3_RUNTIME_HOME, or script/code checkout"
     )
 

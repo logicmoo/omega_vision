@@ -24,7 +24,7 @@ from resource_store import get_filesystem_provider
 from workspace_credentials import resolve_workspace_credential
 
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 @dataclass(frozen=True)

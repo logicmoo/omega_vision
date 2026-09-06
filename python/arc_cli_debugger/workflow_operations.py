@@ -12,9 +12,10 @@ from llm_providers import LlmConfigurationError
 from llm_workflows import LlmWorkflowEngine, TransactionDefinition, WorkflowAwareLlmProviderRouter
 from project_paths import prompts_path
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OPERATION_PATH = ROOT / "config" / "workflow_operations.json"
-DEFAULT_DATATYPE_PATH = ROOT / "config" / "workflow_datatypes.json"
+ROOT = Path(__file__).resolve().parents[2]
+CONFIG_DIR = Path(__file__).resolve().parent / "config"
+DEFAULT_OPERATION_PATH = CONFIG_DIR / "workflow_operations.json"
+DEFAULT_DATATYPE_PATH = CONFIG_DIR / "workflow_datatypes.json"
 
 def txt(v: Any) -> str: return str(v or "").strip()
 def read_obj(p: Path) -> dict[str, Any]:
@@ -108,7 +109,7 @@ class OperationAwareWorkflowRouter(WorkflowAwareLlmProviderRouter):
         for t in self.operations:
             for d in (*t.inputs.values(),*t.outputs.values()):
                 if d not in self.datatype_by_id: raise LlmConfigurationError(f"Operation {t.id!r} references unknown datatype {d!r}")
-        real=Path(workflow_path or os.getenv("WORLD_WORKBENCH_WORKFLOW_CONFIG") or os.getenv("ARC3_LLM_WORKFLOW_CONFIG") or ROOT/"config"/"llm_workflows.json").resolve()
+        real=Path(workflow_path or os.getenv("WORLD_WORKBENCH_WORKFLOW_CONFIG") or os.getenv("ARC3_LLM_WORKFLOW_CONFIG") or CONFIG_DIR/"llm_workflows.json").resolve()
         raw=read_obj(real); cooked=copy.deepcopy(raw); cooked["llm_workflows"]=expand_subworkflows(cooked.get("llm_workflows") or []); synthetic=[]; self.operation_step_by_transaction_id={}
         for wf in cooked.get("llm_workflows",[]):
             wid=txt(wf.get("id")) or "workflow"; out=[]

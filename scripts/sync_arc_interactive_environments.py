@@ -1,6 +1,6 @@
 """CLI wrapper around ``python/arc_interactive_sync.py``: copy ARC-AGI-3 game
 environment packages from a sibling ``arc-interactive`` checkout into
-``workbench/server/environment_files``, so the workbench's ARC3 Play &
+``python/workbench_api_server/environment_files``, so the workbench's ARC3 Play &
 Record engine (``arc_agi.Arcade(environments_dir=...)``, which resolves
 relative to the running server's CWD) discovers them.
 

@@ -1,12 +1,12 @@
 """Reusable logic for merging a sibling ``arc-interactive`` checkout's ARC-AGI-3
-game environment packages into ``workbench/server/environment_files``.
+game environment packages into ``python/workbench_api_server/environment_files``.
 
 Shared by ``scripts/sync_arc_interactive_environments.py`` (CLI) and the
 ``POST /arc3-play/games/sync`` endpoint in ``arc3_play_api.py`` (in-app
 "notice new games" action), so both stay in lockstep with a single copy of
 the merge rules.
 
-``workbench/server/environment_files/`` is intentionally gitignored (see
+``python/workbench_api_server/environment_files/`` is intentionally gitignored (see
 ".gitignore": "Vendored framework + downloaded game source + agent
 recordings") -- it is a local, per-machine cache of downloaded/authored game
 packages, not repository source. ``../arc-interactive`` is a separate repo
@@ -28,9 +28,9 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_SOURCE = REPO_ROOT.parent / "arc-interactive" / "environment_files"
-DEFAULT_DEST = REPO_ROOT / "workbench" / "server" / "environment_files"
+DEFAULT_DEST = REPO_ROOT / "python" / "workbench_api_server" / "environment_files"
 
 
 def is_well_formed_version_dir(path: Path) -> bool:

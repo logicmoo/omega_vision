@@ -31,18 +31,21 @@ from scipy import ndimage
 
 STRUCT4 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
 _HERE = Path(__file__).resolve().parent
-GROUP_PL = _HERE / "arc_group.pl"
-MEM_PL = _HERE / "object_memory.pl"
 
 
 def _repo_root() -> Path:
-    """Walk up to the repository root (dir holding .git / workbench)."""
+    """Walk up to the repository root (dir holding .git / pyproject.toml)."""
     p = _HERE
     for _ in range(8):
-        if (p / ".git").exists() or (p / "workbench").is_dir():
+        if (p / ".git").exists() or (p / "pyproject.toml").is_file():
             return p
         p = p.parent
-    return _HERE.parents[4]
+    return _HERE.parents[3]
+
+
+_PL_DIR = _repo_root() / "prolog" / "omega_vision"
+GROUP_PL = _PL_DIR / "arc_group.pl"
+MEM_PL = _PL_DIR / "object_memory.pl"
 
 
 def memory_dir() -> Path:
@@ -53,7 +56,7 @@ def memory_dir() -> Path:
       shape_dir/    -- the colorless shape vocabulary (regenerated, consulted)
       identity_dir/ -- persistent object identities (prov + position + shape + color)"""
     env = os.environ.get("OBJECT_MEMORY_DIR")
-    d = Path(env) if env else (_repo_root() / "data" / "object_memory")
+    d = Path(env) if env else (_repo_root() / "data" / "omega_vision" / "object_memory")
     d.mkdir(parents=True, exist_ok=True)
     return d
 

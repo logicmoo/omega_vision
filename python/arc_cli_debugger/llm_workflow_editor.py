@@ -13,7 +13,7 @@ from llm_workflows import (
     run_workflow_menu,
 )
 
-EXAMPLE_PATH = Path(__file__).resolve().parents[1] / "config" / "example_multistep_workflow.json"
+EXAMPLE_PATH = Path(__file__).resolve().parent / "config" / "example_multistep_workflow.json"
 
 
 def _read_json(path: Path) -> dict[str, Any]:

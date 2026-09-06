@@ -27,7 +27,7 @@ from llm_providers import LlmConfigurationError, ProviderSpec
 from llm_transcripts import finalize_last_transcript
 from project_paths import prompts_path
 
-DEFAULT_WORKFLOW_PATH = Path(__file__).resolve().parents[1] / "config" / "llm_workflows.json"
+DEFAULT_WORKFLOW_PATH = Path(__file__).resolve().parent / "config" / "llm_workflows.json"
 
 
 def _text(value: Any) -> str:
