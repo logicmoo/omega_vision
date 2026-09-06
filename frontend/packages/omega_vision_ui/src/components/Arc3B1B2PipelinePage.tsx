@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { MarkdownDocument } from "./MarkdownDocument";
-import { WorkflowPageHost, type WorkflowPageComponentRegistry, type WorkflowPageDefinition } from "./WorkflowPageHost";
-import { WorkflowPageSourceEditor } from "./WorkflowPageSourceEditor";
-import { ThreeStateAccordionMember, ThreeStateAccordionStack, type AccordionDisplayMode } from "./ThreeStateAccordion";
+import { MarkdownDocument } from "@app/components/MarkdownDocument";
+import { WorkflowPageHost, type WorkflowPageComponentRegistry, type WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
+import { WorkflowPageSourceEditor } from "@app/components/WorkflowPageSourceEditor";
+import { ThreeStateAccordionMember, ThreeStateAccordionStack, type AccordionDisplayMode } from "@app/components/ThreeStateAccordion";
 import "../styles/arc3_prompt_prolog.css";
 
 export type ModelChoice = {

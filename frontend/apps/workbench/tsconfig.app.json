@@ -14,7 +14,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@app/*": ["./src/*"],
+      "@omega_vision_ui/*": ["../../packages/omega_vision_ui/src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../../packages/omega_vision_ui/src"]
 }

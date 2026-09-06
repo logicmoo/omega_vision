@@ -12,7 +12,7 @@ const HERE = fileURLToPath(new URL(".", import.meta.url));
 // those manifests, plus any path another plugin asked web_proxy to mount, so a
 // new plugin never needs this file edited.
 function pluginProxyPrefixes(): string[] {
-  const root = resolve(HERE, "../plugins");
+  const root = resolve(HERE, "../../../plugins");
   const prefixes = new Set<string>();
   let directories: string[] = [];
   try {
@@ -141,11 +141,21 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [tsxSourceLocations(), react()],
+    resolve: {
+      alias: {
+        "@app": resolve(HERE, "src"),
+        "@omega_vision_ui": resolve(HERE, "../../packages/omega_vision_ui/src"),
+      },
+    },
     server: {
       host,
       port,
       strictPort: true,
       hmr: false,
+      fs: {
+        // The reusable Omega Vision UI package lives outside the app root.
+        allow: [resolve(HERE, "../../..")],
+      },
       watch: {
         ignored: [
           "**/dist/**",

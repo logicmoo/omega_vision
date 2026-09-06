@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { WorkflowPageHost, type WorkflowPageComponentRegistry, type WorkflowPageDefinition } from "./WorkflowPageHost";
-import { WorkflowPageSourceEditor } from "./WorkflowPageSourceEditor";
-import { ThreeStateAccordionMember, ThreeStateAccordionStack, type AccordionDisplayMode } from "./ThreeStateAccordion";
+import { WorkflowPageHost, type WorkflowPageComponentRegistry, type WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
+import { WorkflowPageSourceEditor } from "@app/components/WorkflowPageSourceEditor";
+import { ThreeStateAccordionMember, ThreeStateAccordionStack, type AccordionDisplayMode } from "@app/components/ThreeStateAccordion";
 import "../styles/arc3_prompt_prolog.css";
 
 type ModelChoice = {

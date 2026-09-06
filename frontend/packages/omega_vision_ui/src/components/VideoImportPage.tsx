@@ -1,11 +1,11 @@
 import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { pushGlobalStatus } from "../lib/globalStatus";
-import { ColoredTagCombobox, type ColoredTag, type ColoredTagDescription } from "./ColoredTagCombobox";
-import { SuperControl } from "./UniversalArtifactEditor";
-import type { WorkflowPageDefinition } from "./WorkflowPageHost";
+import { pushGlobalStatus } from "@app/lib/globalStatus";
+import { ColoredTagCombobox, type ColoredTag, type ColoredTagDescription } from "@app/components/ColoredTagCombobox";
+import { SuperControl } from "@app/components/UniversalArtifactEditor";
+import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
-import { modelCapabilityTags } from "./modelOptionDisplay";
-import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "../lib/pageProcessActivity";
+import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
+import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
 import "../styles/video_import_page.css";
 

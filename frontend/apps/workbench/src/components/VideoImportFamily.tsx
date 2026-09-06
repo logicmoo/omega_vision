@@ -1,8 +1,8 @@
-import { VideoImportPage, type VideoImportChainSummaryStep } from "./VideoImportPage";
+import { VideoImportPage, type VideoImportChainSummaryStep } from "@omega_vision_ui/components/VideoImportPage";
 import { GenerationHost } from "./GenerationHost";
 import type { PageFamily } from "../lib/pageGenerations";
 import type { WorkflowPageDefinition } from "./WorkflowPageHost";
-import type { ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
+import type { ModelChoice, WorkspaceFileRecord } from "@omega_vision_ui/components/Arc3B1B2PipelinePage";
 
 /**
  * The Video Import page family ? the first page on the upgrade system.
@@ -27,7 +27,7 @@ const family: PageFamily = {
       verdict: "canonical",
       lessons: "Its pre-graduation ancestor (the original organic build, now only in git history) scattered concerns ? three vote paths, two strip renders, ad-hoc section shells; the prompt rebuild consolidated them and then took over as baseline under the VideoImportPage.tsx name.",
       provenance: {
-        componentPath: "workbench/frontend/src/components/VideoImportPage.tsx",
+        componentPath: "frontend/packages/omega_vision_ui/src/components/VideoImportPage.tsx",
         builtFrom: "workbench/docs/VIDEO_IMPORT.md (appendix build prompt)",
         builtBy: "copilot session: Video import pipeline",
         date: "2026-08-29",

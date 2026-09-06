@@ -14,27 +14,27 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { relationshipIds } from "./resourceRelationships";
+import { relationshipIds } from "@app/components/resourceRelationships";
 import {
   ThreeStateAccordionMember,
   ThreeStateAccordionStack,
   type AccordionDisplayMode,
-} from "./ThreeStateAccordion";
+} from "@app/components/ThreeStateAccordion";
 import {
   OperationPlayground,
   type OperationDef,
   type OperationImplementationDef,
-} from "./OperationPlayground";
+} from "@app/components/OperationPlayground";
 import {
   WorkflowPageHost,
   type WorkflowPageComponentRegistry,
   type WorkflowPageDefinition,
   type WorkflowPageMemberDefinition,
-} from "./WorkflowPageHost";
-import { ResourceSourceEditor } from "./ResourceSourceEditor";
-import { WorkflowPageSourceEditor } from "./WorkflowPageSourceEditor";
-import "../styles/english_workflow.css";
-import "../styles/english_workflow_order.css";
+} from "@app/components/WorkflowPageHost";
+import { ResourceSourceEditor } from "@app/components/ResourceSourceEditor";
+import { WorkflowPageSourceEditor } from "@app/components/WorkflowPageSourceEditor";
+import "@app/styles/english_workflow.css";
+import "@app/styles/english_workflow_order.css";
 import "../styles/visual_image_diff.css";
 
 type VisualFrame = {

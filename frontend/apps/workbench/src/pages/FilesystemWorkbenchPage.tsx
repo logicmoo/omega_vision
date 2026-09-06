@@ -13,7 +13,7 @@ import { ChatDock } from "../components/ChatDock";
 import { PageUiTools } from "../components/PageUiTools";
 import { PddlPlanImportPanel } from "../components/PddlPlanImportPanel";
 import { relationshipIds } from "../components/resourceRelationships";
-import type { VideoImportChainSummaryStep } from "../components/VideoImportPage";
+import type { VideoImportChainSummaryStep } from "@omega_vision_ui/components/VideoImportPage";
 import {
   HumanInputForm,
   RuntimeHistoryView,
@@ -140,22 +140,22 @@ const GenerateWorkflowPage = lazy(() =>
   })),
 );
 const VisualImageDiffPage = lazy(() =>
-  import("../components/VisualImageDiffPage").then((module) => ({
+  import("@omega_vision_ui/components/VisualImageDiffPage").then((module) => ({
     default: module.VisualImageDiffPage,
   })),
 );
 const Arc3PromptPrologPage = lazy(() =>
-  import("../components/Arc3PromptPrologPage").then((module) => ({
+  import("@omega_vision_ui/components/Arc3PromptPrologPage").then((module) => ({
     default: module.Arc3PromptPrologPage,
   })),
 );
 const Arc3B1B2PipelinePage = lazy(() =>
-  import("../components/Arc3B1B2PipelinePage").then((module) => ({
+  import("@omega_vision_ui/components/Arc3B1B2PipelinePage").then((module) => ({
     default: module.Arc3B1B2PipelinePage,
   })),
 );
 const Arc3PlayPage = lazy(() =>
-  import("../components/Arc3PlayPage").then((module) => ({
+  import("@omega_vision_ui/components/Arc3PlayPage").then((module) => ({
     default: module.Arc3PlayPage,
   })),
 );
@@ -175,7 +175,7 @@ const SpriteViewerPage = lazy(() =>
   })),
 );
 const RecognitionDemosPage = lazy(() =>
-  import("../components/RecognitionDemosPage").then((module) => ({
+  import("@omega_vision_ui/components/RecognitionDemosPage").then((module) => ({
     default: module.RecognitionDemosPage,
   })),
 );

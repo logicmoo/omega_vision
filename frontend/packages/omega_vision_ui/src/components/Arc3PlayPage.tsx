@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { type WorkflowPageDefinition } from "./WorkflowPageHost";
+import { type WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import { Arc3B1B2PipelinePage, type ModelChoice, type WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
-import { useTaskRegistry } from "../taskRegistry";
+import { useTaskRegistry } from "@app/taskRegistry";
 import "../styles/arc3_play.css";
 
 type Props = {
