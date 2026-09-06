@@ -12,6 +12,11 @@ blob), then we derive PURELY TOPOLOGICAL facts from the pixels:
                          % the image edge -> Outer completely surrounds Inner
   border(Id).            % region has a pixel on the image edge
   img_size(W, H).
+  polygon(Id, Points).   % OUTER edge (silhouette)
+  hole(Id, Points).      % INNER edges (cutouts), stored separately
+  midline(Id, Points).   % median lines: distance-transform crest polylines
+  fillpoint(Id, xy(X,Y), Depth). % all points found in the fill: every local
+                         % distance peak, guaranteed interior, deepest first
 
 Prolog then reasons over adjacency + enclosure — never a box. Optionally also
 emit the quantized cell/3 grid (--grid) for full pixel fidelity.
@@ -29,7 +34,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFilter, ImageOps
 from scipy import ndimage
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
@@ -188,6 +193,25 @@ def enclosures(info, neigh):
     return out
 
 
+def add_enclosed_parts(info, pairs, big: set, floor: int = 4) -> set:
+    """Enclosed fillers survive min_area: a region fully surrounded by a kept
+    part is itself a part (eye dots, mouth holes), however small - it is the
+    thing that fills a cutout. Iterates so nested fillers (pupil inside iris
+    inside eye-white) all make it in."""
+    neigh = defaultdict(set)
+    for a, b in pairs:
+        neigh[a].add(b)
+        neigh[b].add(a)
+    added = True
+    while added:
+        added = False
+        for outer, inner in enclosures(info, neigh):
+            if outer in big and inner not in big and info[inner]["area"] >= floor:
+                big.add(inner)
+                added = True
+    return big
+
+
 def perimeters(labels: np.ndarray) -> dict[int, int]:
     """Boundary length per region: pixel pairs facing a different region plus
     pixels on the image edge (bbox-free shape cue: perimeter^2/area separates
@@ -326,12 +350,54 @@ def _skeleton_paths(mask: np.ndarray, origin: tuple[int, int]) -> list[list[tupl
     return paths
 
 
+def _simplify_no_cutout(path: list[tuple[int, int]], inside, tolerance: float) -> list[tuple[int, int]]:
+    """Douglas-Peucker constrained to the part raster: a chord is accepted
+    only when every pixel under it stays inside the part, so midlines never
+    cross into cutouts. Kept vertices are original skeleton pixels - each one
+    could seed a fill. Points that merely touch an edge stay; fill is simply
+    never called from midline points (fillpoint/3 owns that)."""
+    if len(path) <= 2:
+        return list(path)
+
+    def chord_ok(i: int, j: int) -> bool:
+        x0, y0 = path[i]
+        x1, y1 = path[j]
+        n = int(max(abs(x1 - x0), abs(y1 - y0)))
+        for t in range(1, n):
+            if not inside(round(x0 + (x1 - x0) * t / n), round(y0 + (y1 - y0) * t / n)):
+                return False
+        return True
+
+    keep = {0, len(path) - 1}
+    stack = [(0, len(path) - 1)]
+    while stack:
+        i, j = stack.pop()
+        if j <= i + 1:
+            continue
+        x0, y0 = path[i]
+        x1, y1 = path[j]
+        dx, dy = x1 - x0, y1 - y0
+        norm = (dx * dx + dy * dy) ** 0.5 or 1.0
+        kmax, dmax = -1, -1.0
+        for k in range(i + 1, j):
+            px, py = path[k]
+            d = abs(dx * (y0 - py) - dy * (x0 - px)) / norm
+            if d > dmax:
+                kmax, dmax = k, d
+        if dmax <= tolerance and chord_ok(i, j):
+            continue
+        keep.add(kmax)
+        stack.append((i, kmax))
+        stack.append((kmax, j))
+    return [path[k] for k in sorted(keep)]
+
+
 def region_midlines(labels: np.ndarray, big: set, tolerance: float = 1.5) -> dict[int, list[list[tuple[int, int]]]]:
     """Medial-axis MIDLINES for every part — solid parts get their structural
     skeleton, stroke-like parts get their stroke path — as simplified
-    polylines. Stored separately from the outer/inner edge polygons."""
-    from skimage import measure  # noqa: PLC0415
-
+    polylines. Stored separately from the outer/inner edge polygons. Every
+    vertex is an interior skeleton pixel (a potential fill point) and no
+    segment crosses into a cutout."""
     midlines: dict[int, list[list[tuple[int, int]]]] = {}
     for gid in big:
         ys, xs = np.nonzero(labels == gid)
@@ -339,12 +405,14 @@ def region_midlines(labels: np.ndarray, big: set, tolerance: float = 1.5) -> dic
             continue
         y0, y1, x0, x1 = ys.min(), ys.max(), xs.min(), xs.max()
         sub = labels[y0:y1 + 1, x0:x1 + 1] == gid
+
+        def inside(x: int, y: int) -> bool:
+            return 0 <= y - y0 <= y1 - y0 and 0 <= x - x0 <= x1 - x0 and bool(sub[y - y0, x - x0])
+
         paths = _skeleton_paths(sub, (int(y0), int(x0)))
         simplified: list[list[tuple[int, int]]] = []
         for path in paths:
-            arr = np.asarray([(y, x) for x, y in path], dtype=float)
-            keep = measure.approximate_polygon(arr, tolerance=tolerance)
-            pts = [(int(round(x)), int(round(y))) for y, x in keep]
+            pts = [(int(x), int(y)) for x, y in _simplify_no_cutout(path, inside, tolerance)]
             if len(pts) >= 2:
                 simplified.append(pts)
         if not simplified and paths:
@@ -355,9 +423,44 @@ def region_midlines(labels: np.ndarray, big: set, tolerance: float = 1.5) -> dic
     return midlines
 
 
+def region_fillpoints(labels: np.ndarray, big: set) -> dict[int, list[tuple[int, int, float]]]:
+    """All fill peaks per part: every local maximum plateau of the distance
+    transform, one representative point each, deepest first. Each point is
+    guaranteed inside the part (a centroid is not: donuts, crescents); depth
+    is the local half-width. Seeds flood fills, anchors cutout tests, and
+    hands redraw its brush centers."""
+    fillpoints: dict[int, list[tuple[int, int, float]]] = {}
+    slices = ndimage.find_objects(labels + 1)
+    for gid in big:
+        sl = slices[gid] if gid < len(slices) else None
+        if sl is None:
+            continue
+        mask = np.pad(labels[sl] == gid, 1)
+        dist = ndimage.distance_transform_edt(mask)
+        peak = float(dist.max())
+        if peak <= 0:
+            continue
+        local_max = (dist == ndimage.maximum_filter(dist, size=3)) & mask
+        # one representative per connected peak plateau, skipping shallow noise
+        floor = max(1.0, 0.25 * peak)
+        plateaus, count = ndimage.label(local_max & (dist >= floor))
+        points: list[tuple[int, int, float]] = []
+        for index in range(1, count + 1):
+            ys, xs = np.nonzero(plateaus == index)
+            mid = len(ys) // 2
+            py, px = int(ys[mid]), int(xs[mid])
+            points.append((px - 1 + sl[1].start, py - 1 + sl[0].start,
+                           round(float(dist[py, px]), 1)))
+        points.sort(key=lambda p: -p[2])
+        if points:
+            fillpoints[gid] = points
+    return fillpoints
+
+
 def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | None = None,
               polygons: dict[int, dict] | None = None,
-              midlines: dict[int, list[list[tuple[int, int]]]] | None = None) -> str:
+              midlines: dict[int, list[list[tuple[int, int]]]] | None = None,
+              fillpoints: dict[int, list[tuple[int, int, float]]] | None = None) -> str:
     neigh = defaultdict(set)
     for a, b in pairs:
         neigh[a].add(b)
@@ -368,12 +471,12 @@ def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | No
         ":- dynamic region/4.", ":- dynamic adjacent/2.", ":- dynamic shared_edge/3.",
         ":- dynamic encloses/2.", ":- dynamic border/1.", ":- dynamic img_size/2.",
         ":- dynamic perimeter/2.", ":- dynamic polygon/2.", ":- dynamic hole/2.",
-        ":- dynamic midline/2.",
+        ":- dynamic midline/2.", ":- dynamic fillpoint/3.",
         ":- discontiguous region/4.", ":- discontiguous adjacent/2.",
         ":- discontiguous shared_edge/3.", ":- discontiguous encloses/2.",
         ":- discontiguous border/1.", ":- discontiguous perimeter/2.",
         ":- discontiguous polygon/2.", ":- discontiguous hole/2.",
-        ":- discontiguous midline/2.",
+        ":- discontiguous midline/2.", ":- discontiguous fillpoint/3.",
         f"img_size({w}, {h}).", "",
     ]
     for gid in sorted(big, key=lambda g: -info[g]["area"]):
@@ -391,6 +494,9 @@ def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | No
             for line in midlines[gid]:
                 mid = ",".join(f"xy({x},{y})" for x, y in line)
                 L.append(f"midline(r{gid}, [{mid}]).")
+        if fillpoints and gid in fillpoints:
+            for fx, fy, depth in fillpoints[gid]:
+                L.append(f"fillpoint(r{gid}, xy({fx},{fy}), {depth}).")
         if i["border"]:
             L.append(f"border(r{gid}).")
     L.append("")
@@ -417,6 +523,33 @@ def grid_to_prolog(idx: np.ndarray, colors, cell: int) -> str:
     return "\n".join(L) + "\n"
 
 
+def _draw_parts_debug(img: Image.Image, polygons: dict[int, dict],
+                      midlines: dict[int, list[list[tuple[int, int]]]],
+                      fillpoints: dict[int, list[tuple[int, int, float]]]) -> Image.Image:
+    """debug_image.png for the parts_map transform: faded original with green
+    outer edges, red cutouts, blue median lines, orange fill peaks."""
+    base = img.convert("RGB")
+    out = Image.blend(base, Image.new("RGB", base.size, (255, 255, 255)), 0.55)
+    draw = ImageDraw.Draw(out)
+    for gid, d in polygons.items():
+        outer = d["outer"]
+        if outer:
+            draw.line(list(outer) + [outer[0]], fill=(0, 170, 0), width=1)
+        for ring in d["holes"]:
+            draw.line(list(ring) + [ring[0]], fill=(230, 30, 30), width=1)
+    for gid, paths in midlines.items():
+        for path in paths:
+            if len(path) == 1:
+                x, y = path[0]
+                draw.ellipse([x - 1, y - 1, x + 1, y + 1], fill=(40, 90, 255))
+            else:
+                draw.line(path, fill=(40, 90, 255), width=1)
+    for gid, points in fillpoints.items():
+        for x, y, _depth in points[:3]:
+            draw.ellipse([x - 2, y - 2, x + 2, y + 2], outline=(255, 140, 0))
+    return out
+
+
 def extract_region_facts(
     image_path: str | Path,
     *,
@@ -424,10 +557,13 @@ def extract_region_facts(
     filter_mode: str = "auto",
     max_dim: int = 960,
     minfrac: float = 0.0008,
+    debug_image: str | Path | None = None,
 ) -> dict:
     """One-call pipeline for the image importer / video system: enhance ->
     gradient-tolerant color blobs -> bbox-free Prolog region facts. Returns
-    the facts text plus extraction stats; callers persist/consume as needed."""
+    the facts text plus extraction stats and a per-part summary; callers
+    persist/consume as needed. When ``debug_image`` is given, renders the
+    edges + median lines + fill peaks overlay there."""
     img = Image.open(image_path)
     if max_dim and max(img.size) > max_dim:
         scale = max_dim / max(img.size)
@@ -442,10 +578,27 @@ def extract_region_facts(
     min_area = max(12, int(minfrac * w * h))
     big = {gid for gid, i in info.items() if i["area"] >= min_area}
     pairs = adjacency(labels)
+    big = add_enclosed_parts(info, pairs, big)
     perims = perimeters(labels)
+    polygons = region_polygons(labels, big)
+    midlines = region_midlines(labels, big)
+    fillpoints = region_fillpoints(labels, big)
+    parts = [
+        {
+            "id": f"r{gid}",
+            "color": info[gid]["color"],
+            "area": info[gid]["area"],
+            "outer": len(polygons.get(gid, {}).get("outer", [])),
+            "holes": len(polygons.get(gid, {}).get("holes", [])),
+            "midlines": len(midlines.get(gid, [])),
+            "fillpoints": len(fillpoints.get(gid, [])),
+        }
+        for gid in sorted(big, key=lambda g: -info[g]["area"])
+    ]
+    if debug_image is not None:
+        _draw_parts_debug(img, polygons, midlines, fillpoints).save(debug_image)
     return {
-        "prolog": to_prolog(info, pairs, big, w, h, perims, region_polygons(labels, big),
-                            region_midlines(labels, big)),
+        "prolog": to_prolog(info, pairs, big, w, h, perims, polygons, midlines, fillpoints),
         "width": w,
         "height": h,
         "regionCount": len(big),
@@ -454,6 +607,7 @@ def extract_region_facts(
         "tolerance": tolerance,
         "filterAction": filter_action,
         "minArea": min_area,
+        "parts": parts,
     }
 
 
@@ -500,13 +654,14 @@ def main(argv: list[str]) -> int:
     min_area = max(12, int(args.minfrac * w * h))
     big = {gid for gid, i in info.items() if i["area"] >= min_area}
     pairs = adjacency(labels)
+    big = add_enclosed_parts(info, pairs, big)
     perims = perimeters(labels)
     print(f"{args.image}: {w}x{h}px, {mode}, "
           f"min_area={min_area}px -> {len(big)} regions, {sum(1 for a,b in pairs if a in big and b in big)} adjacencies")
     if args.prolog:
         Path(args.prolog).write_text(
             to_prolog(info, pairs, big, w, h, perims, region_polygons(labels, big),
-                      region_midlines(labels, big)), encoding="utf-8")
+                      region_midlines(labels, big), region_fillpoints(labels, big)), encoding="utf-8")
         print("wrote", args.prolog)
     if args.grid:
         if idx is None:

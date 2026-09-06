@@ -3107,6 +3107,12 @@ export function VideoImportPage({
   const [reduceOnlyGood, setReduceOnlyGood] = useState(false);
   const [reduceMetta, setReduceMetta] = useState<Record<string, string>>({});
   const [reduceParts, setReduceParts] = useState<Record<string, any[]>>({});
+  // parts_extraction_0 previews: per input image, the transform's
+  // debug_image.png (shown to the LEFT of the input) + the parts list from
+  // meta.json. Keyed by input rel path; loaded lazily from the filesystem
+  // transform outputs (result.pl + meta.json + debug_image.png contract).
+  const [partsPreviews, setPartsPreviews] = useState<Record<string, any>>({});
+  const [partsRunBusy, setPartsRunBusy] = useState(false);
   const [expandedReduceId, setExpandedReduceId] = useState<string | null>(null);
   // partOf tree ↔ groups-box highlight: which part ids to light up, scoped to one
   // reduce row/tier (keyed by that tier's metta path).
@@ -4669,6 +4675,66 @@ export function VideoImportPage({
     return payload;
   };
   const asset = (path: string) => `/workbench/workspaces/${encodeURIComponent(workspaceId)}/asset?path=${encodeURIComponent(path)}`;
+  // parts_extraction_0 transform outputs for an input image: recording moves
+  // keep transforms inside the move dir; image-set pool images keep them
+  // under data/<set>/transforms/<stem>/.
+  const partsTransformBase = (inputRel: string): string | null => {
+    if (!inputRel) return null;
+    if (inputRel.endsWith("/image.png")) return inputRel.slice(0, -"/image.png".length);
+    const pool = inputRel.match(/^(data\/[^/]+)\/pool\/([^/]+)\.[a-zA-Z0-9]+$/);
+    if (pool) return `${pool[1]}/transforms/${pool[2]}`;
+    return null;
+  };
+  useEffect(() => {
+    if (reduceTab !== "inputs" || !recognitionReduce || !Array.isArray(recognitionReduce.items)) return;
+    let cancelled = false;
+    const pending = recognitionReduce.items
+      .map((it: any) => it.inputPath || "")
+      .filter((rel: string) => rel && partsPreviews[rel] === undefined && partsTransformBase(rel));
+    if (pending.length === 0) return;
+    (async () => {
+      const queue = [...pending];
+      const workers = Array.from({ length: 4 }, async () => {
+        while (!cancelled && queue.length > 0) {
+          const rel = queue.shift() as string;
+          const dir = `${partsTransformBase(rel)}/parts_extraction_0/python_scikit`;
+          try {
+            const resp = await fetch(asset(`${dir}/meta.json`), { cache: "no-store" });
+            if (cancelled) return;
+            if (!resp.ok) { setPartsPreviews((cur) => ({ ...cur, [rel]: { ok: false } })); continue; }
+            const meta = await resp.json();
+            setPartsPreviews((cur) => ({
+              ...cur,
+              [rel]: { ok: true, overlay: asset(`${dir}/debug_image.png`), parts: meta.parts || [], meta },
+            }));
+          } catch {
+            if (!cancelled) setPartsPreviews((cur) => ({ ...cur, [rel]: { ok: false } }));
+          }
+        }
+      });
+      await Promise.all(workers);
+    })();
+    return () => { cancelled = true; };
+  }, [reduceTab, recognitionReduce, partsPreviews, workspaceId]);
+  const runPartsExtraction = async () => {
+    if (partsRunBusy || !recognitionReduce || !Array.isArray(recognitionReduce.items) || recognitionReduce.items.length === 0) return;
+    const first = recognitionReduce.items.find((it: any) => it.inputPath);
+    if (!first) return;
+    const rel = String(first.inputPath);
+    const payload: any = { workspaceId };
+    const move = rel.match(/^(.*)\/(\d+)\/image\.png$/);
+    if (move) payload.recording = move[1];
+    else payload.set = selectedImageSet;
+    setPartsRunBusy(true);
+    try {
+      const resp = await fetch(`${API}/sequence-sets/transform`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      });
+      if (resp.ok) setPartsPreviews({});
+    } finally {
+      setPartsRunBusy(false);
+    }
+  };
   const updateMemberInventory = (id: string, update: (inventory: MemberInventory) => MemberInventory) => {
     setMemberInventories((current) => current.map((inventory) => (inventory.id === id ? update(inventory) : inventory)));
   };
@@ -8581,6 +8647,14 @@ export function VideoImportPage({
 
           {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && reduceTab === "inputs" && (
             <div className="video-import-reduce-collapse">
+              <div className="video-import-reduce-partsbar">
+                <button type="button" className="video-import-btn" disabled={partsRunBusy} onClick={runPartsExtraction}>
+                  {partsRunBusy ? "extracting parts…" : "▶ Parts extraction (edges + medians, all inputs)"}
+                </button>
+                <span className="video-import-reduce-partsbar-note">
+                  parts_extraction_0/python_scikit → debug_image.png (left) + result.pl · then parts_grouping_0 + turtle_programs by prolog
+                </span>
+              </div>
               {(() => {
             const SLUG_ORDER = ["bart_simpson","lisa_simpson","homer_simpson","marge_simpson","maggie_simpson","grandpa_simpson","spongebob","patrick_star","squidward","scooby_doo","shaggy","mickey_mouse","minnie_mouse","donald_duck","goofy","bugs_bunny","pikachu","mario","sonic","moana"];
             const COND_ORDER = ["c1_bw","c2_flip","c3_rot45","c4_busy","c5_new","c6_verybusy","c7_withchars","c8_typical","c9_colorful","c10_modality"];
@@ -8611,11 +8685,20 @@ export function VideoImportPage({
                           {chunk.map((it: any) => {
                             const inputRel = it.inputPath || "";
                             const nparts = (it.rows || [])[0]?.nparts;
+                            const pv = partsPreviews[inputRel];
                             return (
-                              <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}`} key={it.id} role="button" tabIndex={0}
+                              <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}${pv?.ok ? " is-withparts" : ""}`} key={it.id} role="button" tabIndex={0}
                                 onClick={() => { setExpandedReduceId(it.id); setReduceTab("extractions"); }}>
-                                {inputRel ? <img className="video-import-reduce-condthumb" src={asset(inputRel)} alt={it.cond || it.id} loading="lazy" /> : <div className="video-import-reduce-stagemissing">no input</div>}
+                                <div className="video-import-reduce-thumbpair">
+                                  {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy" /> : null}
+                                  {inputRel ? <img className="video-import-reduce-condthumb" src={asset(inputRel)} alt={it.cond || it.id} loading="lazy" /> : <div className="video-import-reduce-stagemissing">no input</div>}
+                                </div>
                                 <div className="video-import-reduce-condlabel">{it.cond || it.id}</div>
+                                {pv?.ok && Array.isArray(pv.parts) && pv.parts.length > 0 ? (
+                                  <pre className="video-import-reduce-partstext" onClick={(e) => e.stopPropagation()}>
+                                    {[`${typeof pv.meta?.elapsedMs === "number" ? (pv.meta.elapsedMs / 1000).toFixed(1) : "?"}s · ${pv.parts.length} parts`, ...pv.parts.map((p: any) => `${p.id} ${p.color} ${p.area}px ${p.outer}-gon ${p.holes}h ${p.midlines}m ${p.fillpoints}f`)].join("\n")}
+                                  </pre>
+                                ) : null}
                                 {(it.rows || []).length > 0 ? <span className="video-import-reduce-badge v-ref">{nparts ?? 0} parts</span> : <span className="video-import-reduce-badge v-worse">not reduced</span>}
                               </div>
                             );
@@ -8651,11 +8734,20 @@ export function VideoImportPage({
                             const best = bestNshot(it);
                             const verdict = best?.agree?.verdict || "";
                             const pct = best ? Math.round((best.agree?.score ?? 0) * 100) : null;
+                            const pv = partsPreviews[inputRel];
                             return (
-                              <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}`} key={it.id} role="button" tabIndex={0}
+                              <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}${pv?.ok ? " is-withparts" : ""}`} key={it.id} role="button" tabIndex={0}
                                 onClick={() => setExpandedReduceId(it.id === expandedReduceId ? null : it.id)}>
-                                <img className="video-import-reduce-condthumb" src={asset(inputRel)} alt={it.cond} loading="lazy" />
+                                <div className="video-import-reduce-thumbpair">
+                                  {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy" /> : null}
+                                  <img className="video-import-reduce-condthumb" src={asset(inputRel)} alt={it.cond} loading="lazy" />
+                                </div>
                                 <div className="video-import-reduce-condlabel">{COND_LABELS[it.cond] || it.cond}</div>
+                                {pv?.ok && Array.isArray(pv.parts) && pv.parts.length > 0 ? (
+                                  <pre className="video-import-reduce-partstext" onClick={(e) => e.stopPropagation()}>
+                                    {[`${typeof pv.meta?.elapsedMs === "number" ? (pv.meta.elapsedMs / 1000).toFixed(1) : "?"}s · ${pv.parts.length} parts`, ...pv.parts.map((p: any) => `${p.id} ${p.color} ${p.area}px ${p.outer}-gon ${p.holes}h ${p.midlines}m ${p.fillpoints}f`)].join("\n")}
+                                  </pre>
+                                ) : null}
                                 {best ? <span className={`video-import-reduce-badge v-${verdict}`}>{best.shots}-shot vs 1: {pct}% {String(verdict).toUpperCase()}</span> : <span className="video-import-reduce-badge v-ref">1-shot ref</span>}
                                 <div className="video-import-reduce-condsrc">
                                   {web ? (

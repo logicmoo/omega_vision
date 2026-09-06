@@ -5932,6 +5932,45 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
     if not pool.is_dir():
         raise HTTPException(status_code=404, detail=f"image set has no pool: {set_id}")
 
+    # Optional ARC sequence prefix: real game moves copied in FIRST, so the
+    # set opens with genuine ARC frames before the image-set curriculum.
+    arc_spec = body.get("arcSequence") or None
+    arc_moves: list[dict[str, Any]] = []
+    if arc_spec:
+        arc_rel = str((arc_spec or {}).get("recording") or "").strip()
+        if not arc_rel:
+            raise HTTPException(status_code=400, detail="arcSequence.recording is required")
+        try:
+            arc_dir = _safe_workspace_child(root, arc_rel)
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        if not (arc_dir / "recording.json").is_file():
+            raise HTTPException(status_code=404, detail=f"not a recording: {arc_rel}")
+        try:
+            arc_manifest = json.loads((arc_dir / "recording.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            arc_manifest = {}
+        actions_by_index = {}
+        for move in (arc_manifest.get("moves") or []):
+            if isinstance(move, dict) and move.get("index") is not None:
+                actions_by_index[int(move["index"])] = move
+        limit = int((arc_spec or {}).get("limit") or 0) or None
+        for step_dir in sorted((p for p in arc_dir.iterdir() if p.is_dir() and p.name.isdigit()),
+                               key=lambda p: int(p.name)):
+            if not (step_dir / "image.png").is_file():
+                continue
+            source_move = actions_by_index.get(int(step_dir.name), {})
+            arc_moves.append({
+                "image": step_dir / "image.png",
+                "action": str(source_move.get("action") or "ARC_MOVE"),
+                "data": source_move.get("data") if isinstance(source_move.get("data"), dict) else {},
+                "source_rel": _data_rel_of(root, step_dir / "image.png"),
+            })
+            if limit and len(arc_moves) >= limit:
+                break
+        if not arc_moves:
+            raise HTTPException(status_code=404, detail=f"arc sequence has no frames: {arc_rel}")
+
     def pool_image(slug: str, cond: str) -> Path | None:
         for suffix in (".jpg", ".jpeg", ".png"):
             candidate = pool / f"{slug}__{cond}{suffix}"
@@ -6066,4 +6105,324 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
             for block_index, block in enumerate(blocks)
         ],
         "skipped": skipped,
+    }
+
+
+# --- Sequence Set transformations ------------------------------------------
+#
+# A transformation is any application of a doer to a move. Results stay in
+# game sequence format as subfolders of the move itself:
+#
+#     <move_num>/<transformation>/<doer>/...results...
+#     e.g. 0/parts_extraction_0/python_scikit/result.pl + meta.json + debug_image.png
+#          0/parts_grouping_0/group_regions_prolog/result.pl + meta.json
+#          0/turtle_programs/turtle_programs_prolog/result.pl + meta.json
+#
+# so one move can carry many transformations, each attributed to the doer
+# that produced it (python_scikit does edge/parts extraction; prolog steps
+# are attributed to the .pl rules file that did them), and alternative
+# doers for the same transformation can coexist side by side. Every
+# transform output folder follows one contract: result.pl (the facts),
+# meta.json (attribution + stats; records the exact module behind the
+# doer), and optionally debug_image.png. The default pipeline runs
+# parts_extraction_0, parts_grouping_0, then turtle_programs, so one call
+# takes a raw frame all the way to grouped parts with redraw programs.
+
+_TRANSFORM_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+def _transform_parts_extraction(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """parts_extraction_0 by the python_scikit doer: result.pl holds Prolog
+    facts where every part gets color + outer edge (polygon/2) + cutouts
+    (hole/2) + medials (midline/2) + fill peaks (fillpoint/3);
+    debug_image.png overlays edges and median lines."""
+    from omega_vision.perception.pixels_to_regions import extract_region_facts  # noqa: PLC0415
+
+    image_path: Path | None = unit.get("image")
+    if image_path is None or not image_path.is_file():
+        raise RuntimeError("unit has no source image")
+    facts = extract_region_facts(
+        image_path,
+        tolerance=int(options.get("tolerance", 24)),
+        filter_mode=str(options.get("filter", "auto")),
+        max_dim=int(options.get("maxDim", 960)),
+        minfrac=float(options.get("minfrac", 0.0008)),
+        debug_image=out_dir / "debug_image.png",
+    )
+    prolog = facts.pop("prolog")
+    (out_dir / "result.pl").write_text(prolog, encoding="utf-8", newline="\n")
+    facts["module"] = "omega_vision.perception.pixels_to_regions"
+    return facts
+
+
+def _transform_part_groups(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """parts_grouping_0 by the group_regions_prolog doer (the .pl file that did it):
+    consult the unit's parts_extraction_0 facts and apply the grouping rules,
+    writing the conclusions to result.pl."""
+    return _run_prolog_over_parts(
+        unit, out_dir, options,
+        rules_rel="prolog/omega_vision/group_regions.pl",
+        goal_name="write_groups",
+        counted={"groupCount": "part_group(g", "objectCount": "object_instance(o"})
+
+
+def _transform_turtle_programs(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """turtle_programs by the turtle_programs_prolog doer (the .pl file that did
+    it): every per-part list except fillpoints (outer edge, each cutout,
+    each midline) becomes a turtle redraw program in result.pl."""
+    return _run_prolog_over_parts(
+        unit, out_dir, options,
+        rules_rel="prolog/omega_vision/turtle_programs.pl",
+        goal_name="write_turtles",
+        counted={"programCount": "turtle_program("})
+
+
+def _run_prolog_over_parts(unit: dict[str, Any], out_dir: Path, options: dict[str, Any], *,
+                           rules_rel: str, goal_name: str,
+                           counted: dict[str, str]) -> dict[str, Any]:
+    parts_root = unit["dir"] / "parts_extraction_0"
+    preferred = str(options.get("partsDoer", "python_scikit"))
+    candidates = [parts_root / preferred / "result.pl",
+                  *sorted(parts_root.glob("*/result.pl"))]
+    regions = next((path for path in candidates if path.is_file()), None)
+    if regions is None:
+        raise RuntimeError("no parts_extraction_0/*/result.pl for this unit (run parts_extraction_0 first)")
+    rules = _REPO_ROOT / Path(rules_rel)
+    out_file = out_dir / "result.pl"
+    goal = "consult('{}'), consult('{}'), {}('{}')".format(
+        rules.as_posix(), regions.as_posix(), goal_name, out_file.as_posix())
+    try:
+        proc = subprocess.run(["swipl", "-q", "-g", goal, "-t", "halt"],
+                              capture_output=True, text=True, timeout=int(options.get("timeout", 120)))
+    except FileNotFoundError as error:
+        raise RuntimeError("swipl is not installed or not on PATH") from error
+    if proc.returncode != 0 or not out_file.is_file():
+        raise RuntimeError((proc.stderr or proc.stdout or "swipl failed").strip()[:400])
+    text = out_file.read_text(encoding="utf-8")
+    stats: dict[str, Any] = {
+        "module": rules_rel,
+        "partsFacts": regions.relative_to(unit["dir"]).as_posix(),
+    }
+    for key, needle in counted.items():
+        stats[key] = text.count(needle)
+    return stats
+
+
+_SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
+    ("parts_extraction_0", "python_scikit"): _transform_parts_extraction,
+    ("parts_grouping_0", "group_regions_prolog"): _transform_part_groups,
+    ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
+}
+
+
+def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
+                       options: dict[str, Any], *, force: bool = False) -> dict[str, Any]:
+    """Run one transformation step for one unit, writing the standard output
+    contract (result.pl + meta.json + optional debug_image.png). Shared by
+    the HTTP endpoint and the offline task pooler."""
+    runner = _SEQUENCE_TRANSFORMS.get((transformation, doer))
+    step_name = f"{transformation}/{doer}"
+    if runner is None:
+        return {"step": step_name, "status": "error", "error": f"unknown transformation {step_name}"}
+    out_dir = unit["dir"] / transformation / doer
+    if not force and (out_dir / "meta.json").is_file():
+        return {"step": step_name, "status": "skipped"}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    started = time.perf_counter()
+    try:
+        stats = runner(unit, out_dir, options)
+    except Exception as error:  # noqa: BLE001 - reported per unit/step
+        return {"step": step_name, "status": "error", "error": str(error)}
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+    meta = {
+        "kind": "sequence_set_transformation",
+        "transformation": transformation,
+        "doer": doer,
+        "options": options,
+        "createdAt": _utc_now(),
+        "elapsedMs": elapsed_ms,
+        **stats,
+    }
+    (out_dir / "meta.json").write_text(
+        json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    entry = {"step": step_name, "status": "written", "elapsedMs": elapsed_ms}
+    for key in ("regionCount", "groupCount", "objectCount", "programCount"):
+        if key in stats:
+            entry[key] = stats[key]
+    return entry
+
+
+def write_unit_todos(unit: dict[str, Any],
+                     pipeline: list[tuple[str, str, dict[str, Any]]],
+                     step_results: list[dict[str, Any]] | None = None) -> int:
+    """Write <unit>/todos.json: the little work-queue file for this image.
+    Status is derived from disk (meta.json present = done), so any offline
+    process - the task pooler - can scan for todos.json files and read what
+    still needs to be done. Returns the pending count."""
+    results = {entry["step"]: entry for entry in (step_results or [])}
+    todos: list[dict[str, Any]] = []
+    pending = 0
+    for transformation, doer, options in pipeline:
+        step_name = f"{transformation}/{doer}"
+        out_dir = unit["dir"] / transformation / doer
+        entry: dict[str, Any] = {
+            "transformation": transformation,
+            "doer": doer,
+            "options": options,
+            "output": step_name,
+        }
+        ran = results.get(step_name)
+        if (out_dir / "meta.json").is_file():
+            entry["status"] = "done"
+        elif ran and ran.get("status") == "error":
+            entry["status"] = "error"
+            entry["error"] = ran.get("error")
+            entry["erroredAt"] = _utc_now()
+            pending += 1
+        else:
+            entry["status"] = "pending"
+            pending += 1
+        todos.append(entry)
+    image_path: Path | None = unit.get("image")
+    try:
+        image_rel = image_path.relative_to(unit["dir"]).as_posix() if image_path else None
+    except ValueError:
+        import os  # noqa: PLC0415
+        image_rel = Path(os.path.relpath(image_path, unit["dir"])).as_posix() if image_path else None
+    unit["dir"].mkdir(parents=True, exist_ok=True)
+    (unit["dir"] / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "unit": str(unit["id"]),
+        "imagePath": image_rel,
+        "updatedAt": _utc_now(),
+        "todos": todos,
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    return pending
+
+
+@router.post("/sequence-sets/transform")
+def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Apply transformations to the moves of a Sequence Set recording, or to
+    every pool image of an Image Set (pass ``set`` instead of ``recording``).
+
+    Every transform output folder follows one contract: result.pl (the facts),
+    meta.json (attribution + stats), and optionally debug_image.png. Outputs
+    travel with the game sequence: ``<move>/<transformation>/<doer>/...`` for
+    recordings, ``data/<set>/transforms/<image>/<transformation>/<doer>/...``
+    for image sets. By default the full pipeline runs: parts_extraction_0 by
+    python_scikit, then parts_grouping_0 and turtle_programs by the prolog
+    rules files that do them. Pass ``transformation``/``doer`` for a single
+    step or ``pipeline`` for an explicit list. Already-transformed units are
+    skipped unless ``force``; ``moves`` limits the run to specific
+    ordinals/stems.
+    """
+    workspace_id = str(body.get("workspaceId") or "")
+    if not workspace_id:
+        raise HTTPException(status_code=400, detail="workspaceId is required")
+    recording_rel = str(body.get("recording") or "").strip()
+    set_id = str(body.get("set") or "").strip()
+    if bool(recording_rel) == bool(set_id):
+        raise HTTPException(status_code=400, detail="pass exactly one of recording or set")
+    raw_pipeline = body.get("pipeline")
+    if raw_pipeline is None:
+        if body.get("transformation") or body.get("doer") or body.get("tool"):
+            raw_pipeline = [{"transformation": body.get("transformation") or "parts_extraction_0",
+                             "doer": body.get("doer") or body.get("tool") or "python_scikit",
+                             "options": body.get("options") or {}}]
+        else:
+            raw_pipeline = [
+                {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": body.get("options") or {}},
+                {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}},
+                {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}},
+            ]
+    if not isinstance(raw_pipeline, list) or not raw_pipeline:
+        raise HTTPException(status_code=400, detail="pipeline must be a non-empty list")
+    pipeline: list[tuple[str, str, dict[str, Any], Any]] = []
+    for value in raw_pipeline:
+        transformation = str((value or {}).get("transformation") or "").strip()
+        doer = str((value or {}).get("doer") or (value or {}).get("tool") or "").strip()
+        options = (value or {}).get("options") or {}
+        if not _TRANSFORM_NAME_RE.match(transformation) or not _TRANSFORM_NAME_RE.match(doer):
+            raise HTTPException(status_code=400, detail="transformation and doer must be snake_case names")
+        if not isinstance(options, dict):
+            raise HTTPException(status_code=400, detail="options must be an object")
+        runner = _SEQUENCE_TRANSFORMS.get((transformation, doer))
+        if runner is None:
+            known = ", ".join(f"{t}/{k}" for t, k in sorted(_SEQUENCE_TRANSFORMS))
+            raise HTTPException(status_code=400,
+                                detail=f"unknown transformation {transformation}/{doer}; known: {known}")
+        pipeline.append((transformation, doer, options, runner))
+    force = bool(body.get("force"))
+    only_moves: set[str] | None = None
+    if body.get("moves") is not None:
+        try:
+            only_moves = {str(value) for value in body["moves"]}
+        except TypeError as error:
+            raise HTTPException(status_code=400, detail="moves must be a list of move ordinals/stems") from error
+
+    root = _workspace_root(workspace_id)
+    units: list[dict[str, Any]] = []
+    if recording_rel:
+        try:
+            recording_dir = _safe_workspace_child(root, recording_rel)
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        if not (recording_dir / "recording.json").is_file():
+            raise HTTPException(status_code=404, detail=f"not a recording (no recording.json): {recording_rel}")
+        for path in sorted((p for p in recording_dir.iterdir() if p.is_dir() and p.name.isdigit()),
+                           key=lambda p: int(p.name)):
+            units.append({"id": path.name, "dir": path, "image": path / "image.png"})
+        target = recording_rel
+    else:
+        try:
+            set_base = _safe_workspace_child(root, f"data/{set_id}")
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        pool = set_base / "pool"
+        if not pool.is_dir():
+            raise HTTPException(status_code=404, detail=f"image set has no pool: {set_id}")
+        for image in sorted(pool.iterdir()):
+            if image.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+                continue
+            units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
+        target = f"data/{set_id}"
+    if only_moves is not None:
+        units = [unit for unit in units if unit["id"] in only_moves]
+    plan_only = bool(body.get("planOnly"))
+    pipeline_specs = [(t, d, o) for t, d, o, _ in pipeline]
+
+    def apply_one(unit: dict[str, Any]) -> dict[str, Any]:
+        steps: list[dict[str, Any]] = []
+        if not plan_only:
+            for transformation, doer, options, _runner in pipeline:
+                steps.append(run_transform_step(unit, transformation, doer, options, force=force))
+        pending = write_unit_todos(unit, pipeline_specs, steps)
+        if plan_only:
+            steps = [{"step": f"{t}/{d}",
+                      "status": "done" if (unit["dir"] / t / d / "meta.json").is_file() else "pending"}
+                     for t, d, _ in pipeline_specs]
+        move_id: Any = int(unit["id"]) if str(unit["id"]).isdigit() else unit["id"]
+        return {"move": move_id, "steps": steps, "pending": pending}
+
+    workers = max(1, min(int(body.get("workers", 4)), 8))
+    if workers == 1 or len(units) <= 1:
+        results = [apply_one(unit) for unit in units]
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as pool_exec:
+            results = list(pool_exec.map(apply_one, units))
+    counts: dict[str, dict[str, int]] = {}
+    for item in results:
+        for step in item["steps"]:
+            bucket = counts.setdefault(step["step"], {})
+            bucket[step["status"]] = bucket.get(step["status"], 0) + 1
+    return {
+        "recording": recording_rel or None,
+        "set": set_id or None,
+        "target": target,
+        "pipeline": [f"{t}/{d}" for t, d, _, _ in pipeline],
+        "moveCount": len(units),
+        "planOnly": plan_only,
+        "pendingTotal": sum(item.get("pending", 0) for item in results),
+        "counts": counts,
+        "moves": results,
     }

@@ -7,6 +7,8 @@
 %   region(Id, Color, Area, centroid(CX,CY)).
 %   adjacent(A, B).  shared_edge(A, B, Pixels).
 %   encloses(Outer, Inner).  border(Id).  img_size(W, H).
+%   polygon(Id, Pts).  hole(Id, Pts).  midline(Id, Pts).
+%   fillpoint(Id, xy(X,Y), Depth).
 %
 % Run: swipl -q -g "consult('group_regions.pl'), consult('REGIONS.pl'), report" -t halt
 
@@ -20,6 +22,7 @@
 :- dynamic polygon/2.
 :- dynamic hole/2.
 :- dynamic midline/2.
+:- dynamic fillpoint/3.
 
 % ---- parts map: the FIRST artifact Prolog produces --------------------------
 % Every part as simplified boundary polygons, OUTER edge (silhouette,
@@ -86,19 +89,93 @@ squarish(Id) :-
     Q =< 18.0.
 
 % ---- attachment ---------------------------------------------------------------
-% Parts attach through strong exact edges. Enclosure-based grouping (a
-% non-square object inside another joining its group, while remaining
-% detachable as its own object) is designed but intentionally NOT enabled
-% yet - uncomment the two clauses below to turn it on.
+% POSITIVE EVIDENCE ONLY: every clause below adds group evidence; nothing
+% ever subtracts. Parts attach through strong exact edges, and through
+% smooth cutouts: a region that fills another object's smooth-edged cutout
+% belongs to that object's group (eyeholes for the face, mouthholes for
+% mouths). Background cutouts are silhouettes: fillers of one smooth
+% background hole group with each other, never with the background itself.
+% A complex figure against a night sky qualifies for nothing precisely
+% because its own outline made the sky's cutout too complex to pass the
+% smoothness test - the rule self-disqualifies; the figure keeps only its
+% own evidence. Cutout fillers stay detachable/1.
 attached(A, B) :- strong_adj(A, B).
-% attached(Outer, Inner) :-
-%     encloses(Outer, Inner),
-%     \+ squarish(Inner),
-%     \+ background(Outer).
-% attached(Inner, Outer) :-
-%     encloses(Outer, Inner),
-%     \+ squarish(Inner),
-%     \+ background(Outer).
+attached(Outer, Inner) :- nonbg_cutout(Outer, Inner).
+attached(Inner, Outer) :- nonbg_cutout(Outer, Inner).
+attached(A, B) :-
+    background(Bg),
+    in_smooth_cutout(A, Bg, Ring),
+    in_smooth_cutout(B, Bg, Ring),
+    A \== B.
+
+nonbg_cutout(Outer, Inner) :-
+    in_smooth_cutout(Inner, Outer, _),
+    \+ background(Outer).
+
+% Inner fills the smooth cutout Ring of Outer: enclosed, and a point of its
+% fill lies inside that hole ring. Fillpoints are guaranteed interior
+% (centroids are not: donuts, crescents), so probe those first.
+in_smooth_cutout(Inner, Outer, Ring) :-
+    encloses(Outer, Inner),
+    inner_probe(Inner, CX, CY),
+    hole(Outer, Ring),
+    ring_smooth(Ring),
+    point_in_ring(CX, CY, Ring).
+
+inner_probe(Inner, X, Y) :- fillpoint(Inner, xy(X, Y), _), !.
+inner_probe(Inner, X, Y) :- region(Inner, _, _, centroid(X, Y)).
+
+fills_cutout(Inner, Outer) :- in_smooth_cutout(Inner, Outer, _).
+
+% ---- ring geometry: smoothness straight from the hole polygon ---------------
+% Smooth means compact edge: perimeter^2/area near a circle's 4*pi (12.57);
+% ellipses/eyeholes stay under ~20, ragged or hairline cutouts score far
+% higher. Tiny rings are noise, not cutouts.
+smooth_max_q(20.0).
+
+ring_smooth(Points) :-
+    length(Points, N), N >= 4,
+    ring_area(Points, Area), Area >= 9,
+    ring_perimeter(Points, P),
+    Q is P * P / Area,
+    smooth_max_q(Max),
+    Q =< Max.
+
+ring_perimeter([First|Rest], P) :-
+    append([First|Rest], [First], Closed),
+    seg_sum(Closed, 0.0, P).
+
+seg_sum([_], Acc, Acc).
+seg_sum([xy(X1,Y1), xy(X2,Y2)|T], Acc, P) :-
+    D is sqrt((X2-X1)*(X2-X1) + (Y2-Y1)*(Y2-Y1)),
+    Acc1 is Acc + D,
+    seg_sum([xy(X2,Y2)|T], Acc1, P).
+
+ring_area([First|Rest], Area) :-
+    append([First|Rest], [First], Closed),
+    shoelace(Closed, 0.0, S),
+    Area is abs(S) / 2.
+
+shoelace([_], Acc, Acc).
+shoelace([xy(X1,Y1), xy(X2,Y2)|T], Acc, S) :-
+    Acc1 is Acc + (X1*Y2 - X2*Y1),
+    shoelace([xy(X2,Y2)|T], Acc1, S).
+
+% ray casting: odd number of edge crossings to the right = inside
+point_in_ring(X, Y, [First|Rest]) :-
+    append([First|Rest], [First], Closed),
+    crossings(Closed, X, Y, 0, C),
+    1 is C mod 2.
+
+crossings([_], _, _, Acc, Acc).
+crossings([xy(X1,Y1), xy(X2,Y2)|T], X, Y, Acc, C) :-
+    (   ( Y1 > Y, Y2 =< Y ; Y2 > Y, Y1 =< Y ),
+        XI is X1 + (Y - Y1) * (X2 - X1) / (Y2 - Y1),
+        X < XI
+    ->  Acc1 is Acc + 1
+    ;   Acc1 = Acc
+    ),
+    crossings([xy(X2,Y2)|T], X, Y, Acc1, C).
 
 detachable(Inner) :- encloses(_, Inner).
 
@@ -180,3 +257,32 @@ report :-
     format("~n== object instances (adjacency clusters, foreground) ==~n"),
     forall((member(M, Objs), length(M, L), L >= 3),
            format("  object of ~w regions: ~w~n", [L, M])).
+
+    % ---- machine output ----------------------------------------------------------
+    % write_groups(+File): apply the grouping rules to the consulted parts-map
+    % facts and write the conclusions as facts for the next pipeline step.
+    % This is the prolog doer behind the part_groups transformation
+    % (<move>/part_groups/prolog/groups.pl).
+    write_groups(File) :-
+        setup_call_cleanup(open(File, write, S), write_groups_stream(S), close(S)).
+
+    write_groups_stream(S) :-
+        format(S, "% part_groups by group_regions.pl (prolog doer)~n", []),
+        forall(member(N/A, [part_group/2, group_area/2, background/1, detachable/1,
+                            object_instance/2, part_of/2, squarish/1]),
+               format(S, ":- dynamic ~w/~w.~n:- discontiguous ~w/~w.~n", [N, A, N, A])),
+        part_groups(Groups),
+        forall(nth1(I, Groups, G),
+               ( format(S, "part_group(g~w, ~w).~n", [I, G]),
+                 aggregate_all(sum(Ar), (member(M, G), region(M, _, Ar, _)), Area),
+                 format(S, "group_area(g~w, ~w).~n", [I, Area]) )),
+        findall(B, background(B), Bs0), sort(Bs0, Bs),
+        forall(member(B, Bs), format(S, "background(~w).~n", [B])),
+        findall(D, detachable(D), Ds0), sort(Ds0, Ds),
+        forall(member(D, Ds), format(S, "detachable(~w).~n", [D])),
+        objects(Objs),
+        forall(nth1(J, Objs, O), format(S, "object_instance(o~w, ~w).~n", [J, O])),
+        findall(In-Out, part_of(In, Out), Ps0), sort(Ps0, Ps),
+        forall(member(In-Out, Ps), format(S, "part_of(~w, ~w).~n", [In, Out])),
+        findall(Q, squarish(Q), Qs0), sort(Qs0, Qs),
+        forall(member(Q, Qs), format(S, "squarish(~w).~n", [Q])).
