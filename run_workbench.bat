@@ -7,10 +7,10 @@ if /I "%~1"=="/kill" (
   set "KILL_API_PORT=%~3"
   if not defined KILL_API_PORT set "KILL_API_PORT=8000"
   if exist "%~dp0.venv\Scripts\python.exe" (
-    "%~dp0.venv\Scripts\python.exe" "%~dp0workbench\scripts\stop_workbench.py" --web-port "!KILL_WEB_PORT!" --api-port "!KILL_API_PORT!"
+    "%~dp0.venv\Scripts\python.exe" "%~dp0python\workbench_api_server\scripts\stop_workbench.py" --web-port "!KILL_WEB_PORT!" --api-port "!KILL_API_PORT!"
   ) else (
-    python "%~dp0workbench\scripts\stop_workbench.py" --web-port "!KILL_WEB_PORT!" --api-port "!KILL_API_PORT!"
+    python "%~dp0python\workbench_api_server\scripts\stop_workbench.py" --web-port "!KILL_WEB_PORT!" --api-port "!KILL_API_PORT!"
   )
   exit /b !ERRORLEVEL!
 )
-call "%~dp0workbench\run_demo.bat" %*
+call "%~dp0python\workbench_api_server\scripts\run_demo.bat" %*

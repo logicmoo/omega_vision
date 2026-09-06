@@ -10,13 +10,13 @@ from threading import get_ident
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 POLICY_PATH = (
-    ROOT / "workbench" / "workspaces" / "shared_library_system" / "policies"
+    ROOT / "workspaces" / "shared_library_system" / "policies"
     / "workbench_startup.workbench_startup_policy.metta"
 )
 LEGACY_POLICY_PATH = ROOT / "config" / "workbench_startup.json"
-SERVICE_DIRECTORY = ROOT / "workbench" / "workspaces" / "shared_library_system" / "design" / "services"
+SERVICE_DIRECTORY = ROOT / "workspaces" / "shared_library_system" / "design" / "services"
 PROCESS_LEDGER = ROOT / "runtime" / "run_workbench_processes.json"
 
 
@@ -48,7 +48,7 @@ def _record_started_process(
 
 def _policy_document() -> dict:
     if POLICY_PATH.is_file():
-        sys.path.insert(0, str(ROOT / "workbench" / "server"))
+        sys.path.insert(0, str(ROOT / "python" / "workbench_api_server"))
         from metta_resource_codec import metta_document_to_json
         return metta_document_to_json(POLICY_PATH.read_text(encoding="utf-8"))
     try:
@@ -61,7 +61,7 @@ def policy_for(service_id: str) -> dict[str, bool]:
     defaults = {"start": True, "hiddenWindow": False}
     for candidate in SERVICE_DIRECTORY.glob("*.managed_service.metta"):
         try:
-            sys.path.insert(0, str(ROOT / "workbench" / "server"))
+            sys.path.insert(0, str(ROOT / "python" / "workbench_api_server"))
             from metta_resource_codec import metta_document_to_json
             service = metta_document_to_json(candidate.read_text(encoding="utf-8"))
             if service.get("id") == service_id:
@@ -83,7 +83,7 @@ def policy_for(service_id: str) -> dict[str, bool]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Start one run_workbench child according to the persisted system policy.")
     parser.add_argument("--service", required=True)
-    parser.add_argument("--cwd", type=Path, default=ROOT / "workbench")
+    parser.add_argument("--cwd", type=Path, default=ROOT)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.command[:1] == ["--"]:

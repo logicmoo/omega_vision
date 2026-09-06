@@ -6,7 +6,7 @@ set "CLAWROUTER_PORT=%~1"
 if not defined CLAWROUTER_PORT set "CLAWROUTER_PORT=3456"
 
 title ClawRouter %CLAWROUTER_PORT%
-cd /d "%~dp0..\.."
+cd /d "%~dp0..\..\.."
 
 where npx.cmd >nul 2>nul
 if errorlevel 1 (
@@ -29,7 +29,7 @@ echo.
 
 set "WORKBENCH_CONTROL_API=%WORKBENCH_CONTROL_API%"
 if not defined WORKBENCH_CONTROL_API set "WORKBENCH_CONTROL_API=http://127.0.0.1:8000"
-"%~dp0..\..\.venv\Scripts\python.exe" "%~dp0submit_managed_command.py" --api "%WORKBENCH_CONTROL_API%" --service clawrouter --cwd "%CD%" -- npx.cmd --yes @blockrun/clawrouter --port %CLAWROUTER_PORT%
+"%~dp0..\..\..\.venv\Scripts\python.exe" "%~dp0submit_managed_command.py" --api "%WORKBENCH_CONTROL_API%" --service clawrouter --cwd "%CD%" -- npx.cmd --yes @blockrun/clawrouter --port %CLAWROUTER_PORT%
 
 echo.
 echo ClawRouter stopped. Rerun this script to restart it.

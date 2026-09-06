@@ -10,8 +10,9 @@ import time
 import uvicorn
 
 
-WORKBENCH_ROOT = Path(__file__).resolve().parents[1]
-SERVER_ROOT = WORKBENCH_ROOT / "server"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+WORKBENCH_ROOT = REPO_ROOT
+SERVER_ROOT = Path(__file__).resolve().parents[1]
 RESTART_EXIT_CODE = 75
 SUPERVISED_WORKER_ENV = "WORKBENCH_API_SUPERVISED_WORKER"
 
@@ -52,7 +53,8 @@ def main() -> None:
     args = parser.parse_args()
 
     os.chdir(SERVER_ROOT)
-    sys.path.insert(0, str(SERVER_ROOT))
+    for extra in (SERVER_ROOT, REPO_ROOT / "python", REPO_ROOT / "python" / "plugins_framework"):
+        sys.path.insert(0, str(extra))
     if os.environ.get(SUPERVISED_WORKER_ENV) != "1":
         _run_explicit_restart_supervisor(args.host, args.port)
         return

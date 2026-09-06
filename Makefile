@@ -51,13 +51,13 @@ setup: ## One-time install: venv, arc-agi, kaggle CLI, clone framework
 	@echo "Setup complete. Try:  make play-local"
 
 play-local: ## Run agent/my_agent.py against ALL games (or GAME=ls20 for a single one)
-	$(VENV_PY) scripts/play_local.py $(if $(GAME),--game $(GAME)) --max-steps $(STEPS)
+	$(VENV_PY) python/arc_cli_debugger/cli/play_local.py $(if $(GAME),--game $(GAME)) --max-steps $(STEPS)
 
 verify-local: ## Quick smoke test: 50 steps on ls20 + vc33 only
-	$(VENV_PY) scripts/play_local.py --game ls20,vc33 --max-steps 50
+	$(VENV_PY) python/arc_cli_debugger/cli/play_local.py --game ls20,vc33 --max-steps 50
 
 list-games: ## Show all available games
-	$(VENV_PY) scripts/play_local.py --list
+	$(VENV_PY) python/arc_cli_debugger/cli/play_local.py --list
 
 pull-sample: _check-kaggle ## Download the official Stochastic Goose sample notebook for reference
 	mkdir -p reference/stochastic-goose
@@ -65,21 +65,21 @@ pull-sample: _check-kaggle ## Download the official Stochastic Goose sample note
 	    -p reference/stochastic-goose -m
 	@echo "Open reference/stochastic-goose/*.ipynb for the canonical pattern."
 
-notebook: ## Splice agent/my_agent.py into notebooks/submission.ipynb
+notebook: ## Splice agent/my_agent.py into python/notebooks/submission.ipynb
 	$(VENV_PY) scripts/build_notebook.py
 
 submit: notebook _check-kaggle ## Build notebook and push to Kaggle (one-line submission)
-	@grep -q REPLACE_WITH_YOUR_USERNAME notebooks/kernel-metadata.json && { \
-	    echo "ERROR: edit notebooks/kernel-metadata.json and replace REPLACE_WITH_YOUR_USERNAME"; \
+	@grep -q REPLACE_WITH_YOUR_USERNAME python/notebooks/kernel-metadata.json && { \
+	    echo "ERROR: edit python/notebooks/kernel-metadata.json and replace REPLACE_WITH_YOUR_USERNAME"; \
 	    exit 1; } || true
-	$(KAGGLE) kernels push -p notebooks/
+	$(KAGGLE) kernels push -p python/notebooks/
 	@echo ""
 	@echo "Pushed. Track it with:  make status"
 
 status: _check-kaggle ## Show the status of your most recent Kaggle kernel run
-	@KERNEL_ID=$$(python3 -c "import json; print(json.load(open('notebooks/kernel-metadata.json'))['id'])"); \
+	@KERNEL_ID=$$(python3 -c "import json; print(json.load(open('python/notebooks/kernel-metadata.json'))['id'])"); \
 	$(KAGGLE) kernels status $$KERNEL_ID
 
 clean: ## Remove generated artefacts (venv, downloaded games, vendored repos)
-	rm -rf $(VENV) vendor environment_files recordings notebooks/submission.ipynb \
+	rm -rf $(VENV) vendor environment_files recordings python/notebooks/submission.ipynb \
 	       reference logs.log __pycache__ .pytest_cache

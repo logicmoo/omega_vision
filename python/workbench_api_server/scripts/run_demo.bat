@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat"
 set "ROOT=%~dp0"
-for %%I in ("%ROOT%..") do set "REPO_ROOT=%%~fI"
+for %%I in ("%ROOT%..\..\..") do set "REPO_ROOT=%%~fI"
 set "WORKBENCH_PYTHON=%REPO_ROOT%\.venv\Scripts\python.exe"
 
 rem Usage:
@@ -90,9 +90,9 @@ if errorlevel 1 (
   if errorlevel 1 goto :failed
 )
 
-if not exist "%ROOT%frontend\node_modules\.bin\vite.cmd" (
+if not exist "%REPO_ROOT%\frontend\apps\workbench\node_modules\.bin\vite.cmd" (
   echo Installing web packages for the first run...
-  pushd "%ROOT%frontend"
+  pushd "%REPO_ROOT%\frontend\apps\workbench"
   call npm install
   if errorlevel 1 (
     popd
@@ -102,7 +102,7 @@ if not exist "%ROOT%frontend\node_modules\.bin\vite.cmd" (
 )
 
 echo Starting the local event backend on %BIND_IP%:%API_PORT%...
-"%WORKBENCH_PYTHON%" "%ROOT%scripts\start_with_policy.py" --service workbench-api --cwd "%ROOT%." -- "%ComSpec%" /d /c scripts\run_api_server.bat %BIND_IP% %API_PORT%
+"%WORKBENCH_PYTHON%" "%ROOT%start_with_policy.py" --service workbench-api --cwd "%REPO_ROOT%." -- "%ComSpec%" /d /c python\workbench_api_server\scripts\run_api_server.bat %BIND_IP% %API_PORT%
 echo Waiting for the backend before submitting managed commands...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$limit=(Get-Date).AddSeconds(45); $url='%API_HEALTH_URL%'; do { try { $r=Invoke-WebRequest -UseBasicParsing $url -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch {}; Start-Sleep -Milliseconds 400 } while ((Get-Date) -lt $limit); exit 1"
 if errorlevel 1 echo WARNING: The API is unavailable; managed batch files will use legacy mode.
@@ -112,12 +112,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebReque
 if errorlevel 1 (
   if exist "%CHANNEL_RELAY_DIR%\mailbox-server.cmd" (
     echo Starting the Mailbox Channel Relay when enabled in System Settings...
-    "%WORKBENCH_PYTHON%" "%ROOT%scripts\start_with_policy.py" --service mailbox_server --cwd "%ROOT%." -- "%ComSpec%" /d /c scripts\run_channel_relay.bat "%CHANNEL_RELAY_DIR%"
+    "%WORKBENCH_PYTHON%" "%ROOT%start_with_policy.py" --service mailbox_server --cwd "%REPO_ROOT%." -- "%ComSpec%" /d /c python\workbench_api_server\scripts\run_channel_relay.bat "%CHANNEL_RELAY_DIR%"
     if errorlevel 3 (
       echo Mailbox Channel Relay startup is disabled in System Settings.
     ) else (
       echo Waiting for Mailbox Channel Relay...
-      "%WORKBENCH_PYTHON%" "%ROOT%scripts\wait_for_managed_service.py" --service mailbox_server --url "%CHANNEL_RELAY_URL%/health" --timeout 90
+      "%WORKBENCH_PYTHON%" "%ROOT%wait_for_managed_service.py" --service mailbox_server --url "%CHANNEL_RELAY_URL%/health" --timeout 90
       if errorlevel 1 echo WARNING: Mailbox Channel Relay did not answer yet.
     )
   ) else (
@@ -131,12 +131,12 @@ echo Checking ClawRouter on 127.0.0.1:%CLAWROUTER_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebRequest -UseBasicParsing '%CLAWROUTER_HEALTH_URL%' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch {}; exit 1" >nul 2>nul
 if errorlevel 1 (
   echo Starting the local ClawRouter proxy on 127.0.0.1:%CLAWROUTER_PORT%...
-  "%WORKBENCH_PYTHON%" "%ROOT%scripts\start_with_policy.py" --service clawrouter --cwd "%ROOT%." -- "%ComSpec%" /d /c scripts\run_clawrouter.bat %CLAWROUTER_PORT%
+  "%WORKBENCH_PYTHON%" "%ROOT%start_with_policy.py" --service clawrouter --cwd "%REPO_ROOT%." -- "%ComSpec%" /d /c python\workbench_api_server\scripts\run_clawrouter.bat %CLAWROUTER_PORT%
   if errorlevel 3 (
     echo ClawRouter startup is disabled in System Settings.
   ) else (
     echo Waiting for ClawRouter...
-    "%WORKBENCH_PYTHON%" "%ROOT%scripts\wait_for_managed_service.py" --service clawrouter --url "%CLAWROUTER_HEALTH_URL%" --timeout 120
+    "%WORKBENCH_PYTHON%" "%ROOT%wait_for_managed_service.py" --service clawrouter --url "%CLAWROUTER_HEALTH_URL%" --timeout 120
     if errorlevel 1 echo WARNING: ClawRouter did not answer yet. Check its configured process window.
   )
 ) else (
@@ -147,12 +147,12 @@ echo Checking OmniRoute on 127.0.0.1:%OMNIROUTE_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebRequest -UseBasicParsing '%OMNIROUTE_URL%/' -TimeoutSec 3; if ($r.StatusCode -eq 200) { exit 0 } } catch {}; exit 1" >nul 2>nul
 if errorlevel 1 (
   echo Starting the local OmniRoute gateway on 127.0.0.1:%OMNIROUTE_PORT%...
-  "%WORKBENCH_PYTHON%" "%ROOT%scripts\start_with_policy.py" --service omniroute --cwd "%ROOT%." -- "%ComSpec%" /d /c scripts\run_omniroute.bat %OMNIROUTE_PORT%
+  "%WORKBENCH_PYTHON%" "%ROOT%start_with_policy.py" --service omniroute --cwd "%REPO_ROOT%." -- "%ComSpec%" /d /c python\workbench_api_server\scripts\run_omniroute.bat %OMNIROUTE_PORT%
   if errorlevel 3 (
     echo OmniRoute startup is disabled in System Settings.
   ) else (
     echo Waiting for OmniRoute...
-    "%WORKBENCH_PYTHON%" "%ROOT%scripts\wait_for_managed_service.py" --service omniroute --url "%OMNIROUTE_URL%/" --timeout 240
+    "%WORKBENCH_PYTHON%" "%ROOT%wait_for_managed_service.py" --service omniroute --url "%OMNIROUTE_URL%/" --timeout 240
     if errorlevel 1 echo WARNING: OmniRoute did not answer yet. Check its configured process window.
   )
 ) else (
@@ -160,12 +160,12 @@ if errorlevel 1 (
 )
 
 if exist "%WORKBENCH_PYTHON%" (
-  "%WORKBENCH_PYTHON%" "%ROOT%scripts\bootstrap_omniroute.py" "%ROOT%workspaces\shared_library_system"
+  "%WORKBENCH_PYTHON%" "%ROOT%bootstrap_omniroute.py" "%REPO_ROOT%\workspaces\shared_library_system"
   if errorlevel 1 echo WARNING: OmniRoute endpoint-key setup failed. Configure it under Settings.
 )
 
 echo Starting the live-editing web interface on %BIND_IP%:%WEB_PORT%...
-"%WORKBENCH_PYTHON%" "%ROOT%scripts\start_with_policy.py" --service workbench-web --cwd "%ROOT%." -- "%ComSpec%" /d /c scripts\run_vite_server.bat %BIND_IP% %WEB_PORT% %API_URL%
+"%WORKBENCH_PYTHON%" "%ROOT%start_with_policy.py" --service workbench-web --cwd "%REPO_ROOT%." -- "%ComSpec%" /d /c python\workbench_api_server\scripts\run_vite_server.bat %BIND_IP% %WEB_PORT% %API_URL%
 
 echo Waiting for the website...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$limit=(Get-Date).AddSeconds(45); do { try { $r=Invoke-WebRequest -UseBasicParsing '%WEB_URL%' -TimeoutSec 2; if ($r.StatusCode -eq 200) { exit 0 } } catch {}; Start-Sleep -Milliseconds 400 } while ((Get-Date) -lt $limit); exit 1"
@@ -181,7 +181,7 @@ echo API documentation is at %API_URL%/docs
 echo ClawRouter is at %CLAWROUTER_URL%/v1 using blockrun/free by default.
 echo OmniRoute is at %OMNIROUTE_URL%/v1 using auto/best-free by default.
 echo Mailbox Channel Relay is at %CHANNEL_RELAY_URL% when enabled in System Settings.
-echo Edit files under workbench\frontend\src or workbench\server;
+echo Edit files under frontend\apps\workbench\src or python\workbench_api_server;
 echo the appropriate process reloads automatically.
 echo Each API/Vite window shows the exact command to rerun after Ctrl+C.
 echo Close the API, Vite, ClawRouter, and OmniRoute windows for this instance when you are finished.

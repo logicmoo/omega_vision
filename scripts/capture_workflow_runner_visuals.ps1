@@ -2,7 +2,7 @@ param(
     [string]$BaseUrl = "http://127.0.0.1:5173",
     [string]$Workspace = "shared",
     [string]$RunId = "",
-    [string]$OutputDirectory = "workbench/docs/todo/assets/actual"
+    [string]$OutputDirectory = "docs/todo/assets/actual"
 )
 
 $ErrorActionPreference = "Stop"

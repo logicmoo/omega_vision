@@ -3,7 +3,7 @@ rem Intentionally do not SETLOCAL here.  These variables must remain in this
 rem child command window after Vite is stopped so `restart` uses the same
 rem host, port, and API target.
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat"
-set "ROOT=%~dp0.."
+set "ROOT=%~dp0..\..\.."
 set "BIND_IP=%~1"
 if not defined BIND_IP set "BIND_IP=127.0.0.1"
 set "WEB_PORT=%~2"
@@ -16,7 +16,7 @@ set "WORKBENCH_WEB_PORT=%WEB_PORT%"
 set "WORKBENCH_API_TARGET=%API_TARGET%"
 
 title MeTTa Workbench Vite Dev Server %BIND_IP%:%WEB_PORT%
-cd /d "%ROOT%\frontend"
+cd /d "%ROOT%\frontend\apps\workbench"
 doskey restart=npm run dev
 
 echo.
@@ -48,7 +48,7 @@ echo.
 
 set "WORKBENCH_CONTROL_API=%WORKBENCH_CONTROL_API%"
 if not defined WORKBENCH_CONTROL_API set "WORKBENCH_CONTROL_API=%API_TARGET%"
-"%ROOT%\..\.venv\Scripts\python.exe" "%ROOT%\scripts\submit_managed_command.py" --api "%WORKBENCH_CONTROL_API%" --service workbench-web --cwd "%CD%" --env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT --env WORKBENCH_API_TARGET -- "%ComSpec%" /d /c "npm.cmd run dev"
+"%ROOT%\.venv\Scripts\python.exe" "%~dp0submit_managed_command.py" --api "%WORKBENCH_CONTROL_API%" --service workbench-web --cwd "%CD%" --env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT --env WORKBENCH_API_TARGET -- "%ComSpec%" /d /c "npm.cmd run dev"
 
 echo.
 echo ------------------------------------------------------------

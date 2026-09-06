@@ -4,8 +4,9 @@ import sys
 from pathlib import Path
 
 
-WORKBENCH = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(WORKBENCH / "server"))
+REPO = Path(__file__).resolve().parents[3]
+WORKBENCH = REPO
+sys.path.insert(0, str(REPO / "python" / "workbench_api_server"))
 
 from backend_library import load_workspace_backend_records  # noqa: E402
 from workspace_credentials import (  # noqa: E402
@@ -15,7 +16,7 @@ from workspace_credentials import (  # noqa: E402
 
 
 def main() -> int:
-    workspace_root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else WORKBENCH / "workspaces" / "shared"
+    workspace_root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else REPO / "workspaces" / "shared"
     if resolve_workspace_credential(workspace_root, "OMNIROUTE_API_KEY"):
         print("OmniRoute endpoint key is already configured.")
         return 0
