@@ -1857,7 +1857,21 @@ export function VideoImportPage({
     url.searchParams.set("subview", subview);
     window.history.replaceState(window.history.state, "", url);
     setActiveSubview(subview);
+    // Keep the app nav rail/topbar highlight in sync with the page's own tabs.
+    window.dispatchEvent(new CustomEvent("workbench:subview-changed", { detail: subview }));
   };
+  useEffect(() => {
+    // Stage pages in the app nav address this component through ?subview=;
+    // honor switches that arrive while the page is already mounted.
+    const onExternal = (event: Event) => {
+      const detail = String((event as CustomEvent).detail || "").toLowerCase();
+      if (VIDEO_IMPORT_SUBVIEWS.some((entry) => entry.id === detail)) {
+        setActiveSubview(detail as VideoImportSubview);
+      }
+    };
+    window.addEventListener("workbench:set-subview", onExternal);
+    return () => window.removeEventListener("workbench:set-subview", onExternal);
+  }, []);
   const hoveredImageRef = useRef<Element | null>(null);
   const [altImageZoom, setAltImageZoom] = useState<AltImageZoom | null>(null);
   const [pinnedAltImageZoom, setPinnedAltImageZoom] = useState<AltImageZoom | null>(null);

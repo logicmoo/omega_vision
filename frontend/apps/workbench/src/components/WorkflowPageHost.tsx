@@ -38,6 +38,9 @@ export type WorkflowPageDefinition = {
   description?: string;
   glyph?: string;
   menuPlacement?: "first" | "middle" | "last";
+  /** Nav rail group this page is listed under. Defaults to OMEGA VISION for
+   * arc3_* renderers and WORKFLOWS otherwise. */
+  menuGroup?: string;
   order?: number;
   routeView: string;
   renderer: string;

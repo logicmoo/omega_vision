@@ -709,8 +709,8 @@ const WORKSPACE_RESOURCE_COUNTING_STORAGE_KEY =
 const PLUGIN_MENU_COLLAPSE_THRESHOLD = 5;
 
 export const NAVIGATION_V2: Array<{
-  group: "WORKSPACE" | "WORKFLOWS" | "CAPABILITIES" | "KNOWLEDGE" | "RUNTIME" | "SYSTEM" | "PLUGINS";
-  items: Array<{ label: string; view: View; glyph: string }>;
+  group: "WORKSPACE" | "WORKFLOWS" | "OMEGA VISION" | "CAPABILITIES" | "KNOWLEDGE" | "RUNTIME" | "SYSTEM" | "PLUGINS";
+  items: Array<{ label: string; view: View; glyph: string; subview?: string }>;
 }> = [
   {
     group: "WORKSPACE",
@@ -730,6 +730,24 @@ export const NAVIGATION_V2: Array<{
     ],
   },
   {
+    // The ARC/vision family: static vision pages plus every filesystem
+    // workflow page whose renderer is arc3_* (see workflowNavigationEntries).
+    // The Video Import stages are first-class pages sharing one rich
+    // component, addressed by ?subview=.
+    group: "OMEGA VISION",
+    items: [
+      { label: "Video Import", view: "videoImport", subview: "sources", glyph: "▷" },
+      { label: "Frames & Filters", view: "videoImport", subview: "frames", glyph: "▤" },
+      { label: "Game Recordings", view: "videoImport", subview: "games", glyph: "⊞" },
+      { label: "Objects", view: "videoImport", subview: "objects", glyph: "◍" },
+      { label: "Finish", view: "videoImport", subview: "finish", glyph: "✓" },
+      { label: "Recognition", view: "videoImport", subview: "recognition", glyph: "❖" },
+      { label: "VI Advanced", view: "videoImport", subview: "advanced", glyph: "⚙" },
+      { label: "Sprite Viewer", view: "spriteViewer", glyph: "◳" },
+      { label: "Demos", view: "recognitionDemos", glyph: "✦" },
+    ],
+  },
+  {
     group: "CAPABILITIES",
     items: [
       { label: "Operations", view: "operations", glyph: "⚒" },
@@ -745,9 +763,6 @@ export const NAVIGATION_V2: Array<{
     group: "KNOWLEDGE",
     items: [
       { label: "Data", view: "knowledgeData", glyph: "◫" },
-      { label: "Video Import", view: "videoImport", glyph: "▷" },
-      { label: "Sprite Viewer", view: "spriteViewer", glyph: "◳" },
-      { label: "Demos", view: "recognitionDemos", glyph: "✦" },
       { label: "AtomSpaces", view: "contexts", glyph: "⚛" },
       { label: "Resource AtomSpace", view: "resourceAtomspace", glyph: "⌬" },
       { label: "Artifacts", view: "knowledgeArtifacts", glyph: "▣" },
@@ -1325,6 +1340,17 @@ export function FilesystemWorkbenchPage() {
       return {};
     }
   });
+  // Current ?subview= (Video Import stage pages); kept in state so the nav
+  // rail/topbar highlight follows both nav clicks and the page's own tabs.
+  const [activeNavSubview, setActiveNavSubview] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get("subview"),
+  );
+  useEffect(() => {
+    const onChanged = (event: Event) =>
+      setActiveNavSubview(String((event as CustomEvent).detail || "") || null);
+    window.addEventListener("workbench:subview-changed", onChanged);
+    return () => window.removeEventListener("workbench:subview-changed", onChanged);
+  }, []);
   useEffect(() => {
     if (view !== "pluginPage" || pluginPage || pluginMenu.length === 0) return;
     const params = new URL(window.location.href).searchParams;
@@ -1349,6 +1375,9 @@ export function FilesystemWorkbenchPage() {
           label: definition.label,
           glyph: definition.glyph || "✧",
           menuPlacement: definition.menuPlacement || "middle",
+          menuGroup:
+            definition.menuGroup ||
+            (definition.renderer.startsWith("arc3_") ? "OMEGA VISION" : "WORKFLOWS"),
           order: definition.order ?? 1000,
           definition,
         }))
@@ -1409,12 +1438,12 @@ export function FilesystemWorkbenchPage() {
       ];
     }
     return orderedSectionTopbarItems.map((item) => ({
-      key: `section-topbar:${item.view}`,
+      key: `section-topbar:${item.view}${item.subview ? `:${item.subview}` : ""}`,
       label: item.label,
-      active: item.view === view,
-      onClick: () => setView(item.view),
+      active: item.view === view && (!item.subview || (activeNavSubview || "sources") === item.subview),
+      onClick: () => openNavigationItem(item),
     }));
-  }, [view, orderedSectionTopbarItems]);
+  }, [view, orderedSectionTopbarItems, activeNavSubview]);
   const setLeftColumnAccordionMode = (mode: AccordionDisplayMode) => {
     setWorkflowLeftColumnDisplayMode(mode);
     setSelectedStageDisplayMode(mode);
@@ -3288,6 +3317,19 @@ export function FilesystemWorkbenchPage() {
         view === "editor" ||
         view === "workflowRuns"
       : target === view;
+  const navItemSelected = (item: { view: View; subview?: string }) =>
+    navSelected(item.view) &&
+    (!item.subview || (activeNavSubview || "sources") === item.subview);
+  const openNavigationItem = (item: { view: View; subview?: string }) => {
+    if (item.subview) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("subview", item.subview);
+      window.history.replaceState(window.history.state, "", url);
+      setActiveNavSubview(item.subview);
+      window.dispatchEvent(new CustomEvent("workbench:set-subview", { detail: item.subview }));
+    }
+    setView(item.view);
+  };
   const returnToBreadcrumb = (entry: BreadcrumbEntry, index: number) => {
     breadcrumbNavigation.current = true;
     setViewTrailIndex(index);
@@ -3572,8 +3614,10 @@ export function FilesystemWorkbenchPage() {
               </button>
               {!collapsedNavigationGroups[section.group] && (
                 <>
-              {section.group === "WORKFLOWS" &&
-                workflowNavigationEntries.map((entry) => {
+              {(section.group === "WORKFLOWS" || section.group === "OMEGA VISION") &&
+                workflowNavigationEntries
+                  .filter((entry) => entry.menuGroup === section.group)
+                  .map((entry) => {
                   const target = WORKBENCH_VIEWS.has(
                     entry.definition.routeView as View,
                   )
@@ -3599,8 +3643,8 @@ export function FilesystemWorkbenchPage() {
                   key={item.label}
                   title={item.label}
                   data-navigation-label={item.label}
-                  className={`rail-icon ${navSelected(item.view) ? "selected" : ""}`}
-                  onClick={() => setView(item.view)}
+                  className={`rail-icon ${navItemSelected(item) ? "selected" : ""}`}
+                  onClick={() => openNavigationItem(item)}
                 >
                   <span>{item.glyph}</span>
                   <small>{item.label}</small>
