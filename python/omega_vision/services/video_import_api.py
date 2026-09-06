@@ -6134,8 +6134,9 @@ _TRANSFORM_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 def _transform_parts_extraction(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
     """parts_extraction_0 by the python_scikit doer: result.pl holds Prolog
     facts where every part gets color + outer edge (polygon/2) + cutouts
-    (hole/2) + medials (midline/2) + fill peaks (fillpoint/3);
-    debug_image.png overlays edges and median lines."""
+    (hole/2) + medials (midline/2) + fill peaks (fillpoint/3). Also saves
+    geometry.json so the separate parts_debug_0 ui task can render the
+    overlay without re-extracting."""
     from omega_vision.perception.pixels_to_regions import extract_region_facts  # noqa: PLC0415
 
     image_path: Path | None = unit.get("image")
@@ -6147,12 +6148,43 @@ def _transform_parts_extraction(unit: dict[str, Any], out_dir: Path, options: di
         filter_mode=str(options.get("filter", "auto")),
         max_dim=int(options.get("maxDim", 960)),
         minfrac=float(options.get("minfrac", 0.0008)),
-        debug_image=out_dir / "debug_image.png",
+        geometry_out=out_dir / "geometry.json",
     )
     prolog = facts.pop("prolog")
     (out_dir / "result.pl").write_text(prolog, encoding="utf-8", newline="\n")
     facts["module"] = "omega_vision.perception.pixels_to_regions"
     return facts
+
+
+def _transform_parts_debug(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """parts_debug_0 by the python_pil doer (a ui-type task): renders the faded
+    original with green outer edges, red cutouts, blue midlines, and orange
+    fill peaks from the geometry.json the extraction step saved. Falls back to
+    copying a legacy inline overlay when only old extraction output exists."""
+    from omega_vision.perception.pixels_to_regions import render_parts_debug  # noqa: PLC0415
+
+    image_path: Path | None = unit.get("image")
+    if image_path is None or not image_path.is_file():
+        raise RuntimeError("unit has no source image")
+    extraction_dir = unit["dir"] / "parts_extraction_0" / "python_scikit"
+    geometry_file = extraction_dir / "geometry.json"
+    if not geometry_file.is_file():
+        legacy = extraction_dir / "debug_image.png"
+        if legacy.is_file():
+            shutil.copyfile(legacy, out_dir / "debug_image.png")
+            (out_dir / "result.pl").write_text(
+                "% parts_debug_0/python_pil: copied legacy overlay from parts_extraction_0\n"
+                "debug_image('debug_image.png').\n", encoding="utf-8", newline="\n")
+            return {"module": "omega_vision.perception.pixels_to_regions", "source": "legacy_copy"}
+        raise RuntimeError("parts_extraction_0 has no geometry.json (re-run extraction)")
+    geometry = json.loads(geometry_file.read_text(encoding="utf-8"))
+    overlay = render_parts_debug(image_path, geometry)
+    overlay.save(out_dir / "debug_image.png")
+    (out_dir / "result.pl").write_text(
+        "% parts_debug_0/python_pil: overlay rendered from parts_extraction_0 geometry.json\n"
+        "debug_image('debug_image.png').\n", encoding="utf-8", newline="\n")
+    return {"width": overlay.size[0], "height": overlay.size[1],
+            "module": "omega_vision.perception.pixels_to_regions", "source": "geometry"}
 
 
 def _transform_part_groups(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
@@ -6210,16 +6242,45 @@ def _run_prolog_over_parts(unit: dict[str, Any], out_dir: Path, options: dict[st
 
 _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
     ("parts_extraction_0", "python_scikit"): _transform_parts_extraction,
+    ("parts_debug_0", "python_pil"): _transform_parts_debug,
     ("parts_grouping_0", "group_regions_prolog"): _transform_part_groups,
     ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
 }
 
 
+_CLAIM_STALE_SECONDS = 30 * 60
+
+
+def _claim_worker_id() -> str:
+    import socket  # noqa: PLC0415
+    return f"{socket.gethostname()}:{os.getpid()}"
+
+
+def _read_claim(claim_file: Path) -> tuple[dict[str, Any], float] | None:
+    """Return (claim payload, age seconds) for a live claim, else None."""
+    try:
+        age = time.time() - claim_file.stat().st_mtime
+    except OSError:
+        return None
+    if age >= _CLAIM_STALE_SECONDS:
+        return None
+    try:
+        payload = json.loads(claim_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        payload = {}
+    return payload, age
+
+
 def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
-                       options: dict[str, Any], *, force: bool = False) -> dict[str, Any]:
+                       options: dict[str, Any], *, force: bool = False,
+                       depends_on: list[str] | None = None) -> dict[str, Any]:
     """Run one transformation step for one unit, writing the standard output
     contract (result.pl + meta.json + optional debug_image.png). Shared by
-    the HTTP endpoint and the offline task pooler."""
+    the HTTP endpoint and the offline task pooler.
+
+    A claim.json lock is taken in the step dir before work starts so that a
+    second worker (server endpoint, another pooler, ...) sees the step as
+    started and does not start it too. Stale claims (>30 min) are stolen."""
     runner = _SEQUENCE_TRANSFORMS.get((transformation, doer))
     step_name = f"{transformation}/{doer}"
     if runner is None:
@@ -6227,11 +6288,30 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     out_dir = unit["dir"] / transformation / doer
     if not force and (out_dir / "meta.json").is_file():
         return {"step": step_name, "status": "skipped"}
+    for dep in depends_on or []:
+        if not (unit["dir"] / dep / "meta.json").is_file():
+            return {"step": step_name, "status": "blocked", "missing": dep}
     out_dir.mkdir(parents=True, exist_ok=True)
+    claim_file = out_dir / "claim.json"
+    claim_body = json.dumps({"kind": "transformation_claim", "step": step_name,
+                             "claimedBy": _claim_worker_id(), "claimedAt": _utc_now()},
+                            indent=2)
+    try:
+        fd = os.open(str(claim_file), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        live = _read_claim(claim_file)
+        if live is not None:
+            return {"step": step_name, "status": "claimed",
+                    "claimedBy": live[0].get("claimedBy"), "claimedAt": live[0].get("claimedAt")}
+        claim_file.write_text(claim_body, encoding="utf-8")  # steal stale claim
+    else:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(claim_body)
     started = time.perf_counter()
     try:
         stats = runner(unit, out_dir, options)
     except Exception as error:  # noqa: BLE001 - reported per unit/step
+        claim_file.unlink(missing_ok=True)
         return {"step": step_name, "status": "error", "error": str(error)}
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     meta = {
@@ -6245,6 +6325,7 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     }
     (out_dir / "meta.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    claim_file.unlink(missing_ok=True)
     entry = {"step": step_name, "status": "written", "elapsedMs": elapsed_ms}
     for key in ("regionCount", "groupCount", "objectCount", "programCount"):
         if key in stats:
@@ -6253,7 +6334,7 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
 
 
 def write_unit_todos(unit: dict[str, Any],
-                     pipeline: list[tuple[str, str, dict[str, Any]]],
+                     pipeline: list[dict[str, Any]],
                      step_results: list[dict[str, Any]] | None = None) -> int:
     """Write <unit>/todos.json: the little work-queue file for this image.
     Status is derived from disk (meta.json present = done), so any offline
@@ -6262,18 +6343,36 @@ def write_unit_todos(unit: dict[str, Any],
     results = {entry["step"]: entry for entry in (step_results or [])}
     todos: list[dict[str, Any]] = []
     pending = 0
-    for transformation, doer, options in pipeline:
+    for spec in pipeline:
+        transformation, doer = spec["transformation"], spec["doer"]
         step_name = f"{transformation}/{doer}"
         out_dir = unit["dir"] / transformation / doer
         entry: dict[str, Any] = {
             "transformation": transformation,
             "doer": doer,
-            "options": options,
+            "options": spec.get("options") or {},
             "output": step_name,
+            "dependsOn": spec.get("dependsOn") or [],
+            "priority": int(spec.get("priority", 100)),
         }
+        if spec.get("type"):
+            entry["type"] = spec["type"]
         ran = results.get(step_name)
+        claim = None if (out_dir / "meta.json").is_file() else _read_claim(out_dir / "claim.json")
         if (out_dir / "meta.json").is_file():
             entry["status"] = "done"
+            try:
+                meta = json.loads((out_dir / "meta.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                meta = {}
+            if isinstance(meta.get("elapsedMs"), (int, float)):
+                entry["elapsedMs"] = meta["elapsedMs"]
+            if meta.get("createdAt"):
+                entry["completedAt"] = meta["createdAt"]
+        elif claim is not None:
+            entry["status"] = "started"
+            entry["startedBy"] = claim[0].get("claimedBy")
+            entry["startedAt"] = claim[0].get("claimedAt")
         elif ran and ran.get("status") == "error":
             entry["status"] = "error"
             entry["error"] = ran.get("error")
@@ -6298,6 +6397,110 @@ def write_unit_todos(unit: dict[str, Any],
         "todos": todos,
     }, indent=2, ensure_ascii=False), encoding="utf-8")
     return pending
+
+
+_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
+    {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {},
+     "priority": 10, "dependsOn": []},
+    {"transformation": "parts_debug_0", "doer": "python_pil", "options": {},
+     "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_scikit"]},
+    {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {},
+     "priority": 30, "dependsOn": ["parts_extraction_0/python_scikit"]},
+    {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {},
+     "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+]
+_PIPELINE_TEMPLATE_REL = "data/transform_pipeline.json"
+_PIPELINE_TEMPLATE_COMMENT = ("Initial todo template: stamped onto every unit as todos.json. "
+                              "priority: lower runs first; dependsOn gates on finished steps; "
+                              "type marks task kinds (e.g. ui for debug images).")
+
+
+def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
+    """Validate + normalize pipeline/template steps: snake_case names, known
+    runners, dependsOn defaulting to the previous step, integer priority
+    (lower runs first), optional type tag."""
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("pipeline must be a non-empty list")
+    steps: list[dict[str, Any]] = []
+    for index, value in enumerate(raw):
+        value = value or {}
+        transformation = str(value.get("transformation") or "").strip()
+        doer = str(value.get("doer") or value.get("tool") or "").strip()
+        options = value.get("options") or {}
+        if not _TRANSFORM_NAME_RE.match(transformation) or not _TRANSFORM_NAME_RE.match(doer):
+            raise ValueError("transformation and doer must be snake_case names")
+        if not isinstance(options, dict):
+            raise ValueError("options must be an object")
+        if (transformation, doer) not in _SEQUENCE_TRANSFORMS:
+            known = ", ".join(f"{t}/{k}" for t, k in sorted(_SEQUENCE_TRANSFORMS))
+            raise ValueError(f"unknown transformation {transformation}/{doer}; known: {known}")
+        depends = value.get("dependsOn")
+        if depends is None:
+            depends = [f"{steps[-1]['transformation']}/{steps[-1]['doer']}"] if steps else []
+        if not isinstance(depends, list):
+            raise ValueError("dependsOn must be a list of transformation/doer strings")
+        try:
+            priority = int(value.get("priority", (index + 1) * 10))
+        except (TypeError, ValueError) as error:
+            raise ValueError("priority must be an integer (lower runs first)") from error
+        step: dict[str, Any] = {"transformation": transformation, "doer": doer, "options": options,
+                                "dependsOn": [str(d) for d in depends], "priority": priority}
+        if value.get("type"):
+            step["type"] = str(value["type"])
+        steps.append(step)
+    return steps
+
+
+def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
+    """Read the editable initial-todo template, creating it from the built-in
+    default on first use so it is always visible and editable as a file."""
+    file = root / _PIPELINE_TEMPLATE_REL
+    if file.is_file():
+        try:
+            payload = json.loads(file.read_text(encoding="utf-8"))
+            steps = payload.get("pipeline") if isinstance(payload, dict) else payload
+            if isinstance(steps, list) and steps:
+                return steps
+        except (OSError, ValueError):
+            pass
+        return [dict(step) for step in _DEFAULT_PIPELINE_TEMPLATE]
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_text(json.dumps({
+        "kind": "transform_pipeline_template",
+        "comment": _PIPELINE_TEMPLATE_COMMENT,
+        "pipeline": _DEFAULT_PIPELINE_TEMPLATE,
+    }, indent=2), encoding="utf-8")
+    return [dict(step) for step in _DEFAULT_PIPELINE_TEMPLATE]
+
+
+@router.get("/sequence-sets/pipeline-template")
+def get_pipeline_template(workspaceId: str) -> dict[str, Any]:
+    try:
+        pipeline = _normalize_pipeline(load_pipeline_template(_workspace_root(workspaceId)))
+    except ValueError:
+        pipeline = _normalize_pipeline(_DEFAULT_PIPELINE_TEMPLATE)
+    return {"file": _PIPELINE_TEMPLATE_REL, "pipeline": pipeline}
+
+
+@router.post("/sequence-sets/pipeline-template")
+def save_pipeline_template(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    workspace_id = str(body.get("workspaceId") or "")
+    if not workspace_id:
+        raise HTTPException(status_code=400, detail="workspaceId is required")
+    try:
+        cleaned = _normalize_pipeline(body.get("pipeline"))
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    root = _workspace_root(workspace_id)
+    file = root / _PIPELINE_TEMPLATE_REL
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_text(json.dumps({
+        "kind": "transform_pipeline_template",
+        "comment": _PIPELINE_TEMPLATE_COMMENT,
+        "updatedAt": _utc_now(),
+        "pipeline": cleaned,
+    }, indent=2), encoding="utf-8")
+    return {"file": _PIPELINE_TEMPLATE_REL, "pipeline": cleaned}
 
 
 @router.post("/sequence-sets/transform")
@@ -6330,28 +6533,11 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                              "doer": body.get("doer") or body.get("tool") or "python_scikit",
                              "options": body.get("options") or {}}]
         else:
-            raw_pipeline = [
-                {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": body.get("options") or {}},
-                {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}},
-                {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}},
-            ]
-    if not isinstance(raw_pipeline, list) or not raw_pipeline:
-        raise HTTPException(status_code=400, detail="pipeline must be a non-empty list")
-    pipeline: list[tuple[str, str, dict[str, Any], Any]] = []
-    for value in raw_pipeline:
-        transformation = str((value or {}).get("transformation") or "").strip()
-        doer = str((value or {}).get("doer") or (value or {}).get("tool") or "").strip()
-        options = (value or {}).get("options") or {}
-        if not _TRANSFORM_NAME_RE.match(transformation) or not _TRANSFORM_NAME_RE.match(doer):
-            raise HTTPException(status_code=400, detail="transformation and doer must be snake_case names")
-        if not isinstance(options, dict):
-            raise HTTPException(status_code=400, detail="options must be an object")
-        runner = _SEQUENCE_TRANSFORMS.get((transformation, doer))
-        if runner is None:
-            known = ", ".join(f"{t}/{k}" for t, k in sorted(_SEQUENCE_TRANSFORMS))
-            raise HTTPException(status_code=400,
-                                detail=f"unknown transformation {transformation}/{doer}; known: {known}")
-        pipeline.append((transformation, doer, options, runner))
+            raw_pipeline = load_pipeline_template(_workspace_root(workspace_id))
+    try:
+        pipeline_specs = _normalize_pipeline(raw_pipeline)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
     force = bool(body.get("force"))
     only_moves: set[str] | None = None
     if body.get("moves") is not None:
@@ -6389,18 +6575,19 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
-    pipeline_specs = [(t, d, o) for t, d, o, _ in pipeline]
 
     def apply_one(unit: dict[str, Any]) -> dict[str, Any]:
         steps: list[dict[str, Any]] = []
         if not plan_only:
-            for transformation, doer, options, _runner in pipeline:
-                steps.append(run_transform_step(unit, transformation, doer, options, force=force))
+            for spec in sorted(pipeline_specs, key=lambda s: s["priority"]):
+                steps.append(run_transform_step(unit, spec["transformation"], spec["doer"],
+                                                spec.get("options") or {}, force=force,
+                                                depends_on=spec.get("dependsOn") or []))
         pending = write_unit_todos(unit, pipeline_specs, steps)
         if plan_only:
-            steps = [{"step": f"{t}/{d}",
-                      "status": "done" if (unit["dir"] / t / d / "meta.json").is_file() else "pending"}
-                     for t, d, _ in pipeline_specs]
+            steps = [{"step": f"{spec['transformation']}/{spec['doer']}",
+                      "status": "done" if (unit["dir"] / spec["transformation"] / spec["doer"] / "meta.json").is_file() else "pending"}
+                     for spec in pipeline_specs]
         move_id: Any = int(unit["id"]) if str(unit["id"]).isdigit() else unit["id"]
         return {"move": move_id, "steps": steps, "pending": pending}
 
@@ -6419,7 +6606,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "recording": recording_rel or None,
         "set": set_id or None,
         "target": target,
-        "pipeline": [f"{t}/{d}" for t, d, _, _ in pipeline],
+        "pipeline": [f"{spec['transformation']}/{spec['doer']}" for spec in pipeline_specs],
         "moveCount": len(units),
         "planOnly": plan_only,
         "pendingTotal": sum(item.get("pending", 0) for item in results),

@@ -3113,6 +3113,7 @@ export function VideoImportPage({
   // transform outputs (result.pl + meta.json + debug_image.png contract).
   const [partsPreviews, setPartsPreviews] = useState<Record<string, any>>({});
   const [partsRunBusy, setPartsRunBusy] = useState(false);
+  const [partsTpl, setPartsTpl] = useState<{ open: boolean; text: string; busy: boolean; err: string | null }>({ open: false, text: "", busy: false, err: null });
   const [expandedReduceId, setExpandedReduceId] = useState<string | null>(null);
   // partOf tree ↔ groups-box highlight: which part ids to light up, scoped to one
   // reduce row/tier (keyed by that tier's metta path).
@@ -4685,6 +4686,25 @@ export function VideoImportPage({
     if (pool) return `${pool[1]}/transforms/${pool[2]}`;
     return null;
   };
+  // Card text: parts summary (when extraction is done) plus one line per todo
+  // from the unit's todos.json - status, stamped time, worker, dependencies.
+  const partsPreviewText = (pv: any): string | null => {
+    const lines: string[] = [];
+    if (pv?.ok && Array.isArray(pv.parts) && pv.parts.length > 0) {
+      lines.push(`${typeof pv.meta?.elapsedMs === "number" ? (pv.meta.elapsedMs / 1000).toFixed(1) : "?"}s · ${pv.parts.length} parts`);
+      lines.push(...pv.parts.map((p: any) => `${p.id} ${p.color} ${p.area}px ${p.outer}-gon ${p.holes}h ${p.midlines}m ${p.fillpoints}f`));
+    }
+    for (const t of (Array.isArray(pv?.todos) ? pv.todos : [])) {
+      if (t.transformation === "parts_extraction_0" && t.status === "done" && pv?.ok) continue;
+      const secs = typeof t.elapsedMs === "number" ? ` ${(t.elapsedMs / 1000).toFixed(1)}s` : "";
+      const who = t.status === "started" && t.startedBy ? ` by ${t.startedBy}` : "";
+      const after = t.status === "pending" && Array.isArray(t.dependsOn) && t.dependsOn.length > 0
+        ? ` (after ${t.dependsOn.map((d: string) => d.split("/")[0]).join(", ")})` : "";
+      const tags = `${t.type ? ` [${t.type}]` : ""}${typeof t.priority === "number" ? ` p${t.priority}` : ""}`;
+      lines.push(`${t.transformation}${tags} ${t.status}${secs}${who}${after}`);
+    }
+    return lines.length > 0 ? lines.join("\n") : null;
+  };
   useEffect(() => {
     if (reduceTab !== "inputs" || !recognitionReduce || !Array.isArray(recognitionReduce.items)) return;
     let cancelled = false;
@@ -4697,15 +4717,30 @@ export function VideoImportPage({
       const workers = Array.from({ length: 4 }, async () => {
         while (!cancelled && queue.length > 0) {
           const rel = queue.shift() as string;
-          const dir = `${partsTransformBase(rel)}/parts_extraction_0/python_scikit`;
+          const base = partsTransformBase(rel) as string;
+          const dir = `${base}/parts_extraction_0/python_scikit`;
           try {
+            let todos: any[] | undefined;
+            const todosResp = await fetch(asset(`${base}/todos.json`), { cache: "no-store" });
+            if (cancelled) return;
+            if (todosResp.ok) todos = (await todosResp.json())?.todos || [];
+            const partsDone = (todos || []).some((t: any) => t.transformation === "parts_extraction_0" && t.status === "done");
+            if (todos !== undefined && !partsDone) {
+              setPartsPreviews((cur) => ({ ...cur, [rel]: { ok: false, todos } }));
+              continue;
+            }
             const resp = await fetch(asset(`${dir}/meta.json`), { cache: "no-store" });
             if (cancelled) return;
-            if (!resp.ok) { setPartsPreviews((cur) => ({ ...cur, [rel]: { ok: false } })); continue; }
+            if (!resp.ok) { setPartsPreviews((cur) => ({ ...cur, [rel]: { ok: false, todos } })); continue; }
             const meta = await resp.json();
             setPartsPreviews((cur) => ({
               ...cur,
-              [rel]: { ok: true, overlay: asset(`${dir}/debug_image.png`), parts: meta.parts || [], meta },
+              [rel]: {
+                ok: true,
+                overlay: asset(`${base}/parts_debug_0/python_pil/debug_image.png`),
+                overlayLegacy: asset(`${dir}/debug_image.png`),
+                parts: meta.parts || [], meta, todos,
+              },
             }));
           } catch {
             if (!cancelled) setPartsPreviews((cur) => ({ ...cur, [rel]: { ok: false } }));
@@ -4733,6 +4768,51 @@ export function VideoImportPage({
       if (resp.ok) setPartsPreviews({});
     } finally {
       setPartsRunBusy(false);
+    }
+  };
+  const togglePartsTemplate = async () => {
+    if (partsTpl.open) { setPartsTpl((c) => ({ ...c, open: false })); return; }
+    setPartsTpl({ open: true, text: "loading…", busy: true, err: null });
+    try {
+      const resp = await fetch(`${API}/sequence-sets/pipeline-template?workspaceId=${encodeURIComponent(workspaceId)}`);
+      const data = await resp.json();
+      setPartsTpl({ open: true, text: JSON.stringify(data.pipeline, null, 2), busy: false, err: null });
+    } catch (error: any) {
+      setPartsTpl({ open: true, text: "", busy: false, err: String(error) });
+    }
+  };
+  const savePartsTemplate = async () => {
+    let pipeline: any;
+    try { pipeline = JSON.parse(partsTpl.text); } catch (error: any) {
+      setPartsTpl((c) => ({ ...c, err: `bad JSON: ${error?.message || error}` })); return;
+    }
+    if (!Array.isArray(pipeline)) pipeline = pipeline?.pipeline;
+    setPartsTpl((c) => ({ ...c, busy: true, err: null }));
+    try {
+      const resp = await fetch(`${API}/sequence-sets/pipeline-template`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId, pipeline }),
+      });
+      if (!resp.ok) {
+        const detail = (await resp.json().catch(() => null))?.detail;
+        setPartsTpl((c) => ({ ...c, busy: false, err: String(detail || `HTTP ${resp.status}`) }));
+        return;
+      }
+      // re-stamp todos.json across the visible recording/set, then reload cards
+      const first = recognitionReduce?.items?.find((it: any) => it.inputPath);
+      if (first) {
+        const rel = String(first.inputPath);
+        const payload: any = { workspaceId, planOnly: true };
+        const move = rel.match(/^(.*)\/(\d+)\/image\.png$/);
+        if (move) payload.recording = move[1]; else payload.set = selectedImageSet;
+        await fetch(`${API}/sequence-sets/transform`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+        });
+      }
+      setPartsPreviews({});
+      setPartsTpl((c) => ({ ...c, busy: false, open: false }));
+    } catch (error: any) {
+      setPartsTpl((c) => ({ ...c, busy: false, err: String(error) }));
     }
   };
   const updateMemberInventory = (id: string, update: (inventory: MemberInventory) => MemberInventory) => {
@@ -8654,7 +8734,25 @@ export function VideoImportPage({
                 <span className="video-import-reduce-partsbar-note">
                   parts_extraction_0/python_scikit → debug_image.png (left) + result.pl · then parts_grouping_0 + turtle_programs by prolog
                 </span>
+                <button type="button" className="video-import-btn" onClick={togglePartsTemplate}>
+                  {partsTpl.open ? "close todo template" : "✎ todo template"}
+                </button>
               </div>
+              {partsTpl.open && (
+                <div className="video-import-reduce-tpledit">
+                  <div className="video-import-reduce-tplhead">
+                    initial todo template · data/transform_pipeline.json — stamped onto every unit as todos.json; steps run in order, each depending on the previous
+                  </div>
+                  <textarea className="video-import-reduce-tplarea" spellCheck={false} value={partsTpl.text}
+                    onChange={(e) => setPartsTpl((c) => ({ ...c, text: e.target.value }))} />
+                  {partsTpl.err ? <div className="video-import-reduce-tplerr">{partsTpl.err}</div> : null}
+                  <div>
+                    <button type="button" className="video-import-btn" disabled={partsTpl.busy} onClick={savePartsTemplate}>
+                      {partsTpl.busy ? "saving…" : "save template + re-stamp todos"}
+                    </button>
+                  </div>
+                </div>
+              )}
               {(() => {
             const SLUG_ORDER = ["bart_simpson","lisa_simpson","homer_simpson","marge_simpson","maggie_simpson","grandpa_simpson","spongebob","patrick_star","squidward","scooby_doo","shaggy","mickey_mouse","minnie_mouse","donald_duck","goofy","bugs_bunny","pikachu","mario","sonic","moana"];
             const COND_ORDER = ["c1_bw","c2_flip","c3_rot45","c4_busy","c5_new","c6_verybusy","c7_withchars","c8_typical","c9_colorful","c10_modality"];
@@ -8690,15 +8788,14 @@ export function VideoImportPage({
                               <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}${pv?.ok ? " is-withparts" : ""}`} key={it.id} role="button" tabIndex={0}
                                 onClick={() => { setExpandedReduceId(it.id); setReduceTab("extractions"); }}>
                                 <div className="video-import-reduce-thumbpair">
-                                  {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy" /> : null}
+                                  {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy"
+                                    onError={(e) => { const el = e.currentTarget; if (pv.overlayLegacy && el.src !== pv.overlayLegacy) el.src = pv.overlayLegacy; else el.style.display = "none"; }} /> : null}
                                   {inputRel ? <img className="video-import-reduce-condthumb" src={asset(inputRel)} alt={it.cond || it.id} loading="lazy" /> : <div className="video-import-reduce-stagemissing">no input</div>}
                                 </div>
                                 <div className="video-import-reduce-condlabel">{it.cond || it.id}</div>
-                                {pv?.ok && Array.isArray(pv.parts) && pv.parts.length > 0 ? (
-                                  <pre className="video-import-reduce-partstext" onClick={(e) => e.stopPropagation()}>
-                                    {[`${typeof pv.meta?.elapsedMs === "number" ? (pv.meta.elapsedMs / 1000).toFixed(1) : "?"}s · ${pv.parts.length} parts`, ...pv.parts.map((p: any) => `${p.id} ${p.color} ${p.area}px ${p.outer}-gon ${p.holes}h ${p.midlines}m ${p.fillpoints}f`)].join("\n")}
-                                  </pre>
-                                ) : null}
+                                {(() => { const txt = partsPreviewText(pv); return txt ? (
+                                  <pre className="video-import-reduce-partstext" onClick={(e) => e.stopPropagation()}>{txt}</pre>
+                                ) : null; })()}
                                 {(it.rows || []).length > 0 ? <span className="video-import-reduce-badge v-ref">{nparts ?? 0} parts</span> : <span className="video-import-reduce-badge v-worse">not reduced</span>}
                               </div>
                             );
@@ -8739,15 +8836,14 @@ export function VideoImportPage({
                               <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}${pv?.ok ? " is-withparts" : ""}`} key={it.id} role="button" tabIndex={0}
                                 onClick={() => setExpandedReduceId(it.id === expandedReduceId ? null : it.id)}>
                                 <div className="video-import-reduce-thumbpair">
-                                  {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy" /> : null}
+                                  {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy"
+                                    onError={(e) => { const el = e.currentTarget; if (pv.overlayLegacy && el.src !== pv.overlayLegacy) el.src = pv.overlayLegacy; else el.style.display = "none"; }} /> : null}
                                   <img className="video-import-reduce-condthumb" src={asset(inputRel)} alt={it.cond} loading="lazy" />
                                 </div>
                                 <div className="video-import-reduce-condlabel">{COND_LABELS[it.cond] || it.cond}</div>
-                                {pv?.ok && Array.isArray(pv.parts) && pv.parts.length > 0 ? (
-                                  <pre className="video-import-reduce-partstext" onClick={(e) => e.stopPropagation()}>
-                                    {[`${typeof pv.meta?.elapsedMs === "number" ? (pv.meta.elapsedMs / 1000).toFixed(1) : "?"}s · ${pv.parts.length} parts`, ...pv.parts.map((p: any) => `${p.id} ${p.color} ${p.area}px ${p.outer}-gon ${p.holes}h ${p.midlines}m ${p.fillpoints}f`)].join("\n")}
-                                  </pre>
-                                ) : null}
+                                {(() => { const txt = partsPreviewText(pv); return txt ? (
+                                  <pre className="video-import-reduce-partstext" onClick={(e) => e.stopPropagation()}>{txt}</pre>
+                                ) : null; })()}
                                 {best ? <span className={`video-import-reduce-badge v-${verdict}`}>{best.shots}-shot vs 1: {pct}% {String(verdict).toUpperCase()}</span> : <span className="video-import-reduce-badge v-ref">1-shot ref</span>}
                                 <div className="video-import-reduce-condsrc">
                                   {web ? (

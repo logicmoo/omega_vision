@@ -29,6 +29,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -550,6 +551,26 @@ def _draw_parts_debug(img: Image.Image, polygons: dict[int, dict],
     return out
 
 
+def render_parts_debug(image_path: str | Path, geometry: dict) -> Image.Image:
+    """Standalone debug-overlay renderer for the parts_debug task: re-applies
+    the same resize + enhance the extraction used (recorded in geometry.json),
+    then draws the saved polygons, midlines, and fill peaks."""
+    img = Image.open(image_path)
+    max_dim = int(geometry.get("maxDim") or 960)
+    if max_dim and max(img.size) > max_dim:
+        scale = max_dim / max(img.size)
+        img = img.resize((max(1, round(img.size[0] * scale)), max(1, round(img.size[1] * scale))), Image.LANCZOS)
+    img, _action = enhance(img, str(geometry.get("filterMode") or "auto"))
+    polygons = {g: {"outer": [tuple(p) for p in d.get("outer", [])],
+                    "holes": [[tuple(p) for p in ring] for ring in d.get("holes", [])]}
+                for g, d in (geometry.get("polygons") or {}).items()}
+    midlines = {g: [[tuple(p) for p in path] for path in paths]
+                for g, paths in (geometry.get("midlines") or {}).items()}
+    fillpoints = {g: [tuple(p) for p in points]
+                  for g, points in (geometry.get("fillpoints") or {}).items()}
+    return _draw_parts_debug(img, polygons, midlines, fillpoints)
+
+
 def extract_region_facts(
     image_path: str | Path,
     *,
@@ -558,12 +579,15 @@ def extract_region_facts(
     max_dim: int = 960,
     minfrac: float = 0.0008,
     debug_image: str | Path | None = None,
+    geometry_out: str | Path | None = None,
 ) -> dict:
     """One-call pipeline for the image importer / video system: enhance ->
     gradient-tolerant color blobs -> bbox-free Prolog region facts. Returns
     the facts text plus extraction stats and a per-part summary; callers
     persist/consume as needed. When ``debug_image`` is given, renders the
-    edges + median lines + fill peaks overlay there."""
+    edges + median lines + fill peaks overlay there. When ``geometry_out``
+    is given, saves the drawing geometry as JSON so a separate debug-image
+    task can render the overlay later without re-extracting."""
     img = Image.open(image_path)
     if max_dim and max(img.size) > max_dim:
         scale = max_dim / max(img.size)
@@ -597,6 +621,16 @@ def extract_region_facts(
     ]
     if debug_image is not None:
         _draw_parts_debug(img, polygons, midlines, fillpoints).save(debug_image)
+    if geometry_out is not None:
+        Path(geometry_out).write_text(json.dumps({
+            "width": w,
+            "height": h,
+            "maxDim": max_dim,
+            "filterMode": filter_mode,
+            "polygons": {str(g): d for g, d in polygons.items()},
+            "midlines": {str(g): p for g, p in midlines.items()},
+            "fillpoints": {str(g): p for g, p in fillpoints.items()},
+        }, ensure_ascii=False), encoding="utf-8")
     return {
         "prolog": to_prolog(info, pairs, big, w, h, perims, polygons, midlines, fillpoints),
         "width": w,
