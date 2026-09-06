@@ -99,59 +99,39 @@ all = [
 
 [project.urls]
 Homepage = "https://logicmoo.org/"
-Repository = "https://github.com/logicmoo/symbolic_learner_arc3_kaggle_starter"
-Issues = "https://github.com/logicmoo/symbolic_learner_arc3_kaggle_starter/issues"
+Repository = "https://github.com/logicmoo/omega_vision"
+Issues = "https://github.com/logicmoo/omega_vision/issues"
 
 [tool.setuptools]
 packages = [
   "omega_vision",
   "omega_vision.core",
+  "omega_vision.demos",
   "omega_vision.forms",
   "omega_vision.accelerators",
   "omega_vision.adapters",
   "omega_vision.evaluation",
   "omega_vision.environments",
+  "omega_vision.perception",
   "omega_vision.runtime",
-  "webui",
+  "omega_vision.services",
   "worldworkbench",
   "worldworkbench.adapters",
-]
-py-modules = [
-  "action_tree",
-  "arc3_runner",
-  "gpt_bridge",
-  "image_codec",
-  "interactive_runner",
-  "llm_catalog_environment",
-  "llm_catalog_integration",
-  "llm_catalog_sampling",
-  "llm_json",
-  "llm_json_patch",
-  "llm_key_controls",
-  "llm_model_catalog",
-  "llm_profile_editor",
-  "llm_providers",
-  "llm_readme_patch",
-  "llm_transcripts",
-  "llm_workflow_editor",
-  "llm_workflows",
-  "multillm_runner",
-  "project_paths",
-  "swipl_bridge",
-  "unsloth_studio",
-  "workflow_operation_editor",
-  "workflow_operations",
 ]
 include-package-data = true
 
 [tool.setuptools.package-dir]
 "" = "python"
-webui = "webui"
 
 [tool.setuptools.package-data]
-webui = ["static/*.html"]
+"omega_vision.perception" = ["*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["python", "workbench/server"]
+pythonpath = [
+  "python",
+  "python/workbench_api_server",
+  "python/arc_cli_debugger",
+  "python/plugins_framework",
+]
 addopts = "-ra"
