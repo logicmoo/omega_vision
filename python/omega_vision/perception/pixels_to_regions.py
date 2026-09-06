@@ -208,28 +208,34 @@ def perimeters(labels: np.ndarray) -> dict[int, int]:
     return out
 
 
-def region_polygons(labels: np.ndarray, big: set, tolerance: float = 1.5) -> dict[int, list[tuple[int, int]]]:
-    """Trace each part's outer boundary and simplify it into a polygon
-    (marching squares + Douglas-Peucker). Points are (x, y) image coords;
-    the longest contour is the silhouette, holes are ignored here."""
+def region_polygons(labels: np.ndarray, big: set, tolerance: float = 1.5) -> dict[int, dict]:
+    """Trace each part's boundaries and simplify them into polygons
+    (marching squares + Douglas-Peucker). Points are (x, y) image coords.
+    The OUTER edge (silhouette, the longest contour) and every INNER edge
+    (holes: eye sockets, gaps, enclosed cutouts) are stored separately."""
     from skimage import measure  # noqa: PLC0415
 
-    polygons: dict[int, list[tuple[int, int]]] = {}
+    def simplify(contour) -> list[tuple[int, int]]:
+        simplified = measure.approximate_polygon(contour, tolerance=tolerance)
+        return [(int(round(x)), int(round(y))) for y, x in simplified]
+
+    polygons: dict[int, dict] = {}
     for gid in big:
         mask = labels == gid
         contours = measure.find_contours(mask.astype(np.uint8), 0.5)
         if not contours:
             continue
-        contour = max(contours, key=len)
-        simplified = measure.approximate_polygon(contour, tolerance=tolerance)
-        points = [(int(round(x)), int(round(y))) for y, x in simplified]
-        if len(points) >= 3:
-            polygons[gid] = points
+        contours = sorted(contours, key=len, reverse=True)
+        outer = simplify(contours[0])
+        if len(outer) < 3:
+            continue
+        holes = [pts for pts in (simplify(c) for c in contours[1:]) if len(pts) >= 3]
+        polygons[gid] = {"outer": outer, "holes": holes}
     return polygons
 
 
 def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | None = None,
-              polygons: dict[int, list[tuple[int, int]]] | None = None) -> str:
+              polygons: dict[int, dict] | None = None) -> str:
     neigh = defaultdict(set)
     for a, b in pairs:
         neigh[a].add(b)
@@ -239,11 +245,11 @@ def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | No
         "% bbox-FREE region facts (topology only).",
         ":- dynamic region/4.", ":- dynamic adjacent/2.", ":- dynamic shared_edge/3.",
         ":- dynamic encloses/2.", ":- dynamic border/1.", ":- dynamic img_size/2.",
-        ":- dynamic perimeter/2.", ":- dynamic polygon/2.",
+        ":- dynamic perimeter/2.", ":- dynamic polygon/2.", ":- dynamic hole/2.",
         ":- discontiguous region/4.", ":- discontiguous adjacent/2.",
         ":- discontiguous shared_edge/3.", ":- discontiguous encloses/2.",
         ":- discontiguous border/1.", ":- discontiguous perimeter/2.",
-        ":- discontiguous polygon/2.",
+        ":- discontiguous polygon/2.", ":- discontiguous hole/2.",
         f"img_size({w}, {h}).", "",
     ]
     for gid in sorted(big, key=lambda g: -info[g]["area"]):
@@ -252,8 +258,11 @@ def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | No
         if perims and gid in perims:
             L.append(f"perimeter(r{gid}, {perims[gid]}).")
         if polygons and gid in polygons:
-            points = ",".join(f"xy({x},{y})" for x, y in polygons[gid])
-            L.append(f"polygon(r{gid}, [{points}]).")
+            outer = ",".join(f"xy({x},{y})" for x, y in polygons[gid]["outer"])
+            L.append(f"polygon(r{gid}, [{outer}]).")
+            for hole_points in polygons[gid]["holes"]:
+                inner = ",".join(f"xy({x},{y})" for x, y in hole_points)
+                L.append(f"hole(r{gid}, [{inner}]).")
         if i["border"]:
             L.append(f"border(r{gid}).")
     L.append("")

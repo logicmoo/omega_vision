@@ -18,14 +18,17 @@
 :- dynamic img_size/2.
 :- dynamic perimeter/2.
 :- dynamic polygon/2.
+:- dynamic hole/2.
 
 % ---- parts map: the FIRST artifact Prolog produces --------------------------
-% Every part as a simplified boundary polygon: part_map/1 lists
-% part(Id, Color, Area, Centroid, Polygon) for all regions that carry a
-% polygon/2 fact, largest first.
+% Every part as simplified boundary polygons, OUTER edge (silhouette,
+% polygon/2) separate from INNER edges (holes, hole/2): part_map/1 lists
+% part(Id, Color, Area, Centroid, Outer, Holes), largest first.
 part_map(Parts) :-
-    findall(Area-part(Id, Color, Area, Centroid, Points),
-            ( region(Id, Color, Area, Centroid), polygon(Id, Points) ),
+    findall(Area-part(Id, Color, Area, Centroid, Outer, Holes),
+            ( region(Id, Color, Area, Centroid),
+              polygon(Id, Outer),
+              findall(H, hole(Id, H), Holes) ),
             Keyed),
     sort(1, @>=, Keyed, Sorted),
     findall(P, member(_-P, Sorted), Parts).
@@ -156,10 +159,10 @@ report :-
     format("~n== ~w regions, ~w enclosures, ~w background, ~w objects, ~w part groups ==~n",
            [NR, NE, NB, NO, NG]),
     part_map(Parts), length(Parts, NP),
-    format("~n== parts map (~w polygons, largest first) ==~n", [NP]),
-    forall((nth1(I, Parts, part(Id, Col, Area, _, Points)), I =< 12),
-           ( length(Points, NPts),
-             format("  ~w (~w, ~w px): ~w-gon~n", [Id, Col, Area, NPts]) )),
+    format("~n== parts map (~w polygons, outer + holes, largest first) ==~n", [NP]),
+    forall((nth1(I, Parts, part(Id, Col, Area, _, Outer, Holes)), I =< 12),
+           ( length(Outer, NPts), length(Holes, NH),
+             format("  ~w (~w, ~w px): ~w-gon, ~w hole(s)~n", [Id, Col, Area, NPts, NH]) )),
     format("~n== containment groups (encloses) ==~n"),
     forall((group(P, Cs), length(Cs, L), L >= 1),
            ( region(P, Col, _, _), format("  ~w (~w) encloses ~w~n", [P, Col, Cs]) )),
