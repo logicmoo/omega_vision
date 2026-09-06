@@ -1,0 +1,10 @@
+(
+  (kind model_ping_event)
+  (id ping_all_20260825T230407_40d609de:event:clawrouter_clawrouter-free-router)
+  (jobId ping_all_20260825T230407_40d609de)
+  (modelPolicyEntryId clawrouter:clawrouter-free-router)
+  (status succeeded)
+  (healthStatus online)
+  (latencyMs 25.0)
+  (createdAt 2026-08-25T23:04:07.676174Z)
+)

@@ -1,6 +1,6 @@
 # Statement of Work: Debugger (Phase 1) and Vision System (Phase 2)
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 This document divides the delivered work along the repository's canonical
 three-phase SoW (see [SOW_PHASE_ARCHITECTURE.md](../../../SOW_PHASE_ARCHITECTURE.md)

@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260902T164709_596b0014:health:openai_gpt-5.6)
+  (modelPolicyEntryId openai:gpt-5.6)
+  (vendorId openai)
+  (status online)
+  (latencyMs 1435.7)
+  (observedAt 2026-09-02T16:47:12.242818Z)
+  (jobId ping_all_20260902T164709_596b0014)
+)

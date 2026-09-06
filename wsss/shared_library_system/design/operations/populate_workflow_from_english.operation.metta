@@ -1,0 +1,102 @@
+(
+  (kind operation)
+  (id workflow.populate_from_english)
+  (label "Revise Workflow from English")
+  (description "Browse the previous Workflow, revise it from an authoritative English resource, and report operation contracts that remain unresolved.")
+  (topics ([]
+    workflow-authoring
+    text
+  ))
+  (inputs (
+    (english_specification Text)
+    (effective_operation_catalog Array)
+    (workflow_schema Object)
+    (memory_values_plan Object)
+    (existing_workflow Object)
+    (validation_errors Array)
+  ))
+  (outputs (
+    (workflow Any)
+    (new_memory_values_plan Object)
+    (required_operations Array)
+    (unresolved_operations Array)
+    (preflight_proposals Array)
+    (validation_report Object)
+  ))
+  (implementedBy (
+    (workflow.populate_from_english.json ())
+  ))
+  (inheritedBy (
+    (workflow.populate_from_english.json (
+      (lend ([]
+        *
+      ))
+      (withhold ([]
+        id
+        label
+        description
+        implements
+        implementedBy
+        preferredImplementation
+      ))
+    ))
+  ))
+  (preferredImplementation workflow.populate_from_english.json)
+)
+(
+  (kind operation)
+  (id workflow.populate_from_english.json)
+  (label "Revise Workflow from English")
+  (topics ([]
+    workflow-authoring
+    systems-llm
+  ))
+  (implementation llm.complete)
+  (implements (
+    (workflow.populate_from_english ())
+  ))
+  (inputs (
+    (english_specification Text)
+    (effective_operation_catalog Array)
+    (workflow_schema Object)
+    (memory_values_plan Object)
+    (existing_workflow Object)
+    (validation_errors Array)
+  ))
+  (outputs (
+    (workflow Object)
+    (new_memory_values_plan Object)
+    (required_operations Array)
+    (unresolved_operations Array)
+    (preflight_proposals Array)
+    (validation_report Object)
+  ))
+  (bindings (
+    (prompts ([]
+      workflow.generate_from_english
+    ))
+    (promptVariants (
+      (workflow.generate_from_english workflow.generate_from_english.json)
+    ))
+    (separator "\n\n")
+  ))
+  (modelSelection (
+    (models ([]))
+    (strategy policy)
+  ))
+  (parameters (
+    (outputBinding workflow)
+    (outputFormat json)
+    (parseJson true)
+    (responseFormat json_object)
+    (requiresPreflight true)
+  ))
+  (inheritsFrom (
+    (workflow.populate_from_english (
+      (borrow ([]
+        *
+      ))
+      (exclude ([]))
+    ))
+  ))
+)

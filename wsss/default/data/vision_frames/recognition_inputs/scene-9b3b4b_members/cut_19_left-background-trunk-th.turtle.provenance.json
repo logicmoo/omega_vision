@@ -1,0 +1,130 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.turtle.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.turtle.provenance.json",
+  "createdAt": "2026-09-03T12:29:54.929240Z",
+  "operation": "render_turtle_program",
+  "dimensions": {
+    "width": 23,
+    "height": 141
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.provenance.json"
+  },
+  "source": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.turtle.json"
+  },
+  "transform": {
+    "coordinateSpace": [
+      1000,
+      1000
+    ],
+    "sourceDimensions": {
+      "width": 23,
+      "height": 141
+    },
+    "renderScale": 1.0,
+    "commandCount": 2
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 23,
+        "height": 141
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-trunk-th_041627cea99d.png",
+          "geometryHash": "041627cea99d639d75eb3bafd3122ad7fe2a33c9270c538d1328f2da378798a9",
+          "traceVerified": true
+        },
+        "cropBox": [
+          133,
+          73,
+          156,
+          214
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              145,
+              78
+            ],
+            [
+              153,
+              75
+            ],
+            [
+              143,
+              211
+            ],
+            [
+              135,
+              211
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:38.221298Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_19_left-background-trunk-th.turtle.png",
+      "operation": "render_turtle_program",
+      "dimensions": {
+        "width": 23,
+        "height": 141
+      },
+      "transform": {
+        "coordinateSpace": [
+          1000,
+          1000
+        ],
+        "sourceDimensions": {
+          "width": 23,
+          "height": 141
+        },
+        "renderScale": 1.0,
+        "commandCount": 2
+      },
+      "createdAt": "2026-09-03T12:29:54.929240Z"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260902T164709_596b0014:health:clawrouter_clawrouter-free-router)
+  (modelPolicyEntryId clawrouter:clawrouter-free-router)
+  (vendorId clawrouter)
+  (status online)
+  (latencyMs 2.4)
+  (observedAt 2026-09-02T16:47:10.001782Z)
+  (jobId ping_all_20260902T164709_596b0014)
+)

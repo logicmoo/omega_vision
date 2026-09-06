@@ -1,0 +1,10 @@
+(
+  (kind model_ping_event)
+  (id ping_all_20260825T230407_40d609de:event:https.llm.c.singularitynet.io.v1_https.llm.c.singularitynet.io.v1-openai_gpt-oss-120b)
+  (jobId ping_all_20260825T230407_40d609de)
+  (modelPolicyEntryId https.llm.c.singularitynet.io.v1:https.llm.c.singularitynet.io.v1-openai_gpt-oss-120b)
+  (status succeeded)
+  (healthStatus online)
+  (latencyMs 1091.2)
+  (createdAt 2026-08-25T23:04:09.017132Z)
+)

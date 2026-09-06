@@ -15,7 +15,7 @@ ROOT_DOCUMENTS = (
     "FILE_TREE.md",
 )
 GENERATED_IGNORED_PATHS = {
-    "notebooks/submission.ipynb",
+    "python/notebooks/submission.ipynb",
 }
 
 
@@ -42,7 +42,10 @@ def _maintained_markdown() -> tuple[Path, ...]:
         "action_trees",
         "reference",
         "node_modules",
+        "plugins",
         "runtime",
+        "wsss",
+        "data",
     }
     return tuple(
         path
@@ -131,24 +134,23 @@ def test_file_tree_links_all_connected_architecture_files() -> None:
         "pyproject.toml",
         "requirements.txt",
         "scripts/_runtime.py",
-        "scripts/interactive_runner.py",
-        "scripts/run_webui.py",
-        "scripts/prolog_controlled_runner.py",
-        "scripts/re_play.py",
-        "scripts/my_play.py",
-        "scripts/me_play.py",
-        "scripts/he_play.py",
-        "scripts/play_local.py",
-        "scripts/build_notebook.py",
+        "python/arc_cli_debugger/cli/interactive_runner.py",
+        "python/arc_cli_debugger/webui/run_webui.py",
+        "python/arc_cli_debugger/cli/prolog_controlled_runner.py",
+        "python/arc_cli_debugger/cli/re_play.py",
+        "python/arc_cli_debugger/cli/my_play.py",
+        "python/arc_cli_debugger/cli/me_play.py",
+        "python/arc_cli_debugger/cli/he_play.py",
+        "python/arc_cli_debugger/cli/play_local.py",
         "scripts/slim_framework.py",
-        "python/interactive_runner.py",
+        "python/arc_cli_debugger/interactive_runner.py",
         "python/worldworkbench/__init__.py",
         "python/worldworkbench/core.py",
         "python/worldworkbench/adapters/__init__.py",
         "python/worldworkbench/adapters/arc3.py",
-        "workbench/docs/DATA_REPRESENTATIONS.md",
-        "workbench/workspaces/shared_library_system/design/configs/world_workbench_operations.config.metta",
-        "config/llm_workflows.json",
+        "docs/DATA_REPRESENTATIONS.md",
+        "workspaces/shared_library_system/design/configs/world_workbench_operations.config.metta",
+        "python/arc_cli_debugger/config/llm_workflows.json",
         "python/omega_vision/core/models.py",
         "python/omega_vision/adapters/providers.py",
         "python/omega_vision/forms/forms.py",
@@ -157,23 +159,23 @@ def test_file_tree_links_all_connected_architecture_files() -> None:
         "python/omega_vision/core/prediction.py",
         "python/omega_vision/core/learning.py",
         "python/omega_vision/runtime/integration.py",
-        "prolog/object_memory_contract.pl",
-        "prolog/generative_form.pl",
-        "prolog/residual_gate.pl",
-        "prolog/single_writer.pl",
-        "prolog/transition_analysis.pl",
-        "prolog/transformation_learning.pl",
-        "prolog/rule_induction.pl",
-        "prolog/rule_ranking.pl",
-        "prolog/transition_rules.pl",
-        "prolog/prediction_ledger.pl",
-        "prolog/prediction_evaluation.pl",
-        "prolog/game_object_learner_api.pl",
-        "tests/test_object_memory_contracts.py",
-        "tests/test_documentation_links.py",
-        "tests/test_runtime_home.py",
-        "tests/test_world_workbench.py",
-        "prolog/test_object_memory.pl",
+        "prolog/omega_vision/object_memory_contract.pl",
+        "prolog/omega_vision/generative_form.pl",
+        "prolog/omega_vision/residual_gate.pl",
+        "prolog/omega_vision/single_writer.pl",
+        "prolog/omega_vision/transition_analysis.pl",
+        "prolog/omega_vision/transformation_learning.pl",
+        "prolog/omega_vision/rule_induction.pl",
+        "prolog/omega_vision/rule_ranking.pl",
+        "prolog/omega_vision/transition_rules.pl",
+        "prolog/omega_vision/prediction_ledger.pl",
+        "prolog/omega_vision/prediction_evaluation.pl",
+        "prolog/omega_vision/game_object_learner_api.pl",
+        "tests/omega_vision/test_object_memory_contracts.py",
+        "tests/workbench_api/test_documentation_links.py",
+        "tests/workbench_api/test_runtime_home.py",
+        "tests/workbench_api/test_world_workbench.py",
+        "tests/plt/test_object_memory.pl",
     }
     assert expected.issubset(links), sorted(expected.difference(links))
 
@@ -181,21 +183,21 @@ def test_file_tree_links_all_connected_architecture_files() -> None:
 def test_readme_documents_every_runnable_demo() -> None:
     text = (ROOT / "README.md").read_text(encoding="utf-8")
     required_commands = (
-        "python scripts/interactive_runner.py ls20",
-        "python scripts/run_webui.py --game ls20",
-        "python scripts/prolog_controlled_runner.py",
-        "python scripts/re_play.py",
-        "python scripts/my_play.py",
-        "python scripts/me_play.py",
-        "python scripts/he_play.py",
-        "python scripts/play_local.py --game ls20 --max-steps 200",
+        "python python/arc_cli_debugger/cli/interactive_runner.py ls20",
+        "python python/arc_cli_debugger/webui/run_webui.py --game ls20",
+        "python python/arc_cli_debugger/cli/prolog_controlled_runner.py",
+        "python python/arc_cli_debugger/cli/re_play.py",
+        "python python/arc_cli_debugger/cli/my_play.py",
+        "python python/arc_cli_debugger/cli/me_play.py",
+        "python python/arc_cli_debugger/cli/he_play.py",
+        "python python/arc_cli_debugger/cli/play_local.py --game ls20 --max-steps 200",
         "python scripts/build_notebook.py",
         "python scripts/slim_framework.py",
         "pytest -q",
-        "swipl -q -s prolog/test_turtle_dsl.pl -g run_tests,halt",
-        "swipl -q -s prolog/test_object_memory.pl -g run_tests,halt",
-        "use_module('prolog/arc3_agent.pl')",
-        "use_module('prolog/game_object_learner_api.pl')",
+        "swipl -q -s tests/plt/test_turtle_dsl.pl -g run_tests,halt",
+        "swipl -q -s tests/plt/test_object_memory.pl -g run_tests,halt",
+        "use_module('prolog/omega_vision/arc3_agent.pl')",
+        "use_module('prolog/omega_vision/game_object_learner_api.pl')",
     )
     for command in required_commands:
         assert command in text, command
@@ -203,13 +205,13 @@ def test_readme_documents_every_runnable_demo() -> None:
 
 def test_runnable_examples_were_consolidated_into_scripts() -> None:
     for relative in (
-        "scripts/interactive_runner.py",
-        "scripts/run_webui.py",
-        "scripts/prolog_controlled_runner.py",
-        "scripts/re_play.py",
-        "scripts/my_play.py",
-        "scripts/me_play.py",
-        "scripts/he_play.py",
+        "python/arc_cli_debugger/cli/interactive_runner.py",
+        "python/arc_cli_debugger/webui/run_webui.py",
+        "python/arc_cli_debugger/cli/prolog_controlled_runner.py",
+        "python/arc_cli_debugger/cli/re_play.py",
+        "python/arc_cli_debugger/cli/my_play.py",
+        "python/arc_cli_debugger/cli/me_play.py",
+        "python/arc_cli_debugger/cli/he_play.py",
     ):
         assert (ROOT / relative).is_file(), relative
 
@@ -219,8 +221,8 @@ def test_runnable_examples_were_consolidated_into_scripts() -> None:
     if examples_dir.exists():
         assert not tuple(examples_dir.iterdir()), "examples/ should be empty or absent"
 
-    server_text = (ROOT / "webui" / "server.py").read_text(encoding="utf-8")
-    assert 'PROJECT_ROOT / "scripts" / "interactive_runner.py"' in server_text
+    server_text = (ROOT / "python" / "arc_cli_debugger" / "webui" / "server.py").read_text(encoding="utf-8")
+    assert '"cli" / "interactive_runner.py"' in server_text
     assert 'PROJECT_ROOT / "examples" / "interactive_runner.py"' not in server_text
 
 
@@ -244,12 +246,9 @@ def test_pyproject_metadata_and_extras_match_repository() -> None:
     setuptools = data["tool"]["setuptools"]
     assert {
         "omega_vision",
-        "webui",
         "worldworkbench",
         "worldworkbench.adapters",
     }.issubset(set(setuptools["packages"]))
-    assert "interactive_runner" in setuptools["py-modules"]
-    assert data["tool"]["setuptools"]["package-dir"]["webui"] == "webui"
     assert "python" in data["tool"]["pytest"]["ini_options"]["pythonpath"]
 
 

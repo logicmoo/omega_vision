@@ -1,0 +1,78 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_20_blue-gray-background-tre.png",
+  "subjectName": "blue-gray background tree",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#315f6a\",\n  \"penWidth\": 4,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          307.0,\n          304.0\n        ],\n        [\n          324.0,\n          304.0\n        ],\n        [\n          329.0,\n          421.0\n        ],\n        [\n          347.0,\n          368.0\n        ],\n        [\n          358.0,\n          368.0\n        ],\n        [\n          344.0,\n          448.0\n        ],\n        [\n          343.0,\n          579.0\n        ],\n        [\n          318.0,\n          585.0\n        ],\n        [\n          316.0,\n          440.0\n        ]\n      ],\n      \"fill\": \"#3d7380\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          318.0,\n          312.0\n        ],\n        [\n          323.0,\n          437.0\n        ],\n        [\n          328.0,\n          574.0\n        ]\n      ],\n      \"fill\": \"transparent\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#315f6a",
+    "penWidth": 4,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            307.0,
+            304.0
+          ],
+          [
+            324.0,
+            304.0
+          ],
+          [
+            329.0,
+            421.0
+          ],
+          [
+            347.0,
+            368.0
+          ],
+          [
+            358.0,
+            368.0
+          ],
+          [
+            344.0,
+            448.0
+          ],
+          [
+            343.0,
+            579.0
+          ],
+          [
+            318.0,
+            585.0
+          ],
+          [
+            316.0,
+            440.0
+          ]
+        ],
+        "fill": "#3d7380"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            318.0,
+            312.0
+          ],
+          [
+            323.0,
+            437.0
+          ],
+          [
+            328.0,
+            574.0
+          ]
+        ],
+        "fill": "transparent"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:29:55.536960Z"
+}

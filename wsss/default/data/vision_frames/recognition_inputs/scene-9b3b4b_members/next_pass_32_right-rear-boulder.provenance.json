@@ -1,0 +1,152 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_32_right-rear-boulder.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_32_right-rear-boulder.provenance.json",
+  "createdAt": "2026-09-03T12:21:45.322047Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 803,
+    "height": 794
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_32_right-rear-boulder.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_32_right-rear-boulder.provenance.json"
+  },
+  "source": {
+    "objectName": "right rear boulder"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 77,
+      "height": 76
+    },
+    "scale": 9,
+    "resizedDimensions": {
+      "width": 693,
+      "height": 684
+    },
+    "padding": {
+      "left": 55,
+      "top": 55,
+      "right": 55,
+      "bottom": 55
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_32_right-rear-boulder.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 77,
+        "height": 76
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-rear-boulder_26994ab4973e.png",
+          "geometryHash": "26994ab4973e68ec55f906ef26d68376342d1915f5c9cbb20407b0bb06b944a1",
+          "traceVerified": true
+        },
+        "cropBox": [
+          563,
+          146,
+          640,
+          222
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              575,
+              177
+            ],
+            [
+              592,
+              155
+            ],
+            [
+              617,
+              148
+            ],
+            [
+              639,
+              150
+            ],
+            [
+              639,
+              220
+            ],
+            [
+              584,
+              219
+            ],
+            [
+              565,
+              205
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:45.238465Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_32_right-rear-boulder.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 803,
+        "height": 794
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 77,
+          "height": 76
+        },
+        "scale": 9,
+        "resizedDimensions": {
+          "width": 693,
+          "height": 684
+        },
+        "padding": {
+          "left": 55,
+          "top": 55,
+          "right": 55,
+          "bottom": 55
+        }
+      },
+      "createdAt": "2026-09-03T12:21:45.322047Z"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Image Perception to Recognizable Memory and ARC3
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

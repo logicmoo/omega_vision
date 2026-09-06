@@ -1,4 +1,4 @@
-"""Splice the current `agent/my_agent.py` into `notebooks/submission.ipynb`.
+"""Splice the current `agent/my_agent.py` into `python/notebooks/submission.ipynb`.
 
 The notebook follows the exact pattern used by Kaggle's official sample
 ("ARC3 Sample Submission - Stochastic Goose"):
@@ -42,8 +42,8 @@ _ACCELERATORS = {
 }
 
 AGENT_SRC = ROOT / "agent" / "my_agent.py"
-NOTEBOOK_PATH = ROOT / "notebooks" / "submission.ipynb"
-METADATA_PATH = ROOT / "notebooks" / "kernel-metadata.json"
+NOTEBOOK_PATH = ROOT / "python" / "notebooks" / "submission.ipynb"
+METADATA_PATH = ROOT / "python" / "notebooks" / "kernel-metadata.json"
 
 
 def code_cell(source: str) -> dict:
@@ -204,7 +204,7 @@ def main() -> None:
     NOTEBOOK_PATH.write_text(json.dumps(build(), indent=1))
     print(f"[build_notebook] Wrote {NOTEBOOK_PATH.relative_to(ROOT)}  "
           f"(accelerator: {ACCELERATOR})")
-    # Keep notebooks/kernel-metadata.json in sync so the user never has to
+    # Keep python/notebooks/kernel-metadata.json in sync so the user never has to
     # edit it just to flip CPU ↔ GPU.
     if METADATA_PATH.exists():
         meta = json.loads(METADATA_PATH.read_text())

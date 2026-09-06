@@ -1,0 +1,244 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_02_foreground-grass.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_02_foreground-grass.provenance.json",
+  "createdAt": "2026-09-03T12:14:39.951772Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 640,
+    "height": 147
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "foreground grass"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_foreground-grass_926570fdc4bb.png",
+      "geometryHash": "926570fdc4bb7c32cec5ea2c7c1b22b3aee85947e67091e77fb9b1d8e1815627",
+      "traceVerified": true
+    },
+    "cropBox": [
+      0,
+      213,
+      640,
+      360
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          0,
+          221
+        ],
+        [
+          79,
+          218
+        ],
+        [
+          130,
+          224
+        ],
+        [
+          178,
+          215
+        ],
+        [
+          224,
+          215
+        ],
+        [
+          271,
+          222
+        ],
+        [
+          322,
+          218
+        ],
+        [
+          369,
+          225
+        ],
+        [
+          414,
+          220
+        ],
+        [
+          461,
+          229
+        ],
+        [
+          508,
+          221
+        ],
+        [
+          554,
+          225
+        ],
+        [
+          596,
+          220
+        ],
+        [
+          639,
+          223
+        ],
+        [
+          639,
+          359
+        ],
+        [
+          0,
+          359
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_02_foreground-grass.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 640,
+        "height": 147
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_foreground-grass_926570fdc4bb.png",
+          "geometryHash": "926570fdc4bb7c32cec5ea2c7c1b22b3aee85947e67091e77fb9b1d8e1815627",
+          "traceVerified": true
+        },
+        "cropBox": [
+          0,
+          213,
+          640,
+          360
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              0,
+              221
+            ],
+            [
+              79,
+              218
+            ],
+            [
+              130,
+              224
+            ],
+            [
+              178,
+              215
+            ],
+            [
+              224,
+              215
+            ],
+            [
+              271,
+              222
+            ],
+            [
+              322,
+              218
+            ],
+            [
+              369,
+              225
+            ],
+            [
+              414,
+              220
+            ],
+            [
+              461,
+              229
+            ],
+            [
+              508,
+              221
+            ],
+            [
+              554,
+              225
+            ],
+            [
+              596,
+              220
+            ],
+            [
+              639,
+              223
+            ],
+            [
+              639,
+              359
+            ],
+            [
+              0,
+              359
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:39.951772Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_02_foreground-grass.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_02_foreground-grass.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_02_foreground-grass.turtle.provenance.json"
+  }
+}

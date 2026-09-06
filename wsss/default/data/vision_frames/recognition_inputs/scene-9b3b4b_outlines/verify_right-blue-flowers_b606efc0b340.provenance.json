@@ -1,0 +1,347 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-blue-flowers_b606efc0b340.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-blue-flowers_b606efc0b340.provenance.json",
+  "createdAt": "2026-09-03T12:14:46.911239Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "right blue flowers"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          414,
+          211
+        ],
+        [
+          421,
+          202
+        ],
+        [
+          428,
+          208
+        ],
+        [
+          433,
+          198
+        ],
+        [
+          440,
+          207
+        ],
+        [
+          447,
+          196
+        ],
+        [
+          454,
+          205
+        ],
+        [
+          461,
+          197
+        ],
+        [
+          468,
+          207
+        ],
+        [
+          476,
+          199
+        ],
+        [
+          484,
+          209
+        ],
+        [
+          492,
+          200
+        ],
+        [
+          500,
+          211
+        ],
+        [
+          508,
+          202
+        ],
+        [
+          516,
+          211
+        ],
+        [
+          524,
+          204
+        ],
+        [
+          531,
+          214
+        ],
+        [
+          526,
+          222
+        ],
+        [
+          414,
+          222
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 648,
+        "y": 588
+      },
+      {
+        "op": "line",
+        "x": 667,
+        "y": 563
+      },
+      {
+        "op": "line",
+        "x": 678,
+        "y": 552
+      },
+      {
+        "op": "line",
+        "x": 688,
+        "y": 577
+      },
+      {
+        "op": "line",
+        "x": 699,
+        "y": 546
+      },
+      {
+        "op": "line",
+        "x": 721,
+        "y": 549
+      },
+      {
+        "op": "line",
+        "x": 746,
+        "y": 554
+      },
+      {
+        "op": "line",
+        "x": 782,
+        "y": 560
+      },
+      {
+        "op": "line",
+        "x": 831,
+        "y": 596
+      },
+      {
+        "op": "line",
+        "x": 824,
+        "y": 618
+      },
+      {
+        "op": "line",
+        "x": 648,
+        "y": 618
+      },
+      {
+        "op": "line",
+        "x": 648,
+        "y": 588
+      }
+    ],
+    "geometryHash": "b606efc0b34062a63d0336b0b6b1a244382bc3611b99ae89fb8f570c8e99a006",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.8306
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-blue-flowers_b606efc0b340.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              414,
+              211
+            ],
+            [
+              421,
+              202
+            ],
+            [
+              428,
+              208
+            ],
+            [
+              433,
+              198
+            ],
+            [
+              440,
+              207
+            ],
+            [
+              447,
+              196
+            ],
+            [
+              454,
+              205
+            ],
+            [
+              461,
+              197
+            ],
+            [
+              468,
+              207
+            ],
+            [
+              476,
+              199
+            ],
+            [
+              484,
+              209
+            ],
+            [
+              492,
+              200
+            ],
+            [
+              500,
+              211
+            ],
+            [
+              508,
+              202
+            ],
+            [
+              516,
+              211
+            ],
+            [
+              524,
+              204
+            ],
+            [
+              531,
+              214
+            ],
+            [
+              526,
+              222
+            ],
+            [
+              414,
+              222
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 648,
+            "y": 588
+          },
+          {
+            "op": "line",
+            "x": 667,
+            "y": 563
+          },
+          {
+            "op": "line",
+            "x": 678,
+            "y": 552
+          },
+          {
+            "op": "line",
+            "x": 688,
+            "y": 577
+          },
+          {
+            "op": "line",
+            "x": 699,
+            "y": 546
+          },
+          {
+            "op": "line",
+            "x": 721,
+            "y": 549
+          },
+          {
+            "op": "line",
+            "x": 746,
+            "y": 554
+          },
+          {
+            "op": "line",
+            "x": 782,
+            "y": 560
+          },
+          {
+            "op": "line",
+            "x": 831,
+            "y": 596
+          },
+          {
+            "op": "line",
+            "x": 824,
+            "y": 618
+          },
+          {
+            "op": "line",
+            "x": 648,
+            "y": 618
+          },
+          {
+            "op": "line",
+            "x": 648,
+            "y": 588
+          }
+        ],
+        "geometryHash": "b606efc0b34062a63d0336b0b6b1a244382bc3611b99ae89fb8f570c8e99a006",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.8306
+      },
+      "createdAt": "2026-09-03T12:14:46.911239Z"
+    }
+  ]
+}

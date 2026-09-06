@@ -1,0 +1,17 @@
+(
+  (kind semantic_datatype)
+  (id event)
+  (label Event)
+  (description "A semantic event or occurrence observed or inferred in a world.")
+  (implements (
+    (information ())
+  ))
+  (inheritsFrom (
+    (information (
+      (borrow ([]
+        *
+      ))
+      (exclude ([]))
+    ))
+  ))
+)

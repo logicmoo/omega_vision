@@ -2,12 +2,13 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workbench/emullm-rewritten" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workbench/plugins/HIDE_succotash/emullm-rewritten" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workbench/plugins/coplex" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workbench/plugins/coplex_stdpy" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workbench/plugins/emullm" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workbench/plugins/mailbox_chat" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/workbench/plugins/ws_collab" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../.." vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/plugins/codex_cli" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/plugins/coplex" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/plugins/coplex_stdpy" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/plugins/emullm" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/plugins/mailbox_chat" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/plugins/ws_audio" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/plugins/ws_collab" vcs="Git" />
   </component>
 </project>

@@ -1,0 +1,156 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_09_center-left-stone.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_09_center-left-stone.provenance.json",
+  "createdAt": "2026-09-03T12:14:45.401054Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 755,
+    "height": 734
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_09_center-left-stone.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_09_center-left-stone.provenance.json"
+  },
+  "source": {
+    "objectName": "center-left stone"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 31,
+      "height": 30
+    },
+    "scale": 21,
+    "resizedDimensions": {
+      "width": 651,
+      "height": 630
+    },
+    "padding": {
+      "left": 52,
+      "top": 52,
+      "right": 52,
+      "bottom": 52
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_09_center-left-stone.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 31,
+        "height": 30
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_center-left-stone_04842a5b48ff.png",
+          "geometryHash": "04842a5b48ff916b813b631d8153f02aa7b783258b2b2897d53b1ce13704baa5",
+          "traceVerified": true
+        },
+        "cropBox": [
+          281,
+          227,
+          312,
+          257
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              283,
+              244
+            ],
+            [
+              286,
+              235
+            ],
+            [
+              294,
+              229
+            ],
+            [
+              303,
+              231
+            ],
+            [
+              309,
+              239
+            ],
+            [
+              307,
+              249
+            ],
+            [
+              299,
+              255
+            ],
+            [
+              289,
+              253
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:45.341271Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_09_center-left-stone.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 755,
+        "height": 734
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 31,
+          "height": 30
+        },
+        "scale": 21,
+        "resizedDimensions": {
+          "width": 651,
+          "height": 630
+        },
+        "padding": {
+          "left": 52,
+          "top": 52,
+          "right": 52,
+          "bottom": 52
+        }
+      },
+      "createdAt": "2026-09-03T12:14:45.401054Z"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Artifact Query Categories
 
-[← Back to top-level README](../../../README.md)
+[← Back to top-level README](../../README.md)
 
 Design trees support two complementary category mechanisms.
 

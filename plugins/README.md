@@ -1,6 +1,6 @@
 # Workbench plugins
 
-[Back to repository README](../../README.md)
+[Back to repository README](../README.md)
 
 The backend scans direct child directories of this folder for `plugin.json`.
 Each manifest names an `entrypoint` exporting `create_router(manifest)`. The

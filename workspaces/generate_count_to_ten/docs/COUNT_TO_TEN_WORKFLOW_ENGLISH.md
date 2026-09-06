@@ -1,6 +1,6 @@
 # Count to Ten — Workflow Generation Test
 
-[← Back to top-level README](../../../../README.md)
+[← Back to top-level README](../../../README.md)
 
 ## Purpose
 

@@ -240,7 +240,7 @@ live captions** instead of local Vosk. It is registered on the Processes page
 as the managed service **Google Meet STT Bridge**
 (`meet_caption_bridge.managed_service.json`, health on
 `http://127.0.0.1:48699/health`, launcher
-`workbench/scripts/run_meet_bridge.bat`) and can be started/stopped from
+`python/workbench_api_server/scripts/run_meet_bridge.bat`) and can be started/stopped from
 there like any other subsystem.
 
 ```powershell
@@ -282,7 +282,7 @@ python scripts/meet_caption_bridge.py --forget-sso    # re-pick the account
 ## Codex heartbeat automation
 
 The repository-owned source of truth for the Workbench mailbox heartbeat is
-[`config/codex-automations/symbolic-workbench-mailbox-agent.toml`](../config/codex-automations/symbolic-workbench-mailbox-agent.toml).
+[`python/arc_cli_debugger/config/codex-automations/symbolic-workbench-mailbox-agent.toml`](../python/arc_cli_debugger/config/codex-automations/symbolic-workbench-mailbox-agent.toml).
 It intentionally omits machine-local scheduler metadata such as
 `target_thread_id`, `created_at`, and `updated_at`.
 

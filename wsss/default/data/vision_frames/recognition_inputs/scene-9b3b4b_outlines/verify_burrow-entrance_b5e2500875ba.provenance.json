@@ -1,0 +1,291 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_burrow-entrance_b5e2500875ba.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_burrow-entrance_b5e2500875ba.provenance.json",
+  "createdAt": "2026-09-03T12:14:44.327124Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "burrow entrance"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          309,
+          239
+        ],
+        [
+          312,
+          228
+        ],
+        [
+          320,
+          221
+        ],
+        [
+          334,
+          219
+        ],
+        [
+          346,
+          224
+        ],
+        [
+          353,
+          233
+        ],
+        [
+          356,
+          245
+        ],
+        [
+          353,
+          256
+        ],
+        [
+          345,
+          263
+        ],
+        [
+          333,
+          266
+        ],
+        [
+          321,
+          262
+        ],
+        [
+          313,
+          254
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 484,
+        "y": 666
+      },
+      {
+        "op": "line",
+        "x": 488,
+        "y": 635
+      },
+      {
+        "op": "line",
+        "x": 501,
+        "y": 616
+      },
+      {
+        "op": "line",
+        "x": 523,
+        "y": 610
+      },
+      {
+        "op": "line",
+        "x": 541,
+        "y": 624
+      },
+      {
+        "op": "line",
+        "x": 552,
+        "y": 649
+      },
+      {
+        "op": "line",
+        "x": 557,
+        "y": 682
+      },
+      {
+        "op": "line",
+        "x": 552,
+        "y": 713
+      },
+      {
+        "op": "line",
+        "x": 523,
+        "y": 741
+      },
+      {
+        "op": "line",
+        "x": 502,
+        "y": 730
+      },
+      {
+        "op": "line",
+        "x": 488,
+        "y": 708
+      },
+      {
+        "op": "line",
+        "x": 484,
+        "y": 666
+      }
+    ],
+    "geometryHash": "b5e2500875bac5c908540e9c5bbe258bdef086f0e9e56f1b274cb110818a07e0",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.9859
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_burrow-entrance_b5e2500875ba.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              309,
+              239
+            ],
+            [
+              312,
+              228
+            ],
+            [
+              320,
+              221
+            ],
+            [
+              334,
+              219
+            ],
+            [
+              346,
+              224
+            ],
+            [
+              353,
+              233
+            ],
+            [
+              356,
+              245
+            ],
+            [
+              353,
+              256
+            ],
+            [
+              345,
+              263
+            ],
+            [
+              333,
+              266
+            ],
+            [
+              321,
+              262
+            ],
+            [
+              313,
+              254
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 484,
+            "y": 666
+          },
+          {
+            "op": "line",
+            "x": 488,
+            "y": 635
+          },
+          {
+            "op": "line",
+            "x": 501,
+            "y": 616
+          },
+          {
+            "op": "line",
+            "x": 523,
+            "y": 610
+          },
+          {
+            "op": "line",
+            "x": 541,
+            "y": 624
+          },
+          {
+            "op": "line",
+            "x": 552,
+            "y": 649
+          },
+          {
+            "op": "line",
+            "x": 557,
+            "y": 682
+          },
+          {
+            "op": "line",
+            "x": 552,
+            "y": 713
+          },
+          {
+            "op": "line",
+            "x": 523,
+            "y": 741
+          },
+          {
+            "op": "line",
+            "x": 502,
+            "y": 730
+          },
+          {
+            "op": "line",
+            "x": 488,
+            "y": 708
+          },
+          {
+            "op": "line",
+            "x": 484,
+            "y": 666
+          }
+        ],
+        "geometryHash": "b5e2500875bac5c908540e9c5bbe258bdef086f0e9e56f1b274cb110818a07e0",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.9859
+      },
+      "createdAt": "2026-09-03T12:14:44.327124Z"
+    }
+  ]
+}

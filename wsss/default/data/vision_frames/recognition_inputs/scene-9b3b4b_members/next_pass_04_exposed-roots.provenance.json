@@ -1,0 +1,254 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_04_exposed-roots.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_04_exposed-roots.provenance.json",
+  "createdAt": "2026-09-03T12:14:42.352955Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 844,
+    "height": 448
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_04_exposed-roots.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_04_exposed-roots.provenance.json"
+  },
+  "source": {
+    "objectName": "exposed roots"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 182,
+      "height": 83
+    },
+    "scale": 4,
+    "resizedDimensions": {
+      "width": 728,
+      "height": 332
+    },
+    "padding": {
+      "left": 58,
+      "top": 58,
+      "right": 58,
+      "bottom": 58
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_04_exposed-roots.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 182,
+        "height": 83
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_exposed-roots_ae37d7c1ea93.png",
+          "geometryHash": "ae37d7c1ea938586ca80cf22bfd4d0726e2ccdfbeebfae2cc52374cf128a7416",
+          "traceVerified": true
+        },
+        "cropBox": [
+          217,
+          165,
+          399,
+          248
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              292,
+              167
+            ],
+            [
+              311,
+              173
+            ],
+            [
+              294,
+              194
+            ],
+            [
+              276,
+              211
+            ],
+            [
+              258,
+              224
+            ],
+            [
+              234,
+              230
+            ],
+            [
+              218,
+              226
+            ],
+            [
+              244,
+              213
+            ],
+            [
+              261,
+              197
+            ]
+          ],
+          [
+            [
+              322,
+              171
+            ],
+            [
+              339,
+              177
+            ],
+            [
+              352,
+              196
+            ],
+            [
+              375,
+              211
+            ],
+            [
+              397,
+              221
+            ],
+            [
+              389,
+              229
+            ],
+            [
+              364,
+              218
+            ],
+            [
+              340,
+              207
+            ],
+            [
+              327,
+              191
+            ]
+          ],
+          [
+            [
+              310,
+              181
+            ],
+            [
+              324,
+              184
+            ],
+            [
+              321,
+              210
+            ],
+            [
+              329,
+              230
+            ],
+            [
+              321,
+              247
+            ],
+            [
+              310,
+              229
+            ],
+            [
+              307,
+              207
+            ]
+          ],
+          [
+            [
+              286,
+              185
+            ],
+            [
+              297,
+              192
+            ],
+            [
+              283,
+              213
+            ],
+            [
+              276,
+              239
+            ],
+            [
+              264,
+              245
+            ],
+            [
+              268,
+              218
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:42.322614Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_04_exposed-roots.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 844,
+        "height": 448
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 182,
+          "height": 83
+        },
+        "scale": 4,
+        "resizedDimensions": {
+          "width": 728,
+          "height": 332
+        },
+        "padding": {
+          "left": 58,
+          "top": 58,
+          "right": 58,
+          "bottom": 58
+        }
+      },
+      "createdAt": "2026-09-03T12:14:42.352955Z"
+    }
+  ]
+}

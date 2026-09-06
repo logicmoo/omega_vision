@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260825T230407_40d609de:health:https.llm.c.singularitynet.io.v1_https.llm.c.singularitynet.io.v1-meta-llama_llama-3.3-70b-instruct)
+  (modelPolicyEntryId https.llm.c.singularitynet.io.v1:https.llm.c.singularitynet.io.v1-meta-llama_llama-3.3-70b-instruct)
+  (vendorId https.llm.c.singularitynet.io.v1)
+  (status online)
+  (latencyMs 1091.2)
+  (observedAt 2026-08-25T23:04:08.874739Z)
+  (jobId ping_all_20260825T230407_40d609de)
+)

@@ -1,0 +1,102 @@
+(
+  (kind operation)
+  (id value.set)
+  (label "Set Named Value")
+  (topics ([]
+    workflow-language
+    workflow-values
+  ))
+  (description "Bind an immutable supplied value to a run-scoped alias while retaining the prior produced value and alias transition evidence.")
+  (implementation workflow.value.set)
+  (inputs ((name String) (value Any)))
+  (outputs ((name String) (previousValue Any) (value Any)))
+  (parameters ((scope run_alias) (preserveHistory true)))
+)
+(
+  (kind operation)
+  (id value.compare)
+  (label "Compare Values")
+  (topics ([]
+    workflow-language
+    workflow-values
+    conditionals
+  ))
+  (description "Compare two typed values with an explicit operator and return the Boolean result.")
+  (implementation workflow.value.compare)
+  (inputs ((left Any) (operator String) (right Any)))
+  (outputs ((matched Boolean)))
+  (parameters ((supportedOperators ([] truthy falsy empty not_empty equals not_equals less_than less_than_or_equal greater_than greater_than_or_equal))))
+)
+(
+  (kind operation)
+  (id memory.read)
+  (label "Read AtomSpace Memory Cell")
+  (topics ([]
+    workflow-language
+    recognition-memory
+  ))
+  (description "Read one declared AtomSpace-backed memory cell using an explicit missing-cell policy.")
+  (implementation workflow.memory.read)
+  (inputs ((atomspace_scope String) (atomspace_scope_key String) (atomspace_cell String) (missingPolicy String) (default Any)))
+  (outputs ((found Boolean) (atomspace_atom Any) (provenance Object)))
+  (parameters ((missingPolicies ([] error null default))))
+)
+(
+  (kind operation)
+  (id memory.write)
+  (label "Write AtomSpace Memory Cell")
+  (topics ([]
+    workflow-language
+    recognition-memory
+  ))
+  (description "Update one declared AtomSpace-backed memory cell using an explicit merge rule and retain evidence for the mutation.")
+  (implementation workflow.memory.write)
+  (inputs ((atomspace_scope String) (atomspace_scope_key String) (atomspace_cell String) (atomspace_atom Any) (change_mode String) (evidenceLink String)))
+  (outputs ((previousAtom Any) (atomspace_atom Any) (provenance Object)))
+  (parameters ((changeModes ([] replace append merge increment min max)) (requiresMemoryModel true) (requiresEvidenceLink true)))
+)
+(
+  (kind operation)
+  (id control.loop.continue)
+  (label "Continue Loop")
+  (topics ([]
+    workflow-language
+    control-flow
+    loops
+  ))
+  (description "Finalize the current iteration and return to the named active loop's condition or next-item check.")
+  (implementation workflow.control.loop.continue)
+  (inputs ((loopId String)))
+  (outputs ((continued Boolean) (iteration Number)))
+  (parameters ((requiresActiveLoop true)))
+)
+(
+  (kind operation)
+  (id control.loop.break)
+  (label "Break Loop")
+  (topics ([]
+    workflow-language
+    control-flow
+    loops
+  ))
+  (description "Finalize and exit the named active loop, exporting only its declared output values.")
+  (implementation workflow.control.loop.break)
+  (inputs ((loopId String)))
+  (outputs ((broken Boolean) (iterations Number) (exportedValues Object)))
+  (parameters ((requiresActiveLoop true) (usesDeclaredExitStep true)))
+)
+(
+  (kind operation)
+  (id control.return)
+  (label "Return from Workflow or Operation")
+  (topics ([]
+    workflow-language
+    control-flow
+    programming-control-flow
+  ))
+  (description "Validate declared outputs, unwind the current frame, and return a typed result to its caller.")
+  (implementation workflow.control.return)
+  (inputs ((values Object)))
+  (outputs ((returned Boolean) (values Object)))
+  (parameters ((requiresDeclaredOutputs true) (completeTopLevelRun true)))
+)

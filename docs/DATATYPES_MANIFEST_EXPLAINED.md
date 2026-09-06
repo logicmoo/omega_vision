@@ -1,4 +1,4 @@
-[← Back to top-level README](../README.md) · [LLM and workflow configuration](../config/README.md)
+[← Back to top-level README](../README.md) · [LLM and workflow configuration](../python/arc_cli_debugger/config/README.md)
 
 # Symbolic Datatypes in AtomSpace Explained
 
@@ -14,9 +14,9 @@ The datatype manifest therefore separates:
 - **operation contracts** from the implementations that perform them;
 - and **workflow routing** from the data events that activate new branches.
 
-![Symbolic Workflow Datatype Graph](../config/workflow_datatypes.svg)
+![Symbolic Workflow Datatype Graph](../python/arc_cli_debugger/config/workflow_datatypes.svg)
 
-The machine-readable form of this graph is stored in [`workflow_datatypes.json`](../config/workflow_datatypes.json). Reusable operation contracts and implementation routes are stored in [`workflow_operations.json`](../config/workflow_operations.json).
+The machine-readable form of this graph is stored in [`workflow_datatypes.json`](../python/arc_cli_debugger/config/workflow_datatypes.json). Reusable operation contracts and implementation routes are stored in [`workflow_operations.json`](../python/arc_cli_debugger/config/workflow_operations.json).
 
 ---
 
@@ -867,7 +867,7 @@ individual_object
         object_properties
 ```
 
-The full machine-readable relationships are in [`workflow_datatypes.json`](../config/workflow_datatypes.json).
+The full machine-readable relationships are in [`workflow_datatypes.json`](../python/arc_cli_debugger/config/workflow_datatypes.json).
 
 ---
 

@@ -1,6 +1,6 @@
 # Game Preview Gallery: intentionally costly example
 
-[Back to repository README](../../../../README.md)
+[Back to repository README](../../../README.md)
 
 The ARC3 Random Player exposes one optional `Curate Viewable Gallery` step that opens every available game, captures its first frame, and returns a single Gallery Resource. This is intentionally a nontrivially bad demonstration, not recommended architecture.
 

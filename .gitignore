@@ -60,8 +60,8 @@ downloads/
 eggs/
 .eggs/
 lib/
-!workbench/frontend/src/lib/
-!workbench/frontend/src/lib/**
+!frontend/apps/workbench/src/lib/
+!frontend/apps/workbench/src/lib/**
 lib64/
 parts/
 sdist/
@@ -298,7 +298,7 @@ recordings/
 logs.log
 
 # Generated artefacts
-notebooks/submission.ipynb
+python/notebooks/submission.ipynb
 reference/
 .llm_responses/
 .codex-commit-message.txt
@@ -322,12 +322,12 @@ workbench-ui-current.png
 .idea/
 .vscode/
 /.tmp_pytest_ren/test_plugin_scanner_skips_hidd0/loose_object
-/workbench/plugins/mailbox_chat/.idea/mailbox-mailbox-relay-bridging-proxy.iml
-/workbench/plugins/mailbox_chat/.idea/mailbox-mailbox-relay-bridging-proxy@1.iml
-/workbench/plugins/mailbox_chat/.idea/modules.xml
-/workbench/plugins/mailbox_chat/.idea/inspectionProfiles/Project_Default.xml
-/workbench/plugins/mailbox_chat/.idea/vcs.xml
-/workbench/plugins/mailbox_chat/.idea/workspace.xml
+/plugins/mailbox_chat/.idea/mailbox-mailbox-relay-bridging-proxy.iml
+/plugins/mailbox_chat/.idea/mailbox-mailbox-relay-bridging-proxy@1.iml
+/plugins/mailbox_chat/.idea/modules.xml
+/plugins/mailbox_chat/.idea/inspectionProfiles/Project_Default.xml
+/plugins/mailbox_chat/.idea/vcs.xml
+/plugins/mailbox_chat/.idea/workspace.xml
 
 # Video Import media (downloaded videos, extracted frames, previews) — never
 # commit; the skill files, LUTs, and small JSON catalogs stay tracked.

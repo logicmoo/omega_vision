@@ -1,6 +1,6 @@
 # Symbolic ARC Recognition — Identity, Recognition, Regeneration, Memory, Replay
 
-[← Back to top-level README](../../../README.md) · Related:
+[← Back to top-level README](../../README.md) · Related:
 [OBJECT_REGISTRY_CANONICAL](OBJECT_REGISTRY_CANONICAL.md) ·
 [BUTTERED_TOAST_NORMALIZATION](BUTTERED_TOAST_NORMALIZATION.md) ·
 [PHASE2_OBJECT_MEMORY_DEMONSTRATION](PHASE2_OBJECT_MEMORY_DEMONSTRATION.md)
@@ -10,9 +10,9 @@ This is the LLM‑free symbolic object‑recognition line that satisfies SOW Pha
 Python and grouping/memory in SWI‑Prolog. Everything below is real filesystem /
 backend behaviour — no mocks.
 
-- Perception + shape model: `workbench/server/generative_vision/prolog/symbolic_arc.py`
-- Persistence: `workbench/server/generative_vision/prolog/object_memory.pl`
-- Canonical store (git‑ignored, regenerable): `data/object_memory/`
+- Perception + shape model: `python/omega_vision/perception/symbolic_arc.py`
+- Persistence: `prolog/omega_vision/object_memory.pl`
+- Canonical store (git‑ignored, regenerable): `data/omega_vision/object_memory/`
   - `shape_dir/shapes.pl` — colourless shape vocabulary (regenerated deterministically)
   - `identity_dir/<scope>/identities.db.pl` — persistent object identities + occurrences
 - UI: Video Import → **Recognition** subview (per‑object chips + PartOf tree names) and the **Sprite Viewer**.

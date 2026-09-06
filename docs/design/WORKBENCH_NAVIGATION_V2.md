@@ -1,10 +1,10 @@
 # Workbench Navigation V2
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 ## Purpose
 
-Navigation V2 organizes the active filesystem-backed workbench by purpose without replacing existing editors. `workbench/frontend/src/App.tsx` remains the authority for the active page.
+Navigation V2 organizes the active filesystem-backed workbench by purpose without replacing existing editors. `frontend/apps/workbench/src/App.tsx` remains the authority for the active page.
 
 ## Navigation Contract
 

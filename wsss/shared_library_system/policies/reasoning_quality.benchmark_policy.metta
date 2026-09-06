@@ -1,0 +1,38 @@
+(
+  (kind benchmark_policy)
+  (id reasoning_quality)
+  (label "Reasoning Quality Matrix")
+  (description "Defines a repeatable reasoning-quality benchmark matrix rather than storing a result. At execution time it selects models whose effective benchmark state is eligible, crosses current free-router Model Presets with the Strict Output Prompt Profile, and records accuracy, latency, and token use for comparison and later policy decisions.")
+  (enabled true)
+  (example true)
+  (modelPolicyId default_model_runtime)
+  (modelSelection (
+    (policyState on)
+    (requireEffectiveBenchmark true)
+  ))
+  (modelPresets ([]
+    clawrouter-free-router
+    omniroute-free-router-preset-high
+  ))
+  (promptProfiles ([]
+    strict_output
+  ))
+  (metrics ([]
+    accuracy
+    latency_ms
+    input_tokens
+    output_tokens
+    estimated_cost
+  ))
+  (cases ([]
+    (
+      (id exact_token)
+      (prompt "Return exactly the token ARC3_OK and no other text.")
+      (expected ARC3_OK)
+      (evaluator exact_match)
+    )
+  ))
+  (repetitions 3)
+  (concurrency 4)
+  (timeoutSeconds 300)
+)

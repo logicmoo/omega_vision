@@ -1,3 +1,5 @@
+[← Back to top-level README](../README.md)
+
 # Video Import — Help
 
 The Video Import page (KNOWLEDGE → Video Import) is the full loop for turning
@@ -572,7 +574,7 @@ this tool from scratch:
 
 ````markdown
 Build a **Video Import** page (KNOWLEDGE → Video Import) for the workbench:
-a FastAPI router (`workbench/server/video_import_api.py`, mounted under
+a FastAPI router (`python/omega_vision/services/video_import_api.py`, mounted under
 `/workbench/video-import`) plus a React page, storing everything under the
 workspace's `data/video_import/`.
 

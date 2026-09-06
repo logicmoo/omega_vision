@@ -1,6 +1,6 @@
 # Resource Relationship Model
 
-[Back to repository README](../../../README.md) ·
+[Back to repository README](../../README.md) ·
 [Filesystem resource model](FILESYSTEM_RESOURCE_MODEL.md)
 
 ## Purpose

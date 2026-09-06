@@ -1,4 +1,4 @@
-[← Back to top-level README](../../README.md)
+[← Back to top-level README](../README.md)
 
 # First-Class Data Representations
 
@@ -25,7 +25,7 @@ A workflow should normally ask for an abstract datatype such as `image`, not for
 Shared reusable definitions live in:
 
 ```text
-workbench/workspaces/shared_library_system/
+workspaces/shared_library_system/
 ├── datatypes/
 ├── representations/
 ├── operations/
@@ -182,12 +182,12 @@ The current planner uses cost when choosing the shortest available conversion pa
 For a workspace named `arc3`:
 
 ```text
-GET /workbench/workspaces/arc3/datatypes
-GET /workbench/workspaces/arc3/representations
-GET /workbench/workspaces/arc3/representation-graph
-GET /workbench/workspaces/arc3/datatypes/image/resolve
-GET /workbench/workspaces/arc3/datatypes/image/resolve?representation=scene_graph
-GET /workbench/workspaces/arc3/datatypes/image/plan?source=bitmap&target=logo_program
+GET /workspaces/arc3/datatypes
+GET /workspaces/arc3/representations
+GET /workspaces/arc3/representation-graph
+GET /workspaces/arc3/datatypes/image/resolve
+GET /workspaces/arc3/datatypes/image/resolve?representation=scene_graph
+GET /workspaces/arc3/datatypes/image/plan?source=bitmap&target=logo_program
 ```
 
 The representation graph response includes effective shared/workspace datatype resources, representation resources, and conversion edges.

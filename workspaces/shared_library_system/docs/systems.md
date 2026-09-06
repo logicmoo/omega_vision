@@ -1,6 +1,6 @@
 # Systems
 
-[Back to repository README](../../../../README.md)
+[Back to repository README](../../../README.md)
 
 Systems are callable execution and communication facilities available to the
 Workbench. Python, SWI-Prolog, MeTTa, the single LLM System Caller, OmegaClaw,

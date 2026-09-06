@@ -1,0 +1,160 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_20_blue-gray-background-tre.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_20_blue-gray-background-tre.provenance.json",
+  "createdAt": "2026-09-03T12:21:38.531785Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 384,
+    "height": 853
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_20_blue-gray-background-tre.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_20_blue-gray-background-tre.provenance.json"
+  },
+  "source": {
+    "objectName": "blue-gray background tree"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 38,
+      "height": 105
+    },
+    "scale": 7,
+    "resizedDimensions": {
+      "width": 266,
+      "height": 735
+    },
+    "padding": {
+      "left": 59,
+      "top": 59,
+      "right": 59,
+      "bottom": 59
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_20_blue-gray-background-tre.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 38,
+        "height": 105
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_blue-gray-background-tre_44d8c9ef6de2.png",
+          "geometryHash": "44d8c9ef6de278f4be763f642d35e209d01f650b3ba9ab4decb34593d06d9413",
+          "traceVerified": true
+        },
+        "cropBox": [
+          194,
+          107,
+          232,
+          212
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              196,
+              112
+            ],
+            [
+              207,
+              109
+            ],
+            [
+              210,
+              151
+            ],
+            [
+              222,
+              132
+            ],
+            [
+              229,
+              132
+            ],
+            [
+              220,
+              161
+            ],
+            [
+              219,
+              208
+            ],
+            [
+              203,
+              210
+            ],
+            [
+              202,
+              158
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:38.499970Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_20_blue-gray-background-tre.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 384,
+        "height": 853
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 38,
+          "height": 105
+        },
+        "scale": 7,
+        "resizedDimensions": {
+          "width": 266,
+          "height": 735
+        },
+        "padding": {
+          "left": 59,
+          "top": 59,
+          "right": 59,
+          "bottom": 59
+        }
+      },
+      "createdAt": "2026-09-03T12:21:38.531785Z"
+    }
+  ]
+}

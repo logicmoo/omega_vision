@@ -1,6 +1,6 @@
 # Universal Artifact Editor
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 ## Baseline
 

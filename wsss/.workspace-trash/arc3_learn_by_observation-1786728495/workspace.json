@@ -1,0 +1,1 @@
+{"kind":"workspace","id":"arc3_learn_by_observation","label":"ARC3 Learning by Observation","description":"Runnable ARC3 observation-learning workflow.","includes":[{"workspaceId":"shared_library_arc3","includeInherited":true}]}

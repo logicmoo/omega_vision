@@ -1,14 +1,16 @@
+[← Back to top-level README](../../README.md)
+
 # Page Generations — the page version-management system
 
 Every workbench page can carry its full version history. A **page family**
 registers each **generation** it has shipped (v1, v2, …); a stepper strip at
 the top of the page lets the user walk through the history (`?gen=N` pins a
 generation in the URL). The Video Import page is the first family on the
-system (`workbench/frontend/src/components/VideoImportFamily.tsx`).
+system (`frontend/apps/workbench/src/components/VideoImportFamily.tsx`).
 
 ## Global policies
 
-Defined in `workbench/frontend/src/lib/pageGenerations.ts`
+Defined in `frontend/apps/workbench/src/lib/pageGenerations.ts`
 (`GLOBAL_GENERATION_POLICIES`) and displayed in every page's ⓘ provenance
 panel:
 
@@ -20,7 +22,7 @@ panel:
    generation; they never delete one.
 3. **New generations are built from the written build prompt.** Each page's
    help document carries a "prompt that would build this" appendix
-   (e.g. `workbench/docs/VIDEO_IMPORT.md`). To make v(N+1): update the prompt
+   (e.g. `docs/VIDEO_IMPORT.md`). To make v(N+1): update the prompt
    first so it describes the target, then build from it. Building with the
    whole design known up front beats growing it organically.
 4. **Every generation records provenance** — component path, build prompt,

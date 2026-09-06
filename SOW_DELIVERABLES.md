@@ -42,7 +42,7 @@ Phase 1 delivers the debugger, evidence-recording surface, expandable command fr
 ## ARC3 interaction and recorded evidence
 
 - [x] Adapt the existing ARC debugger workflow to ARC3.  
-  Evidence: [`python/arc3_runner.py`](python/arc3_runner.py), [`scripts/interactive_runner.py`](scripts/interactive_runner.py), [`DEBUGGER.md`](DEBUGGER.md).
+  Evidence: [`python/arc_cli_debugger/arc3_runner.py`](python/arc_cli_debugger/arc3_runner.py), [`python/arc_cli_debugger/cli/interactive_runner.py`](python/arc_cli_debugger/cli/interactive_runner.py), [`DEBUGGER.md`](DEBUGGER.md).
 
 - [x] Load and interact with selected ARC3 games and levels.  
   Evidence: game/level lifecycle and interactive controls in `Arc3Runner`.
@@ -51,7 +51,7 @@ Phase 1 delivers the debugger, evidence-recording surface, expandable command fr
   Evidence: `StepRecord`, `image.png`, `state.json`, action history, exports, and node READMEs.
 
 - [x] Store gameplay encounters and explored action paths in a GitHub-browsable action tree.  
-  Evidence: [`python/action_tree.py`](python/action_tree.py), deterministic action directories, parent/child links, and generated READMEs.
+  Evidence: [`python/arc_cli_debugger/action_tree.py`](python/arc_cli_debugger/action_tree.py), deterministic action directories, parent/child links, and generated READMEs.
 
 - [x] Preserve encounter and action history with deterministic replay, reset, restart, and path navigation.  
   Evidence: runner history/replay/reset/restart behavior and action-tree navigation.
@@ -59,7 +59,7 @@ Phase 1 delivers the debugger, evidence-recording surface, expandable command fr
 ## Pluggable command and provider framework
 
 - [x] Provide expandable command hooks for replaceable LLM, Prolog, Python, and external providers.  
-  Evidence: `python/multillm_runner.py`, `python/gpt_bridge.py`, `python/swipl_bridge.py`, provider cycling, and symbolic command entry points.
+  Evidence: `python/arc_cli_debugger/multillm_runner.py`, `python/omega_vision/gpt_bridge.py`, `python/omega_vision/prolog_bridge.py`, provider cycling, and symbolic command entry points.
 
 - [x] Supply current and previous observations, action context, and available metadata to providers and display their results.  
   Evidence: combined parent/current image and context requests in `GptArcAnalyzer`.
@@ -98,7 +98,7 @@ The checked items above claim the delivered ability to **show and preserve** the
   Evidence: mutable latest `.pl` view, immutable `llm_adapter_*.md` transcripts, transcript selection, and `restore_transcript()`.
 
 - [x] Preserve provider, adapter, model, analysis level, profile, token budget, images, exact prompt, timing, repair history, and raw response.  
-  Evidence: [`python/llm_transcripts.py`](python/llm_transcripts.py).
+  Evidence: [`python/arc_cli_debugger/llm_transcripts.py`](python/arc_cli_debugger/llm_transcripts.py).
 
 - [x] Place restorable generated artifacts at the top of each completed transcript.  
   Evidence: artifact-first transcript layout and tests.
@@ -107,18 +107,18 @@ The checked items above claim the delivered ability to **show and preserve** the
   Evidence: transcript layout and response-at-bottom tests.
 
 - [x] Make node `README.md` identify the active transcript and link historical runs.  
-  Evidence: [`python/llm_readme_patch.py`](python/llm_readme_patch.py).
+  Evidence: [`python/arc_cli_debugger/llm_readme_patch.py`](python/arc_cli_debugger/llm_readme_patch.py).
 
 ## Runtime and documentation
 
 - [x] Keep provider definitions and reusable prompt text together under `config/`.  
-  Evidence: [`config/llm_providers.json`](config/llm_providers.json).
+  Evidence: [`python/arc_cli_debugger/config/llm_providers.json`](python/arc_cli_debugger/config/llm_providers.json).
 
 - [x] Allow each provider to select an ordered prompt-section list and omit sections such as `transitions`.  
   Evidence: provider prompt-section configuration and tests.
 
 - [x] Resolve code, config, and action-tree storage independently.  
-  Evidence: [`scripts/_runtime.py`](scripts/_runtime.py), [`python/project_paths.py`](python/project_paths.py).
+  Evidence: [`scripts/_runtime.py`](scripts/_runtime.py), [`python/arc_cli_debugger/project_paths.py`](python/arc_cli_debugger/project_paths.py).
 
 - [x] Print where configuration is loaded from and where action trees are saved.  
   Evidence: startup resolved-path report.
@@ -127,7 +127,7 @@ The checked items above claim the delivered ability to **show and preserve** the
   Evidence: shared providers, object-memory contracts, learner plugin contracts, Prolog bridge, and action-tree artifact slots.
 
 - [x] Document debugger architecture, action trees, hooks, artifacts, evidence, provenance, and replay controls.  
-  Evidence: [`README.md`](README.md), [`DEBUGGER.md`](DEBUGGER.md), [`config/README.md`](config/README.md), [`SOW_PHASE_ARCHITECTURE.md`](SOW_PHASE_ARCHITECTURE.md), and [`FILE_TREE.md`](FILE_TREE.md).
+  Evidence: [`README.md`](README.md), [`DEBUGGER.md`](DEBUGGER.md), [`python/arc_cli_debugger/config/README.md`](python/arc_cli_debugger/config/README.md), [`SOW_PHASE_ARCHITECTURE.md`](SOW_PHASE_ARCHITECTURE.md), and [`FILE_TREE.md`](FILE_TREE.md).
 
 ## Phase 1 status
 
@@ -179,7 +179,7 @@ Phase 2 implements the semantic object layer behind the Phase 1 debugger. It use
   Evidence: extracted programs use `set_pos`, `rot`, `fwd`, `penup`/`pendown`, and canonical `pen_width`; every filled axis-aligned rectangle, including widths above four cells, renders as one width-aware stroke when that footprint is exact. Non-rectangular connected components use one deterministic spanning-tree Turtle walk: the pen remains down while rotations, forward movement, and safe backtracking visit every occupied cell. Hollow-object coverage proves the walk preserves holes with one initial position and no row-by-row teleportation, and live SWI-Prolog regeneration remains exact.
 
 - [x] Execute the stored Turtle program to regenerate the object and compare it with the source observation.
-  Evidence: `GenerativeForm` executes extracted programs through `SWIPrologBridge` and the canonical `prolog/turtle_dsl.pl`; regenerated-cell fit, distance, normalized residual, and description-length metrics have live SWI-Prolog coverage.
+  Evidence: `GenerativeForm` executes extracted programs through `SWIPrologBridge` and the canonical `prolog/omega_vision/turtle_dsl.pl`; regenerated-cell fit, distance, normalized residual, and description-length metrics have live SWI-Prolog coverage.
   `TurtleReconstructionEvidenceBuilder` now converts exact fit or residual measurements into attributable signed evidence without hiding the measured residual. Live semantic capture invokes the real SWI-Prolog renderer for every candidate, persists the metrics on its Turtle reference, attaches evidence to the encounter, links the evidence artifact into the action tree, and restores it during replay.
 
 - [x] Preserve exact holes, disconnected strokes, topology, and supported thickness through the stored Turtle program.
@@ -243,10 +243,10 @@ Input image or game state
     → later recognition as the same object
 ```
 
-  Evidence: `scripts/phase2_object_memory_demo.py` runs this path over two real logical-grid states, uses the established extractor and SWI-Prolog Turtle renderer, explicitly authorizes a friendly identity through `SingleWriter`, persists moved-object evidence, rebuilds a fresh store from action-tree manifests, and emits a machine-readable summary. `tests/test_phase2_object_memory_demo.py` asserts stable identity, four exact reconstructions, change capture, and deterministic replay. See [Phase 2 object-memory demonstration](workbench/docs/design/PHASE2_OBJECT_MEMORY_DEMONSTRATION.md).
+  Evidence: `scripts/phase2_object_memory_demo.py` runs this path over two real logical-grid states, uses the established extractor and SWI-Prolog Turtle renderer, explicitly authorizes a friendly identity through `SingleWriter`, persists moved-object evidence, rebuilds a fresh store from action-tree manifests, and emits a machine-readable summary. `tests/test_phase2_object_memory_demo.py` asserts stable identity, four exact reconstructions, change capture, and deterministic replay. See [Phase 2 object-memory demonstration](docs/design/PHASE2_OBJECT_MEMORY_DEMONSTRATION.md).
 
 - [x] Provide Phase 2 identity, correspondence, regeneration, confidence, memory, and replay documentation with linked evidence.
-  Evidence: [Phase 2 object-memory demonstration](workbench/docs/design/PHASE2_OBJECT_MEMORY_DEMONSTRATION.md) documents the complete executable path, inspectable action-tree artifacts, exact record types, restart replay, and regression assertions.
+  Evidence: [Phase 2 object-memory demonstration](docs/design/PHASE2_OBJECT_MEMORY_DEMONSTRATION.md) documents the complete executable path, inspectable action-tree artifacts, exact record types, restart replay, and regression assertions.
 
 ---
 
@@ -345,7 +345,7 @@ Phase 3 implements learning and prediction over the persistent objects and evide
   - rendered arcade environments;
   - fixed-camera physics examples;
   - top-down manipulation with partial occlusion.
-  Evidence: `scripts/phase2_environment_progression_demo.py` runs seven deterministic fixtures through the normalized raster contracts and emits a machine-readable acceptance summary. It covers a rendered multi-sprite arcade frame, a three-frame fixed-camera motion sequence, and clean/noisy/partly occluded top-down manipulation scenes. See [Phase 2 environment progression](workbench/docs/design/PHASE2_ENVIRONMENT_PROGRESSION.md).
+  Evidence: `scripts/phase2_environment_progression_demo.py` runs seven deterministic fixtures through the normalized raster contracts and emits a machine-readable acceptance summary. It covers a rendered multi-sprite arcade frame, a three-frame fixed-camera motion sequence, and clean/noisy/partly occluded top-down manipulation scenes. See [Phase 2 environment progression](docs/design/PHASE2_ENVIRONMENT_PROGRESSION.md).
 
 - [x] Demonstrate the complete Phase 3 workflow:
 
@@ -364,7 +364,7 @@ Input game state
   Evidence: `scripts/phase3_learning_demo.py` executes transition analysis, candidate transformation learning, rule induction with assumptions and critiques, a persisted pre-outcome prediction, independent outcome grading, evidence-backed probability calibration, and deterministic semantic replay. Its machine-readable summary is required by the fail-closed Phase 2 acceptance report generator.
 
 - [x] Provide reproducible integration commands, example scripts, acceptance-test results, and developer notes.
-  Evidence: the object-memory and environment-progression demonstrations emit deterministic machine-readable summaries. `scripts/generate_phase2_acceptance_report.py` verifies those summaries together with an explicit regression result and repository commit, fails closed when evidence is missing, and writes JSON plus Markdown reports. Commands and scope are documented in [Phase 2 object-memory demonstration](workbench/docs/design/PHASE2_OBJECT_MEMORY_DEMONSTRATION.md) and [Phase 2 environment progression](workbench/docs/design/PHASE2_ENVIRONMENT_PROGRESSION.md).
+  Evidence: the object-memory and environment-progression demonstrations emit deterministic machine-readable summaries. `scripts/generate_phase2_acceptance_report.py` verifies those summaries together with an explicit regression result and repository commit, fails closed when evidence is missing, and writes JSON plus Markdown reports. Commands and scope are documented in [Phase 2 object-memory demonstration](docs/design/PHASE2_OBJECT_MEMORY_DEMONSTRATION.md) and [Phase 2 environment progression](docs/design/PHASE2_ENVIRONMENT_PROGRESSION.md).
 
 ---
 

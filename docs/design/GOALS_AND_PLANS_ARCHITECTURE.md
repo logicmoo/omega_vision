@@ -1,6 +1,6 @@
 # Goals, Planning Strategies, and Workflows
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 ## Semantic model
 

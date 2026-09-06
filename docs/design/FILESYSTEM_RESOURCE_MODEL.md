@@ -1,6 +1,6 @@
 # Filesystem Resource Model
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 Detailed relationship semantics are defined in
 [Resource Relationship Model](RESOURCE_RELATIONSHIP_MODEL.md).

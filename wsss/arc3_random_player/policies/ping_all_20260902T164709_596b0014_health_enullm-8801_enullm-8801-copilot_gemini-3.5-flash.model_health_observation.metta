@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260902T164709_596b0014:health:enullm-8801_enullm-8801-copilot_gemini-3.5-flash)
+  (modelPolicyEntryId enullm-8801:enullm-8801-copilot_gemini-3.5-flash)
+  (vendorId enullm-8801)
+  (status online)
+  (latencyMs 4278.0)
+  (observedAt 2026-09-02T16:47:14.534351Z)
+  (jobId ping_all_20260902T164709_596b0014)
+)

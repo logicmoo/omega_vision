@@ -1,6 +1,6 @@
 # Atom.Ant Symbolic Reasoning Loop
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

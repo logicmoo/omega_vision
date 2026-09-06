@@ -1,0 +1,10 @@
+(
+  (kind model_ping_event)
+  (id ping_all_20260902T164709_596b0014:event:https.llm.c.singularitynet.io.v1_https.llm.c.singularitynet.io.v1-minimax_minimax-m2.7)
+  (jobId ping_all_20260902T164709_596b0014)
+  (modelPolicyEntryId https.llm.c.singularitynet.io.v1:https.llm.c.singularitynet.io.v1-minimax_minimax-m2.7)
+  (status succeeded)
+  (healthStatus online)
+  (latencyMs 810.3)
+  (createdAt 2026-09-02T16:47:10.883207Z)
+)

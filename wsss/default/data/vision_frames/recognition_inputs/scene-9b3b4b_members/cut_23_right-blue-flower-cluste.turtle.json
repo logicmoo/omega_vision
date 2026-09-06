@@ -1,0 +1,156 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_23_right-blue-flower-cluste.png",
+  "subjectName": "right blue flower cluster",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#176b7a\",\n  \"penWidth\": 3,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          634.0,\n          535.0\n        ],\n        [\n          673.0,\n          515.0\n        ],\n        [\n          713.0,\n          524.0\n        ],\n        [\n          748.0,\n          510.0\n        ],\n        [\n          790.0,\n          529.0\n        ],\n        [\n          823.0,\n          515.0\n        ],\n        [\n          858.0,\n          543.0\n        ],\n        [\n          837.0,\n          593.0\n        ],\n        [\n          782.0,\n          602.0\n        ],\n        [\n          734.0,\n          588.0\n        ],\n        [\n          687.0,\n          599.0\n        ],\n        [\n          643.0,\n          577.0\n        ]\n      ],\n      \"fill\": \"#1f7580\"\n    },\n    {\n      \"op\": \"dot\",\n      \"points\": [\n        [\n          661.0,\n          552.0\n        ]\n      ],\n      \"size\": 22,\n      \"fill\": \"#2ca8ce\",\n      \"x\": 661.0,\n      \"y\": 552.0,\n      \"radius\": 22\n    },\n    {\n      \"op\": \"dot\",\n      \"points\": [\n        [\n          696.0,\n          533.0\n        ]\n      ],\n      \"size\": 18,\n      \"fill\": \"#56c1d4\",\n      \"x\": 696.0,\n      \"y\": 533.0,\n      \"radius\": 18\n    },\n    {\n      \"op\": \"dot\",\n      \"points\": [\n        [\n          728.0,\n          564.0\n        ]\n      ],\n      \"size\": 24,\n      \"fill\": \"#258ac8\",\n      \"x\": 728.0,\n      \"y\": 564.0,\n      \"radius\": 24\n    },\n    {\n      \"op\": \"dot\",\n      \"points\": [\n        [\n          762.0,\n          536.0\n        ]\n      ],\n      \"size\": 20,\n      \"fill\": \"#38b9d1\",\n      \"x\": 762.0,\n      \"y\": 536.0,\n      \"radius\": 20\n    },\n    {\n      \"op\": \"dot\",\n      \"points\": [\n        [\n          797.0,\n          558.0\n        ]\n      ],\n      \"size\": 23,\n      \"fill\": \"#237fc0\",\n      \"x\": 797.0,\n      \"y\": 558.0,\n      \"radius\": 23\n    },\n    {\n      \"op\": \"dot\",\n      \"points\": [\n        [\n          830.0,\n          543.0\n        ]\n      ],\n      \"size\": 18,\n      \"fill\": \"#55c7d2\",\n      \"x\": 830.0,\n      \"y\": 543.0,\n      \"radius\": 18\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#176b7a",
+    "penWidth": 3,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            634.0,
+            535.0
+          ],
+          [
+            673.0,
+            515.0
+          ],
+          [
+            713.0,
+            524.0
+          ],
+          [
+            748.0,
+            510.0
+          ],
+          [
+            790.0,
+            529.0
+          ],
+          [
+            823.0,
+            515.0
+          ],
+          [
+            858.0,
+            543.0
+          ],
+          [
+            837.0,
+            593.0
+          ],
+          [
+            782.0,
+            602.0
+          ],
+          [
+            734.0,
+            588.0
+          ],
+          [
+            687.0,
+            599.0
+          ],
+          [
+            643.0,
+            577.0
+          ]
+        ],
+        "fill": "#1f7580"
+      },
+      {
+        "op": "dot",
+        "points": [
+          [
+            661.0,
+            552.0
+          ]
+        ],
+        "size": 22,
+        "fill": "#2ca8ce",
+        "x": 661.0,
+        "y": 552.0,
+        "radius": 22
+      },
+      {
+        "op": "dot",
+        "points": [
+          [
+            696.0,
+            533.0
+          ]
+        ],
+        "size": 18,
+        "fill": "#56c1d4",
+        "x": 696.0,
+        "y": 533.0,
+        "radius": 18
+      },
+      {
+        "op": "dot",
+        "points": [
+          [
+            728.0,
+            564.0
+          ]
+        ],
+        "size": 24,
+        "fill": "#258ac8",
+        "x": 728.0,
+        "y": 564.0,
+        "radius": 24
+      },
+      {
+        "op": "dot",
+        "points": [
+          [
+            762.0,
+            536.0
+          ]
+        ],
+        "size": 20,
+        "fill": "#38b9d1",
+        "x": 762.0,
+        "y": 536.0,
+        "radius": 20
+      },
+      {
+        "op": "dot",
+        "points": [
+          [
+            797.0,
+            558.0
+          ]
+        ],
+        "size": 23,
+        "fill": "#237fc0",
+        "x": 797.0,
+        "y": 558.0,
+        "radius": 23
+      },
+      {
+        "op": "dot",
+        "points": [
+          [
+            830.0,
+            543.0
+          ]
+        ],
+        "size": 18,
+        "fill": "#55c7d2",
+        "x": 830.0,
+        "y": 543.0,
+        "radius": 18
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:29:58.708953Z"
+}

@@ -1,0 +1,10 @@
+(
+  (kind model_ping_event)
+  (id ping_all_20260902T164709_596b0014:event:enullm-8801_enullm-8801-asi1)
+  (jobId ping_all_20260902T164709_596b0014)
+  (modelPolicyEntryId enullm-8801:enullm-8801-asi1)
+  (status succeeded)
+  (healthStatus online)
+  (latencyMs 4278.0)
+  (createdAt 2026-09-02T16:47:14.276807Z)
+)

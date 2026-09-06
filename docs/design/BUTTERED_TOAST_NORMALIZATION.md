@@ -1,3 +1,5 @@
+[← Back to top-level README](../../README.md)
+
 # The Buttered Toast Algorithm (bottom-right shape normalization)
 
 ## What it is
@@ -14,7 +16,7 @@ they share one key ("the same shape").
 
 ## Where it lives
 
-- `workbench/server/generative_vision/prolog/symbolic_arc.py`
+- `python/omega_vision/perception/symbolic_arc.py`
   - `_canon_br(offs)` — the algorithm.
   - `_shape_sig(cells, hex)` — an object's identity key uses the buttered-toast
     (rotation-normalized) shape.

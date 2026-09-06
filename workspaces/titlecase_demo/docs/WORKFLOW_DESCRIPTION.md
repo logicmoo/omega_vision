@@ -1,6 +1,6 @@
 # Titlecase Demo
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

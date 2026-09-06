@@ -26,7 +26,7 @@ Override these locations when needed:
 
 ```bash
 ARC3_CONFIG_ROOT=/path/to/config
-ARC3_LLM_CONFIG=/path/to/config/llm_providers.json
+ARC3_LLM_CONFIG=/path/to/python/arc_cli_debugger/config/llm_providers.json
 ARC3_TREE_ROOT=/path/to/action_trees
 ```
 
@@ -53,7 +53,7 @@ The debugger does not implement a separate game engine. The ARC3 toolkit environ
 ## Start the terminal debugger
 
 ```bash
-python scripts/interactive_runner.py ls20
+python python/arc_cli_debugger/cli/interactive_runner.py ls20
 ```
 
 On native Windows:
@@ -67,7 +67,7 @@ The positional argument is the initial game ID. The default is `ls20`.
 ## Start the browser debugger
 
 ```bash
-python scripts/run_webui.py --game ls20
+python python/arc_cli_debugger/webui/run_webui.py --game ls20
 ```
 
 Open:
@@ -76,14 +76,14 @@ Open:
 http://127.0.0.1:8765/
 ```
 
-Each browser connection starts an isolated `scripts/interactive_runner.py` process. Saved action-tree files and transcripts remain after the browser tab closes.
+Each browser connection starts an isolated `python/arc_cli_debugger/cli/interactive_runner.py` process. Saved action-tree files and transcripts remain after the browser tab closes.
 
 ### Browser dimensions
 
 ```bash
 ARC3_WEB_COLS=320
 ARC3_WEB_ROWS=100
-python scripts/run_webui.py --game ls20
+python python/arc_cli_debugger/webui/run_webui.py --game ls20
 ```
 
 ### Non-loopback binding
@@ -92,7 +92,7 @@ Binding outside localhost requires a token:
 
 ```bash
 ARC3_WEB_TOKEN=choose-a-long-random-token \
-python scripts/run_webui.py --host 0.0.0.0 --port 8765 --game ls20
+python python/arc_cli_debugger/webui/run_webui.py --host 0.0.0.0 --port 8765 --game ls20
 ```
 
 Do not expose an unrestricted terminal, Prolog execution endpoint, API keys, or private files without authentication and HTTPS.
@@ -211,7 +211,7 @@ Press `(g)` then `(1)`. The chooser lists all transcripts for the current state.
 4. marks that transcript active;
 5. regenerates `README.md` so the embedded latest artifacts and active transcript link agree.
 
-Failed or incomplete runs remain available as debug-only transcripts but cannot become the active artifact snapshot. Enter `E` in the same chooser to edit `config/llm_providers.json`.
+Failed or incomplete runs remain available as debug-only transcripts but cannot become the active artifact snapshot. Enter `E` in the same chooser to edit `python/arc_cli_debugger/config/llm_providers.json`.
 
 ### Prolog mode
 
@@ -315,16 +315,16 @@ Generated programs should trace geometry with `fwd/1` and `rot/1`, using `set_po
 Run Turtle tests:
 
 ```bash
-swipl -q -s prolog/test_turtle_dsl.pl -g run_tests,halt
+swipl -q -s tests/plt/test_turtle_dsl.pl -g run_tests,halt
 ```
 
 ## SWI-Prolog-controlled demonstration
 
 ```bash
-python scripts/prolog_controlled_runner.py
+python python/arc_cli_debugger/cli/prolog_controlled_runner.py
 ```
 
-This calls `python/swipl_bridge.py`, loads `prolog/arc3_agent.pl`, asks Prolog for an action, and applies it through `Arc3Runner`.
+This calls `python/omega_vision/prolog_bridge.py`, loads `prolog/omega_vision/arc3_agent.pl`, asks Prolog for an action, and applies it through `Arc3Runner`.
 
 ## Notebooks
 
@@ -332,8 +332,8 @@ This calls `python/swipl_bridge.py`, loads `prolog/arc3_agent.pl`, asks Prolog f
 jupyter lab
 ```
 
-- `notebooks/arc3_debugger.ipynb` — guided debugger workflow.
-- `notebooks/arc3_runner.ipynb` — lower-level scripting and API exploration.
+- `python/notebooks/arc3_debugger.ipynb` — guided debugger workflow.
+- `python/notebooks/arc3_runner.ipynb` — lower-level scripting and API exploration.
 
 Both use `Arc3Runner`, the same action tree, the same identity registry, and the same combined artifacts.
 
@@ -349,6 +349,6 @@ If a requested action-tree path is blocked by an unusable filesystem entry, the 
 
 ## Editable LLM configuration
 
-Providers and reusable prompt sections live together in `config/llm_providers.json`. Prompt values may be arrays of physical lines so Git diffs remain readable. Each provider's `prompt_text` array selects and orders the named blocks included in its request.
+Providers and reusable prompt sections live together in `python/arc_cli_debugger/config/llm_providers.json`. Prompt values may be arrays of physical lines so Git diffs remain readable. Each provider's `prompt_text` array selects and orders the named blocks included in its request.
 
 [← Back to top-level README](README.md)

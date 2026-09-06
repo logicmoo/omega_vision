@@ -1,6 +1,6 @@
 # Runtime Persistence Architecture
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 ## Design and Runtime Boundary
 

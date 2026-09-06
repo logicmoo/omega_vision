@@ -1,0 +1,17 @@
+(
+  (kind semantic_datatype)
+  (id objectified_observation)
+  (label "Objectified Observation")
+  (description "An observation enriched with stable entities and synchronized representations.")
+  (implements (
+    (observation ())
+  ))
+  (inheritsFrom (
+    (observation (
+      (borrow ([]
+        *
+      ))
+      (exclude ([]))
+    ))
+  ))
+)

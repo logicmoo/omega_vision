@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260902T164709_596b0014:health:https.llm.c.singularitynet.io.v1_https.llm.c.singularitynet.io.v1-z-ai_glm-4.7-flash)
+  (modelPolicyEntryId https.llm.c.singularitynet.io.v1:https.llm.c.singularitynet.io.v1-z-ai_glm-4.7-flash)
+  (vendorId https.llm.c.singularitynet.io.v1)
+  (status online)
+  (latencyMs 810.3)
+  (observedAt 2026-09-02T16:47:11.171447Z)
+  (jobId ping_all_20260902T164709_596b0014)
+)

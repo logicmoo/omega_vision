@@ -1,0 +1,17 @@
+(
+  (kind semantic_datatype)
+  (id world_dynamics)
+  (label "World Dynamics")
+  (description "Semantic rules, transition structure, constraints, and causal dynamics of a world.")
+  (implements (
+    (information ())
+  ))
+  (inheritsFrom (
+    (information (
+      (borrow ([]
+        *
+      ))
+      (exclude ([]))
+    ))
+  ))
+)

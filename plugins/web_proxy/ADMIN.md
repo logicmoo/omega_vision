@@ -1,6 +1,6 @@
 # Web Proxy administration and setup
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 The Web Proxy plugin mounts itself on the workbench API port and forwards HTTP
 and WebSocket traffic to origins that are explicitly listed in its manifest.

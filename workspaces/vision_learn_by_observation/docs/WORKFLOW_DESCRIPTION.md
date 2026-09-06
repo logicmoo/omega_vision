@@ -1,6 +1,6 @@
 # Learn a Visual World by Observation
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

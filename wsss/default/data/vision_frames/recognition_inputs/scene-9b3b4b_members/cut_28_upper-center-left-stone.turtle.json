@@ -1,0 +1,70 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_28_upper-center-left-stone.png",
+  "subjectName": "upper center-left stone",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#4d524c\",\n  \"penWidth\": 4,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          457.0,\n          596.0\n        ],\n        [\n          466.0,\n          596.0\n        ],\n        [\n          479.0,\n          616.0\n        ],\n        [\n          485.0,\n          646.0\n        ],\n        [\n          471.0,\n          660.0\n        ],\n        [\n          458.0,\n          646.0\n        ]\n      ],\n      \"fill\": \"#6e746d\"\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          463.0,\n          599.0\n        ],\n        [\n          474.0,\n          616.0\n        ],\n        [\n          474.0,\n          638.0\n        ],\n        [\n          462.0,\n          641.0\n        ]\n      ],\n      \"fill\": \"#8c9084\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#4d524c",
+    "penWidth": 4,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            457.0,
+            596.0
+          ],
+          [
+            466.0,
+            596.0
+          ],
+          [
+            479.0,
+            616.0
+          ],
+          [
+            485.0,
+            646.0
+          ],
+          [
+            471.0,
+            660.0
+          ],
+          [
+            458.0,
+            646.0
+          ]
+        ],
+        "fill": "#6e746d"
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            463.0,
+            599.0
+          ],
+          [
+            474.0,
+            616.0
+          ],
+          [
+            474.0,
+            638.0
+          ],
+          [
+            462.0,
+            641.0
+          ]
+        ],
+        "fill": "#8c9084"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:30:02.977496Z"
+}

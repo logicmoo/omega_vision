@@ -561,7 +561,7 @@ values here.
   side controls, or independent control rows unless the user explicitly asks
   for a new panel.
 - The canonical workflow accordion names and placement destinations are listed
-  in `workbench/docs/design/WORKFLOW_ACCORDION_MAP.md`. When the user names an
+  in `docs/design/WORKFLOW_ACCORDION_MAP.md`. When the user names an
   accordion, place the requested control inside that exact existing member.
 
 - Canonical checkout: `C:\snet\PeTTa\repos\symbolic_learner_workbench`
@@ -571,14 +571,14 @@ values here.
   (`Add model policy history aggregation`)
 - Python environment: one repository-root `.venv` containing all optional
   ARC3, workbench, test, notebook, and integration dependencies
-- Frontend dependencies: `workbench/frontend/node_modules`
+- Frontend dependencies: `frontend/apps/workbench/node_modules`
 - Local `.env` is ignored by Git and must point at the canonical checkout;
   never copy its secrets into this ledger
 
 ## Completed and validated
 
 - [x] Add AtomSpaces -> Resource AtomSpace. The real
-  `/workbench/workspaces/{workspace_id}/resource-atomspace` endpoint materializes
+  `/workspaces/{workspace_id}/resource-atomspace` endpoint materializes
   all effective filesystem/runtime resources as atoms and all six canonical
   relationship fields plus `preferredImplementation` as links. The page offers
   kind/search/relationship filters, selected-atom link inspection, and MeTTa
@@ -635,10 +635,10 @@ values here.
   `fetchDirectory` in `ChatConversation.tsx` fetches `/ws_collab/mailbox/mailboxes`
   and `/workbench/mailbox/mailboxes` concurrently (each tolerating the other being
   down) and unions both by mailbox id, letting the live ws_collab relay win on
-  id collisions. `workbench/server/mailbox_api_lib.py` (the `/workbench/mailbox/*`
+  id collisions. `python/workbench_api_server/mailbox_api_lib.py` (the `/workbench/mailbox/*`
   surface) previously went dark (503) whenever the sibling `mailbox_channels`
   package wasn't installed; it now falls back to the bundled `mailbox_chat`
-  plugin copy (`workbench/plugins/mailbox_chat/src/mailbox_chat/`) via a thin
+  plugin copy (`plugins/mailbox_chat/src/mailbox_chat/`) via a thin
   `_ChannelStoreShim`/`_MailboxClientShim` adapting its `mailbox_store`/
   `agent_mailbox` naming to the API this module was written against. This is
   the same on-disk store `scripts/stt_mailbox_listener.py` and
@@ -654,7 +654,7 @@ values here.
   `Path.cwd() / "mailbox"`, which only lines up with the repo-root `mailbox/`
   store when a process happens to be launched from the repository root. The
   live dev API server is started with `os.chdir(SERVER_ROOT)`
-  (`workbench/scripts/run_api_server.py`), so `/workbench/mailbox/mailboxes` still
+  (`python/workbench_api_server/scripts/run_api_server.py`), so `/workbench/mailbox/mailboxes` still
   came back empty against the real running server even though the direct
   Python check above passed. `mailbox_api_lib.py`'s fallback block now pins
   the shim's `mailbox_dir` to `<repo_root>/mailbox` (falling back to
@@ -722,7 +722,7 @@ values here.
   Effective inheritance is borrow intersect lend, minus exclude and withhold,
   followed by local overrides. Parents withhold identity and relationship fields
   by default. The complete contract is documented in
-  `workbench/docs/design/RESOURCE_RELATIONSHIP_MODEL.md`.
+  `docs/design/RESOURCE_RELATIONSHIP_MODEL.md`.
 - [x] Support partial implementations throughout family resolvers and editors.
   Do not classify every resource with `implements` as concrete. Derive and expose
   UI-only abstract/partial/concrete/runnable status from the current draft, resolved
@@ -784,7 +784,7 @@ values here.
   resource validation passed on 2026-08-24.
 
 - [x] Add filesystem-backed Workbench plugin discovery under
-  `workbench/plugins`, a Plugins navigation submenu/page with manual refresh
+  `plugins`, a Plugins navigation submenu/page with manual refresh
   and persisted `startup`/`disabled` scan policy, and the first `web_proxy`
   plugin. The proxy exposes the allowlisted local emullm relay at
   `/web_proxy/http/127.0.0.1:8801/`, forwards GET/POST/PUT/PATCH/DELETE/OPTIONS/
@@ -825,8 +825,8 @@ values here.
   to end: configure page opened from the Plugins card, initialization checks,
   target probe, and a save that persisted to `plugin.json` and re-rendered.
 
-- [ ] Known follow-up: the API dev server reloads only on `workbench/server`
-  Python changes, so editing a plugin entrypoint under `workbench/plugins`
+- [ ] Known follow-up: the API dev server reloads only on `python/workbench_api_server`
+  Python changes, so editing a plugin entrypoint under `plugins`
   needs an API restart. Widening `reload_dirs` conflicts with the deliberate
   guard in `tests/test_windows_dependency_bootstrap.py`; decide the intended
   policy before changing it.
@@ -871,7 +871,7 @@ values here.
   Vite → API → web_proxy mount → the standalone server.
 
 - [x] Add `cadence=on-activation` to the WS_COLLAB worker monitor
-  (`workbench/plugins/ws_collab/ws_collab/workers.py`), resolving the tension
+  (`plugins/ws_collab/ws_collab/workers.py`), resolving the tension
   between the health monitor (warn ~60s, overdue ~120s, unresponsive ~300s) and
   the doctrine's ban on agent keep-alive loops: an agent that only runs when its
   recurring automation fires was previously guaranteed to be flagged as a
@@ -1204,10 +1204,10 @@ values here.
   the `plugin_api.py`/`plugin_admin.py` `API_PREFIX = "/workbench"` contract.
   Changed: all 18 former `app.include_router(...)` calls plus the hardcoded
   workbench route decorators in
-  `workbench/server/app.py` (health, whoami, analyze, runs, tasks, workflows)
+  `python/workbench_api_server/app.py` (health, whoami, analyze, runs, tasks, workflows)
   now use `/workbench`; the self-referencing health-check URL in
   `service_monitor_api.py`'s `_builtin_definitions()`; the mockup URLs in
-  `workflow_runner_todo_api.py`; `workbench/scripts/submit_managed_command.py`
+  `workflow_runner_todo_api.py`; `python/workbench_api_server/scripts/submit_managed_command.py`
   and `scripts/mailbox_codex_listener.py`'s own calls into the workbench API;
   `scripts/capture_workflow_runner_visuals.ps1`; all 51 frontend `.tsx`/`.ts`
   files that called the former namespace (bulk replacement verified
@@ -1217,17 +1217,17 @@ values here.
   string assertions and `test_mailbox_api_lib.py`'s OWN isolated-app fixture,
   which still used the former prefix after its call-site assertions
   were bulk-renamed — caught by a targeted git-stash A/B pytest diff); reference docs
-  (`workbench/README.md`, `docs/AGENT_MAILBOX.md`, `docs/CHAT_PAGE.md`,
-  `workbench/docs/VIDEO_IMPORT.md`, `workbench/docs/DATA_REPRESENTATIONS.md`,
-  `workbench/docs/design/{OPERATIONS_AND_EXECUTIONS,GOALS_AND_PLANS_ARCHITECTURE,
+  (`docs/WORKBENCH.md`, `docs/AGENT_MAILBOX.md`, `docs/CHAT_PAGE.md`,
+  `docs/VIDEO_IMPORT.md`, `docs/DATA_REPRESENTATIONS.md`,
+  `docs/design/{OPERATIONS_AND_EXECUTIONS,GOALS_AND_PLANS_ARCHITECTURE,
   RUNTIME_PERSISTENCE_ARCHITECTURE,CODEX_CURRENT_IMPLEMENTATION_INVENTORY}.md`,
-  `workbench/plugins/README.md`); and the workspace `.metta` resources
+  `plugins/README.md`); and the workspace `.metta` resources
   (`mailbox.system.metta`, `image_filter_skills.operation.metta`,
   `workbench_api.managed_service.metta`). Left alone (confirmed genuinely
   unrelated external service contracts): OmniRoute's key and login endpoints,
   `/api/auth/login` on :20128, OpenRouter's `https://openrouter.ai/api/v1`,
   HuggingFace's `/api/models/...`, unsloth studio's own `/api/inference/*` on
-  :8888. The standalone `webui/server.py` tool now follows the same
+  :8888. The standalone `python/arc_cli_debugger/webui/server.py` tool now follows the same
   `/workbench/config` convention. Root `/` no longer 302-redirects the API port to the Vite
   port (`http://127.0.0.1:8000/` used to "secretly host" `:5173` via a
   redirect); it now RELAYS instead, proxying HTTP and the HMR WebSocket
@@ -1252,7 +1252,7 @@ values here.
   33 failed/865 passed both before and after (the 33 are pre-existing,
   confirmed via `git stash` A/B diff); `npm
   run build` succeeds; live-restarted API+Vite and curl-verified `GET
-  /workbench/health`, `GET /workbench/plugins`, `GET /workbench/endpoints`
+  /workbench/health`, `GET /plugins`, `GET /workbench/endpoints`
   (232 entries), `GET /workbench/web_proxy/admin` (plugin mirror works), `GET
   /` on both `:8000` and `:5173` return 200 with zero redirects
   (`-MaximumRedirection 0`), `@vite/client`/`src/main.tsx` relay correctly
@@ -1335,7 +1335,7 @@ values here.
 - [x] Pin FreeRouter's inherited `CLAWROUTER_PORT` override to 18800 so it
   cannot occupy ClawRouter's port 3456.
 - [x] Restrict Uvicorn live reload to application Python source changes under
-  `workbench/server`, explicitly excluding generated `environment_files`,
+  `python/workbench_api_server`, explicitly excluding generated `environment_files`,
   `runtime`, `__pycache__`, and server-test files so execution cannot restart
   the API.
 
@@ -1383,13 +1383,13 @@ Preserve the canonical checkout and its `codex/workbench-navigation-v2` branch.
   --check` passed on 2026-08-12.
 
 - Added shared `gallery.curate_resource` and `collection.random_list_element`
-  filesystem Operations backed by `python/collection_operations.py`.
+  filesystem Operations backed by `workspaces/shared_library_system/collection_operations.py`.
 - The workflow editor can insert any abstract Operation after the selected step;
   the inserted node is immediately available through the normal playground path.
 - Gallery invocation results render human-inspectable cards while preserving the
   identical structured artifact for downstream AI/Operations.
 - ARC3's `arc3_random.build_game_preview_gallery` is only an intentionally costly
-  demonstration. See `workbench/workspaces/arc3_random_player/docs/GAME_PREVIEW_GALLERY_BAD_EXAMPLE.md`.
+  demonstration. See `workspaces/arc3_random_player/docs/GAME_PREVIEW_GALLERY_BAD_EXAMPLE.md`.
 - Focused ARC/gallery tests: 9 passed. Frontend production build and live browser
   insertion check passed. Changes remain uncommitted.
 - Douglas clarified that Operations should be presented as durable delayed
@@ -1627,7 +1627,7 @@ Preserve the canonical checkout and its `codex/workbench-navigation-v2` branch.
 
 - The workflow preflight spline is a real accordion member above the LEFT/RIGHT controls and renders dependency branches, inferred repeated-output capture groups, and explicit bounded FOR/WHILE control arcs.
 - `arc3_random_player.outer_loop` now describes the existing automatic session operation as two nested bounded loops: while unplayed games remain, and while elapsed game time is below the configured seconds-per-game limit. The existing `arc3_random.run_session` implementation remains the executable owner of those loops.
-- Repository Docs can summarize the current exposed/filtered file list with a selected effective workspace model and configurable first-N-lines excerpts, persist the result under `workbench/docs/generated/`, and open the Markdown immediately in the right pane. Unexposed paths are rejected server-side.
+- Repository Docs can summarize the current exposed/filtered file list with a selected effective workspace model and configurable first-N-lines excerpts, persist the result under `docs/generated/`, and open the Markdown immediately in the right pane. Unexposed paths are rejected server-side.
 - [x] Keep SingularityNET as an enabled shared LLM backend and add a real
   `snet-asi1` model child from its live `/v1/models` catalog, so effective
   workspace model selectors can use SingularityNET rather than showing an

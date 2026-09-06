@@ -1,0 +1,340 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_01_horizon.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_01_horizon.provenance.json",
+  "createdAt": "2026-09-03T12:14:39.587182Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 640,
+    "height": 31
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "horizon"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_horizon_95aa29f5bd29.png",
+      "geometryHash": "95aa29f5bd29eeb899eb13e41b6f80508249034249cf315d1a08c21760f25b72",
+      "traceVerified": true
+    },
+    "cropBox": [
+      0,
+      201,
+      640,
+      232
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          0,
+          218
+        ],
+        [
+          78,
+          213
+        ],
+        [
+          127,
+          216
+        ],
+        [
+          176,
+          207
+        ],
+        [
+          224,
+          203
+        ],
+        [
+          271,
+          211
+        ],
+        [
+          322,
+          207
+        ],
+        [
+          369,
+          216
+        ],
+        [
+          414,
+          211
+        ],
+        [
+          461,
+          220
+        ],
+        [
+          508,
+          212
+        ],
+        [
+          553,
+          216
+        ],
+        [
+          596,
+          211
+        ],
+        [
+          639,
+          214
+        ],
+        [
+          639,
+          224
+        ],
+        [
+          596,
+          221
+        ],
+        [
+          553,
+          226
+        ],
+        [
+          508,
+          222
+        ],
+        [
+          461,
+          230
+        ],
+        [
+          414,
+          221
+        ],
+        [
+          369,
+          226
+        ],
+        [
+          322,
+          217
+        ],
+        [
+          271,
+          221
+        ],
+        [
+          224,
+          213
+        ],
+        [
+          176,
+          217
+        ],
+        [
+          127,
+          226
+        ],
+        [
+          78,
+          223
+        ],
+        [
+          0,
+          228
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_01_horizon.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 640,
+        "height": 31
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_horizon_95aa29f5bd29.png",
+          "geometryHash": "95aa29f5bd29eeb899eb13e41b6f80508249034249cf315d1a08c21760f25b72",
+          "traceVerified": true
+        },
+        "cropBox": [
+          0,
+          201,
+          640,
+          232
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              0,
+              218
+            ],
+            [
+              78,
+              213
+            ],
+            [
+              127,
+              216
+            ],
+            [
+              176,
+              207
+            ],
+            [
+              224,
+              203
+            ],
+            [
+              271,
+              211
+            ],
+            [
+              322,
+              207
+            ],
+            [
+              369,
+              216
+            ],
+            [
+              414,
+              211
+            ],
+            [
+              461,
+              220
+            ],
+            [
+              508,
+              212
+            ],
+            [
+              553,
+              216
+            ],
+            [
+              596,
+              211
+            ],
+            [
+              639,
+              214
+            ],
+            [
+              639,
+              224
+            ],
+            [
+              596,
+              221
+            ],
+            [
+              553,
+              226
+            ],
+            [
+              508,
+              222
+            ],
+            [
+              461,
+              230
+            ],
+            [
+              414,
+              221
+            ],
+            [
+              369,
+              226
+            ],
+            [
+              322,
+              217
+            ],
+            [
+              271,
+              221
+            ],
+            [
+              224,
+              213
+            ],
+            [
+              176,
+              217
+            ],
+            [
+              127,
+              226
+            ],
+            [
+              78,
+              223
+            ],
+            [
+              0,
+              228
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:39.587182Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_01_horizon.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_01_horizon.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_01_horizon.turtle.provenance.json"
+  }
+}

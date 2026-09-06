@@ -8,9 +8,52 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="edb8fea1-73c1-4416-9e9a-8ac50d562623" name="Changes" comment="Catchup files">
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/codex_cli/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/codex_cli/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/codex_cli/ADMIN.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/codex_cli/ADMIN.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/codex_cli/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/codex_cli/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/codex_cli/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/codex_cli/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/codex_cli/plugin.json" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/codex_cli/plugin.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/codex_cli/plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/codex_cli/plugin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/COPYING" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/COPYING" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/FEATURE_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/FEATURE_GUIDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/LICENSE" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/LICENSE" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/01-architecture.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/01-architecture.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/02-harness-core.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/02-harness-core.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/03-tools-and-permissions.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/03-tools-and-permissions.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/04-rest-api.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/04-rest-api.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/05-plugin-integration.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/05-plugin-integration.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/06-testing.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/06-testing.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/01-what-is-a-coding-agent.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/01-what-is-a-coding-agent.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/02-anatomy-of-a-turn.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/02-anatomy-of-a-turn.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/03-tools-are-a-contract.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/03-tools-are-a-contract.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/04-how-file-editing-works.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/04-how-file-editing-works.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/05-planning-and-todo-tracking.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/05-planning-and-todo-tracking.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/06-mcp-and-external-tools.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/06-mcp-and-external-tools.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/07-lab-trace-a-run.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/07-lab-trace-a-run.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/08-lab-build-a-tool.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/08-lab-build-a-tool.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/09-connecting-a-real-model.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/09-connecting-a-real-model.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/10-subagents-and-orchestration.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/10-subagents-and-orchestration.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/11-glossary-and-further-reading.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/11-glossary-and-further-reading.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/docs/curriculum/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/examples/example_codex_harness.pl" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/examples/example_codex_harness.pl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/pack.pl" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/pack.pl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/plugin.json" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/plugin.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/plugin.py" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/plugin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/prolog/coplex/codex_harness.pl" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/prolog/coplex/codex_harness.pl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/prolog/coplex_server_main.pl" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/prolog/coplex_server_main.pl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/test/test_codex_harness.pl" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/test/test_codex_harness.pl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/coplex/test/test_codex_harness_server.pl" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/coplex/test/test_codex_harness_server.pl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/emullm/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/emullm/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/emullm/config.json" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/emullm/config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/emullm/docs/EMULLM_RELAY.md" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/emullm/docs/EMULLM_RELAY.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/emullm/plugin.json" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/emullm/plugin.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/emullm/src/emullm/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/emullm/src/emullm/api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/emullm/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/emullm/tests/test_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plugins/emullm/tests/test_plugin_runners.py" beforeDir="false" afterPath="$PROJECT_DIR$/plugins/emullm/tests/test_plugin_runners.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,6 +82,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="McpProjectServerCommands">
     <commands />
@@ -132,9 +178,11 @@
     "Python Debug Server.Unnamed.executor": "Debug",
     "Python.interactive_runner.executor": "Run",
     "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "WebServerToolWindowFactoryState": "false",
     "ai.playground.ignore.import.keys.banner.in.settings": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
@@ -181,7 +229,6 @@
     </configuration>
     <configuration name="interactive_runner" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="logicmoo-world-workbench" />
-      <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -192,9 +239,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="DEBUG_JUST_MY_CODE" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="RUN_TOOL" value="" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/interactive_runner.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -222,6 +267,7 @@
       </set>
     </attachedChunks>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="edb8fea1-73c1-4416-9e9a-8ac50d562623" name="Changes" comment="" />
@@ -244,6 +290,7 @@
       <workItem from="1787786890213" duration="80000" />
       <workItem from="1787787026524" duration="2000" />
       <workItem from="1787848859093" duration="7394000" />
+      <workItem from="1788705883766" duration="1267000" />
     </task>
     <task id="LOCAL-00001" summary="Catchup">
       <option name="closed" value="true" />
@@ -292,16 +339,12 @@
     <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
-    <option name="OPEN_GENERIC_TABS">
-      <map>
-        <entry key="56d96773-49bd-4b28-bc9d-e6d20ad817d5" value="TOOL_WINDOW" />
-      </map>
-    </option>
     <option name="TAB_STATES">
       <map>
         <entry key="56d96773-49bd-4b28-bc9d-e6d20ad817d5">
           <value>
             <State>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
               <option name="FILTERS">
                 <map>
                   <entry key="branch">
@@ -320,7 +363,6 @@
                   </entry>
                 </map>
               </option>
-              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
             </State>
           </value>
         </entry>
@@ -329,6 +371,11 @@
             <State />
           </value>
         </entry>
+      </map>
+    </option>
+    <option name="OPEN_GENERIC_TABS">
+      <map>
+        <entry key="56d96773-49bd-4b28-bc9d-e6d20ad817d5" value="TOOL_WINDOW" />
       </map>
     </option>
   </component>

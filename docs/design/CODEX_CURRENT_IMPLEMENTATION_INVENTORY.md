@@ -1,20 +1,20 @@
 # Codex Current Implementation Inventory
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 ## Scope and Active Entrypoint
 
-This living inventory records the active Navigation V2 implementation. `workbench/frontend/src/main.tsx` renders `App`; `workbench/frontend/src/App.tsx` imports and returns only `FilesystemWorkbenchPage`. Therefore `workbench/frontend/src/pages/FilesystemWorkbenchPage.tsx` is the active application. No other page under `src/pages/` is reachable through the current entrypoint.
+This living inventory records the active Navigation V2 implementation. `frontend/apps/workbench/src/main.tsx` renders `App`; `frontend/apps/workbench/src/App.tsx` imports and returns only `FilesystemWorkbenchPage`. Therefore `frontend/apps/workbench/src/pages/FilesystemWorkbenchPage.tsx` is the active application. No other page under `src/pages/` is reachable through the current entrypoint.
 
-The backend is FastAPI, launched from `workbench/server/app.py`. The active page uses `/workbench/workspaces/{id}/snapshot` for filesystem state and `/workbench/engine/*` for workflow execution.
+The backend is FastAPI, launched from `python/workbench_api_server/app.py`. The active page uses `/workspaces/{id}/snapshot` for filesystem state and `/workbench/engine/*` for workflow execution.
 
 ## Navigation Mapping
 
 | Navigation V2 item | Current backing component/data | Status |
 | --- | --- | --- |
 | Overview | `WorkspaceOverview` and workspace inclusion/configuration APIs | Real, reuse |
-| Goals | `GoalPlanLibraryEditor`, `/workbench/workspaces/{id}/goals`, shared same-kind alternatives | Real, reuse |
-| Planning | `GoalPlanLibraryEditor`, `/workbench/workspaces/{id}/plans`, shared planning strategies | Real, reuse |
+| Goals | `GoalPlanLibraryEditor`, `/workspaces/{id}/goals`, shared same-kind alternatives | Real, reuse |
+| Planning | `GoalPlanLibraryEditor`, `/workspaces/{id}/plans`, shared planning strategies | Real, reuse |
 | Workflows | Active canvas and raw workflow editor in `FilesystemWorkbenchPage` | Real, reuse |
 | Operations | `OperationLibraryEditor` and `OperationPlayground` | Real, relabel Operations |
 | Source Code | `PromptLibraryEditor` plus language-filtered `OperationLibraryEditor` tabs | Real, reuse |
@@ -53,13 +53,13 @@ Some inactive pages expose views not currently promoted to dedicated active navi
 
 Workspace and file APIs:
 
-- `GET /workbench/workspaces`, `GET /workbench/workspaces/{id}`
-- `GET /workbench/workspaces/{id}/snapshot`
-- `GET|PUT /workbench/workspaces/{id}/file`
+- `GET /workspaces`, `GET /workspaces/{id}`
+- `GET /workspaces/{id}/snapshot`
+- `GET|PUT /workspaces/{id}/file`
 - Workspace operation, datatype, representation, backend, model, and prompt collection routes
 - Prompt hierarchy, implementation, and resolution routes
 - Datatype resolution, representation graph, inventory, and conversion-planning routes
-- `POST /workbench/workspaces/{id}/operations/{operation_id}/invoke`
+- `POST /workspaces/{id}/operations/{operation_id}/invoke`
 
 Workflow-engine and pursuit APIs:
 

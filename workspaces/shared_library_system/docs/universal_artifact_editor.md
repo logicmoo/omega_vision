@@ -1,4 +1,4 @@
-[← Back to top-level README](../../../../README.md)
+[← Back to top-level README](../../../README.md)
 
 # Universal Artifact Editor
 

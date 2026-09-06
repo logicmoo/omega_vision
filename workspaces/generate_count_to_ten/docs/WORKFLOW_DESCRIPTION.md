@@ -1,6 +1,6 @@
 # Count from one to ten
 
-[← Back to top-level README](../../../../README.md)
+[← Back to top-level README](../../../README.md)
 
 Create a bounded semantic workflow that counts from 1 through 10 inclusive and returns the ordered values.
 

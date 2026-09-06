@@ -1,0 +1,162 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_06_burrow-entrance.turtle.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_06_burrow-entrance.turtle.provenance.json",
+  "createdAt": "2026-09-03T12:29:38.734008Z",
+  "operation": "render_turtle_program",
+  "dimensions": {
+    "width": 52,
+    "height": 51
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_06_burrow-entrance.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_06_burrow-entrance.provenance.json"
+  },
+  "source": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_06_burrow-entrance.turtle.json"
+  },
+  "transform": {
+    "coordinateSpace": [
+      1000,
+      1000
+    ],
+    "sourceDimensions": {
+      "width": 52,
+      "height": 51
+    },
+    "renderScale": 1.0,
+    "commandCount": 18
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_06_burrow-entrance.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 52,
+        "height": 51
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_burrow-entrance_b5e2500875ba.png",
+          "geometryHash": "b5e2500875bac5c908540e9c5bbe258bdef086f0e9e56f1b274cb110818a07e0",
+          "traceVerified": true
+        },
+        "cropBox": [
+          307,
+          217,
+          359,
+          268
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              309,
+              239
+            ],
+            [
+              312,
+              228
+            ],
+            [
+              320,
+              221
+            ],
+            [
+              334,
+              219
+            ],
+            [
+              346,
+              224
+            ],
+            [
+              353,
+              233
+            ],
+            [
+              356,
+              245
+            ],
+            [
+              353,
+              256
+            ],
+            [
+              345,
+              263
+            ],
+            [
+              333,
+              266
+            ],
+            [
+              321,
+              262
+            ],
+            [
+              313,
+              254
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:44.370995Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_06_burrow-entrance.turtle.png",
+      "operation": "render_turtle_program",
+      "dimensions": {
+        "width": 52,
+        "height": 51
+      },
+      "transform": {
+        "coordinateSpace": [
+          1000,
+          1000
+        ],
+        "sourceDimensions": {
+          "width": 52,
+          "height": 51
+        },
+        "renderScale": 1.0,
+        "commandCount": 18
+      },
+      "createdAt": "2026-09-03T12:29:38.734008Z"
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-trunk-th_041627cea99d.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-trunk-th_041627cea99d.provenance.json",
+  "createdAt": "2026-09-03T12:21:38.174293Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left background trunk three"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          145,
+          78
+        ],
+        [
+          153,
+          75
+        ],
+        [
+          143,
+          211
+        ],
+        [
+          135,
+          211
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 227,
+        "y": 209
+      },
+      {
+        "op": "line",
+        "x": 239,
+        "y": 209
+      },
+      {
+        "op": "line",
+        "x": 224,
+        "y": 588
+      },
+      {
+        "op": "line",
+        "x": 211,
+        "y": 588
+      }
+    ],
+    "geometryHash": "041627cea99d639d75eb3bafd3122ad7fe2a33c9270c538d1328f2da378798a9",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.584
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-background-trunk-th_041627cea99d.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              145,
+              78
+            ],
+            [
+              153,
+              75
+            ],
+            [
+              143,
+              211
+            ],
+            [
+              135,
+              211
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 227,
+            "y": 209
+          },
+          {
+            "op": "line",
+            "x": 239,
+            "y": 209
+          },
+          {
+            "op": "line",
+            "x": 224,
+            "y": 588
+          },
+          {
+            "op": "line",
+            "x": 211,
+            "y": 588
+          }
+        ],
+        "geometryHash": "041627cea99d639d75eb3bafd3122ad7fe2a33c9270c538d1328f2da378798a9",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.584
+      },
+      "createdAt": "2026-09-03T12:21:38.174293Z"
+    }
+  ]
+}

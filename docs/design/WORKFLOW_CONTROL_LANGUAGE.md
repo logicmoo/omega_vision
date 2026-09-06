@@ -1,4 +1,4 @@
-[← Back to repository README](../../../README.md)
+[← Back to repository README](../../README.md)
 
 # Workflow Control Language
 

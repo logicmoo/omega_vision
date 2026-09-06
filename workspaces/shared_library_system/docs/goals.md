@@ -1,6 +1,6 @@
 # Goals and Interpretations
 
-[Back to repository README](../../../../README.md)
+[Back to repository README](../../../README.md)
 
 Goals describe desired outcomes independently of the strategy used to pursue them. Every resource has `kind goal`; a goal with a same-kind parent is an implicit alternative beneath that parent.
 

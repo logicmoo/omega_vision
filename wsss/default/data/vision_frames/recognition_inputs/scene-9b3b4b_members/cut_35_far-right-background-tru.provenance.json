@@ -1,0 +1,164 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_35_far-right-background-tru.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_35_far-right-background-tru.provenance.json",
+  "createdAt": "2026-09-03T12:21:46.316465Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 28,
+    "height": 182
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "far-right background trunk"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_far-right-background-tru_28d90c21589f.png",
+      "geometryHash": "28d90c21589f31bbd7c748bd8014aac5ff52895d4fe1b83ce1978fff6151bf4a",
+      "traceVerified": true
+    },
+    "cropBox": [
+      568,
+      0,
+      596,
+      182
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          574,
+          0
+        ],
+        [
+          593,
+          0
+        ],
+        [
+          590,
+          152
+        ],
+        [
+          580,
+          180
+        ],
+        [
+          570,
+          178
+        ],
+        [
+          577,
+          141
+        ]
+      ]
+    ],
+    "holes": []
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_35_far-right-background-tru.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 28,
+        "height": 182
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_far-right-background-tru_28d90c21589f.png",
+          "geometryHash": "28d90c21589f31bbd7c748bd8014aac5ff52895d4fe1b83ce1978fff6151bf4a",
+          "traceVerified": true
+        },
+        "cropBox": [
+          568,
+          0,
+          596,
+          182
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              574,
+              0
+            ],
+            [
+              593,
+              0
+            ],
+            [
+              590,
+              152
+            ],
+            [
+              580,
+              180
+            ],
+            [
+              570,
+              178
+            ],
+            [
+              577,
+              141
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:46.316465Z"
+    }
+  ],
+  "terminal": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_35_far-right-background-tru.turtle.json",
+    "renderedImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_35_far-right-background-tru.turtle.png",
+    "renderedProvenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_35_far-right-background-tru.turtle.provenance.json"
+  }
+}

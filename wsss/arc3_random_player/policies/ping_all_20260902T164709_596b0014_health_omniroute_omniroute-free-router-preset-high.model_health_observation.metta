@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260902T164709_596b0014:health:omniroute_omniroute-free-router-preset-high)
+  (modelPolicyEntryId omniroute:omniroute-free-router-preset-high)
+  (vendorId omniroute)
+  (status online)
+  (latencyMs 2633.3)
+  (observedAt 2026-09-02T16:47:12.643813Z)
+  (jobId ping_all_20260902T164709_596b0014)
+)

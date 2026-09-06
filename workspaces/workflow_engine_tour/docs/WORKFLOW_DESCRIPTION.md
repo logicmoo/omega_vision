@@ -1,6 +1,6 @@
 # Fan Out and Merge
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

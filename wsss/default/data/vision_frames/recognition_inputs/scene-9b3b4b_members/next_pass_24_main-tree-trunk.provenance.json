@@ -1,0 +1,160 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_24_main-tree-trunk.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_24_main-tree-trunk.provenance.json",
+  "createdAt": "2026-09-03T12:21:40.642465Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 674,
+    "height": 821
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.provenance.json"
+  },
+  "source": {
+    "objectName": "main tree trunk"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 80,
+      "height": 101
+    },
+    "scale": 7,
+    "resizedDimensions": {
+      "width": 560,
+      "height": 707
+    },
+    "padding": {
+      "left": 57,
+      "top": 57,
+      "right": 57,
+      "bottom": 57
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 80,
+        "height": 101
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_main-tree-trunk_78b775a96413.png",
+          "geometryHash": "78b775a96413476813206524aec796b1f4def004f2c0f1a9ebf72f913ddd7d4d",
+          "traceVerified": true
+        },
+        "cropBox": [
+          277,
+          90,
+          357,
+          191
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              306,
+              93
+            ],
+            [
+              349,
+              92
+            ],
+            [
+              354,
+              128
+            ],
+            [
+              344,
+              160
+            ],
+            [
+              331,
+              181
+            ],
+            [
+              304,
+              189
+            ],
+            [
+              279,
+              177
+            ],
+            [
+              292,
+              151
+            ],
+            [
+              300,
+              122
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:40.582570Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_24_main-tree-trunk.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 674,
+        "height": 821
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 80,
+          "height": 101
+        },
+        "scale": 7,
+        "resizedDimensions": {
+          "width": 560,
+          "height": 707
+        },
+        "padding": {
+          "left": 57,
+          "top": 57,
+          "right": 57,
+          "bottom": 57
+        }
+      },
+      "createdAt": "2026-09-03T12:21:40.642465Z"
+    }
+  ]
+}

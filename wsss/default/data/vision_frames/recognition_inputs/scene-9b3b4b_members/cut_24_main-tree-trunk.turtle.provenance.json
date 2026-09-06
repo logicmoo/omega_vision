@@ -1,0 +1,150 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.turtle.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.turtle.provenance.json",
+  "createdAt": "2026-09-03T12:29:59.306985Z",
+  "operation": "render_turtle_program",
+  "dimensions": {
+    "width": 80,
+    "height": 101
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.provenance.json"
+  },
+  "source": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.turtle.json"
+  },
+  "transform": {
+    "coordinateSpace": [
+      1000,
+      1000
+    ],
+    "sourceDimensions": {
+      "width": 80,
+      "height": 101
+    },
+    "renderScale": 1.0,
+    "commandCount": 3
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 80,
+        "height": 101
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_main-tree-trunk_78b775a96413.png",
+          "geometryHash": "78b775a96413476813206524aec796b1f4def004f2c0f1a9ebf72f913ddd7d4d",
+          "traceVerified": true
+        },
+        "cropBox": [
+          277,
+          90,
+          357,
+          191
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              306,
+              93
+            ],
+            [
+              349,
+              92
+            ],
+            [
+              354,
+              128
+            ],
+            [
+              344,
+              160
+            ],
+            [
+              331,
+              181
+            ],
+            [
+              304,
+              189
+            ],
+            [
+              279,
+              177
+            ],
+            [
+              292,
+              151
+            ],
+            [
+              300,
+              122
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:40.582570Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_24_main-tree-trunk.turtle.png",
+      "operation": "render_turtle_program",
+      "dimensions": {
+        "width": 80,
+        "height": 101
+      },
+      "transform": {
+        "coordinateSpace": [
+          1000,
+          1000
+        ],
+        "sourceDimensions": {
+          "width": 80,
+          "height": 101
+        },
+        "renderScale": 1.0,
+        "commandCount": 3
+      },
+      "createdAt": "2026-09-03T12:29:59.306985Z"
+    }
+  ]
+}

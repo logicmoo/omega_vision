@@ -1,0 +1,12 @@
+{
+  "kind": "workspace",
+  "id": "image_perception_to_recognizable_memory_and_arc3",
+  "label": "Image Perception to Recognizable Memory and ARC3",
+  "description": "Primary ARC3 learning project combining staged image perception, recognizable memory, prompt-generated symbolic analysis, and losslessly preserved random exploration.",
+  "includes": [
+    {
+      "workspaceId": "shared_library_arc3",
+      "includeInherited": true
+    }
+  ]
+}

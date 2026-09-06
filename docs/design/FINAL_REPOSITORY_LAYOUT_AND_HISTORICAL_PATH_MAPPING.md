@@ -1,4 +1,4 @@
-[← Back to top-level README](../../../README.md)
+[← Back to top-level README](../../README.md)
 
 # Final Repository Layout and Historical Path Mapping
 
@@ -15,7 +15,7 @@ Status: **mapping approved; replay not yet started.** No files move until the re
       arc_cli_debugger imports omega_vision. arc3_runner.py stays debugger-owned.
 - Q5  Vision frontend pages single-home in frontend/packages/omega_vision_ui/;
       empty frontend/apps/omega_vision/ shell scaffolded AFTER replay (new commit, not historical).
-- Q6  python/arc3_random_player.py -> python/arc_cli_debugger/arc3_random_player.py.
+- Q6  python/arc_cli_debugger/arc3_random_player.py -> python/arc_cli_debugger/arc3_random_player.py.
 - Q7  Legacy /analyze + /runs still wanted: store.py, routes/, models.py stay first-class in workbench_api_server/.
 - Q8  object_memory replays at python/omega_vision/ WITH FINAL SUBPACKAGE LAYOUT from birth
       (file map from rename detection of c509dc49 + ee8a9abb). The short-lived facade package
@@ -26,7 +26,7 @@ Status: **mapping approved; replay not yet started.** No files move until the re
 - Q12 Debugger tests -> NEW tests/arc_cli_debugger/.
 
 ## COPY_HISTORY set (each file committed at BOTH destinations through all of replay)
-From workbench/server/ -> workbench_api_server/<name>.py AND python/omega_vision/services/<name>.py:
+From python/workbench_api_server/ -> workbench_api_server/<name>.py AND python/omega_vision/services/<name>.py:
   workflow_engine.py, advanced_workflow_engine.py, workflow_providers.py, operation_resolution.py,
   operation_library.py, prompt_library.py, model_library.py, backend_library.py,
   datatype_library.py, policy_library.py, goal_plan_library.py, artifact_category_library.py,
@@ -37,26 +37,26 @@ Rules: every historical change to the source path applies to both descendants; d
 post-replay refactor commits; record divergence point in the commit map.
 
 ## MOVE mapping (single-destination), applied to every historical commit
-### workbench/server/ -> workbench_api_server/
+### python/workbench_api_server/ -> workbench_api_server/
   app.py, terminal_api.py, mailbox_api_lib.py, jobs_api.py, datatype_api.py, prompt_api.py,
   goal_run_api.py, operation_api.py, policy_api.py, system_control_api.py, service_monitor_api.py,
   repository_docs_api.py, workflow_engine_api.py, workspace_api.py, model_policy_todo_api.py,
   workflow_runner_todo_api.py, model_discovery.py, model_policy_ping.py, model_benchmark.py,
   representation_planner.py, pddl_plan.py, store.py, models.py, routes/**, requirements.txt,
   test_*.py (5 embedded server tests -> tests/workbench_api/ instead, see Tests)
-### workbench/server/ -> plugins_framework_src/
+### python/workbench_api_server/ -> plugins_framework_src/
   plugin_admin.py, plugin_api.py
-### workbench/server/ -> python/omega_vision/services/
+### python/workbench_api_server/ -> python/omega_vision/services/
   video_import_pipeline.py, video_import_api.py, registry_api.py, phase3_pipeline.py (as phase3_live.py)
-### workbench/server/ -> python/omega_vision/
+### python/workbench_api_server/ -> python/omega_vision/
   generative_vision/prolog/{symbolic_arc,pixels_to_grid,pixels_to_regions,scene_split,color_names}.py
     -> python/omega_vision/perception/
   generative_vision/__init__.py, generative_vision/prolog/__init__.py -> python/omega_vision/perception/ (merged inits)
   recognition_demos.py -> python/omega_vision/demos/recognition_demos.py
   runtime.py -> python/omega_vision/perception/grid_analysis.py
-### workbench/server/ -> prolog/omega_vision/
+### python/workbench_api_server/ -> prolog/omega_vision/
   generative_vision/prolog/{arc_parts,arc_group,group_regions,object_memory}.pl
-### workbench/server/ -> workspaces/
+### python/workbench_api_server/ -> workspaces/
   shared_operation_callables.py -> workspaces/titlecase_demo/ (exact spot decided at replay)
 ### prolog/
   KEEP prolog/: (none stay at root except future pack.pl)
@@ -69,14 +69,14 @@ post-replay refactor commits; record divergence point in the commit map.
 ### python/ (ARC CLI debugger consolidation)
   interactive_runner.py, arc3_runner.py, action_tree.py, ansi_console.py, arc_interactive_sync.py,
   arc3_random_player.py -> python/arc_cli_debugger/
-  webui/** + scripts/run_webui.py(+.bat) -> python/arc_cli_debugger/webui/
+  webui/** + python/arc_cli_debugger/webui/run_webui.py(+.bat) -> python/arc_cli_debugger/webui/
   scripts/{interactive_runner(.py/.bat), prolog_controlled_runner, re_play, my_play, me_play, he_play,
   play_local, play_random_arc3, windows_action_tree_smoke}.py -> python/arc_cli_debugger/cli/
 ### python/ (OV-owned shared bridges, Q4)
   swipl_bridge.py -> python/omega_vision/prolog_bridge.py
   image_codec.py -> python/omega_vision/image_codec.py
   gpt_bridge.py  -> python/omega_vision/gpt_bridge.py
-### python/object_memory/** (historical, Q8)
+### python/omega_vision/** (historical, Q8)
   Final-name+layout from birth. File-level map = rename detection of c509dc49 (object_memory->omega_vision)
   composed with ee8a9abb (flat->subpackages), e.g.:
     models.py->core/models.py, memory.py->core/memory.py, prediction.py->core/prediction.py,
@@ -94,7 +94,7 @@ post-replay refactor commits; record divergence point in the commit map.
 ### python/ KEEP
   worldworkbench/**, project_paths.py, multillm_runner.py, unsloth_studio.py, collection_operations.py,
   visual_image_diff_operations.py, workflow_operations.py, workflow_operation_editor.py, llm_*.py, __init__.py
-### workbench/frontend/ -> frontend/
+### frontend/apps/workbench/ -> frontend/
   Vision pages/styles -> frontend/packages/omega_vision_ui/src/:
     components/{VideoImportPage,Arc3B1B2PipelinePage,Arc3PromptPrologPage,Arc3PlayPage,
     RecognitionDemosPage,VisualImageDiffPage}.tsx + styles/{video_import,arc3_prompt_prolog,
@@ -103,27 +103,27 @@ post-replay refactor commits; record divergence point in the commit map.
     package-lock.json, tsconfig*.json, vite.config.ts, vite.ws_collab.config.ts)
   shared_ui/ package: created in post-replay refactor (not during replay)
   apps/omega_vision/ shell: post-replay scaffold commit (Q5)
-### workbench/plugins/ -> plugins/
+### plugins/ -> plugins/
   plugins.json, README.md, .gitignore, web_proxy/** (tracked history)
   Untracked nested repos (emullm, ws_audio, ws_collab, codex_cli, coplex, coplex_stdpy, mailbox_chat,
   HIDE_*) -> physical move to plugins/ after replay approval; never enters replayed history.
-### workbench/workspaces/ -> workspaces/
+### workspaces/ -> workspaces/
   All 17 workspaces keep names/relative layout EXCEPT:
   arc3_random_player/data/** -> data/omega_vision/** (tracked files MOVE in history; relative org preserved:
     arc3_games/, vision_frames/, video_import/; untracked recognition_reduce/ etc. move post-replay)
   arc3_random_player/knowledge/object_memory.db.pl -> data/omega_vision/knowledge/ (untracked, post-replay)
-### workbench/docs/ -> docs/  (design/, todo/, 3 root files; no collisions with existing docs/)
+### docs/ -> docs/  (design/, todo/, 3 root files; no collisions with existing docs/)
 ### workbench root files
-  workbench/README.md -> docs/WORKBENCH.md (tentative-approved)
-  workbench/run_demo.bat, run_demo.sh -> workbench_api_server/scripts/
-  workbench/scripts/** -> workbench_api_server/scripts/
+  docs/WORKBENCH.md -> docs/WORKBENCH.md (tentative-approved)
+  python/workbench_api_server/scripts/run_demo.bat, run_demo.sh -> workbench_api_server/scripts/
+  python/workbench_api_server/scripts/** -> workbench_api_server/scripts/
   workbench/config (historical) -> workbench_api_server/config/
 ### Tests -> six+1 buckets (TEST_MOVE at replay)
   tests/omega_vision/: test_phase2_*, test_omega_vision_sow_forms, test_object_memory_contracts,
     test_object_memory_rest_roundtrip?, test_symbolic_arc_*, test_turtle_normalize, test_arc3_capture_observers, ...
   tests/omega_vision_api/: test_video_import_*, test_arc3_play_* , registry/phase3/recognition API tests
   tests/workbench_api/: workspace/resource/operation/prompt/model/policy/plugin/service/system/
-    workflow-engine/docs/mailbox tests + 5 embedded workbench/server/test_*.py + repo-hygiene tests
+    workflow-engine/docs/mailbox tests + 5 embedded python/workbench_api_server/test_*.py + repo-hygiene tests
   tests/arc_cli_debugger/: action-tree, interactive-runner, runner-path, windows smoke tests (Q12)
   tests/plt/: native .pl tests + run_tests.pl
   tests/workbench_ui/, tests/omega_vision_ui/: start empty
@@ -136,7 +136,7 @@ post-replay refactor commits; record divergence point in the commit map.
   README.md, AGENTS.md, CODEX_TODO.md, DEBUGGER.md, FILE_TREE.md, KAGGLE.md, LICENSE, Makefile,
   README_WINDOWS.md, README_WEB_TERMINAL_FIX.md, SOW_*.md, TODO.md, pyproject.toml, requirements.txt,
   run_workbench.bat, workbench.workspace.json, .github/**, .idea/, .run/, .codex/, config/, scripts/(rest),
-  notebooks/, agent/, data/{object_memory,object_memory_demo,recognition_demo_parts}, docs/(existing),
+  python/notebooks/, agent/, data/{object_memory,object_memory_demo,recognition_demo_parts}, docs/(existing),
   _sow.txt, _ingest_reduce_seed.py -> scripts/ (tentative), .gitignore/.gitattributes/.env.example
   webui gone (moved to debugger). tools/ does not exist (hint checked; nothing found).
 

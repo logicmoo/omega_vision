@@ -156,15 +156,15 @@ they do not.
 
 The machine-readable contracts are maintained in:
 
-- [`workbench/docs/DATA_REPRESENTATIONS.md`](workbench/docs/DATA_REPRESENTATIONS.md)
+- [`docs/DATA_REPRESENTATIONS.md`](docs/DATA_REPRESENTATIONS.md)
   for the filesystem-backed semantic, representation, and concrete datatype model.
-- [`workbench/workspaces/shared_library_system/design/configs/world_workbench_operations.config.metta`](workbench/workspaces/shared_library_system/design/configs/world_workbench_operations.config.metta) for
+- [`workspaces/shared_library_system/design/configs/world_workbench_operations.config.metta`](workspaces/shared_library_system/design/configs/world_workbench_operations.config.metta) for
   operation input/output contracts.
-- [`config/llm_workflows.json`](config/llm_workflows.json) for runnable workflows
+- [`python/arc_cli_debugger/config/llm_workflows.json`](python/arc_cli_debugger/config/llm_workflows.json) for runnable workflows
   and nested subworkflows.
-- [`config/workflow_operations.json`](config/workflow_operations.json) for operation
+- [`python/arc_cli_debugger/config/workflow_operations.json`](python/arc_cli_debugger/config/workflow_operations.json) for operation
   implementations.
-- [`config/llm_providers.json`](config/llm_providers.json) for model providers
+- [`python/arc_cli_debugger/config/llm_providers.json`](python/arc_cli_debugger/config/llm_providers.json) for model providers
   and reusable prompt sections.
 
 ## Inspection and provenance
@@ -192,7 +192,7 @@ For the complete local browser demo on Windows, pull `main` and run
 [`run_workbench.bat`](run_workbench.bat). It starts the local FastAPI
 event backend and live-editing Vite web interface, then opens the workbench at
 `http://127.0.0.1:5173/`. No deployment is required; frontend and backend edits
-reload from your checkout. See the [local web demo guide](workbench/README.md).
+reload from your checkout. See the [local web demo guide](docs/WORKBENCH.md).
 
 Inside a supported interactive host, press uppercase **`W`** to open the
 workflow desktop. Select a workflow and choose **Save and Run Selected**. The
@@ -259,7 +259,7 @@ The selected provider configuration is resolved independently:
 
 1. `WORLD_WORKBENCH_LLM_CONFIG`.
 2. `WORLD_WORKBENCH_CONFIG_ROOT/llm_providers.json`.
-3. The nearest `config/llm_providers.json` found while walking upward from the
+3. The nearest `python/arc_cli_debugger/config/llm_providers.json` found while walking upward from the
    launch directory.
 4. The selected workbench/runtime home's configuration, when present.
 5. The configuration beside the running code checkout.
@@ -293,13 +293,13 @@ pytest -q
 Run the Turtle DSL checks with:
 
 ```bash
-swipl -q -s prolog/test_turtle_dsl.pl -g run_tests,halt
+swipl -q -s tests/plt/test_turtle_dsl.pl -g run_tests,halt
 ```
 
 Run the object-memory checks with:
 
 ```bash
-swipl -q -s prolog/test_object_memory.pl -g run_tests,halt
+swipl -q -s tests/plt/test_object_memory.pl -g run_tests,halt
 ```
 
 General framework references:
@@ -307,7 +307,7 @@ General framework references:
 - [World Analysis Workbench architecture](docs/WORLD_ANALYSIS_WORKBENCH.md) —
   AtomSpaces, observations, world models, goals, simulations,
   processing resources, and adapter boundaries.
-- [LLM providers, prompt composition, and comparison transcripts](config/README.md)
+- [LLM providers, prompt composition, and comparison transcripts](python/arc_cli_debugger/config/README.md)
   — provider selection, reusable prompt blocks, run comparison, and artifact
   restoration.
 - [Clickable repository file tree](FILE_TREE.md) — maintained files and their
@@ -326,7 +326,7 @@ objectifies the resulting state, analyzes the before/action/after transition,
 updates the emerging world model, and repeats. Its complex stages invoke the
 reusable capture, objectification, transition-analysis, and world-update
 subworkflows declared in
-[`config/llm_workflows.json`](config/llm_workflows.json).
+[`python/arc_cli_debugger/config/llm_workflows.json`](python/arc_cli_debugger/config/llm_workflows.json).
 
 From the same desktop, the autonomous solver will reuse perception,
 objectification, stable identity, Turtle reconstruction, transition analysis,
@@ -338,7 +338,7 @@ inspectors, AtomSpace bindings, intermediate Atoms, transcripts, and evidence hi
 ### Start the interactive application
 
 ```bash
-python scripts/interactive_runner.py ls20
+python python/arc_cli_debugger/cli/interactive_runner.py ls20
 ```
 
 On native Windows:
@@ -355,7 +355,7 @@ historical model runs; and press `p` for Prolog mode.
 Start the browser terminal with:
 
 ```bash
-python scripts/run_webui.py --game ls20
+python python/arc_cli_debugger/webui/run_webui.py --game ls20
 ```
 
 Then open `http://127.0.0.1:8765/`.
@@ -363,18 +363,18 @@ Then open `http://127.0.0.1:8765/`.
 Other application demonstrations and protected evaluation commands:
 
 ```bash
-python scripts/prolog_controlled_runner.py
-python scripts/re_play.py
-python scripts/my_play.py
-python scripts/me_play.py
-python scripts/he_play.py
-python scripts/play_local.py --game ls20 --max-steps 200
+python python/arc_cli_debugger/cli/prolog_controlled_runner.py
+python python/arc_cli_debugger/cli/re_play.py
+python python/arc_cli_debugger/cli/my_play.py
+python python/arc_cli_debugger/cli/me_play.py
+python python/arc_cli_debugger/cli/he_play.py
+python python/arc_cli_debugger/cli/play_local.py --game ls20 --max-steps 200
 make play-local GAME=ls20 STEPS=200
 python scripts/build_notebook.py
 make notebook
 python scripts/slim_framework.py
-swipl -q -g "use_module('prolog/arc3_agent.pl'),halt"
-swipl -q -g "use_module('prolog/game_object_learner_api.pl'),halt"
+swipl -q -g "use_module('prolog/omega_vision/arc3_agent.pl'),halt"
+swipl -q -g "use_module('prolog/omega_vision/game_object_learner_api.pl'),halt"
 ```
 
 Application-specific documentation:
@@ -396,6 +396,6 @@ preferred `WORLD_WORKBENCH_*` names. The protected Kaggle entry points remain
 intact and must not be renamed or repurposed:
 
 - [`agent/my_agent.py`](agent/my_agent.py)
-- [`scripts/play_local.py`](scripts/play_local.py)
+- [`python/arc_cli_debugger/cli/play_local.py`](python/arc_cli_debugger/cli/play_local.py)
 - [`scripts/build_notebook.py`](scripts/build_notebook.py)
 - [`Makefile`](Makefile)

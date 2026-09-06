@@ -1,0 +1,10 @@
+(
+  (kind model_ping_event)
+  (id ping_all_20260825T230407_40d609de:event:https.inference.asicloud.cudos.org.v1_asicloud-asi1-mini)
+  (jobId ping_all_20260825T230407_40d609de)
+  (modelPolicyEntryId https.inference.asicloud.cudos.org.v1:asicloud-asi1-mini)
+  (status succeeded)
+  (healthStatus online)
+  (latencyMs 972.4)
+  (createdAt 2026-08-25T23:04:08.656964Z)
+)

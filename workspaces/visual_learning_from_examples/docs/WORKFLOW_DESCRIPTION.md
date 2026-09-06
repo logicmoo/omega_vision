@@ -1,6 +1,6 @@
 # Examples to Visual Memory
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

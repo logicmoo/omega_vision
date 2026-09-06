@@ -1,6 +1,6 @@
 # TODO: Restore the Rich Workflow Runner Experience
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 The supplied workflow-runner mockup is the visual acceptance reference for a future rich runtime surface. It is not executable data and must not replace the current durable Workflow Runs table until every panel is backed by real engine, workspace, or artifact resources.
 
@@ -16,7 +16,7 @@ The active Workflow Runs page now keeps the durable history table and adds:
 - source/render comparison for persisted numeric grids and image data URLs; and
 - human-input forms derived from the frozen workflow step contract.
 
-Automated acceptance captures are available through `scripts/capture_workflow_runner_visuals.ps1`. The script opens deep-linked, filesystem-backed Workflow Runs topology and chronology views and writes 1920×1080 images under `workbench/docs/todo/assets/actual/`; it never injects mock run data. Hypothesis, transition-evidence, and suggested-experiment artifacts have explicit runtime contracts and render only when a run actually persists matching typed artifacts. Persisted safe form drafts, image/grid input widgets, independently resizable runner panels, and direct navigation from stages, invocation traces, and artifact provenance to their executable Operation, Model, Datatype, or Representation resources are also active. Human submissions emit durable `human_input.received` events that identify the produced artifacts while listing sensitive fields only as redacted field names.
+Automated acceptance captures are available through `scripts/capture_workflow_runner_visuals.ps1`. The script opens deep-linked, filesystem-backed Workflow Runs topology and chronology views and writes 1920×1080 images under `docs/todo/assets/actual/`; it never injects mock run data. Hypothesis, transition-evidence, and suggested-experiment artifacts have explicit runtime contracts and render only when a run actually persists matching typed artifacts. Persisted safe form drafts, image/grid input widgets, independently resizable runner panels, and direct navigation from stages, invocation traces, and artifact provenance to their executable Operation, Model, Datatype, or Representation resources are also active. Human submissions emit durable `human_input.received` events that identify the produced artifacts while listing sensitive fields only as redacted field names.
 
 ## Preserve from the Reference
 

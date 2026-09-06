@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260902T164709_596b0014:health:https.inference.asicloud.cudos.org.v1_asicloud-asi1-mini)
+  (modelPolicyEntryId https.inference.asicloud.cudos.org.v1:asicloud-asi1-mini)
+  (vendorId https.inference.asicloud.cudos.org.v1)
+  (status online)
+  (latencyMs 893.7)
+  (observedAt 2026-09-02T16:47:11.197551Z)
+  (jobId ping_all_20260902T164709_596b0014)
+)

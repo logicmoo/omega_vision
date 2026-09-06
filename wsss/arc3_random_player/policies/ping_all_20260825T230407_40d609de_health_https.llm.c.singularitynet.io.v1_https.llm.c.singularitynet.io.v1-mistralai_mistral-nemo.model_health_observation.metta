@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260825T230407_40d609de:health:https.llm.c.singularitynet.io.v1_https.llm.c.singularitynet.io.v1-mistralai_mistral-nemo)
+  (modelPolicyEntryId https.llm.c.singularitynet.io.v1:https.llm.c.singularitynet.io.v1-mistralai_mistral-nemo)
+  (vendorId https.llm.c.singularitynet.io.v1)
+  (status online)
+  (latencyMs 1091.2)
+  (observedAt 2026-08-25T23:04:08.970200Z)
+  (jobId ping_all_20260825T230407_40d609de)
+)

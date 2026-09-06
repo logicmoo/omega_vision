@@ -5,7 +5,7 @@
 This ZIP contains a replacement for:
 
 ```text
-webui/static/index.html
+python/arc_cli_debugger/webui/static/index.html
 ```
 
 It fixes the browser debugger regression where requesting more terminal rows and
@@ -29,7 +29,7 @@ Extract this ZIP from the root of the `arc3_debugger` directory so that it
 overwrites:
 
 ```text
-webui/static/index.html
+python/arc_cli_debugger/webui/static/index.html
 ```
 
 PowerShell example:

@@ -61,7 +61,7 @@ Before changing UI code, determine the active entrypoint from:
 
 
 
-\- workbench/frontend/src/App.tsx
+\- frontend/apps/workbench/src/App.tsx
 
 
 
@@ -73,7 +73,7 @@ Backend entrypoint:
 
 
 
-\- workbench/server/app.py
+\- python/workbench_api_server/app.py
 
 
 
@@ -81,7 +81,7 @@ Filesystem workspaces:
 
 
 
-\- workbench/workspaces/
+\- workspaces/
 
 
 
@@ -332,15 +332,15 @@ Core Python modules live in `python/`, including the `object_memory/` and
 
 `worldworkbench/` packages. The active browser workbench is split between
 
-`workbench/server/` and `workbench/frontend/`. Keep Prolog rules and native
+`python/workbench_api_server/` and `frontend/apps/workbench/`. Keep Prolog rules and native
 
 tests in `prolog/`, reusable configuration in `config/`, command-line helpers
 
 in `scripts/`, and Python tests in `tests/`. ARC agent code belongs in
 
-`agent/`; `notebooks/` contains Kaggle notebook inputs and metadata. Consult
+`agent/`; `python/notebooks/` contains Kaggle notebook inputs and metadata. Consult
 
-`README.md`, `workbench/README.md`, and `README_WINDOWS.md` before changing
+`README.md`, `docs/WORKBENCH.md`, and `README_WINDOWS.md` before changing
 
 setup or runtime behavior.
 
@@ -362,11 +362,11 @@ STEPS=200` runs a targeted session. These Make targets assume a Unix-like
 
 shell; use `README_WINDOWS.md` on Windows.
 
-\- From `workbench/frontend/`, `npm install && npm run dev` starts Vite with hot-reloading (preferred for interactive use) and
+\- From `frontend/apps/workbench/`, `npm install && npm run dev` starts Vite with hot-reloading (preferred for interactive use) and
 
 `npm run build` type-checks and builds the frontend (used for validation/production checks, not for serving the interactive app). Node.js 22+ is required.
 
-\- `swipl -q -s prolog/run_tests.pl` runs the SWI-Prolog test entrypoint.
+\- `swipl -q -s tests/plt/run_tests.pl` runs the SWI-Prolog test entrypoint.
 
 
 
@@ -504,7 +504,7 @@ I would add:
 
 ```text
 
-workbench/docs/design/
+docs/design/
 
 ├── WORKBENCH\_NAVIGATION\_V2.md
 
@@ -516,7 +516,7 @@ workbench/docs/design/
 
 
 
-workbench/docs/todo/
+docs/todo/
 
 ├── MODEL\_RUNTIME\_USAGE\_AND\_BENCHMARKING\_POLICIES.md
 
@@ -527,12 +527,12 @@ workbench/docs/todo/
 The full TODO text you just wrote should be saved verbatim as:
 
 
-workbench/docs/todo/MODEL\_RUNTIME\_USAGE\_AND\_BENCHMARKING\_POLICIES.md
+docs/todo/MODEL\_RUNTIME\_USAGE\_AND\_BENCHMARKING\_POLICIES.md
 
 Save the latest model-policy mockup as:
 
 
-workbench/docs/todo/assets/model\_runtime\_policy\_mockup.png
+docs/todo/assets/model\_runtime\_policy\_mockup.png
 
 The model-policy screenshot becomes an explicit visual design reference rather than a temporary image trapped in chat history. The current active Operations editor is the acceptance baseline; verify it directly in the running application.
 
@@ -587,9 +587,9 @@ Do not start with “implement the entire workbench.” That encourages broad re
 Paste this first:
 
 
-Read AGENTS.md and all files under workbench/docs/design and
+Read AGENTS.md and all files under docs/design and
 
-workbench/docs/todo.
+docs/todo.
 
 
 
@@ -611,7 +611,7 @@ Create:
 
 
 
-workbench/docs/design/CODEX\_CURRENT\_IMPLEMENTATION\_INVENTORY.md
+docs/design/CODEX\_CURRENT\_IMPLEMENTATION\_INVENTORY.md
 
 
 
@@ -753,7 +753,7 @@ Run the frontend build and relevant tests.
 
 Add the supplied Model Runtime Usage and Benchmarking Policies specification
 
-and mockup to workbench/docs/todo.
+and mockup to docs/todo.
 
 
 

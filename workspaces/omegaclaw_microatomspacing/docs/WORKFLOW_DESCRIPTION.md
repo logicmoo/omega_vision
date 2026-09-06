@@ -1,6 +1,6 @@
 # Message to MicroAtoms
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

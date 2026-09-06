@@ -92,7 +92,7 @@ Turtle is therefore an executable object representation inside the workbench;
 it is not the workbench's top-level workflow.
 
 The runnable workflow is `arc3_human_observation` in
-[`llm_workflows.json`](../config/llm_workflows.json). Each of its seven steps may
+[`llm_workflows.json`](../python/arc_cli_debugger/config/llm_workflows.json). Each of its seven steps may
 call a named subworkflow. The workflow desktop shows these as nested workflow
 items; **Save and Run Selected** validates, expands, and executes them.
 

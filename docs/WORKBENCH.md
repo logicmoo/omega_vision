@@ -108,9 +108,9 @@ PNG/JPEG/BMP are concrete datatypes.
 Shared resources are stored as one JSON file per definition:
 
 ```text
-workbench/workspaces/shared_library_system/design/semantic_datatypes/
-workbench/workspaces/shared_library_system/design/representation_datatypes/
-workbench/workspaces/shared_library_system/design/concrete_datatypes/
+workspaces/shared_library_system/design/semantic_datatypes/
+workspaces/shared_library_system/design/representation_datatypes/
+workspaces/shared_library_system/design/concrete_datatypes/
 ```
 
 A normal workspace inherits these definitions and can override a shared
@@ -128,7 +128,7 @@ PNG, JPEG, and BMP are concrete children of the bitmap representation rather
 than different semantic datatypes.
 
 The design and resource schemas are described in
-`workbench/docs/DATA_REPRESENTATIONS.md`.
+`docs/DATA_REPRESENTATIONS.md`.
 
 ## Run it on Linux or macOS
 
@@ -146,21 +146,21 @@ Then open `http://127.0.0.1:5173/`. API documentation is available at
 Backend:
 
 ```bash
-cd workbench/server
+cd python/workbench_api_server
 ../.venv/bin/python -m uvicorn app:app --reload --port 8000
 ```
 
 Frontend:
 
 ```bash
-cd workbench/frontend
+cd frontend/apps/workbench
 npm run dev
 ```
 
 Production frontend check:
 
 ```bash
-cd workbench/frontend
+cd frontend/apps/workbench
 npm run build
 ```
 
@@ -177,13 +177,13 @@ route prefix everywhere (bare and mirrored), so `/web_proxy/...`,
 
 ```text
 GET  /workbench/health
-GET  /workbench/workspaces/{workspace_id}/snapshot
-GET  /workbench/workspaces/{workspace_id}/operations
-GET  /workbench/workspaces/{workspace_id}/datatypes
-GET  /workbench/workspaces/{workspace_id}/representations
-GET  /workbench/workspaces/{workspace_id}/representation-graph
-GET  /workbench/workspaces/{workspace_id}/datatypes/{datatype_id}/resolve
-GET  /workbench/workspaces/{workspace_id}/datatypes/{datatype_id}/plan?source=bitmap&target=logo_program
+GET  /workspaces/{workspace_id}/snapshot
+GET  /workspaces/{workspace_id}/operations
+GET  /workspaces/{workspace_id}/datatypes
+GET  /workspaces/{workspace_id}/representations
+GET  /workspaces/{workspace_id}/representation-graph
+GET  /workspaces/{workspace_id}/datatypes/{datatype_id}/resolve
+GET  /workspaces/{workspace_id}/datatypes/{datatype_id}/plan?source=bitmap&target=logo_program
 POST /workbench/runs
 GET  /workbench/runs/{run_id}
 POST /workbench/runs/{run_id}/commands

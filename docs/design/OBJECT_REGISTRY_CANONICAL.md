@@ -1,7 +1,9 @@
+[← Back to top-level README](../../README.md)
+
 # The canonical object registry
 
-**Decision:** `data/object_memory/` is the **canonical object registry** for the
-symbolic recognizer line (`workbench/server/generative_vision/prolog/symbolic_arc.py`
+**Decision:** `data/omega_vision/object_memory/` is the **canonical object registry** for the
+symbolic recognizer line (`python/omega_vision/perception/symbolic_arc.py`
 + `object_memory.pl`). It is the single source of truth for the shapes the system
 knows and the objects it has recognized.
 
@@ -11,7 +13,7 @@ There are two independent memory lines in this repo:
 
 - **Symbolic recognizer line (this, canonical):** deterministic, LLM-free. Produces
   the colorless shape vocabulary and per-game object identities and stores them in
-  `data/object_memory/`.
+  `data/omega_vision/object_memory/`.
 - **Action-tree / LLM line (`python/omega_vision/`):** a separate framework of
   JSON semantic records, action-tree catalogs, correspondence authority, and the
   per-game-level `object_registry.pl` it generates. It serves the LLM/action-tree
@@ -35,7 +37,7 @@ Every process resolves the same location via `symbolic_arc.memory_dir()`
 
 No other store is authoritative for recognizer shapes/identities.
 
-## Layout (see `data/object_memory/README.md`)
+## Layout (see `data/omega_vision/object_memory/README.md`)
 
 - `shape_dir/shapes.pl` — colorless SHAPE vocabulary (`shape/3` + `variant/4`),
   regenerated deterministically, consulted before recognition.

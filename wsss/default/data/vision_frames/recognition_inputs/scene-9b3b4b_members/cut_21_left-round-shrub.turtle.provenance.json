@@ -1,0 +1,146 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_21_left-round-shrub.turtle.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_21_left-round-shrub.turtle.provenance.json",
+  "createdAt": "2026-09-03T12:29:57.149538Z",
+  "operation": "render_turtle_program",
+  "dimensions": {
+    "width": 53,
+    "height": 50
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_21_left-round-shrub.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_21_left-round-shrub.provenance.json"
+  },
+  "source": {
+    "turtleProgram": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_21_left-round-shrub.turtle.json"
+  },
+  "transform": {
+    "coordinateSpace": [
+      1000,
+      1000
+    ],
+    "sourceDimensions": {
+      "width": 53,
+      "height": 50
+    },
+    "renderScale": 1.0,
+    "commandCount": 4
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_21_left-round-shrub.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 53,
+        "height": 50
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-round-shrub_3de47a2e285c.png",
+          "geometryHash": "3de47a2e285c10567ca61719be769d8f252a87a8ba5e14875f97fa8a8d98bba1",
+          "traceVerified": true
+        },
+        "cropBox": [
+          61,
+          163,
+          114,
+          213
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              69,
+              176
+            ],
+            [
+              87,
+              165
+            ],
+            [
+              103,
+              166
+            ],
+            [
+              111,
+              178
+            ],
+            [
+              109,
+              197
+            ],
+            [
+              96,
+              211
+            ],
+            [
+              75,
+              210
+            ],
+            [
+              63,
+              197
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:38.795798Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_21_left-round-shrub.turtle.png",
+      "operation": "render_turtle_program",
+      "dimensions": {
+        "width": 53,
+        "height": 50
+      },
+      "transform": {
+        "coordinateSpace": [
+          1000,
+          1000
+        ],
+        "sourceDimensions": {
+          "width": 53,
+          "height": 50
+        },
+        "renderScale": 1.0,
+        "commandCount": 4
+      },
+      "createdAt": "2026-09-03T12:29:57.149538Z"
+    }
+  ]
+}

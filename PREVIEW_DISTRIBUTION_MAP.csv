@@ -1,0 +1,56 @@
+source,action_or_destination
+python/llm_catalog_environment.py,python/arc_cli_debugger/llm_catalog_environment.py
+python/llm_catalog_environment.py,(loose original deleted)
+python/llm_catalog_integration.py,python/arc_cli_debugger/llm_catalog_integration.py
+python/llm_catalog_integration.py,(loose original deleted)
+python/llm_catalog_sampling.py,python/arc_cli_debugger/llm_catalog_sampling.py
+python/llm_catalog_sampling.py,(loose original deleted)
+python/llm_json.py,python/arc_cli_debugger/llm_json.py
+python/llm_json.py,(loose original deleted)
+python/llm_json_patch.py,python/arc_cli_debugger/llm_json_patch.py
+python/llm_json_patch.py,(loose original deleted)
+python/llm_key_controls.py,python/arc_cli_debugger/llm_key_controls.py
+python/llm_key_controls.py,(loose original deleted)
+python/llm_model_catalog.py,python/arc_cli_debugger/llm_model_catalog.py
+python/llm_model_catalog.py,(loose original deleted)
+python/llm_profile_editor.py,python/arc_cli_debugger/llm_profile_editor.py
+python/llm_profile_editor.py,(loose original deleted)
+python/llm_providers.py,python/arc_cli_debugger/llm_providers.py
+python/llm_providers.py,(loose original deleted)
+python/llm_readme_patch.py,python/arc_cli_debugger/llm_readme_patch.py
+python/llm_readme_patch.py,(loose original deleted)
+python/llm_transcripts.py,python/arc_cli_debugger/llm_transcripts.py
+python/llm_transcripts.py,(loose original deleted)
+python/llm_workflow_editor.py,python/arc_cli_debugger/llm_workflow_editor.py
+python/llm_workflow_editor.py,(loose original deleted)
+python/llm_workflows.py,python/arc_cli_debugger/llm_workflows.py
+python/llm_workflows.py,(loose original deleted)
+python/multillm_runner.py,python/arc_cli_debugger/multillm_runner.py
+python/multillm_runner.py,(loose original deleted)
+python/unsloth_studio.py,python/arc_cli_debugger/unsloth_studio.py
+python/unsloth_studio.py,(loose original deleted)
+python/workflow_operations.py,python/arc_cli_debugger/workflow_operations.py
+python/workflow_operations.py,(loose original deleted)
+python/workflow_operation_editor.py,python/arc_cli_debugger/workflow_operation_editor.py
+python/workflow_operation_editor.py,(loose original deleted)
+python/project_paths.py,python/arc_cli_debugger/project_paths.py
+python/project_paths.py,python/omega_vision/project_paths.py
+python/project_paths.py,(loose original deleted)
+python/collection_operations.py,python/arc_cli_debugger/collection_operations.py
+python/collection_operations.py,workspaces/shared_library_system/collection_operations.py
+python/collection_operations.py,(loose original deleted)
+python/visual_image_diff_operations.py,workspaces/shared_library_arc3/visual_image_diff_operations.py
+python/visual_image_diff_operations.py,(loose original deleted)
+python/omega_vision/gpt_bridge.py,python/arc_cli_debugger/gpt_bridge.py
+python/omega_vision/prolog_bridge.py,python/arc_cli_debugger/swipl_bridge.py
+python/omega_vision/image_codec.py,python/arc_cli_debugger/image_codec.py
+python/omega_vision/image_codec.py,workbench_api_server/image_codec.py
+python/arc_cli_debugger/action_tree.py,python/omega_vision/action_tree.py
+python/arc_cli_debugger/arc3_runner.py,workbench_api_server/arc3_runner.py
+python/arc_cli_debugger/arc3_runner.py,python/omega_vision/services/arc3_runner.py
+python/arc_cli_debugger/arc_interactive_sync.py,workbench_api_server/arc_interactive_sync.py
+python/arc_cli_debugger/arc_interactive_sync.py,python/omega_vision/services/arc_interactive_sync.py
+python/arc_cli_debugger/arc3_random_player.py,workspaces/arc3_random_player/arc3_random_player.py
+python/arc_cli_debugger/arc3_random_player.py,workspaces/arc3_random_player_V2/arc3_random_player.py
+python/arc_cli_debugger/arc3_random_player.py,workspaces/image_perception_to_recognizable_memory_and_arc3/arc3_random_player.py
+python/arc_cli_debugger/arc3_random_player.py,workspaces/shared_library_arc3/arc3_random_player.py

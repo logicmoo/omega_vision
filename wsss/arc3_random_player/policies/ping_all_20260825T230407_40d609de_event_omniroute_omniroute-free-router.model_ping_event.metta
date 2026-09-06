@@ -1,0 +1,10 @@
+(
+  (kind model_ping_event)
+  (id ping_all_20260825T230407_40d609de:event:omniroute_omniroute-free-router)
+  (jobId ping_all_20260825T230407_40d609de)
+  (modelPolicyEntryId omniroute:omniroute-free-router)
+  (status succeeded)
+  (healthStatus online)
+  (latencyMs 2718.8)
+  (createdAt 2026-08-25T23:04:10.370556Z)
+)

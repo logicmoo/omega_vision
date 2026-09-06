@@ -1,6 +1,6 @@
 # Learn and Test an ARC3 Transformation Rule
 
-[← Back to repository README](../../../../README.md)
+[← Back to repository README](../../../README.md)
 
 ## Purpose
 

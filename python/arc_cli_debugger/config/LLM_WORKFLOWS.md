@@ -1,4 +1,4 @@
-[← Back to top-level README](../README.md) · [LLM catalog documentation](README.md)
+[← Back to top-level README](../../../README.md) · [LLM catalog documentation](README.md)
 
 # Optional LLM and Prolog Workflows
 

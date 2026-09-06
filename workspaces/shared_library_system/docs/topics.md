@@ -1,6 +1,6 @@
 # Topics
 
-[Back to repository README](../../../../README.md)
+[Back to repository README](../../../README.md)
 
 **Topics** are flat, top-level subject-matter labels that classify resources for
 UI selection and filtering — "browse operations by topic", "find a prompt for

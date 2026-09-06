@@ -1,0 +1,194 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_13_left-blue-flowers.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_13_left-blue-flowers.provenance.json",
+  "createdAt": "2026-09-03T12:14:46.688395Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 796,
+    "height": 362
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_13_left-blue-flowers.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_13_left-blue-flowers.provenance.json"
+  },
+  "source": {
+    "objectName": "left blue flowers"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 49,
+      "height": 18
+    },
+    "scale": 14,
+    "resizedDimensions": {
+      "width": 686,
+      "height": 252
+    },
+    "padding": {
+      "left": 55,
+      "top": 55,
+      "right": 55,
+      "bottom": 55
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_13_left-blue-flowers.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 49,
+        "height": 18
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-blue-flowers_a211ecb835b5.png",
+          "geometryHash": "a211ecb835b5f83285182eaf8bc5d28481e5f6ed996816bdc38aa1bd36d070b2",
+          "traceVerified": true
+        },
+        "cropBox": [
+          18,
+          205,
+          67,
+          223
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              20,
+              217
+            ],
+            [
+              24,
+              211
+            ],
+            [
+              29,
+              215
+            ],
+            [
+              27,
+              221
+            ]
+          ],
+          [
+            [
+              31,
+              214
+            ],
+            [
+              35,
+              208
+            ],
+            [
+              40,
+              213
+            ],
+            [
+              38,
+              219
+            ]
+          ],
+          [
+            [
+              43,
+              215
+            ],
+            [
+              47,
+              210
+            ],
+            [
+              52,
+              214
+            ],
+            [
+              50,
+              220
+            ]
+          ],
+          [
+            [
+              56,
+              212
+            ],
+            [
+              60,
+              207
+            ],
+            [
+              65,
+              212
+            ],
+            [
+              62,
+              218
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:14:46.661539Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_13_left-blue-flowers.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 796,
+        "height": 362
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 49,
+          "height": 18
+        },
+        "scale": 14,
+        "resizedDimensions": {
+          "width": 686,
+          "height": 252
+        },
+        "padding": {
+          "left": 55,
+          "top": 55,
+          "right": 55,
+          "bottom": 55
+        }
+      },
+      "createdAt": "2026-09-03T12:14:46.688395Z"
+    }
+  ]
+}

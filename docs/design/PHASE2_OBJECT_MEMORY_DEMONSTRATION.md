@@ -1,6 +1,6 @@
 # Phase 2 Object-Memory Demonstration
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 This deterministic demonstration exercises the complete Phase 2 path without
 an LLM or network service. It uses the established grid extractor, the real

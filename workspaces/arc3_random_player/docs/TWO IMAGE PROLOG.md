@@ -1,6 +1,6 @@
 # B1 -> B2 Pipeline UI (single-stack)
 
-[← Back to top-level README](../../../../README.md)
+[← Back to top-level README](../../../README.md)
 
 Route: `arc3B1B2Pipeline`  
 Renderer: `arc3_prompt_prolog`  

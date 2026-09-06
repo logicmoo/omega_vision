@@ -1,4 +1,4 @@
-[Back to repository README](../../../../README.md)
+[Back to repository README](../../../README.md)
 
 # Tic-Tac-Toe Learner
 

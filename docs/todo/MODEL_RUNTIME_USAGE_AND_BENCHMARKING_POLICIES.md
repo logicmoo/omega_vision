@@ -1,6 +1,6 @@
 # Model Runtime Usage and Benchmarking Policies
 
-[Back to repository README](../../../README.md)
+[Back to repository README](../../README.md)
 
 Build the **Model Runtime Usage and Benchmarking Policies** page in the **MeTTaSymbolicLearnerWorkbench**.
 

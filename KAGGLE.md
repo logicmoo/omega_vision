@@ -45,10 +45,10 @@ When the Kaggle kernel run completes, open it on Kaggle and select **Submit to C
 Do not rename, move, repurpose, or break:
 
 - `agent/my_agent.py`
-- `scripts/play_local.py`
+- `python/arc_cli_debugger/cli/play_local.py`
 - `scripts/build_notebook.py`
-- `notebooks/submission.ipynb`
-- `notebooks/kernel-metadata.json`
+- `python/notebooks/submission.ipynb`
+- `python/notebooks/kernel-metadata.json`
 - existing Kaggle-related Makefile commands
 - imports, paths, and packaging rules required by the Kaggle workflow
 
@@ -70,7 +70,7 @@ The starter implementation is a valid random baseline. Replace its action-select
 Run the agent locally through:
 
 ```bash
-python scripts/play_local.py --game ls20 --max-steps 200
+python python/arc_cli_debugger/cli/play_local.py --game ls20 --max-steps 200
 ```
 
 or:
@@ -81,7 +81,7 @@ make play-local GAME=ls20 STEPS=200
 
 ## Local runner behavior
 
-`scripts/play_local.py`:
+`python/arc_cli_debugger/cli/play_local.py`:
 
 1. Loads `agent/my_agent.py` dynamically.
 2. Uses the vendored ARC-AGI-3 Agents framework.
@@ -92,9 +92,9 @@ make play-local GAME=ls20 STEPS=200
 Examples:
 
 ```bash
-python scripts/play_local.py --list
-python scripts/play_local.py --game ls20 --max-steps 50
-python scripts/play_local.py --game ls20,vc33 --max-steps 50
+python python/arc_cli_debugger/cli/play_local.py --list
+python python/arc_cli_debugger/cli/play_local.py --game ls20 --max-steps 50
+python python/arc_cli_debugger/cli/play_local.py --game ls20,vc33 --max-steps 50
 ```
 
 ## Makefile commands
@@ -107,7 +107,7 @@ python scripts/play_local.py --game ls20,vc33 --max-steps 50
 | `make verify-local` | Smoke-test selected games with a reduced action limit. |
 | `make list-games` | List available ARC3 environments. |
 | `make pull-sample` | Download the official reference notebook. |
-| `make notebook` | Generate `notebooks/submission.ipynb` from `agent/my_agent.py`. |
+| `make notebook` | Generate `python/notebooks/submission.ipynb` from `agent/my_agent.py`. |
 | `make submit` | Generate and upload the notebook to Kaggle. |
 | `make status` | Check the latest Kaggle kernel status. |
 | `make clean` | Remove generated local artifacts. |
@@ -126,7 +126,7 @@ or:
 make notebook
 ```
 
-The builder creates `notebooks/submission.ipynb` with the competition pattern:
+The builder creates `python/notebooks/submission.ipynb` with the competition pattern:
 
 1. Install the competition-provided offline wheels.
 2. Write the current `agent/my_agent.py` into the Kaggle working directory.
@@ -134,11 +134,11 @@ The builder creates `notebooks/submission.ipynb` with the competition pattern:
 4. Register `MyAgent` and run the framework against the gateway.
 5. During ordinary notebook commit validation, emit a placeholder `submission.parquet` so the save-and-run step succeeds.
 
-`notebooks/submission.ipynb` is generated output and should not be edited by hand.
+`python/notebooks/submission.ipynb` is generated output and should not be edited by hand.
 
 ## Kaggle kernel metadata
 
-`notebooks/kernel-metadata.json` contains the Kaggle kernel ID and accelerator settings. Confirm that its `id` uses the intended Kaggle account and slug before running `make submit`.
+`python/notebooks/kernel-metadata.json` contains the Kaggle kernel ID and accelerator settings. Confirm that its `id` uses the intended Kaggle account and slug before running `make submit`.
 
 ## Accelerator selection
 
@@ -198,7 +198,7 @@ scripts/
 ├── build_notebook.py
 └── slim_framework.py
 
-notebooks/
+python/notebooks/
 ├── kernel-metadata.json
 └── submission.ipynb
 
@@ -227,7 +227,7 @@ Replace the token with a newly generated token from Kaggle settings, then retry.
 
 ### `make submit` rejects the kernel metadata
 
-Inspect `notebooks/kernel-metadata.json` and confirm the kernel ID belongs to the intended Kaggle account.
+Inspect `python/notebooks/kernel-metadata.json` and confirm the kernel ID belongs to the intended Kaggle account.
 
 ### Local game creation fails
 

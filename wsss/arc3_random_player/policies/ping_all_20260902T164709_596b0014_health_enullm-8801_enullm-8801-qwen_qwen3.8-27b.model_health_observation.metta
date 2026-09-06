@@ -1,0 +1,10 @@
+(
+  (kind model_health_observation)
+  (id ping_all_20260902T164709_596b0014:health:enullm-8801_enullm-8801-qwen_qwen3.8-27b)
+  (modelPolicyEntryId enullm-8801:enullm-8801-qwen_qwen3.8-27b)
+  (vendorId enullm-8801)
+  (status online)
+  (latencyMs 4278.0)
+  (observedAt 2026-09-02T16:47:14.740379Z)
+  (jobId ping_all_20260902T164709_596b0014)
+)

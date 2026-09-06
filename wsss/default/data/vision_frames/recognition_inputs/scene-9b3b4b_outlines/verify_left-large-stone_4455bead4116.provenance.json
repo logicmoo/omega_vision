@@ -1,0 +1,265 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-large-stone_4455bead4116.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-large-stone_4455bead4116.provenance.json",
+  "createdAt": "2026-09-03T12:14:44.668035Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b.provenance.json"
+  },
+  "source": {
+    "objectName": "left large stone"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          174,
+          249
+        ],
+        [
+          181,
+          240
+        ],
+        [
+          194,
+          235
+        ],
+        [
+          209,
+          234
+        ],
+        [
+          220,
+          239
+        ],
+        [
+          221,
+          248
+        ],
+        [
+          215,
+          256
+        ],
+        [
+          202,
+          261
+        ],
+        [
+          188,
+          261
+        ],
+        [
+          178,
+          257
+        ]
+      ]
+    ],
+    "holes": [],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 272,
+        "y": 694
+      },
+      {
+        "op": "line",
+        "x": 283,
+        "y": 669
+      },
+      {
+        "op": "line",
+        "x": 304,
+        "y": 655
+      },
+      {
+        "op": "line",
+        "x": 327,
+        "y": 652
+      },
+      {
+        "op": "line",
+        "x": 344,
+        "y": 666
+      },
+      {
+        "op": "line",
+        "x": 346,
+        "y": 691
+      },
+      {
+        "op": "line",
+        "x": 336,
+        "y": 713
+      },
+      {
+        "op": "line",
+        "x": 316,
+        "y": 727
+      },
+      {
+        "op": "line",
+        "x": 294,
+        "y": 727
+      },
+      {
+        "op": "line",
+        "x": 278,
+        "y": 716
+      },
+      {
+        "op": "line",
+        "x": 272,
+        "y": 694
+      }
+    ],
+    "geometryHash": "4455bead411695f78c542087e172b1547c495dda788cf1501ce79abbc9718fe4",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.9889
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_left-large-stone_4455bead4116.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              174,
+              249
+            ],
+            [
+              181,
+              240
+            ],
+            [
+              194,
+              235
+            ],
+            [
+              209,
+              234
+            ],
+            [
+              220,
+              239
+            ],
+            [
+              221,
+              248
+            ],
+            [
+              215,
+              256
+            ],
+            [
+              202,
+              261
+            ],
+            [
+              188,
+              261
+            ],
+            [
+              178,
+              257
+            ]
+          ]
+        ],
+        "holes": [],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 272,
+            "y": 694
+          },
+          {
+            "op": "line",
+            "x": 283,
+            "y": 669
+          },
+          {
+            "op": "line",
+            "x": 304,
+            "y": 655
+          },
+          {
+            "op": "line",
+            "x": 327,
+            "y": 652
+          },
+          {
+            "op": "line",
+            "x": 344,
+            "y": 666
+          },
+          {
+            "op": "line",
+            "x": 346,
+            "y": 691
+          },
+          {
+            "op": "line",
+            "x": 336,
+            "y": 713
+          },
+          {
+            "op": "line",
+            "x": 316,
+            "y": 727
+          },
+          {
+            "op": "line",
+            "x": 294,
+            "y": 727
+          },
+          {
+            "op": "line",
+            "x": 278,
+            "y": 716
+          },
+          {
+            "op": "line",
+            "x": 272,
+            "y": 694
+          }
+        ],
+        "geometryHash": "4455bead411695f78c542087e172b1547c495dda788cf1501ce79abbc9718fe4",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.9889
+      },
+      "createdAt": "2026-09-03T12:14:44.668035Z"
+    }
+  ]
+}

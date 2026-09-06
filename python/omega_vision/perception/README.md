@@ -1,3 +1,5 @@
+[← Back to top-level README](../../../README.md)
+
 # generative_vision / prolog
 
 LLM-free recognizers that produce the **same** part-graph the vision model does

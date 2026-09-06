@@ -1,0 +1,172 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_23_right-blue-flower-cluste.png",
+  "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_23_right-blue-flower-cluste.provenance.json",
+  "createdAt": "2026-09-03T12:21:40.154827Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 853,
+    "height": 303
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_23_right-blue-flower-cluste.png",
+    "provenance": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_23_right-blue-flower-cluste.provenance.json"
+  },
+  "source": {
+    "objectName": "right blue flower cluster"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 147,
+      "height": 37
+    },
+    "scale": 5,
+    "resizedDimensions": {
+      "width": 735,
+      "height": 185
+    },
+    "padding": {
+      "left": 59,
+      "top": 59,
+      "right": 59,
+      "bottom": 59
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+      "operation": "recognition_input_upload",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T12:13:04.186157Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_23_right-blue-flower-cluste.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 147,
+        "height": 37
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 360
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "outlineSourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b.png",
+          "dimensions": {
+            "width": 640,
+            "height": 360
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_outlines/verify_right-blue-flower-cluste_91b9928b805a.png",
+          "geometryHash": "91b9928b805ae69d9c446741115a6946357c9fa83657bccbae205edd5494f7eb",
+          "traceVerified": true
+        },
+        "cropBox": [
+          403,
+          181,
+          550,
+          218
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              405,
+              192
+            ],
+            [
+              430,
+              185
+            ],
+            [
+              456,
+              188
+            ],
+            [
+              478,
+              183
+            ],
+            [
+              505,
+              190
+            ],
+            [
+              526,
+              185
+            ],
+            [
+              548,
+              195
+            ],
+            [
+              535,
+              213
+            ],
+            [
+              500,
+              216
+            ],
+            [
+              469,
+              211
+            ],
+            [
+              439,
+              215
+            ],
+            [
+              411,
+              207
+            ]
+          ]
+        ],
+        "holes": []
+      },
+      "createdAt": "2026-09-03T12:21:40.122728Z"
+    },
+    {
+      "image": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/next_pass_23_right-blue-flower-cluste.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 853,
+        "height": 303
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 147,
+          "height": 37
+        },
+        "scale": 5,
+        "resizedDimensions": {
+          "width": 735,
+          "height": 185
+        },
+        "padding": {
+          "left": 59,
+          "top": 59,
+          "right": 59,
+          "bottom": 59
+        }
+      },
+      "createdAt": "2026-09-03T12:21:40.154827Z"
+    }
+  ]
+}

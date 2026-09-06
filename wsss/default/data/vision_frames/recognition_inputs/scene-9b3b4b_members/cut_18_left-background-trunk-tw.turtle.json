@@ -1,0 +1,54 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_18_left-background-trunk-tw.png",
+  "subjectName": "left background trunk two",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#607c71\",\n  \"penWidth\": 3,\n  \"commands\": [\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          180.0,\n          323.0\n        ],\n        [\n          192.0,\n          320.0\n        ],\n        [\n          191.0,\n          588.0\n        ],\n        [\n          180.0,\n          591.0\n        ]\n      ],\n      \"fill\": \"#82998a\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          187.0,\n          329.0\n        ],\n        [\n          185.0,\n          582.0\n        ]\n      ],\n      \"fill\": \"transparent\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#607c71",
+    "penWidth": 3,
+    "commands": [
+      {
+        "op": "polygon",
+        "points": [
+          [
+            180.0,
+            323.0
+          ],
+          [
+            192.0,
+            320.0
+          ],
+          [
+            191.0,
+            588.0
+          ],
+          [
+            180.0,
+            591.0
+          ]
+        ],
+        "fill": "#82998a"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            187.0,
+            329.0
+          ],
+          [
+            185.0,
+            582.0
+          ]
+        ],
+        "fill": "transparent"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:29:54.292262Z"
+}

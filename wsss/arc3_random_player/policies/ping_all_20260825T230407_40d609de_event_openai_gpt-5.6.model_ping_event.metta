@@ -1,0 +1,10 @@
+(
+  (kind model_ping_event)
+  (id ping_all_20260825T230407_40d609de:event:openai_gpt-5.6)
+  (jobId ping_all_20260825T230407_40d609de)
+  (modelPolicyEntryId openai:gpt-5.6)
+  (status succeeded)
+  (healthStatus online)
+  (latencyMs 4255.9)
+  (createdAt 2026-08-25T23:04:11.932098Z)
+)

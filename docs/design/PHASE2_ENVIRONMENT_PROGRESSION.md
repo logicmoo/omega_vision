@@ -51,4 +51,4 @@ They do not claim production recognition quality for arbitrary photographic or
 game-engine inputs; additional perception providers can be compared with the
 same benchmark and provider-ablation runners.
 
-[← Back to top-level README](../../../README.md)
+[← Back to top-level README](../../README.md)

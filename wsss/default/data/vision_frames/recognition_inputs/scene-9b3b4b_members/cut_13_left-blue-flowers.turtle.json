@@ -1,0 +1,931 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/recognition_inputs/scene-9b3b4b_members/cut_13_left-blue-flowers.png",
+  "subjectName": "left blue flowers",
+  "modelId": "local",
+  "prompt": "",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#245f68\",\n  \"penWidth\": 3,\n  \"commands\": [\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          270.0,\n          890.0\n        ],\n        [\n          302.0,\n          736.0\n        ],\n        [\n          327.0,\n          584.0\n        ],\n        [\n          353.0,\n          432.0\n        ]\n      ],\n      \"outline\": \"#245f50\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          335.0,\n          896.0\n        ],\n        [\n          359.0,\n          742.0\n        ],\n        [\n          388.0,\n          603.0\n        ],\n        [\n          421.0,\n          473.0\n        ]\n      ],\n      \"outline\": \"#286553\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          401.0,\n          900.0\n        ],\n        [\n          421.0,\n          750.0\n        ],\n        [\n          448.0,\n          610.0\n        ],\n        [\n          476.0,\n          438.0\n        ]\n      ],\n      \"outline\": \"#245e4f\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          466.0,\n          900.0\n        ],\n        [\n          484.0,\n          754.0\n        ],\n        [\n          516.0,\n          622.0\n        ],\n        [\n          548.0,\n          490.0\n        ]\n      ],\n      \"outline\": \"#2c6b55\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          532.0,\n          900.0\n        ],\n        [\n          550.0,\n          748.0\n        ],\n        [\n          579.0,\n          594.0\n        ],\n        [\n          612.0,\n          430.0\n        ]\n      ],\n      \"outline\": \"#286450\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          600.0,\n          900.0\n        ],\n        [\n          614.0,\n          752.0\n        ],\n        [\n          645.0,\n          613.0\n        ],\n        [\n          679.0,\n          465.0\n        ]\n      ],\n      \"outline\": \"#2a6753\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          668.0,\n          900.0\n        ],\n        [\n          687.0,\n          741.0\n        ],\n        [\n          716.0,\n          581.0\n        ],\n        [\n          745.0,\n          407.0\n        ]\n      ],\n      \"outline\": \"#245f4f\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          734.0,\n          900.0\n        ],\n        [\n          754.0,\n          751.0\n        ],\n        [\n          782.0,\n          620.0\n        ],\n        [\n          817.0,\n          480.0\n        ]\n      ],\n      \"outline\": \"#2b6954\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          801.0,\n          900.0\n        ],\n        [\n          821.0,\n          744.0\n        ],\n        [\n          850.0,\n          588.0\n        ],\n        [\n          882.0,\n          435.0\n        ]\n      ],\n      \"outline\": \"#27634f\"\n    },\n    {\n      \"op\": \"polyline\",\n      \"points\": [\n        [\n          869.0,\n          900.0\n        ],\n        [\n          884.0,\n          749.0\n        ],\n        [\n          914.0,\n          617.0\n        ],\n        [\n          944.0,\n          472.0\n        ]\n      ],\n      \"outline\": \"#286652\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        290,\n        390,\n        354,\n        478\n      ],\n      \"fill\": \"#2a8eaa\",\n      \"outline\": \"#175e77\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        269,\n        426,\n        323,\n        501\n      ],\n      \"fill\": \"#3aa5bd\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        326,\n        425,\n        378,\n        501\n      ],\n      \"fill\": \"#247d9b\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 327,\n      \"y\": 447,\n      \"radius\": 12,\n      \"color\": \"#78c5d3\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        383,\n        426,\n        449,\n        520\n      ],\n      \"fill\": \"#328fab\",\n      \"outline\": \"#175b74\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        359,\n        467,\n        416,\n        545\n      ],\n      \"fill\": \"#46a9bf\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        418,\n        470,\n        473,\n        548\n      ],\n      \"fill\": \"#277b99\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 417,\n      \"y\": 482,\n      \"radius\": 12,\n      \"color\": \"#82c9d5\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        441,\n        385,\n        508,\n        481\n      ],\n      \"fill\": \"#2587a5\",\n      \"outline\": \"#14566f\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        417,\n        428,\n        474,\n        505\n      ],\n      \"fill\": \"#3da4bb\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        476,\n        426,\n        532,\n        505\n      ],\n      \"fill\": \"#2b7898\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 475,\n      \"y\": 444,\n      \"radius\": 13,\n      \"color\": \"#71bed0\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        514,\n        444,\n        584,\n        542\n      ],\n      \"fill\": \"#3198b3\",\n      \"outline\": \"#175b73\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        490,\n        487,\n        549,\n        567\n      ],\n      \"fill\": \"#45adc3\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        552,\n        486,\n        609,\n        566\n      ],\n      \"fill\": \"#247d9c\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 550,\n      \"y\": 503,\n      \"radius\": 13,\n      \"color\": \"#83cbd8\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        576,\n        372,\n        646,\n        471\n      ],\n      \"fill\": \"#2689a8\",\n      \"outline\": \"#145a73\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        551,\n        416,\n        611,\n        497\n      ],\n      \"fill\": \"#3da6bd\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        614,\n        414,\n        671,\n        496\n      ],\n      \"fill\": \"#2a7898\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 612,\n      \"y\": 431,\n      \"radius\": 13,\n      \"color\": \"#74bfd0\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        642,\n        418,\n        714,\n        519\n      ],\n      \"fill\": \"#3299b5\",\n      \"outline\": \"#175d75\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        617,\n        462,\n        678,\n        544\n      ],\n      \"fill\": \"#45acc3\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        681,\n        459,\n        740,\n        543\n      ],\n      \"fill\": \"#237d9c\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 679,\n      \"y\": 478,\n      \"radius\": 14,\n      \"color\": \"#89ceda\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        709,\n        346,\n        781,\n        448\n      ],\n      \"fill\": \"#2488a7\",\n      \"outline\": \"#145870\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        684,\n        391,\n        745,\n        473\n      ],\n      \"fill\": \"#3da5bd\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        748,\n        388,\n        807,\n        472\n      ],\n      \"fill\": \"#297a99\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 746,\n      \"y\": 407,\n      \"radius\": 14,\n      \"color\": \"#75c1d1\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        779,\n        430,\n        851,\n        532\n      ],\n      \"fill\": \"#3298b4\",\n      \"outline\": \"#175b74\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        754,\n        475,\n        815,\n        557\n      ],\n      \"fill\": \"#47aec4\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        818,\n        471,\n        878,\n        556\n      ],\n      \"fill\": \"#247e9d\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 817,\n      \"y\": 490,\n      \"radius\": 14,\n      \"color\": \"#83cad7\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        846,\n        379,\n        917,\n        480\n      ],\n      \"fill\": \"#278ca9\",\n      \"outline\": \"#155970\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        821,\n        423,\n        882,\n        505\n      ],\n      \"fill\": \"#3fa7bd\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        885,\n        421,\n        944,\n        505\n      ],\n      \"fill\": \"#287b99\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 883,\n      \"y\": 440,\n      \"radius\": 14,\n      \"color\": \"#76c0d0\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        910,\n        430,\n        978,\n        527\n      ],\n      \"fill\": \"#3096b1\",\n      \"outline\": \"#175a72\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        889,\n        473,\n        944,\n        549\n      ],\n      \"fill\": \"#43aac1\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 943,\n      \"y\": 486,\n      \"radius\": 13,\n      \"color\": \"#7cc5d3\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        315,\n        554,\n        377,\n        643\n      ],\n      \"fill\": \"#277f9d\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        294,\n        592,\n        347,\n        665\n      ],\n      \"fill\": \"#3a9fb7\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 348,\n      \"y\": 604,\n      \"radius\": 11,\n      \"color\": \"#75bece\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        389,\n        568,\n        452,\n        658\n      ],\n      \"fill\": \"#2b88a5\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        367,\n        605,\n        421,\n        680\n      ],\n      \"fill\": \"#43a8bf\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 422,\n      \"y\": 619,\n      \"radius\": 11,\n      \"color\": \"#81c8d5\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        456,\n        545,\n        519,\n        635\n      ],\n      \"fill\": \"#247d9d\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        435,\n        584,\n        489,\n        659\n      ],\n      \"fill\": \"#3ea4bc\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 490,\n      \"y\": 598,\n      \"radius\": 11,\n      \"color\": \"#70bacb\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        527,\n        580,\n        591,\n        672\n      ],\n      \"fill\": \"#2b8aa7\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        505,\n        618,\n        560,\n        694\n      ],\n      \"fill\": \"#46abc1\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 560,\n      \"y\": 632,\n      \"radius\": 12,\n      \"color\": \"#86ccd8\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        594,\n        537,\n        659,\n        630\n      ],\n      \"fill\": \"#27819f\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        572,\n        576,\n        627,\n        652\n      ],\n      \"fill\": \"#3ca2ba\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 628,\n      \"y\": 589,\n      \"radius\": 12,\n      \"color\": \"#72bdcd\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        663,\n        570,\n        729,\n        664\n      ],\n      \"fill\": \"#2d8ca9\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        641,\n        609,\n        697,\n        686\n      ],\n      \"fill\": \"#48adc3\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 698,\n      \"y\": 623,\n      \"radius\": 12,\n      \"color\": \"#88ccd8\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        731,\n        533,\n        796,\n        625\n      ],\n      \"fill\": \"#27819f\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        709,\n        571,\n        765,\n        648\n      ],\n      \"fill\": \"#40a6bd\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 766,\n      \"y\": 585,\n      \"radius\": 12,\n      \"color\": \"#73bdce\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        798,\n        572,\n        865,\n        666\n      ],\n      \"fill\": \"#2b89a6\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        776,\n        611,\n        832,\n        688\n      ],\n      \"fill\": \"#45abc2\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 833,\n      \"y\": 625,\n      \"radius\": 12,\n      \"color\": \"#84cad7\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        866,\n        542,\n        932,\n        635\n      ],\n      \"fill\": \"#267f9e\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        844,\n        581,\n        900,\n        657\n      ],\n      \"fill\": \"#3fa5bc\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 901,\n      \"y\": 595,\n      \"radius\": 12,\n      \"color\": \"#71bbcc\"\n    },\n    {\n      \"op\": \"ellipse\",\n      \"box\": [\n        926,\n        576,\n        985,\n        662\n      ],\n      \"fill\": \"#2c8ba7\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 956,\n      \"y\": 619,\n      \"radius\": 12,\n      \"color\": \"#80c7d5\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 287,\n      \"y\": 704,\n      \"radius\": 22,\n      \"color\": \"#247b91\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 369,\n      \"y\": 730,\n      \"radius\": 24,\n      \"color\": \"#318fa5\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 448,\n      \"y\": 702,\n      \"radius\": 21,\n      \"color\": \"#257b94\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 522,\n      \"y\": 741,\n      \"radius\": 25,\n      \"color\": \"#3294aa\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 603,\n      \"y\": 704,\n      \"radius\": 22,\n      \"color\": \"#23778f\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 680,\n      \"y\": 739,\n      \"radius\": 24,\n      \"color\": \"#3394aa\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 757,\n      \"y\": 700,\n      \"radius\": 22,\n      \"color\": \"#257c95\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 836,\n      \"y\": 738,\n      \"radius\": 25,\n      \"color\": \"#3496ac\"\n    },\n    {\n      \"op\": \"dot\",\n      \"x\": 914,\n      \"y\": 702,\n      \"radius\": 22,\n      \"color\": \"#247890\"\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#245f68",
+    "penWidth": 3,
+    "commands": [
+      {
+        "op": "polyline",
+        "points": [
+          [
+            270.0,
+            890.0
+          ],
+          [
+            302.0,
+            736.0
+          ],
+          [
+            327.0,
+            584.0
+          ],
+          [
+            353.0,
+            432.0
+          ]
+        ],
+        "outline": "#245f50"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            335.0,
+            896.0
+          ],
+          [
+            359.0,
+            742.0
+          ],
+          [
+            388.0,
+            603.0
+          ],
+          [
+            421.0,
+            473.0
+          ]
+        ],
+        "outline": "#286553"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            401.0,
+            900.0
+          ],
+          [
+            421.0,
+            750.0
+          ],
+          [
+            448.0,
+            610.0
+          ],
+          [
+            476.0,
+            438.0
+          ]
+        ],
+        "outline": "#245e4f"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            466.0,
+            900.0
+          ],
+          [
+            484.0,
+            754.0
+          ],
+          [
+            516.0,
+            622.0
+          ],
+          [
+            548.0,
+            490.0
+          ]
+        ],
+        "outline": "#2c6b55"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            532.0,
+            900.0
+          ],
+          [
+            550.0,
+            748.0
+          ],
+          [
+            579.0,
+            594.0
+          ],
+          [
+            612.0,
+            430.0
+          ]
+        ],
+        "outline": "#286450"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            600.0,
+            900.0
+          ],
+          [
+            614.0,
+            752.0
+          ],
+          [
+            645.0,
+            613.0
+          ],
+          [
+            679.0,
+            465.0
+          ]
+        ],
+        "outline": "#2a6753"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            668.0,
+            900.0
+          ],
+          [
+            687.0,
+            741.0
+          ],
+          [
+            716.0,
+            581.0
+          ],
+          [
+            745.0,
+            407.0
+          ]
+        ],
+        "outline": "#245f4f"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            734.0,
+            900.0
+          ],
+          [
+            754.0,
+            751.0
+          ],
+          [
+            782.0,
+            620.0
+          ],
+          [
+            817.0,
+            480.0
+          ]
+        ],
+        "outline": "#2b6954"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            801.0,
+            900.0
+          ],
+          [
+            821.0,
+            744.0
+          ],
+          [
+            850.0,
+            588.0
+          ],
+          [
+            882.0,
+            435.0
+          ]
+        ],
+        "outline": "#27634f"
+      },
+      {
+        "op": "polyline",
+        "points": [
+          [
+            869.0,
+            900.0
+          ],
+          [
+            884.0,
+            749.0
+          ],
+          [
+            914.0,
+            617.0
+          ],
+          [
+            944.0,
+            472.0
+          ]
+        ],
+        "outline": "#286652"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          290,
+          390,
+          354,
+          478
+        ],
+        "fill": "#2a8eaa",
+        "outline": "#175e77"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          269,
+          426,
+          323,
+          501
+        ],
+        "fill": "#3aa5bd"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          326,
+          425,
+          378,
+          501
+        ],
+        "fill": "#247d9b"
+      },
+      {
+        "op": "dot",
+        "x": 327,
+        "y": 447,
+        "radius": 12,
+        "color": "#78c5d3"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          383,
+          426,
+          449,
+          520
+        ],
+        "fill": "#328fab",
+        "outline": "#175b74"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          359,
+          467,
+          416,
+          545
+        ],
+        "fill": "#46a9bf"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          418,
+          470,
+          473,
+          548
+        ],
+        "fill": "#277b99"
+      },
+      {
+        "op": "dot",
+        "x": 417,
+        "y": 482,
+        "radius": 12,
+        "color": "#82c9d5"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          441,
+          385,
+          508,
+          481
+        ],
+        "fill": "#2587a5",
+        "outline": "#14566f"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          417,
+          428,
+          474,
+          505
+        ],
+        "fill": "#3da4bb"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          476,
+          426,
+          532,
+          505
+        ],
+        "fill": "#2b7898"
+      },
+      {
+        "op": "dot",
+        "x": 475,
+        "y": 444,
+        "radius": 13,
+        "color": "#71bed0"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          514,
+          444,
+          584,
+          542
+        ],
+        "fill": "#3198b3",
+        "outline": "#175b73"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          490,
+          487,
+          549,
+          567
+        ],
+        "fill": "#45adc3"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          552,
+          486,
+          609,
+          566
+        ],
+        "fill": "#247d9c"
+      },
+      {
+        "op": "dot",
+        "x": 550,
+        "y": 503,
+        "radius": 13,
+        "color": "#83cbd8"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          576,
+          372,
+          646,
+          471
+        ],
+        "fill": "#2689a8",
+        "outline": "#145a73"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          551,
+          416,
+          611,
+          497
+        ],
+        "fill": "#3da6bd"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          614,
+          414,
+          671,
+          496
+        ],
+        "fill": "#2a7898"
+      },
+      {
+        "op": "dot",
+        "x": 612,
+        "y": 431,
+        "radius": 13,
+        "color": "#74bfd0"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          642,
+          418,
+          714,
+          519
+        ],
+        "fill": "#3299b5",
+        "outline": "#175d75"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          617,
+          462,
+          678,
+          544
+        ],
+        "fill": "#45acc3"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          681,
+          459,
+          740,
+          543
+        ],
+        "fill": "#237d9c"
+      },
+      {
+        "op": "dot",
+        "x": 679,
+        "y": 478,
+        "radius": 14,
+        "color": "#89ceda"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          709,
+          346,
+          781,
+          448
+        ],
+        "fill": "#2488a7",
+        "outline": "#145870"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          684,
+          391,
+          745,
+          473
+        ],
+        "fill": "#3da5bd"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          748,
+          388,
+          807,
+          472
+        ],
+        "fill": "#297a99"
+      },
+      {
+        "op": "dot",
+        "x": 746,
+        "y": 407,
+        "radius": 14,
+        "color": "#75c1d1"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          779,
+          430,
+          851,
+          532
+        ],
+        "fill": "#3298b4",
+        "outline": "#175b74"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          754,
+          475,
+          815,
+          557
+        ],
+        "fill": "#47aec4"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          818,
+          471,
+          878,
+          556
+        ],
+        "fill": "#247e9d"
+      },
+      {
+        "op": "dot",
+        "x": 817,
+        "y": 490,
+        "radius": 14,
+        "color": "#83cad7"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          846,
+          379,
+          917,
+          480
+        ],
+        "fill": "#278ca9",
+        "outline": "#155970"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          821,
+          423,
+          882,
+          505
+        ],
+        "fill": "#3fa7bd"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          885,
+          421,
+          944,
+          505
+        ],
+        "fill": "#287b99"
+      },
+      {
+        "op": "dot",
+        "x": 883,
+        "y": 440,
+        "radius": 14,
+        "color": "#76c0d0"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          910,
+          430,
+          978,
+          527
+        ],
+        "fill": "#3096b1",
+        "outline": "#175a72"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          889,
+          473,
+          944,
+          549
+        ],
+        "fill": "#43aac1"
+      },
+      {
+        "op": "dot",
+        "x": 943,
+        "y": 486,
+        "radius": 13,
+        "color": "#7cc5d3"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          315,
+          554,
+          377,
+          643
+        ],
+        "fill": "#277f9d"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          294,
+          592,
+          347,
+          665
+        ],
+        "fill": "#3a9fb7"
+      },
+      {
+        "op": "dot",
+        "x": 348,
+        "y": 604,
+        "radius": 11,
+        "color": "#75bece"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          389,
+          568,
+          452,
+          658
+        ],
+        "fill": "#2b88a5"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          367,
+          605,
+          421,
+          680
+        ],
+        "fill": "#43a8bf"
+      },
+      {
+        "op": "dot",
+        "x": 422,
+        "y": 619,
+        "radius": 11,
+        "color": "#81c8d5"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          456,
+          545,
+          519,
+          635
+        ],
+        "fill": "#247d9d"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          435,
+          584,
+          489,
+          659
+        ],
+        "fill": "#3ea4bc"
+      },
+      {
+        "op": "dot",
+        "x": 490,
+        "y": 598,
+        "radius": 11,
+        "color": "#70bacb"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          527,
+          580,
+          591,
+          672
+        ],
+        "fill": "#2b8aa7"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          505,
+          618,
+          560,
+          694
+        ],
+        "fill": "#46abc1"
+      },
+      {
+        "op": "dot",
+        "x": 560,
+        "y": 632,
+        "radius": 12,
+        "color": "#86ccd8"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          594,
+          537,
+          659,
+          630
+        ],
+        "fill": "#27819f"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          572,
+          576,
+          627,
+          652
+        ],
+        "fill": "#3ca2ba"
+      },
+      {
+        "op": "dot",
+        "x": 628,
+        "y": 589,
+        "radius": 12,
+        "color": "#72bdcd"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          663,
+          570,
+          729,
+          664
+        ],
+        "fill": "#2d8ca9"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          641,
+          609,
+          697,
+          686
+        ],
+        "fill": "#48adc3"
+      },
+      {
+        "op": "dot",
+        "x": 698,
+        "y": 623,
+        "radius": 12,
+        "color": "#88ccd8"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          731,
+          533,
+          796,
+          625
+        ],
+        "fill": "#27819f"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          709,
+          571,
+          765,
+          648
+        ],
+        "fill": "#40a6bd"
+      },
+      {
+        "op": "dot",
+        "x": 766,
+        "y": 585,
+        "radius": 12,
+        "color": "#73bdce"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          798,
+          572,
+          865,
+          666
+        ],
+        "fill": "#2b89a6"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          776,
+          611,
+          832,
+          688
+        ],
+        "fill": "#45abc2"
+      },
+      {
+        "op": "dot",
+        "x": 833,
+        "y": 625,
+        "radius": 12,
+        "color": "#84cad7"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          866,
+          542,
+          932,
+          635
+        ],
+        "fill": "#267f9e"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          844,
+          581,
+          900,
+          657
+        ],
+        "fill": "#3fa5bc"
+      },
+      {
+        "op": "dot",
+        "x": 901,
+        "y": 595,
+        "radius": 12,
+        "color": "#71bbcc"
+      },
+      {
+        "op": "ellipse",
+        "box": [
+          926,
+          576,
+          985,
+          662
+        ],
+        "fill": "#2c8ba7"
+      },
+      {
+        "op": "dot",
+        "x": 956,
+        "y": 619,
+        "radius": 12,
+        "color": "#80c7d5"
+      },
+      {
+        "op": "dot",
+        "x": 287,
+        "y": 704,
+        "radius": 22,
+        "color": "#247b91"
+      },
+      {
+        "op": "dot",
+        "x": 369,
+        "y": 730,
+        "radius": 24,
+        "color": "#318fa5"
+      },
+      {
+        "op": "dot",
+        "x": 448,
+        "y": 702,
+        "radius": 21,
+        "color": "#257b94"
+      },
+      {
+        "op": "dot",
+        "x": 522,
+        "y": 741,
+        "radius": 25,
+        "color": "#3294aa"
+      },
+      {
+        "op": "dot",
+        "x": 603,
+        "y": 704,
+        "radius": 22,
+        "color": "#23778f"
+      },
+      {
+        "op": "dot",
+        "x": 680,
+        "y": 739,
+        "radius": 24,
+        "color": "#3394aa"
+      },
+      {
+        "op": "dot",
+        "x": 757,
+        "y": 700,
+        "radius": 22,
+        "color": "#257c95"
+      },
+      {
+        "op": "dot",
+        "x": 836,
+        "y": 738,
+        "radius": 25,
+        "color": "#3496ac"
+      },
+      {
+        "op": "dot",
+        "x": 914,
+        "y": 702,
+        "radius": 22,
+        "color": "#247890"
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T12:29:49.844199Z"
+}
