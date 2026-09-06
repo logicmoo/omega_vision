@@ -44,6 +44,7 @@ from arc3_play_api import (
     _data_rel_of,
     _game_slug,
     _game_write_dir,
+    _import_instance_dir_name,
     _iter_recording_dirs,
     _next_ranked_saved_dir_name,
     _safe_workspace_child,
@@ -5858,4 +5859,211 @@ def materialize_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "levelDir": _data_rel_of(root, level_dir),
         "gameDirectory": game_dir,
         "moveCount": len(moves),
+    }
+
+
+@router.post("/sequence-sets/from-image-set")
+def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Build a Sequence Set (canonical ARC recording format) from an Image Set.
+
+    Each command block selects condition images per character and stamps
+    every resulting step with the block's action. A block gives either one
+    ``cond`` (condition-major: all characters interleaved, escalating block
+    by block) or a ``conds`` list with ``"order": "character"``
+    (character-major: stick with one character through all its conditions
+    before moving on). The default curriculum uses every one of the 200
+    images exactly once:
+
+        {"action": "INTRODUCE_CARTOON_CHAR", "cond": "c1_bw"}      steps 0-19
+        {"action": "QUERY_WHO_ARE_HERE", "cond": "c2_flip"}               steps 20-39
+        {"action": "QUERY_WHO_ARE_HERE", "cond": "c3_rot45"}              steps 40-59
+        {"action": "QUERY_WHO_ARE_HERE", "cond": "c4_busy"}               steps 60-79
+        {"action": "QUERY_WHO_ARE_HERE", "order": "character",
+         "conds": ["c5_new", "c6_verybusy", "c7_withchars",
+                   "c8_typical", "c9_colorful", "c10_modality"]}   steps 80-199
+
+    The set opens from an empty (black) initial frame so recognition
+    genuinely starts with nothing introduced. Characters default to the
+    canonical 20; pass "characters" to override. Missing pool images are
+    skipped and reported.
+    """
+    from PIL import Image  # noqa: PLC0415
+
+    workspace_id = str(body.get("workspaceId") or "")
+    if not workspace_id:
+        raise HTTPException(status_code=400, detail="workspaceId is required")
+    game_id = str(body.get("gameId") or "cartoon_chars").strip() or "cartoon_chars"
+    set_id = str(body.get("set") or _CANONICAL_IMAGE_SET).strip() or _CANONICAL_IMAGE_SET
+    raw_blocks = body.get("blocks") or [
+        {"action": "INTRODUCE_CARTOON_CHAR", "cond": "c1_bw"},
+        {"action": "QUERY_WHO_ARE_HERE", "cond": "c2_flip"},
+        {"action": "QUERY_WHO_ARE_HERE", "cond": "c3_rot45"},
+        {"action": "QUERY_WHO_ARE_HERE", "cond": "c4_busy"},
+        {"action": "QUERY_WHO_ARE_HERE", "order": "character",
+         "conds": ["c5_new", "c6_verybusy", "c7_withchars", "c8_typical", "c9_colorful", "c10_modality"]},
+    ]
+    if not isinstance(raw_blocks, list) or not raw_blocks:
+        raise HTTPException(status_code=400, detail="blocks must be a non-empty list")
+    blocks: list[dict[str, Any]] = []
+    for value in raw_blocks:
+        action = str((value or {}).get("action") or "").strip()
+        conds = [str(c).strip() for c in ((value or {}).get("conds") or []) if str(c).strip()]
+        single = str((value or {}).get("cond") or "").strip()
+        if single:
+            conds = [single, *conds]
+        order = str((value or {}).get("order") or "condition").strip().lower()
+        if not action or not conds:
+            raise HTTPException(status_code=400, detail="each block requires action and cond/conds")
+        if order not in ("condition", "character"):
+            raise HTTPException(status_code=400, detail="block order must be condition or character")
+        blocks.append({"action": action, "conds": conds, "order": order})
+    characters = [str(item).strip() for item in (body.get("characters") or []) if str(item).strip()] or [
+        "bart_simpson", "lisa_simpson", "homer_simpson", "marge_simpson",
+        "maggie_simpson", "grandpa_simpson", "spongebob", "patrick_star",
+        "squidward", "scooby_doo", "shaggy", "mickey_mouse", "minnie_mouse",
+        "donald_duck", "goofy", "bugs_bunny", "pikachu", "mario", "sonic", "moana",
+    ]
+
+    root = _workspace_root(workspace_id)
+    try:
+        pool = _safe_workspace_child(root, f"data/{set_id}/pool")
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    if not pool.is_dir():
+        raise HTTPException(status_code=404, detail=f"image set has no pool: {set_id}")
+
+    def pool_image(slug: str, cond: str) -> Path | None:
+        for suffix in (".jpg", ".jpeg", ".png"):
+            candidate = pool / f"{slug}__{cond}{suffix}"
+            if candidate.is_file():
+                return candidate
+        return None
+
+    selected: list[dict[str, Any]] = []
+    skipped: list[str] = []
+    for block_index, block in enumerate(blocks):
+        if block["order"] == "character":
+            pairs = [(slug, cond) for slug in characters for cond in block["conds"]]
+        else:
+            pairs = [(slug, cond) for cond in block["conds"] for slug in characters]
+        for slug, cond in pairs:
+            source = pool_image(slug, cond)
+            if source is None:
+                skipped.append(f"{slug}__{cond}")
+                continue
+            selected.append({"action": block["action"], "cond": cond, "character": slug,
+                             "source": source, "block": block_index})
+    if not selected:
+        raise HTTPException(status_code=404, detail="no pool images matched the requested blocks")
+
+    game_dir = _game_slug(game_id)
+    container = _game_write_dir(root, game_dir)
+    # Curriculum builds are named imports (the old live-play saved_<NNN>
+    # ranking is not used here): the set's own name, deduplicated on disk.
+    base_name = _slug(str(body.get("name") or "").strip()) or f"{_slug(set_id)}_curriculum"
+    instance_name = _import_instance_dir_name(container, base_name, 1)
+    level_dir = container / instance_name
+    level_dir.mkdir(parents=True, exist_ok=True)
+
+    def write_step(directory: Path, image: Image.Image, *, incoming: str | None,
+                   action_data: dict[str, Any], ordinal: int | None,
+                   source_rel: str | None) -> None:
+        directory.mkdir(parents=True, exist_ok=True)
+        image.save(directory / "image.png", format="PNG")
+        png = (directory / "image.png").read_bytes()
+        payload = {
+            "kind": "sequence_set_frame",
+            "game_id": game_id,
+            "game_directory": game_dir,
+            "state": "NOT_FINISHED",
+            "level": "1",
+            "image_hash": hashlib.sha256(png).hexdigest()[:16],
+            "incoming_action": incoming,
+            "action_directory": str(ordinal) if ordinal is not None else None,
+            "action_data": action_data,
+            "parent_node": ".." if ordinal is not None else None,
+            "action_path": [str(index) for index in range(ordinal + 1)] if ordinal is not None else [],
+            "image_set": set_id,
+            "source_image": source_rel,
+            "recorded_at": _utc_now(),
+        }
+        (directory / "state.json").write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        if incoming is not None:
+            # Sidecar consumed by the flat-set manifest reader: surfaces the
+            # command as "prev + ACTION = this" in induction and provenance.
+            (directory / "image.provenance.json").write_text(
+                json.dumps({
+                    "operation": "sequence_set_from_image_set",
+                    "createdAt": _utc_now(),
+                    "source": {
+                        "imageSet": set_id,
+                        "sourceImage": source_rel,
+                        "incomingAction": incoming,
+                        "character": action_data.get("character"),
+                        "cond": action_data.get("cond"),
+                    },
+                }, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+    with Image.open(selected[0]["source"]) as first_image:
+        blank = Image.new("RGB", first_image.size, (0, 0, 0))
+    write_step(level_dir, blank, incoming=None, ordinal=None, source_rel=None, action_data={
+        "characters": [], "count": 0, "note": "empty scene before any introduction",
+    })
+
+    moves: list[dict[str, Any]] = []
+    for ordinal, step in enumerate(selected):
+        source: Path = step["source"]
+        action_data = {
+            "character": step["character"],
+            "cond": step["cond"],
+            "imageSet": set_id,
+            "block": step["action"],
+        }
+        with Image.open(source) as image:
+            write_step(level_dir / str(ordinal), image.convert("RGB"),
+                       incoming=step["action"], ordinal=ordinal,
+                       source_rel=_data_rel_of(root, source), action_data=action_data)
+        moves.append({
+            "index": ordinal,
+            "action": step["action"],
+            "data": action_data,
+            "directory": _data_rel_of(root, level_dir / str(ordinal)),
+            "state": "NOT_FINISHED",
+            "level": "1",
+            "recorded_at": _utc_now(),
+        })
+    manifest = {
+        "kind": "arc3_play_recording",
+        "source": "sequence_set_from_image_set",
+        "session_id": None,
+        "game_id": game_id,
+        "game_directory": game_dir,
+        "level": "1",
+        "level_directory": _data_rel_of(root, level_dir),
+        "image_set": set_id,
+        "blocks": [{"action": block["action"], "conds": block["conds"], "order": block["order"]} for block in blocks],
+        "started_at": _utc_now(),
+        "updated_at": _utc_now(),
+        "last_event": "sequence_set_from_image_set",
+        "moves": moves,
+    }
+    (level_dir / "recording.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return {
+        "levelDir": _data_rel_of(root, level_dir),
+        "gameDirectory": game_dir,
+        "moveCount": len(moves),
+        "blocks": [
+            {"action": block["action"], "conds": block["conds"], "order": block["order"],
+             "steps": [index for index, step in enumerate(selected) if step["block"] == block_index]}
+            for block_index, block in enumerate(blocks)
+        ],
+        "skipped": skipped,
     }
