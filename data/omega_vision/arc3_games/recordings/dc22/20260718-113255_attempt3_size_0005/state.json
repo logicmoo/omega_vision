@@ -1,0 +1,44 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "3",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION1",
+      "ACTION2",
+      "ACTION3",
+      "ACTION4",
+      "ACTION6"
+    ],
+    "levels_completed": 2,
+    "win_levels": 6,
+    "log_step": 86
+  },
+  "step_count": 86,
+  "game_id": "dc22-fdcac232",
+  "game_directory": "dc22",
+  "image_hash": "dfd3f268a39dc663",
+  "incoming_action": null,
+  "action_directory": null,
+  "action_data": {},
+  "parent_node": null,
+  "action_path": [],
+  "recorded_at": "2026-09-03T10:32:45.382072Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/dc22/20260718-113255_attempt3",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/dc22/20260718-113255_attempt3/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

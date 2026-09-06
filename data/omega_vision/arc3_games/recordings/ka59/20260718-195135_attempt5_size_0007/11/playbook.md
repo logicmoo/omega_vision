@@ -1,0 +1,15 @@
+# Working model
+
+- **Checked through level 4:** ACTION1/2/3/4 are up/down/left/right. A selected green (core0) moves one logical tile = 3 board cells per arrow and restores exact static terrain beneath it. Color1 and color4 outlines are traversable; color2/color15 block direct movement.
+- **Checked through level 2:** ACTION6 on another green core selects it (clicked core ->0; former selected core ->4); initial inactive cores may be5. Shell clicks are inert.
+- **Checked through level 4:** Color4 outlines are shape-matched goals. A level completes automatically when all movable/passive pieces fill matching outlines; placements do not lock.
+- **Checked through level 4:** Contacting an inactive green or passive color11 object launches it while the selected pusher stays fixed. Landing is five logical tiles away if clear; otherwise continue forward to the first clear aligned landing (step119), or clamp before the board edge when no clear landing exists beyond five (step144). Goal color4 is nonblocking. Sparse arms/corners can be used as contact stances.
+- **HUD:** row63 color4 is the level-resetting budget; ignore it as gameplay.
+- **Level-5 mechanic, checked at steps151-154:** paired color12/13 strips are a six-action pulse clock. Each action advances the 12/13 boundary one board pixel. On phase 6, the attempted ordinary move happens first (visible in frame0), then the strips emit color12 waves outward from their color12-facing ends and reset to all13. The vertical source at x24..29,y30..35 emits downward and pushed a green in its lane from center y37 to46; the horizontal strip at x51..53,y27..29 simultaneously emits leftward. Exact pulse reach observed: vertical through y44 and horizontal through x42. A piece already beyond the emitting face should be safe, but crossing the strip itself has not yet been observed.
+
+# Working memory
+
+- Level 5 of 7, levels_completed=4. Selected green is now center(28,46), after step154's phase-6 downward pulse. Both strips settled all color13, so current phase=0. Shaft walls: x21..23 and30..32,y27..53; bottom closed y54..56. Vertical strip fills x24..29,y30..35. Goal center(49,28), frame bbox47..51,y26..30, with the horizontal pulse strip on its right. Large wall x18..35,y9..20 is currently irrelevant/possibly later routing terrain.
+- Falsified: colors12/13 are not a one-shot launcher that sends the player through the upper wall. Step154's attempted move center40->37 instead triggered the periodic pulse and pushed it back to46.
+- Computed escape schedule from phase0: six consecutive ups give centers43,40,37,34,31,28 while phases advance1..6. On the trigger action the normal move reaches center(28,28), just above the source (bbox bottom29), before its wave travels downward, so it should be safe. This is the next deliberate crossing test.
+- If confirmed, phase resets0 at center(28,28). Shortest safe goal route is up to y25, right7 to x49, down to y28. The sixth action of that route triggers another pulse while the piece is at center(43,25), one row above the horizontal wave, so it remains safe; final goal arrival is at phase3.

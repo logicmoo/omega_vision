@@ -1,0 +1,18 @@
+# Working model
+- **Checked:** Control is only `ACTION6(x,y)`. A tethered system has one 5×5 player (color-6 core), N diamond endpoint blobs, and straight color-1 tethers. Its player coordinate is `floor(componentwise mean(endpoint centers))`; this has held for N=2, 3, and 4.
+- **Checked:** Exactly one endpoint globally is active, shown by a color-0 body. A normal field click relocates that active endpoint center exactly to the click, with no range limit, then recomputes its system. Clicking any body cell of an inactive color-3 endpoint only selects it (old active 0→3, selected 3→0). Thus changing endpoints normally costs select + destination.
+- **Checked:** A player solves a matching dotted ring when its core enters the ring interior; exact center is sufficient but not necessary. Level 3 completed when the C14 core reached `(55,51)`, two cells above ring center `(55,53)`, so the old “must equal ring center” model was false. A solved ring flashes and settles with its perimeter changed to 0; its assembly remains until the whole level completes.
+- **Checked:** Every ring on multi-player levels that corresponds to a player must be solved. Level 3 completed as soon as its second player entered its ring.
+- **Checked:** Color 2 is wall terrain. The x=0 strip is a fresh 64-action timer per level, filling one cell 0→5 per action; it is not gameplay.
+- **Strongly supported by all successful routes, collision itself unprobed:** Treat large connected color-10 regions as forbidden terrain, and require every endpoint/player shape and every exact Bresenham tether to avoid color 2, large color-10 terrain, and other assemblies. Small isolated color-10 cells can instead be parts of dotted rings. The line rasterizer has now been reproduced exactly for every level-4 tether.
+- **Checked planning arithmetic:** A final endpoint-coordinate sum in `[N*T, N*T+N-1]` per axis puts the floored mean at exact target T. Obstacles may force waypoint moves or moving a currently inactive endpoint first.
+- **Strong level-4 inference, awaiting first live confirmation:** Players and rings may be multicolored. Match the directional color pattern, not merely one color: the three current player patterns each have a unique identical ring among eight decoys.
+
+# Working memory
+- Level 4 has begun, counter 3/6, timer fresh. Three systems and inferred matching targets:
+  - S15 endpoints inactive `(39,6)` and active `(23,20)`, player `(31,13)`, three-sector pattern `12` upper-left / `14` upper-right / `15` bottom; unique matching ring center `(36,49)`.
+  - S14 endpoints `(17,36),(10,47),(27,52)`, player `(18,45)`, left `14` / right `11`; matching ring `(50,12)`.
+  - S9 endpoints `(46,36),(46,52)`, player `(46,44)`, left `9` / right `8`; matching ring `(17,54)`.
+- Static obstacles are all color-2 components plus the central size-223 color-10 component (bbox `(25,22)-(42,38)`). Eight multicolor dotted rings are traversable goal/decoy markings, not the large color-10 terrain.
+- Next is a five-action exact-center probe/solution for S15, chosen over a less-clear four-action placement so its solved assembly stays compact: move active `(23,20)`→waypoint `(58,13)` giving player `(48,9)`; select old endpoint at top body `(39,4)`, move it to `(36,44)` giving `(47,28)`; select waypoint endpoint at `(58,11)`, move it to `(37,54)` giving exact target `(36,49)`. Every intermediate full configuration was checked with the exact tether rasterizer against static terrain and both other assemblies; minimum clearance is >2 cells.
+- After S15 confirms pattern matching, search routes for S14 and S9 while treating the solved compact S15 assembly as occupied. Do not assume decoy rings need solving.

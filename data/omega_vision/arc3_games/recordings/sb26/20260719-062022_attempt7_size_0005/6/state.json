@@ -1,0 +1,53 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "7",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION5",
+      "ACTION6",
+      "ACTION7"
+    ],
+    "levels_completed": 6,
+    "win_levels": 8,
+    "log_step": 106
+  },
+  "step_count": 106,
+  "game_id": "sb26-7fbdac44",
+  "game_directory": "sb26",
+  "image_hash": "2e6661719575ca3a",
+  "incoming_action": "ACTION6",
+  "action_directory": "6",
+  "action_data": {
+    "x": 13,
+    "y": 58
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "recorded_at": "2026-09-03T10:35:13.849495Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/sb26/20260719-062022_attempt7/6",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/sb26/20260719-062022_attempt7/6/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

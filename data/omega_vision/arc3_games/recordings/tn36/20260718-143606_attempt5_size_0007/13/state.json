@@ -1,0 +1,58 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "5",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION6"
+    ],
+    "levels_completed": 4,
+    "win_levels": 7,
+    "log_step": 76
+  },
+  "step_count": 76,
+  "game_id": "tn36-ef4dde99",
+  "game_directory": "tn36",
+  "image_hash": "259d1d4be320d6a7",
+  "incoming_action": "ACTION6",
+  "action_directory": "13",
+  "action_data": {
+    "x": 54,
+    "y": 39
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13"
+  ],
+  "recorded_at": "2026-09-03T10:35:38.984065Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/tn36/20260718-143606_attempt5/13",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/tn36/20260718-143606_attempt5/13/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

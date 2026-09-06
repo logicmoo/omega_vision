@@ -1,0 +1,72 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "9",
+  "level_source": "imported_recording",
+  "next_level_expected": null,
+  "observation": {
+    "game_id": "su15-4c352900",
+    "state": "NOT_FINISHED",
+    "levels_completed": 8,
+    "win_levels": 9,
+    "action_input": {
+      "id": 6,
+      "data": {
+        "game_id": "su15-4c352900",
+        "x": 12,
+        "y": 41
+      },
+      "reasoning": null
+    },
+    "guid": "20f8d100-ff47-420b-bf1d-3d239a255a77",
+    "full_reset": false,
+    "available_actions": [
+      6,
+      7
+    ],
+    "frame_count": 5
+  },
+  "step_count": 561,
+  "game_id": "su15-4c352900",
+  "game_directory": "su15",
+  "image_hash": "09917b9306487c17",
+  "incoming_action": "ACTION6",
+  "action_directory": "13",
+  "action_data": {
+    "x": 12,
+    "y": 41
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13"
+  ],
+  "recorded_at": "2026-03-02T18:41:44.886765+00:00",
+  "scan": {
+    "path": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt32/13",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt32/13/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

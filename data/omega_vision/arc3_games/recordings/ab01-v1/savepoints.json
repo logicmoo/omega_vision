@@ -1,0 +1,31 @@
+[
+  {
+    "id": "70ff1fde4a71",
+    "kind": "arc3_play_savepoint",
+    "created_at": "2026-08-28T02:47:16.062329Z",
+    "label": "auto save (latest)",
+    "game_id": "ab01-v1",
+    "game_directory": "ab01-v1",
+    "level": "1",
+    "level_directory": "data/arc3_games/recordings/ab01-v1/saved_001",
+    "move_index": 0,
+    "state": "NOT_FINISHED",
+    "session_id": "c3870cac3f4d40209b31e63d368c4c79",
+    "replay_log": [
+      {
+        "op": "step",
+        "action": "ACTION1",
+        "data": {},
+        "directory": null,
+        "level": "1"
+      },
+      {
+        "op": "step",
+        "action": "ACTION2",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ab01-v1/saved_001/0",
+        "level": "1"
+      }
+    ]
+  }
+]

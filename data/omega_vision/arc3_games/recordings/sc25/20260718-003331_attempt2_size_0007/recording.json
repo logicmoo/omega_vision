@@ -1,0 +1,78 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-sc25-20260718-003331",
+  "game_id": "sc25-635fd71a",
+  "game_directory": "sc25",
+  "level": "2",
+  "level_directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt2_size_0007",
+  "started_at": "2026-09-03T10:35:14.817895Z",
+  "updated_at": "2026-09-03T10:35:14.817903Z",
+  "last_event": "level_complete",
+  "imported_from": "data/arc3_games/importables/release-runs/sc25/20260718-003331",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt2/0",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:14.777830Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt2/1",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:14.786120Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt2/2",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:14.793416Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt2/3",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:14.800698Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt2/4",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:14.808056Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt2/5",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:14.816109Z",
+      "level_completed": "2"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "4",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION6"
+    ],
+    "levels_completed": 3,
+    "win_levels": 7,
+    "log_step": 54
+  },
+  "step_count": 54,
+  "game_id": "vc33-5430563c",
+  "game_directory": "vc33",
+  "image_hash": "26c96b71a039d7db",
+  "incoming_action": "ACTION6",
+  "action_directory": "10",
+  "action_data": {
+    "x": 40,
+    "y": 62
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+  ],
+  "recorded_at": "2026-09-03T10:35:48.724241Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/vc33/20260719-012937_attempt4/10",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/vc33/20260719-012937_attempt4/10/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

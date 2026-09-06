@@ -1,0 +1,56 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "4",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION1",
+      "ACTION2",
+      "ACTION3",
+      "ACTION4",
+      "ACTION5"
+    ],
+    "levels_completed": 3,
+    "win_levels": 7,
+    "log_step": 134
+  },
+  "step_count": 134,
+  "game_id": "g50t-5849a774",
+  "game_directory": "g50t",
+  "image_hash": "8264d462dbd33398",
+  "incoming_action": "ACTION2",
+  "action_directory": "10",
+  "action_data": {},
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10"
+  ],
+  "recorded_at": "2026-09-03T10:32:59.681835Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/g50t/20260718-180900_attempt5/10",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/g50t/20260718-180900_attempt5/10/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

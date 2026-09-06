@@ -1,0 +1,63 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "2",
+  "level_source": "imported_recording",
+  "next_level_expected": null,
+  "observation": {
+    "game_id": "r11l-aa269680",
+    "state": "NOT_FINISHED",
+    "levels_completed": 1,
+    "win_levels": 6,
+    "action_input": {
+      "id": 6,
+      "data": {
+        "game_id": "r11l-aa269680",
+        "x": 45,
+        "y": 36
+      },
+      "reasoning": null
+    },
+    "guid": "7bda9483-2c94-4d34-9657-e6fae7aa82ef",
+    "full_reset": false,
+    "available_actions": [
+      6
+    ],
+    "frame_count": 1
+  },
+  "step_count": 13,
+  "game_id": "r11l-aa269680",
+  "game_directory": "r11l",
+  "image_hash": "6199bc55a344f599",
+  "incoming_action": "ACTION6",
+  "action_directory": "5",
+  "action_data": {
+    "x": 45,
+    "y": 36
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "recorded_at": "2026-03-13T17:55:51.570380+00:00",
+  "scan": {
+    "path": "data/arc3_games/recordings/r11l/r11l-7bda9483-2c94-4d34-9657-e6fae7aa82ef_attempt2/5",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/r11l/r11l-7bda9483-2c94-4d34-9657-e6fae7aa82ef_attempt2/5/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

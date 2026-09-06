@@ -1,0 +1,50 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "1",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION6"
+    ],
+    "levels_completed": 0,
+    "win_levels": 7,
+    "log_step": 6
+  },
+  "step_count": 6,
+  "game_id": "tn36-ef4dde99",
+  "game_directory": "tn36",
+  "image_hash": "3542fb267cb53a5b",
+  "incoming_action": "ACTION6",
+  "action_directory": "5",
+  "action_data": {
+    "x": 21,
+    "y": 45
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "recorded_at": "2026-09-03T10:35:38.395789Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/tn36/20260718-143606/5",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/tn36/20260718-143606/5/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

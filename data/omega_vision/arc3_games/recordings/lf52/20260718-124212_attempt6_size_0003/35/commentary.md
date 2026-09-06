@@ -1,0 +1,7 @@
+# Agent commentary (invocation 71)
+
+The vertical probe succeeded exactly: only the ordinary-loaded cart rose, and the camera did not move. The newly revealed ordinary explains the earlier apparent objective failure, so the best-supported goal remains one global ordinary peg. The remaining delivery and capture sequence is now deterministic.
+
+## Predicted cells (x, y, old, new)
+
+[[47, 18, 2], [47, 29, 3], [29, 19, 14], [35, 19, 14]]

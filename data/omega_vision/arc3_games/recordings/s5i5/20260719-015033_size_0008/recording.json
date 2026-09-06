@@ -1,0 +1,171 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-s5i5-20260719-015033",
+  "game_id": "s5i5-18d95033",
+  "game_directory": "s5i5",
+  "level": "1",
+  "level_directory": "data/arc3_games/recordings/s5i5/20260719-015033_size_0008",
+  "started_at": "2026-09-03T10:35:09.159355Z",
+  "updated_at": "2026-09-03T10:35:09.159364Z",
+  "last_event": "level_complete",
+  "imported_from": "data/arc3_games/importables/release-runs/s5i5/20260719-015033",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 20
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/0",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.064497Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 20
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/1",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.072184Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 20
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/2",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.081045Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 20
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/3",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.088931Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 20
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/4",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.096694Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 20
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/5",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.103876Z"
+    },
+    {
+      "index": 6,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 20
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/6",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.111665Z"
+    },
+    {
+      "index": 7,
+      "action": "ACTION6",
+      "data": {
+        "x": 24,
+        "y": 45
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/7",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.120430Z"
+    },
+    {
+      "index": 8,
+      "action": "ACTION6",
+      "data": {
+        "x": 24,
+        "y": 45
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/8",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.127975Z"
+    },
+    {
+      "index": 9,
+      "action": "ACTION6",
+      "data": {
+        "x": 24,
+        "y": 45
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/9",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.135067Z"
+    },
+    {
+      "index": 10,
+      "action": "ACTION6",
+      "data": {
+        "x": 24,
+        "y": 45
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/10",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.142408Z"
+    },
+    {
+      "index": 11,
+      "action": "ACTION6",
+      "data": {
+        "x": 24,
+        "y": 45
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/11",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.149962Z"
+    },
+    {
+      "index": 12,
+      "action": "ACTION6",
+      "data": {
+        "x": 24,
+        "y": 45
+      },
+      "directory": "data/arc3_games/recordings/s5i5/20260719-015033/12",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:35:09.157634Z",
+      "level_completed": "1"
+    }
+  ]
+}

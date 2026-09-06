@@ -1,0 +1,99 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-ft09-20260718-023409",
+  "game_id": "ft09-0d8bbf25",
+  "game_directory": "ft09",
+  "level": "2",
+  "level_directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2_size_0005",
+  "started_at": "2026-09-03T10:32:53.386505Z",
+  "updated_at": "2026-09-03T10:32:53.386523Z",
+  "last_event": "level_complete",
+  "imported_from": "data/arc3_games/importables/release-runs/ft09/20260718-023409",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION6",
+      "data": {
+        "x": 22,
+        "y": 16
+      },
+      "directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2/0",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:32:53.279134Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION6",
+      "data": {
+        "x": 22,
+        "y": 24
+      },
+      "directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2/1",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:32:53.296762Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION6",
+      "data": {
+        "x": 38,
+        "y": 24
+      },
+      "directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2/2",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:32:53.312644Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION6",
+      "data": {
+        "x": 22,
+        "y": 32
+      },
+      "directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2/3",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:32:53.327353Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION6",
+      "data": {
+        "x": 38,
+        "y": 32
+      },
+      "directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2/4",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:32:53.342733Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION6",
+      "data": {
+        "x": 22,
+        "y": 48
+      },
+      "directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2/5",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:32:53.368532Z"
+    },
+    {
+      "index": 6,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 48
+      },
+      "directory": "data/arc3_games/recordings/ft09/20260718-023409_attempt2/6",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:32:53.383152Z",
+      "level_completed": "2"
+    }
+  ]
+}

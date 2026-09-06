@@ -1,0 +1,14 @@
+# Working model
+
+- **Checked through level 4:** ACTION1/2/3/4 are up/down/left/right. The selected green piece (core color0) moves one logical tile = 3 board cells per arrow and restores exact static terrain beneath it. Color1 is floor; color2/color15 block direct selected movement; color4 goal outlines are traversable.
+- **Checked through level 2:** ACTION6 on another green core selects it (clicked core ->0; former selected core ->4); initial inactive cores may be5. Shell clicks are inert.
+- **Checked through level 4:** Color4 outlines are shape-matched goals, two pixels wider/taller than their intended piece. The level completes automatically when all movable/passive pieces fill matching outlines; placements do not lock.
+- **Checked through level 4:** Moving a selected green into an occupied edge/arm of an inactive green or passive color11 object launches the whole object while the pusher stays fixed. Launches animate through blockers and preserve inactive core state. They try to land five logical tiles away; if that landing is blocked, continue forward to the first clear aligned landing (step119 went 7 tiles through color15). If the board edge leaves no clear landing at/beyond five, clamp to the furthest clear aligned point before it (step144 went only 2 tiles). Goal color4 neither blocks nor captures launches. Sparse-shape corners can provide pushing stances.
+- **HUD:** row63 color4 is the level-resetting time/action budget; ignore it as gameplay and avoid no-ops.
+- **New in level 5, assumed only:** colors12/13 form directional-looking static pads/strips; no interaction has yet been recorded. Do not treat their effect as established.
+
+# Working memory
+
+- Level 5 of 7, levels_completed=4, fresh after step150. Only selected 3x3 green is center(28,49). Its six-cell-wide shaft is bounded by color15 at x21..23 and x30..32, closed below at y54..56, and open above y27. A 6x6 colored strip blocks/fills the shaft at x24..29,y30..35: color13 on y32..35 and color12 on y30..31. The only green goal is center(49,28), frame bbox47..51,y26..30; its right edge has a small horizontal color13/12 strip (x51 then x52..53, y27..29). A separate solid color15 block is x18..35,y9..20.
+- Shape/layout inference, **not checked:** the source strip's color gradient points upward (13 below, 12 above), while the goal-side strip points right (13 left, 12 right). They are likely directional launch terrain. Entering the source upward may launch the selected green from the strip through the large upper wall, plausibly landing at center(28,7); alternatives are ordinary traversal, blocking, or another transport effect.
+- Next deliberate probe: move up4 on known floor to center(28,37), then press up once into the colored strip with an expectation at center(28,7). Inspect frames and exact restoration if it differs; do not continue on an unconfirmed pad model.

@@ -1,0 +1,80 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "8",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION6"
+    ],
+    "levels_completed": 7,
+    "win_levels": 8,
+    "log_step": 310
+  },
+  "step_count": 310,
+  "game_id": "s5i5-18d95033",
+  "game_directory": "s5i5",
+  "image_hash": "d30844ab135f4e14",
+  "incoming_action": "ACTION6",
+  "action_directory": "35",
+  "action_data": {
+    "x": 59,
+    "y": 11
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35"
+  ],
+  "recorded_at": "2026-09-03T10:35:11.662416Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/s5i5/20260719-015033_attempt8/35",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/s5i5/20260719-015033_attempt8/35/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

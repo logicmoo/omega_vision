@@ -1,0 +1,66 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "4",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION1",
+      "ACTION2",
+      "ACTION3",
+      "ACTION4",
+      "ACTION6",
+      "ACTION7"
+    ],
+    "levels_completed": 3,
+    "win_levels": 8,
+    "log_step": 117
+  },
+  "step_count": 117,
+  "game_id": "sk48-d8078629",
+  "game_directory": "sk48",
+  "image_hash": "5160f52a1f284f9d",
+  "incoming_action": "ACTION7",
+  "action_directory": "19",
+  "action_data": {},
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19"
+  ],
+  "recorded_at": "2026-09-03T10:35:18.049700Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/sk48/20260718-184901_attempt4/19",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/sk48/20260718-184901_attempt4/19/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

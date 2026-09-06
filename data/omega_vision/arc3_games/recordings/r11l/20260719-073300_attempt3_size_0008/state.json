@@ -1,0 +1,40 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "3",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION6"
+    ],
+    "levels_completed": 2,
+    "win_levels": 6,
+    "log_step": 17
+  },
+  "step_count": 17,
+  "game_id": "r11l-495a7899",
+  "game_directory": "r11l",
+  "image_hash": "ab2c2e9672158e8d",
+  "incoming_action": null,
+  "action_directory": null,
+  "action_data": {},
+  "parent_node": null,
+  "action_path": [],
+  "recorded_at": "2026-09-03T10:35:01.103443Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/r11l/20260719-073300_attempt3",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/r11l/20260719-073300_attempt3/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

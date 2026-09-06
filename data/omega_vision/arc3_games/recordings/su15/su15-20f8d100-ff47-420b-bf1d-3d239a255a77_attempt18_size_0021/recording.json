@@ -1,0 +1,218 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "import-20f8d100-ff4",
+  "game_id": "su15-4c352900",
+  "game_directory": "su15",
+  "level": "8",
+  "level_directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18_size_0021",
+  "started_at": "2026-03-02T18:26:45.989184+00:00",
+  "updated_at": "2026-09-03T10:35:30.622834Z",
+  "last_event": "move",
+  "imported_from": "data/arc3_games/importables/human_25/su15-20f8d100-ff47-420b-bf1d-3d239a255a77.json",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION6",
+      "data": {
+        "x": 10,
+        "y": 42
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/0",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:26.645083+00:00"
+    },
+    {
+      "index": 1,
+      "action": "ACTION6",
+      "data": {
+        "x": 9,
+        "y": 34
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/1",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:27.654042+00:00"
+    },
+    {
+      "index": 2,
+      "action": "ACTION6",
+      "data": {
+        "x": 8,
+        "y": 26
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/2",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:28.558023+00:00"
+    },
+    {
+      "index": 3,
+      "action": "ACTION6",
+      "data": {
+        "x": 9,
+        "y": 18
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/3",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:29.413863+00:00"
+    },
+    {
+      "index": 4,
+      "action": "ACTION6",
+      "data": {
+        "x": 27,
+        "y": 42
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/4",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:31.035376+00:00"
+    },
+    {
+      "index": 5,
+      "action": "ACTION6",
+      "data": {
+        "x": 12,
+        "y": 44
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/5",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:33.262057+00:00"
+    },
+    {
+      "index": 6,
+      "action": "ACTION6",
+      "data": {
+        "x": 11,
+        "y": 29
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/6",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:34.795314+00:00"
+    },
+    {
+      "index": 7,
+      "action": "ACTION6",
+      "data": {
+        "x": 22,
+        "y": 26
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/7",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:35.851015+00:00"
+    },
+    {
+      "index": 8,
+      "action": "ACTION6",
+      "data": {
+        "x": 58,
+        "y": 45
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/8",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:37.526833+00:00"
+    },
+    {
+      "index": 9,
+      "action": "ACTION6",
+      "data": {
+        "x": 10,
+        "y": 34
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/9",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:39.070505+00:00"
+    },
+    {
+      "index": 10,
+      "action": "ACTION6",
+      "data": {
+        "x": 19,
+        "y": 35
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/10",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:40.239876+00:00"
+    },
+    {
+      "index": 11,
+      "action": "ACTION6",
+      "data": {
+        "x": 26,
+        "y": 43
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/11",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:41.975707+00:00"
+    },
+    {
+      "index": 12,
+      "action": "ACTION6",
+      "data": {
+        "x": 12,
+        "y": 40
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/12",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:43.690651+00:00"
+    },
+    {
+      "index": 13,
+      "action": "ACTION6",
+      "data": {
+        "x": 13,
+        "y": 42
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/13",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:44.765096+00:00"
+    },
+    {
+      "index": 14,
+      "action": "ACTION6",
+      "data": {
+        "x": 4,
+        "y": 39
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/14",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:46.989907+00:00"
+    },
+    {
+      "index": 15,
+      "action": "ACTION6",
+      "data": {
+        "x": 7,
+        "y": 44
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/15",
+      "state": "NOT_FINISHED",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:47.868740+00:00"
+    },
+    {
+      "index": 16,
+      "action": "ACTION6",
+      "data": {
+        "x": 12,
+        "y": 38
+      },
+      "directory": "data/arc3_games/recordings/su15/su15-20f8d100-ff47-420b-bf1d-3d239a255a77_attempt18/16",
+      "state": "GAME_OVER",
+      "level": "8",
+      "recorded_at": "2026-03-02T18:36:49.245280+00:00"
+    }
+  ]
+}

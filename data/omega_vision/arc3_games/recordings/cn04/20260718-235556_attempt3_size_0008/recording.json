@@ -1,0 +1,35 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-cn04-20260718-235556",
+  "game_id": "cn04-2fe56bfb",
+  "game_directory": "cn04",
+  "level": "3",
+  "level_directory": "data/arc3_games/recordings/cn04/20260718-235556_attempt3_size_0008",
+  "started_at": "2026-09-03T10:32:40.662694Z",
+  "updated_at": "2026-09-03T10:32:40.662707Z",
+  "last_event": "move",
+  "imported_from": "data/arc3_games/importables/release-runs/cn04/20260718-235556",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION6",
+      "data": {
+        "x": 15,
+        "y": 18
+      },
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556_attempt3/0",
+      "state": "NOT_FINISHED",
+      "level": "3",
+      "recorded_at": "2026-09-03T10:32:40.643488Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556_attempt3/1",
+      "state": "NOT_FINISHED",
+      "level": "3",
+      "recorded_at": "2026-09-03T10:32:40.658466Z"
+    }
+  ]
+}

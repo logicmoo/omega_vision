@@ -1,0 +1,30 @@
+{
+  "kind": "video_import_frame",
+  "game_id": "video-cast",
+  "game_directory": "video-cast",
+  "state": "NOT_FINISHED",
+  "level": "1",
+  "image_hash": "b495dd0f2b0f6cdb",
+  "incoming_action": "FRAME",
+  "action_directory": "0",
+  "action_data": {
+    "characters": [
+      "Bunny"
+    ],
+    "count": 2,
+    "delta": 0,
+    "added": [],
+    "removed": []
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0"
+  ],
+  "characters": [
+    "Bunny"
+  ],
+  "character_count": 2,
+  "source_frame": "data/VideoImports/big_buck_bunny_360_10s_1mb/frames/frame_0001.png",
+  "at_seconds": 2,
+  "recorded_at": "2026-08-28T03:09:04.380476Z"
+}

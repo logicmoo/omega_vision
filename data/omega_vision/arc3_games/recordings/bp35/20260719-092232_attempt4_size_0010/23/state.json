@@ -1,0 +1,71 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "3",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION3",
+      "ACTION4",
+      "ACTION6",
+      "ACTION7"
+    ],
+    "levels_completed": 2,
+    "win_levels": 9,
+    "log_step": 91
+  },
+  "step_count": 91,
+  "game_id": "bp35-0a0ad940",
+  "game_directory": "bp35",
+  "image_hash": "a0c8519903cf3db5",
+  "incoming_action": "ACTION6",
+  "action_directory": "23",
+  "action_data": {
+    "x": 33,
+    "y": 33
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23"
+  ],
+  "recorded_at": "2026-09-03T10:33:27.664928Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/bp35/20260719-092232_attempt4/23",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/bp35/20260719-092232_attempt4/23/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

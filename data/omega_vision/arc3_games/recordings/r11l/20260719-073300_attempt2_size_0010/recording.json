@@ -1,0 +1,159 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-r11l-20260719-073300",
+  "game_id": "r11l-495a7899",
+  "game_directory": "r11l",
+  "level": "2",
+  "level_directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2_size_0010",
+  "started_at": "2026-09-03T10:35:01.095641Z",
+  "updated_at": "2026-09-03T10:35:01.095651Z",
+  "last_event": "level_complete",
+  "imported_from": "data/arc3_games/importables/release-runs/r11l/20260719-073300",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION6",
+      "data": {
+        "x": 54,
+        "y": 46
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/0",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.005425Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION6",
+      "data": {
+        "x": 60,
+        "y": 11
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/1",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.013850Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 33
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/2",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.021789Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION6",
+      "data": {
+        "x": 54,
+        "y": 25
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/3",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.029774Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION6",
+      "data": {
+        "x": 17,
+        "y": 4
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/4",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.037829Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 29
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/5",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.046095Z"
+    },
+    {
+      "index": 6,
+      "action": "ACTION6",
+      "data": {
+        "x": 8,
+        "y": 19
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/6",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.053825Z"
+    },
+    {
+      "index": 7,
+      "action": "ACTION6",
+      "data": {
+        "x": 27,
+        "y": 61
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/7",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.061961Z"
+    },
+    {
+      "index": 8,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 27
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/8",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.069992Z"
+    },
+    {
+      "index": 9,
+      "action": "ACTION6",
+      "data": {
+        "x": 45,
+        "y": 34
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/9",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.077839Z"
+    },
+    {
+      "index": 10,
+      "action": "ACTION6",
+      "data": {
+        "x": 49,
+        "y": 7
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/10",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.085795Z"
+    },
+    {
+      "index": 11,
+      "action": "ACTION6",
+      "data": {
+        "x": 49,
+        "y": 58
+      },
+      "directory": "data/arc3_games/recordings/r11l/20260719-073300_attempt2/11",
+      "state": "NOT_FINISHED",
+      "level": "2",
+      "recorded_at": "2026-09-03T10:35:01.093358Z",
+      "level_completed": "2"
+    }
+  ]
+}

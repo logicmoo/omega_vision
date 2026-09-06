@@ -1,0 +1,123 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-HIDE_lf52-20260718-124212",
+  "game_id": "lf52-271a04aa",
+  "game_directory": "lf52",
+  "level": "1",
+  "level_directory": "data/arc3_games/recordings/lf52/20260718-124212_size_0010",
+  "started_at": "2026-09-03T10:33:46.737241Z",
+  "updated_at": "2026-09-03T10:33:46.737250Z",
+  "last_event": "level_complete",
+  "imported_from": "data/arc3_games/importables/release-runs/HIDE_lf52/20260718-124212",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION6",
+      "data": {
+        "x": 42,
+        "y": 43
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/0",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.654742Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION6",
+      "data": {
+        "x": 18,
+        "y": 19
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/1",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.670270Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 19
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/2",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.679058Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 19
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/3",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.690147Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION6",
+      "data": {
+        "x": 42,
+        "y": 19
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/4",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.699315Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION6",
+      "data": {
+        "x": 42,
+        "y": 19
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/5",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.709060Z"
+    },
+    {
+      "index": 6,
+      "action": "ACTION6",
+      "data": {
+        "x": 42,
+        "y": 31
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/6",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.717775Z"
+    },
+    {
+      "index": 7,
+      "action": "ACTION6",
+      "data": {
+        "x": 42,
+        "y": 31
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/7",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.726041Z"
+    },
+    {
+      "index": 8,
+      "action": "ACTION6",
+      "data": {
+        "x": 42,
+        "y": 43
+      },
+      "directory": "data/arc3_games/recordings/lf52/20260718-124212/8",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:33:46.734516Z",
+      "level_completed": "1"
+    }
+  ]
+}

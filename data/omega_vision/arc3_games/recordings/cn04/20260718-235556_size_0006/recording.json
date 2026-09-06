@@ -1,0 +1,141 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-cn04-20260718-235556",
+  "game_id": "cn04-2fe56bfb",
+  "game_directory": "cn04",
+  "level": "1",
+  "level_directory": "data/arc3_games/recordings/cn04/20260718-235556_size_0006",
+  "started_at": "2026-09-03T10:32:40.108825Z",
+  "updated_at": "2026-09-03T10:32:40.108841Z",
+  "last_event": "level_complete",
+  "imported_from": "data/arc3_games/importables/release-runs/cn04/20260718-235556",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/0",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:39.876585Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION5",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/1",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:39.901952Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION5",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/2",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:39.920341Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION5",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/3",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:39.938717Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/4",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:39.960794Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/5",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:39.980276Z"
+    },
+    {
+      "index": 6,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/6",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:39.994724Z"
+    },
+    {
+      "index": 7,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/7",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:40.008873Z"
+    },
+    {
+      "index": 8,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/8",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:40.023863Z"
+    },
+    {
+      "index": 9,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/9",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:40.039096Z"
+    },
+    {
+      "index": 10,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/10",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:40.056588Z"
+    },
+    {
+      "index": 11,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/11",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:40.070976Z"
+    },
+    {
+      "index": 12,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/12",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:40.086053Z"
+    },
+    {
+      "index": 13,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/cn04/20260718-235556/13",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:40.104992Z",
+      "level_completed": "1"
+    }
+  ]
+}

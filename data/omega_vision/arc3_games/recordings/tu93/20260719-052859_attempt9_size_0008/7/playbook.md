@@ -1,0 +1,14 @@
+# Working model
+
+- **Checked:** ACTION1/2/3/4 = Up/Down/Left/Right. A valid move shifts the 3x3 color-9 player one graph edge (6 pixels), restores the old node, preserves color-2 connectors, and rotates its color-4 pip to the movement edge. Color 5 is wall/background; color 14 is the goal.
+- **Checked through level 3:** Color-8 body + color-15 pip is a static oriented enemy. Its adjacent node in the pip direction is threatened: entering that node causes a lunge and GAME_OVER. Entering the enemy's own node safely captures/replaces it. Other enemies may threaten an enemy's node, imposing capture dependencies.
+- **Checked through levels 4-5:** Color-12 body + color-15 pip is a mobile oriented enemy. After every valid player move it advances one straight graph edge; a blocked input freezes it. It ignores side branches, flips its pip immediately at an endpoint, then moves back next tick. The player's destination must be neither a mobile's current nor next node.
+- **Checked through level 6:** Mobiles persist when sharing a node with another mobile **or a static enemy**. Rendering may show only one occupant (sometimes the static, sometimes the mobile), so disappearance from the settled board is not destruction. Track every logical mobile until later frames prove otherwise. Vacated underlying objects/goal tiles reappear.
+- **Checked:** A border-wide color-6 strip is the action timer, normally losing 1-2 cells per action; edge-only changes are HUD.
+
+# Working memory
+
+- Level 6 (5/9) has automatically RESET after GAME_OVER; fresh initial state: player `(49,19)` Left, timer 64, goal `(13,19)`. M1 `(31,25)` Up on vertical track `y=13,19,25` (period 4); M2 `(49,43)` Left on horizontal track `x=13..49` (period 12).
+- Statics: E0 `(25,31)` Down -> threatens `(25,37)`; E1 `(43,31)` Down -> `(43,37)`; E2 `(25,43)` Up -> `(25,37)`; E3 `(31,43)` Left -> `(25,43)`; E4 `(25,49)` Up -> `(25,43)`; E5 `(31,49)` Up -> `(31,43)`.
+- **Cause of failed attempt:** At t=3 M2 was visually hidden under E3, but it reappeared at `(25,43)` on t=4 and continued its period-12 patrol. The false 'destroyed' inference omitted M2 from BFS. At t=11 player and M2 both entered `(43,43)`, erasing the player and causing GAME_OVER. All logged t=3..11 frames exactly retrodict persistent M2; do not repeat.
+- Correct exact BFS over `(player, both mobile phases, static mask)` gives a 28-action shortest fresh route: `L L R L R L D D L L R R R D D L D L U D L U U L U U U L`. It captures E0, E1, E5, E3, E4, E2 in dependency-safe order. First commit through t=15 (`L L R L R L D D L L R R R D D`), ending player `(43,43)` while M2 is safely at `(31,43)`; then finish the lower chain.

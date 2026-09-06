@@ -1,0 +1,15 @@
+# sk48 playbook
+
+## Working model
+- **Checked through level 2 (steps 0-50):** This is an ordered retractable-chain collector on a 6-pixel logical grid. The bottom panel lists the required colors left-to-right; hollowed centers mark acquisitions. Acquiring the last required target immediately loads the next level.
+- **Checked controls:** ACTION1/ACTION2 move the entire assembly up/down one logical row. ACTION4 extends its right terminal one column, or pushes the acquired chain plus contacted unacquired target(s) right. ACTION3 retracts/pulls the cable and acquired chain left. ACTION7 is undo; ACTION6 is unused. The assembly cannot retract farther than its acquired chain length permits.
+- **Checked horizontal rule for a single contacted target:** Free ACTION4 moves advance one column. A contacted target is pushed through free space; when further rightward movement is blocked by the room wall, the next ACTION4 attaches the required target, adds connectors, and hollows its panel marker. Retraction leaves unacquired targets in place.
+- **Checked vertical rule (level 2):** Treat the assembly as occupying columns `0..t`. A vertical move pushes every unacquired target in the destination row whose column is `<=t` one row in the same direction; targets at `>t` remain. This supports selective pushing by retracting first.
+- **Still assumed, to probe on level 3:** If vertically pushed targets are stacked in one column, the whole contiguous stack cascades one row if space exists. If a horizontal contiguous target train is blocked by the wall, the nearest required target can attach even when a later target, rather than that target itself, occupies the wall. Do not commit past each first test without an expectation.
+- **Checked HUD:** y=53 is a step-budget strip and the thin alternating strip beside the magenta anchor is its rail. The budget resets per level and has been loose (roughly one HUD cell per three actions).
+
+## Working memory
+- Level 3, 2/8 completed, fresh at step 50. Room is 7x7: assembly at row6 with terminal `t=0`; all targets start in col3: green14 row0, blue9 row1, red8 row2, color12 row3. Required order is red8, color12, blue9, green14. HUD is reset.
+- A simulator matching all checked level-2 transitions found a 30-action solution and additive horizontal/vertical pattern databases ruled out any shorter path **under the two still-assumed train rules**: `UUURRRLUUURDLDDRRRRLLLUULURRRR` (`U/D/L/R` = ACTION1/2/3/4).
+- First staged probe: `UUURRR` reaches row3 and shifts color12 col3->4; `L UUU R` shifts green col3->4; the following `D` enters blue's row with `t=3`. Predicted cascade: blue row1->2 and red row2->3, leaving red col3 beside color12 col4. Stop there to validate stacked vertical pushing.
+- If that succeeds: `LDD RR` puts/pushes the red+color12 train to cols5-6. The next `R` is the separate probe: it should attach red at col5 because color12 at col6 blocks the train; another `R` then attaches color12. Finish `LLL UU L U RRRR`, which forms and acquires the blue+green pair at the top.

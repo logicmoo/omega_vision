@@ -1,0 +1,57 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "4",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION1",
+      "ACTION2",
+      "ACTION3",
+      "ACTION4",
+      "ACTION5",
+      "ACTION6",
+      "ACTION7"
+    ],
+    "levels_completed": 3,
+    "win_levels": 8,
+    "log_step": 79
+  },
+  "step_count": 79,
+  "game_id": "ar25-0c556536",
+  "game_directory": "ar25",
+  "image_hash": "24fed5f029425ff8",
+  "incoming_action": "ACTION4",
+  "action_directory": "9",
+  "action_data": {},
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9"
+  ],
+  "recorded_at": "2026-09-03T10:32:33.666034Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/ar25/20260719-004809_attempt4/9",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/ar25/20260719-004809_attempt4/9/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

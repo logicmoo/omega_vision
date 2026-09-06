@@ -1,0 +1,50 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "6",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION1",
+      "ACTION2",
+      "ACTION3",
+      "ACTION4",
+      "ACTION6"
+    ],
+    "levels_completed": 5,
+    "win_levels": 7,
+    "log_step": 175
+  },
+  "step_count": 175,
+  "game_id": "ka59-38d34dbb",
+  "game_directory": "ka59",
+  "image_hash": "7dd6bb83510318d5",
+  "incoming_action": "ACTION3",
+  "action_directory": "4",
+  "action_data": {},
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "recorded_at": "2026-09-03T10:34:02.455533Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/ka59/20260718-195135_attempt6/4",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/ka59/20260718-195135_attempt6/4/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

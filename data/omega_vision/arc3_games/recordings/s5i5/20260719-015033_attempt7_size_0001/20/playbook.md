@@ -1,0 +1,18 @@
+# Working model
+
+- **[Checked, levels 1–6]** Length-panel left/right glyphs retract/extend an actuator by 3. The selected actuator changes length and translates every recursively downstream object by 3 along its direction. Color-15 is fixed collision geometry; target/UI overlays are collision-transparent.
+- **[Checked, levels 1–6]** Lone color-13 cells are active heads; hollow four-arm crosses are targets. All heads must dock simultaneously; a docked head may be moved and restored.
+- **[Checked, levels 3 and 6]** An actuator can translate an attached downstream actuator and that actuator's own downstream objects. Side-adjacent objects not lying downstream along the acting axis do not couple.
+- **[Checked, level 6]** A direction-plus arm sets the selected actuator to that absolute direction and rigidly rotates its downstream subtree by the same turn, preserving relative orientations.
+- **[Checked kinematics]** Each width-3 actuator has top-left joint `Q`, direction `d`, and `l=2+3n`. `Qchild=Q+(l+1)d`; occupied cells are the `(l+1)×3` cap/body rectangle; an active head is `Q+(1,1)+(l-2)d`.
+- **[Checked, steps 143, 180–181]** Partial off-board clipping is allowed if every actuator retains some visible cells (step 143). An action is attempted and rolled back if any moved actuator becomes wholly off-board: step 180's northward length move erased color14; step 181's color14-north rotation erased color9/color12. Settled gameplay was unchanged in both (step 181 changed only HUD). Do not search through wholly hidden links.
+
+# Working memory
+
+- **Level 7/8; levels_completed=6.** Color10 remains initially docked at `(22,7)`; color12 must ultimately dock at `(25,16)`. Main chain is color11→color14→color9→color12.
+- Current main state after rejected steps 180–181 is unchanged: coefficients `(A,B,C,D)=(4,4,6,4)`, directions `(N,E,S,W)`, joints `Q=(48,12),(48,0),(60,0),(60,18)`, active `(49,19)`. Occupied rectangles: color11 `x48..50,y3..14`; color14 `x48..59,y0..2`; color9 `x60..62,y0..17`; color12 `x48..62,y18..20`.
+- Ruled out: the old over-top route. Color11 cannot extend farther north because color14 vanishes; color14 cannot turn north because color9/color12 vanish.
+- **[Exhaustive kinematic check, bounds through 22]** With the original fixed relative orientation `d12=d9+1`, there is no target state at `(25,16)` in which all four main actuators remain visible and avoid the fixed walls—even if the separate color8/color10 bodies are ignored. Therefore color12 must be detached/reoriented or the main base must be translated by another actuator; this level adds the needed separate mechanisms.
+- If color12's orientation is allowed to change independently, only five visible collision-free goal families exist. The shortest is `(A,B,C,D)=(6,6,5,2)`, directions `(S,W,N,W)`, with joints `(48,12)→(48,30)→(30,30)→(30,15)` and final rectangles safely routed below the vertical wall and north through the `x30..32` opening. This strongly indicates color8's direction-only actuator is meant to reorient/capture color12, which itself has length control only.
+- Left subsystem initially remains untouched: color10 is west from `Q=(33,6),l=14`, active `(22,7)`; color8 is south from `Q=(12,6),l=14`. Color10 extend is `(60,51)` and color8 direction center is `(60,58)`.
+- **Next deliberate contact probe:** extend color10 west three times. Predictions: heads `(19,7)`, `(16,7)`, `(13,7)`. After two extensions (`l10=20`) its tip is adjacent to color8's joint at `Q8=(12,6)`; the third should translate the downstream color8 actuator left to `Q8=(9,6)`, visible at `(10,20)`. This tests the inferred capture/push interaction needed to reposition the color8 rotator.

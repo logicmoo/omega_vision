@@ -1,0 +1,15 @@
+# Working model
+
+- **Checked (levels 1-3):** ACTION6 clicks a grid coordinate. A playfield click within range relocates the nearest compact field piece and makes the click its logical anchor; anchor displacement up to 4 in each axis works (including diagonal), while farther clicks are no-ops. ACTION7 remains untested (likely undo).
+- **Checked:** Rendered footprints by stage are: color10 size1 at anchor; color6 size2 bbox `[x-1..x,y-1..y]`; color15 size3 bbox `[x-1..x+1,y-1..y+1]`; color11 size4 bbox `[x-2..x+1,y-2..y+1]`.
+- **Checked:** The HUD ladder is 1x1 color10 -> 2x2 color6 -> 3x3 color15 -> 4x4 color11. Moving one piece into merge range of another same-stage piece consumes both and creates the next stage at the mover's clicked anchor. Confirmed coordinatewise anchor thresholds: size2 pair -> size3 at separation up to 6, size3 pair -> size4 up to 7, including diagonal `(6,6)` and `(6,7)`. General pattern suggests singleton threshold 5, but this is not yet log-checked.
+- **Checked:** Large centered HUD shapes are required outputs; leaf-equivalent mass has exactly matched them. A single-output level completes when its final piece is moved into its color9 blob. On level 3, neither placed output caused an individual event; the level completed only when both required anchors simultaneously occupied the two blobs. Successful arrangement was size4 in left blob and size3 in right blob, but whether endpoints are ordered or generic was not isolated. For safety put logical anchors, not just footprint edges, inside blobs.
+- **Checked:** Rows 0-9 are HUD; row 63 is a deadline bar and not gameplay. It drains about 1-2 cells per click; invalid clicks also spend it. Color0 contact objects can disappear when touched (level 1), but are distinct from color9 output blobs.
+
+# Working memory
+
+- Level 4/9 (levels_completed=3), fresh at step 56; timer 64/64. HUD requires one size4. One color9 blob is centered (5,57), bbox `(1,53)-(9,61)`. Exact mass is eight singles: A=(5,26), B=(11,26), C=(31,27), D=(36,29), E=(8,41), F=(12,47), G=(33,47), H=(30,51).
+- New unexplained color7 outline/object near bbox `(52,19)-(56,22)` is far from every planned route; avoid it and do not assume a role.
+- A bounded DP using checked movement/size2/size3 thresholds finds a 12-action solution if the inferred singleton merge threshold is 5: singleton outputs AB=(6,29), EF=(7,42), CD=(32,32), GH=(29,46); form size3s at (13,37) and (24,40); merge at size4 anchor (17,41); deliver via `(13,45)->(9,49)->(5,53)`.
+- Next is a deliberate but useful threshold probe: click (6,29). Prediction under the size+4 threshold pattern: A moves and merges with B at max coordinate separation 5, yielding size2 bbox `(5,28)-(6,29)`. If it does not merge, A merely moves to (6,29); switch to the conservative singleton threshold 4 plan rather than repeating blindly.
+- Level-3 result distilled: atomic simultaneous completion is confirmed; ruled out individual target disappearance/acceptance while another output remains.

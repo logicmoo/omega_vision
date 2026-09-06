@@ -1,0 +1,206 @@
+{
+  "char": "bunny-cast",
+  "groups": [
+    "ground_group",
+    "mound_group",
+    "tree_group",
+    "burrow_group",
+    "rock_group_left",
+    "rock_group_center",
+    "rock_group_right",
+    "flower_patch_group",
+    "background_vegetation_group",
+    "stone_slab_group",
+    "lighting_group"
+  ],
+  "parts": [
+    {
+      "label": "foreground_grass_field",
+      "partOf": "ground_group"
+    },
+    {
+      "label": "foreground_sunlit_grass",
+      "partOf": "ground_group"
+    },
+    {
+      "label": "left_ground_shadow",
+      "partOf": "ground_group"
+    },
+    {
+      "label": "central_grass_mound",
+      "partOf": "mound_group"
+    },
+    {
+      "label": "mound_sunlit_cap",
+      "partOf": "mound_group"
+    },
+    {
+      "label": "mound_right_shadow",
+      "partOf": "mound_group"
+    },
+    {
+      "label": "tree_trunk",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_trunk_sunlit_face",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_trunk_shadow_face",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_root_left_1",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_root_left_2",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_root_center",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_root_right_1",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_root_right_2",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_bark_highlight_1",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_bark_line_1",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_bark_line_2",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_canopy_main",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_canopy_left_cluster",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_canopy_center_cluster",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "tree_canopy_right_cluster",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "canopy_sunlit_leaf_cluster_1",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "canopy_sunlit_leaf_cluster_2",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "canopy_bright_leaf_1",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "canopy_bright_leaf_2",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "canopy_bright_leaf_3",
+      "partOf": "tree_group"
+    },
+    {
+      "label": "burrow_entrance",
+      "partOf": "burrow_group"
+    },
+    {
+      "label": "burrow_inner_shadow",
+      "partOf": "burrow_group"
+    },
+    {
+      "label": "burrow_lower_soil",
+      "partOf": "burrow_group"
+    },
+    {
+      "label": "left_rounded_rock",
+      "partOf": "rock_group_left"
+    },
+    {
+      "label": "left_rock_highlight",
+      "partOf": "rock_group_left"
+    },
+    {
+      "label": "center_rock_1",
+      "partOf": "rock_group_center"
+    },
+    {
+      "label": "center_rock_2",
+      "partOf": "rock_group_center"
+    },
+    {
+      "label": "center_rock_3",
+      "partOf": "rock_group_center"
+    },
+    {
+      "label": "small_right_mound_rock",
+      "partOf": "rock_group_right"
+    },
+    {
+      "label": "blue_flower_patch_base",
+      "partOf": "flower_patch_group"
+    },
+    {
+      "label": "blue_flower_cluster_1",
+      "partOf": "flower_patch_group"
+    },
+    {
+      "label": "blue_flower_cluster_2",
+      "partOf": "flower_patch_group"
+    },
+    {
+      "label": "background_left_shrub",
+      "partOf": "background_vegetation_group"
+    },
+    {
+      "label": "background_center_tree_trunk",
+      "partOf": "background_vegetation_group"
+    },
+    {
+      "label": "background_center_tree_branch_left",
+      "partOf": "background_vegetation_group"
+    },
+    {
+      "label": "background_center_tree_branch_right",
+      "partOf": "background_vegetation_group"
+    },
+    {
+      "label": "background_dark_hedge",
+      "partOf": "background_vegetation_group"
+    },
+    {
+      "label": "right_stone_slab_main",
+      "partOf": "stone_slab_group"
+    },
+    {
+      "label": "right_stone_slab_highlight",
+      "partOf": "stone_slab_group"
+    },
+    {
+      "label": "right_stone_slab_seam",
+      "partOf": "stone_slab_group"
+    },
+    {
+      "label": "upper_left_sun_glow",
+      "partOf": "lighting_group"
+    }
+  ]
+}

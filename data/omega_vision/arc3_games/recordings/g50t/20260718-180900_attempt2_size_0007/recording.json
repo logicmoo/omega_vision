@@ -1,0 +1,168 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-g50t-20260718-180900",
+  "game_id": "g50t-5849a774",
+  "game_directory": "g50t",
+  "level": "1",
+  "level_directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2_size_0007",
+  "started_at": "2026-09-03T10:32:58.021618Z",
+  "updated_at": "2026-09-03T10:32:58.021630Z",
+  "last_event": "level_complete",
+  "imported_from": "data/arc3_games/importables/release-runs/g50t/20260718-180900",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/0",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.787292Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/1",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.800366Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/2",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.814728Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/3",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.827633Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION5",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/4",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.842499Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/5",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.857513Z"
+    },
+    {
+      "index": 6,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/6",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.871534Z"
+    },
+    {
+      "index": 7,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/7",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.887113Z"
+    },
+    {
+      "index": 8,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/8",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.901908Z"
+    },
+    {
+      "index": 9,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/9",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.915868Z"
+    },
+    {
+      "index": 10,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/10",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.930918Z"
+    },
+    {
+      "index": 11,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/11",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.945019Z"
+    },
+    {
+      "index": 12,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/12",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.959784Z"
+    },
+    {
+      "index": 13,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/13",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.974207Z"
+    },
+    {
+      "index": 14,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/14",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:57.989476Z"
+    },
+    {
+      "index": 15,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/15",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:58.003446Z"
+    },
+    {
+      "index": 16,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/g50t/20260718-180900_attempt2/16",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-09-03T10:32:58.018207Z",
+      "level_completed": "1"
+    }
+  ]
+}

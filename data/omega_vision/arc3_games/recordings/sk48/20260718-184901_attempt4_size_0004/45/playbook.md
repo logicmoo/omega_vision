@@ -1,0 +1,14 @@
+# sk48 playbook
+
+## Working model
+- **Checked:** ACTION1/2 move the horizontal needle and every horizontally threaded bead up/down; ACTION4 advances right, ACTION3 retracts left, ACTION7 undoes. Logical bead slots are 6 cells apart. The bottom panel is the target and row53 is a deadline bar.
+- **Checked:** A bead can be threaded horizontally and vertically at once. A horizontally carried bead entering a vertical strand becomes cross-threaded; carrying it along that strand can push an encountered vertical-only bead (level 3 step64 proves downward pushing). Upward symmetry is still an assumption.
+- **Checked/corrected horizontal rule:** there is a needle-tip slot, not merely a contiguous bead prefix. Every R/L changes the tip by one slot. With no cross-threaded pin, threaded beads translate with it. With a pin, beads stay fixed while the tip advances/retracts: L sheds a bead only when retracting past its slot (an empty gap costs an L); R pierces an immovable vertical bead (step121) but pushes a loose movable bead one slot instead (step122). A loose bead pushed against the right wall is pierced by the next R (repeatedly checked in level 2 steps33-34, 40-41 and level 3 steps72-73).
+- **Checked:** Leaving the bottom end of a vertical strand removes that vertical threading/credit. Peeling a cross-threaded bead leaves it vertical-only and credited. Merely carrying the intact chain out and shifting is not a solution.
+- Level 4 has strands A at logical col2 and B at col4, spanning rows0-2. Initial chain is [blue(9), green(14), red(8), C(12)]; target A=[blue,green], B=[red,C].
+
+## Working memory
+- Level 4, 3/8, current logged step123 after the failed batch: needle row1, tip col5. Blue/green/red are horizontally threaded at cols2/3/4; blue and red are also on A/B. Loose C stayed at top row0 and was pushed from col5 to the right-wall col6 by step122. This falsified the claim that R would rethread a loose movable C.
+- First use ACTION7 to undo only the accidental down move, returning exactly to step122 (row0, same tip/positions). Then R at the wall should pierce C, yielding a gapped threaded chain at cols2,3,4,6 with tip6; this is strongly retrodicted by three earlier wall-thread events.
+- Computed 20-action route from current (needle-tip simulator): Undo, R, DDD, LL, U, L, D, R, UU, LL, D, L, U, RR. State idea: carry the gapped chain below strands; shift left twice to cols0,1,2,4; U cross-threads red on A and C on B; L deposits C. Reposition the remaining three so green is on A, peel red then green, place blue above green, and the final pinned R pushes loose red right onto B above C.
+- Route assumptions to check in short batches: vertically carrying a wall-threaded bead across a gap; horizontal placement/pushing onto a vertical strand; final upward ordering. Next batch checks wall piercing, gapped carrying, and the below-strand shift before committing further.

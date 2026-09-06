@@ -1,0 +1,45 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "6",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION6"
+    ],
+    "levels_completed": 5,
+    "win_levels": 8,
+    "log_step": 142
+  },
+  "step_count": 142,
+  "game_id": "s5i5-18d95033",
+  "game_directory": "s5i5",
+  "image_hash": "0e5dc270e68c2562",
+  "incoming_action": "ACTION6",
+  "action_directory": "0",
+  "action_data": {
+    "x": 13,
+    "y": 48
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0"
+  ],
+  "recorded_at": "2026-09-03T10:35:10.242496Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/s5i5/20260719-015033_attempt6/0",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/s5i5/20260719-015033_attempt6/0/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

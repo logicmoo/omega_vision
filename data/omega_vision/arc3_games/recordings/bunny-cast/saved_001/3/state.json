@@ -1,0 +1,31 @@
+{
+  "kind": "video_import_frame",
+  "game_id": "bunny-cast",
+  "game_directory": "bunny-cast",
+  "state": "NOT_FINISHED",
+  "level": "1",
+  "image_hash": "6e47e48f8b565abd",
+  "incoming_action": "REMOVE_CHARACTER",
+  "action_directory": "3",
+  "action_data": {
+    "characters": [],
+    "count": 0,
+    "delta": -1,
+    "added": [],
+    "removed": [
+      "Big Buck Bunny"
+    ]
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3"
+  ],
+  "characters": [],
+  "character_count": 0,
+  "source_frame": "data/VideoImports/big_buck_bunny_360_10s_1mb/frames/frame_0004.png",
+  "at_seconds": null,
+  "recorded_at": "2026-08-28T02:57:11.325873Z"
+}

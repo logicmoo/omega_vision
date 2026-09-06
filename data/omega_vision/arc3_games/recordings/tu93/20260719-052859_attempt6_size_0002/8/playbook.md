@@ -1,0 +1,13 @@
+# Working model
+
+- **Checked:** ACTION1/2/3/4 = Up/Down/Left/Right. A valid move shifts the 3x3 player one graph edge (6 pixels), restores the old node to color 0, preserves the midway color-2 connector, and rotates the color-4 pip to the movement edge. Color 5 is wall/background; color 14 is the level goal.
+- **Checked through level 3:** Color-8 bodies with color-15 facing pips are static oriented enemies. A live enemy threatens the adjacent graph node in its facing direction. Entering that forward node makes it lunge, erase the player, and cause GAME_OVER; entering the enemy node from any non-forward side safely captures/replaces it. Threat dependencies can overlap, so remove an enemy threatening another enemy's node first.
+- **Checked:** Level 3 was solved by exact BFS over `(player node, live-enemy mask)`, validating the one-node static-threat/capture model.
+- **Checked:** A border-wide color-6 strip is the action timer. It resets to 64 each level/attempt and usually loses 1-2 cells per action; edge-only changes are HUD, not gameplay.
+- **Checked on level 4 and its complete solution:** Color-12 body + color-15 facing pip is a mobile oriented enemy. After every valid player move, it advances one graph edge straight ahead and restores its old node; blocked player input freezes it. It ignores side branches, reverses orientation at the endpoint, and starts moving back on the following valid turn. Both bottom and top reversals were observed. Avoid both its current node and the node it moves into that turn. The predicted dynamic-BFS route completed level 4 at step 70, advancing to 4/9.
+
+# Working memory
+
+- Newly entered level 5 (4/9), no move yet. Player is `(52,15)` facing Left; goal is `(28,33)`; timer is fresh at 64. Four color-12 mobiles are initially: `(28,27)` Down, `(10,33)` Right, `(22,33)` Down, `(28,39)` Up.
+- Graph summary: top horizontal corridor `(10..52,15)`; verticals at x=10 and x=28 down to y=33; long horizontal corridor `(10..52,33)`; lower branches x=16 (to45), x=22 (to39), x=28 (to45), x=34 (to45), x=52 (to45), with bottom links `(16..34,45)`.
+- **Unknown/new interaction:** On the first valid turn, the mobiles at `(28,27)` Down and `(28,39)` Up both nominally enter the goal `(28,33)`. The log cannot determine how simultaneous destination collision resolves. Only valid opening move is Left to `(46,15)`; use it as one deliberate probe, expecting the player move but leaving collision outcome unconstrained. Afterward, infer all mobile transitions from the settled board before planning.

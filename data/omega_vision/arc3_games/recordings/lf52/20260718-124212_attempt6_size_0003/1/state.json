@@ -1,0 +1,51 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "6",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION1",
+      "ACTION2",
+      "ACTION3",
+      "ACTION4",
+      "ACTION6",
+      "ACTION7"
+    ],
+    "levels_completed": 5,
+    "win_levels": 10,
+    "log_step": 248
+  },
+  "step_count": 248,
+  "game_id": "lf52-271a04aa",
+  "game_directory": "lf52",
+  "image_hash": "ee83e829cb46fa58",
+  "incoming_action": "ACTION6",
+  "action_directory": "1",
+  "action_data": {
+    "x": 19,
+    "y": 13
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1"
+  ],
+  "recorded_at": "2026-09-03T10:33:49.090235Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/lf52/20260718-124212_attempt6/1",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/lf52/20260718-124212_attempt6/1/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

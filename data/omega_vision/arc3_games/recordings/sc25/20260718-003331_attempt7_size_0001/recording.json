@@ -1,0 +1,665 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "release-sc25-20260718-003331",
+  "game_id": "sc25-635fd71a",
+  "game_directory": "sc25",
+  "level": "6",
+  "level_directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7_size_0001",
+  "started_at": "2026-09-03T10:35:16.213450Z",
+  "updated_at": "2026-09-03T10:35:16.213458Z",
+  "last_event": "move",
+  "imported_from": "data/arc3_games/importables/release-runs/sc25/20260718-003331",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION6",
+      "data": {
+        "x": 4,
+        "y": 1
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/0",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.747606Z"
+    },
+    {
+      "index": 1,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/1",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.755370Z"
+    },
+    {
+      "index": 2,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/2",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.762868Z"
+    },
+    {
+      "index": 3,
+      "action": "ACTION6",
+      "data": {
+        "x": 35,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/3",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.770188Z"
+    },
+    {
+      "index": 4,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 60
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/4",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.777767Z"
+    },
+    {
+      "index": 5,
+      "action": "ACTION6",
+      "data": {
+        "x": 1,
+        "y": 12
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/5",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.785147Z"
+    },
+    {
+      "index": 6,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/6",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.792724Z"
+    },
+    {
+      "index": 7,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/7",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.799787Z"
+    },
+    {
+      "index": 8,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/8",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.806978Z"
+    },
+    {
+      "index": 9,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/9",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.814225Z"
+    },
+    {
+      "index": 10,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/10",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.821664Z"
+    },
+    {
+      "index": 11,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/11",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.828843Z"
+    },
+    {
+      "index": 12,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/12",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.836488Z"
+    },
+    {
+      "index": 13,
+      "action": "ACTION6",
+      "data": {
+        "x": 4,
+        "y": 23
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/13",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.844262Z"
+    },
+    {
+      "index": 14,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/14",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.852487Z"
+    },
+    {
+      "index": 15,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/15",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.860322Z"
+    },
+    {
+      "index": 16,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 60
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/16",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.868303Z"
+    },
+    {
+      "index": 17,
+      "action": "ACTION6",
+      "data": {
+        "x": 4,
+        "y": 1
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/17",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.876211Z"
+    },
+    {
+      "index": 18,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/18",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.883652Z"
+    },
+    {
+      "index": 19,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/19",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.891263Z"
+    },
+    {
+      "index": 20,
+      "action": "ACTION6",
+      "data": {
+        "x": 35,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/20",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.899025Z"
+    },
+    {
+      "index": 21,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 60
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/21",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.906906Z"
+    },
+    {
+      "index": 22,
+      "action": "ACTION6",
+      "data": {
+        "x": 1,
+        "y": 12
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/22",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.915016Z"
+    },
+    {
+      "index": 23,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/23",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.923078Z"
+    },
+    {
+      "index": 24,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/24",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.930420Z"
+    },
+    {
+      "index": 25,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/25",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.937753Z"
+    },
+    {
+      "index": 26,
+      "action": "ACTION6",
+      "data": {
+        "x": 4,
+        "y": 1
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/26",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.945339Z"
+    },
+    {
+      "index": 27,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/27",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.952850Z"
+    },
+    {
+      "index": 28,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/28",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.960687Z"
+    },
+    {
+      "index": 29,
+      "action": "ACTION6",
+      "data": {
+        "x": 35,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/29",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.968256Z"
+    },
+    {
+      "index": 30,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 60
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/30",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.975898Z"
+    },
+    {
+      "index": 31,
+      "action": "ACTION3",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/31",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.983294Z"
+    },
+    {
+      "index": 32,
+      "action": "ACTION3",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/32",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.990644Z"
+    },
+    {
+      "index": 33,
+      "action": "ACTION3",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/33",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:15.998142Z"
+    },
+    {
+      "index": 34,
+      "action": "ACTION3",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/34",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.006002Z"
+    },
+    {
+      "index": 35,
+      "action": "ACTION3",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/35",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.013397Z"
+    },
+    {
+      "index": 36,
+      "action": "ACTION3",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/36",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.027717Z"
+    },
+    {
+      "index": 37,
+      "action": "ACTION6",
+      "data": {
+        "x": 4,
+        "y": 23
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/37",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.035321Z"
+    },
+    {
+      "index": 38,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/38",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.042905Z"
+    },
+    {
+      "index": 39,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/39",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.054921Z"
+    },
+    {
+      "index": 40,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 60
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/40",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.062386Z"
+    },
+    {
+      "index": 41,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/41",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.070322Z"
+    },
+    {
+      "index": 42,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/42",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.078687Z"
+    },
+    {
+      "index": 43,
+      "action": "ACTION6",
+      "data": {
+        "x": 4,
+        "y": 1
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/43",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.089196Z"
+    },
+    {
+      "index": 44,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/44",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.096885Z"
+    },
+    {
+      "index": 45,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/45",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.105263Z"
+    },
+    {
+      "index": 46,
+      "action": "ACTION6",
+      "data": {
+        "x": 35,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/46",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.115698Z"
+    },
+    {
+      "index": 47,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 60
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/47",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.123457Z"
+    },
+    {
+      "index": 48,
+      "action": "ACTION6",
+      "data": {
+        "x": 1,
+        "y": 12
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/48",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.131644Z"
+    },
+    {
+      "index": 49,
+      "action": "ACTION6",
+      "data": {
+        "x": 25,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/49",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.139346Z"
+    },
+    {
+      "index": 50,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 50
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/50",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.146834Z"
+    },
+    {
+      "index": 51,
+      "action": "ACTION6",
+      "data": {
+        "x": 30,
+        "y": 55
+      },
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/51",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.157080Z"
+    },
+    {
+      "index": 52,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/52",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.165645Z"
+    },
+    {
+      "index": 53,
+      "action": "ACTION4",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/53",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.172912Z"
+    },
+    {
+      "index": 54,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/54",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.180534Z"
+    },
+    {
+      "index": 55,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/55",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.188014Z"
+    },
+    {
+      "index": 56,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/56",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.195637Z"
+    },
+    {
+      "index": 57,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/57",
+      "state": "NOT_FINISHED",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.203546Z"
+    },
+    {
+      "index": 58,
+      "action": "ACTION1",
+      "data": {},
+      "directory": "data/arc3_games/recordings/sc25/20260718-003331_attempt7/58",
+      "state": "WIN",
+      "level": "6",
+      "recorded_at": "2026-09-03T10:35:16.211122Z"
+    }
+  ]
+}

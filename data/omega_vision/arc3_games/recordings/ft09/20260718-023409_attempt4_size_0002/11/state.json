@@ -1,0 +1,56 @@
+{
+  "state": "NOT_FINISHED",
+  "level": "4",
+  "level_source": "imported_release_run",
+  "next_level_expected": null,
+  "observation": {
+    "available_actions": [
+      "ACTION6"
+    ],
+    "levels_completed": 3,
+    "win_levels": 6,
+    "log_step": 37
+  },
+  "step_count": 37,
+  "game_id": "ft09-0d8bbf25",
+  "game_directory": "ft09",
+  "image_hash": "e9b001b3f0038272",
+  "incoming_action": "ACTION6",
+  "action_directory": "11",
+  "action_data": {
+    "x": 22,
+    "y": 48
+  },
+  "parent_node": "..",
+  "action_path": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11"
+  ],
+  "recorded_at": "2026-09-03T10:32:53.805886Z",
+  "scan": {
+    "path": "data/arc3_games/recordings/ft09/20260718-023409_attempt4/11",
+    "results": {
+      "obj_images": [],
+      "grp_images": [],
+      "sub_images": [
+        "data/arc3_games/recordings/ft09/20260718-023409_attempt4/11/image.png"
+      ],
+      "pl_files": [],
+      "eng_files": [],
+      "json_files": [],
+      "metta_files": [],
+      "prompt_files": [],
+      "unknown_files": []
+    }
+  }
+}

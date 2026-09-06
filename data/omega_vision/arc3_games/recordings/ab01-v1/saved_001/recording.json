@@ -1,0 +1,22 @@
+{
+  "kind": "arc3_play_recording",
+  "session_id": "c3870cac3f4d40209b31e63d368c4c79",
+  "game_id": "ab01-v1",
+  "game_directory": "ab01-v1",
+  "level": "1",
+  "level_directory": "data/arc3_games/recordings/ab01-v1/saved_001",
+  "started_at": "2026-08-28T02:46:14.767611Z",
+  "updated_at": "2026-08-28T02:47:16.210827Z",
+  "last_event": "session_closed",
+  "moves": [
+    {
+      "index": 0,
+      "action": "ACTION2",
+      "data": {},
+      "directory": "data/arc3_games/recordings/ab01-v1/saved_001/0",
+      "state": "NOT_FINISHED",
+      "level": "1",
+      "recorded_at": "2026-08-28T02:47:16.060248Z"
+    }
+  ]
+}
