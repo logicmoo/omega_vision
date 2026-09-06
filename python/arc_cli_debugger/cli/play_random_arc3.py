@@ -21,7 +21,7 @@ def main() -> None:
     parser.add_argument("--max-steps-per-game", type=int, default=None)
     parser.add_argument("--seed", type=int)
     args = parser.parse_args()
-    workspace = ROOT / "workbench" / "workspaces" / "arc3_random_player"
+    workspace = ROOT / "workspaces" / "arc3_random_player"
     player = RandomArc3Player(
         workspace,
         seconds_per_game=args.seconds_per_game,

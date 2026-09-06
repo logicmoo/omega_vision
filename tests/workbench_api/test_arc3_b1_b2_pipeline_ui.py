@@ -21,7 +21,7 @@ def test_markdown_document_is_shared_help_renderer() -> None:
     assert 'target={docsSearch || localMarkdown ? undefined : "_blank"}' in source
     # The help tabs now consume the shared renderer rather than an inline ReactMarkdown.
     help_source = HELP_TABS.read_text(encoding="utf-8")
-    assert 'import {MarkdownDocument} from "./MarkdownDocument";' in help_source
+    assert 'import {MarkdownDocument} from "@app/components/MarkdownDocument";' in help_source
     assert "<MarkdownDocument content={document.content}" in help_source
     assert "import ReactMarkdown" not in help_source
 
@@ -43,7 +43,7 @@ def test_b1_b2_page_uses_dedicated_renderer() -> None:
 def test_b1_b2_renderer_is_wired_in_workbench() -> None:
     source = WORKBENCH.read_text(encoding="utf-8")
     assert 'workflowPageForView.renderer === "arc3_b1_b2_pipeline"' in source
-    assert 'import("../components/Arc3B1B2PipelinePage")' in source
+    assert 'import("@omega_vision_ui/components/Arc3B1B2PipelinePage")' in source
     assert "default: module.Arc3B1B2PipelinePage," in source
     assert "<Arc3B1B2PipelinePage" in source
     # The shared prolog renderer must remain wired for the Two-Image page.
@@ -773,7 +773,7 @@ def test_b1_b2_file_groups_have_edit_new_editors() -> None:
     assert ".arc3-prolog-setup-file-editor-head" in styles
     # .md files get a Source/Render editor (like the help view) whose Render mode uses the shared
     # MarkdownDocument renderer (with the special link rewrites).
-    assert 'import { MarkdownDocument } from "./MarkdownDocument";' in source
+    assert 'import { MarkdownDocument } from "@app/components/MarkdownDocument";' in source
     assert "const isMarkdown = /^.+\\.md$/i.test(editorName.trim());" in source
     assert 'const [editorMdMode, setEditorMdMode] = useState<"source" | "render">("source");' in source
     assert 'onClick={() => setEditorMdMode("source")}' in source

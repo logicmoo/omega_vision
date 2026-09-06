@@ -41,9 +41,18 @@ router = APIRouter(prefix="/arc3-play", tags=["arc3-play"])
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _PYTHON_ROOT = _REPO_ROOT / "python"
-_VISION_DATA_ROOT = Path(
-    os.environ.get("OMEGA_VISION_DATA") or (_REPO_ROOT / "data" / "omega_vision")
-)
+def _vision_data_root(root: Path) -> Path:
+    """Vision data home: env override, the shared repo store for real
+    workspaces, or the caller's own data dir (tests, external roots)."""
+    env = os.environ.get("OMEGA_VISION_DATA")
+    if env:
+        return Path(env)
+    try:
+        root.resolve().relative_to((_REPO_ROOT / "workspaces").resolve())
+    except ValueError:
+        return root / "data"
+    return _REPO_ROOT / "data" / "omega_vision"
+
 _THUMBNAIL_CACHE_DIR = Path(__file__).resolve().parent / "environment_thumbnails"
 _THUMBNAIL_SCALE = 4
 
@@ -147,7 +156,7 @@ def _merge_legacy_tree(source: Path, destination: Path) -> None:
 
 def _migrate_arc3_games_root(root: Path) -> Path:
     resolved_root = root.resolve()
-    data_root = _VISION_DATA_ROOT
+    data_root = _vision_data_root(root)
     canonical = data_root / "arc3_games"
     recordings = canonical / "recordings"
     importables = canonical / "importables"
@@ -205,12 +214,12 @@ def _migrate_arc3_games_root(root: Path) -> Path:
 
 def _importables_container(root: Path) -> Path:
     _migrate_arc3_games_root(root)
-    return _VISION_DATA_ROOT / "arc3_games" / "importables"
+    return _vision_data_root(root) / "arc3_games" / "importables"
 
 
 def _curated_games_container(root: Path) -> Path:
     _migrate_arc3_games_root(root)
-    return _VISION_DATA_ROOT / "arc3_games" / "curated"
+    return _vision_data_root(root) / "arc3_games" / "curated"
 
 
 def _games_container(root: Path) -> Path:
@@ -221,7 +230,7 @@ def _games_container(root: Path) -> Path:
     data/<game>/ location -- see _game_dirs_for()/_all_game_dirs(), which
     read both locations so nothing already on disk is hidden from listings.
     """
-    return _VISION_DATA_ROOT / "arc3_games" / "recordings"
+    return _vision_data_root(root) / "arc3_games" / "recordings"
 
 
 def _game_write_dir(root: Path, game_dir: str) -> Path:

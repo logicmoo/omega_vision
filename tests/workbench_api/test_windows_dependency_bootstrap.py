@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _batch(name: str) -> str:
-    return (ROOT / "scripts" / name).read_text(encoding="utf-8")
+    return (ROOT / ("python/arc_cli_debugger/cli/" + name if name == "interactive_runner.bat" else "scripts/" + name)).read_text(encoding="utf-8")
 
 
 def test_interactive_launcher_preserves_workspace_and_repairs_dependencies() -> None:
@@ -15,7 +15,7 @@ def test_interactive_launcher_preserves_workspace_and_repairs_dependencies() -> 
 
     assert 'set "ARC3_CALLER_CWD=%CD%"' in source
     assert 'set "ARC3_LAUNCH_CWD=%CD%"' in source
-    assert 'for %%I in ("%~dp0..") do set "REPO_ROOT=%%~fI"' in source
+    assert 'for %%I in ("%~dp0..\\..\\..") do set "REPO_ROOT=%%~fI"' in source
     assert 'cd /d "%~dp0.."' not in source
     assert 'set "PYTHONHOME="' in source
     assert 'set "PYTHONPATH="' in source
@@ -25,7 +25,7 @@ def test_interactive_launcher_preserves_workspace_and_repairs_dependencies() -> 
     assert '"%VENV_PYTHON%" -m pip install -e "."' in source
     assert '"%VENV_PYTHON%" -m pip install -e ".[all]"' in source
     assert "pip install -e '.[all]'" not in source
-    assert '"%VENV_PYTHON%" "%REPO_ROOT%\\scripts\\interactive_runner.py" %*' in source
+    assert '"%VENV_PYTHON%" "%~dp0interactive_runner.py" %*' in source
 
 
 def test_windows_setup_sanitizes_python_paths_and_verifies_json_repair() -> None:
@@ -39,7 +39,7 @@ def test_windows_setup_sanitizes_python_paths_and_verifies_json_repair() -> None
 
 
 def test_missing_json_repair_message_is_copy_pasteable_on_windows() -> None:
-    source = (ROOT / "python" / "llm_json.py").read_text(encoding="utf-8")
+    source = (ROOT / "python" / "arc_cli_debugger" / "llm_json.py").read_text(encoding="utf-8")
 
     assert '.venv\\Scripts\\python.exe -m pip install -e ".[all]"' in source
     assert "if os.name == \"nt\"" in source

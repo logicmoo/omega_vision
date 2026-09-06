@@ -22,7 +22,7 @@ def test_play_page_uses_dedicated_renderer() -> None:
 def test_play_renderer_is_wired_in_workbench() -> None:
     source = WORKBENCH.read_text(encoding="utf-8")
     assert 'workflowPageForView.renderer === "arc3_play"' in source
-    assert 'import("../components/Arc3PlayPage")' in source
+    assert 'import("@omega_vision_ui/components/Arc3PlayPage")' in source
     assert "default: module.Arc3PlayPage," in source
     assert "<Arc3PlayPage" in source
     assert '"arc3Play"' in source  # View union + WORKBENCH_VIEWS entry
@@ -317,7 +317,7 @@ def test_workbench_has_a_shared_task_registry_like_breadcrumbs() -> None:
 
 def test_play_page_consumes_the_shared_task_registry() -> None:
     source = COMPONENT.read_text(encoding="utf-8")
-    assert 'import { useTaskRegistry } from "../taskRegistry"' in source
+    assert 'import { useTaskRegistry } from "@app/taskRegistry"' in source
     assert "useTaskRegistry()" in source
     # Play wraps the shared perform() to keep its own error banner + the
     # "unknown play session" recovery behavior, without duplicating the task
@@ -358,7 +358,7 @@ def test_games_gallery_page_exists_and_is_wired_into_navigation() -> None:
     # jump straight into Play & Record for that game.
     assert "onDoubleClick={onPlayGame ? () => onPlayGame(shortId) : undefined}" in gallery_component
 
-    gallery_styles = (ROOT / "frontend/packages/omega_vision_ui/src/styles/arc3_games_gallery.css").read_text(encoding="utf-8")
+    gallery_styles = (ROOT / "frontend/apps/workbench/src/styles/arc3_games_gallery.css").read_text(encoding="utf-8")
     assert ".arc3-gallery-grid" in gallery_styles
     assert ".arc3-gallery-thumb" in gallery_styles
 

@@ -25,11 +25,11 @@ router = APIRouter()
 ROOT = Path(__file__).resolve().parents[2]
 LOG_ROOT = ROOT / "runtime" / "logs"
 STARTUP_POLICY_PATH = (
-    ROOT / "workbench" / "workspaces" / "shared_library_system" / "policies"
+    ROOT / "workspaces" / "shared_library_system" / "policies"
     / "workbench_startup.workbench_startup_policy.json"
 )
 LEGACY_STARTUP_POLICY_PATH = ROOT / "config" / "workbench_startup.json"
-MANAGED_SERVICE_DIRECTORY = ROOT / "workbench" / "workspaces" / "shared_library_system" / "design" / "services"
+MANAGED_SERVICE_DIRECTORY = ROOT / "workspaces" / "shared_library_system" / "design" / "services"
 PROCESS_LEDGER = ROOT / "runtime" / "run_workbench_processes.json"
 _LAUNCH_LOCK = RLock()
 _PENDING_LAUNCHES: dict[str, tuple[int, float]] = {}
@@ -61,12 +61,12 @@ MANAGED_SERVICES = (
     ),
     ServiceDefinition(
         "clawrouter", "ClawRouter", "Keyless local model-routing gateway.", 3456, "/health",
-        ROOT / "workbench" / "scripts" / "run_clawrouter.bat", True,
+        ROOT / "python" / "workbench_api_server" / "scripts" / "run_clawrouter.bat", True,
         ("clawrouter",),
     ),
     ServiceDefinition(
         "omniroute", "OmniRoute", "Local multi-provider routing gateway.", 20128, "/",
-        ROOT / "workbench" / "scripts" / "run_omniroute.bat", True,
+        ROOT / "python" / "workbench_api_server" / "scripts" / "run_omniroute.bat", True,
         ("omniroute", "omni-route"),
     ),
 )

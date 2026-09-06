@@ -17,7 +17,7 @@ def test_native_windows_smoke_resolves_paths_and_records_one_node(tmp_path: Path
     result = subprocess.run(
         [
             sys.executable,
-            str(ROOT / "scripts" / "windows_action_tree_smoke.py"),
+            str(ROOT / "python" / "arc_cli_debugger" / "cli" / "windows_action_tree_smoke.py"),
             "--output-root",
             str(output_root),
         ],

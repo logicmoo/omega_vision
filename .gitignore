@@ -341,3 +341,8 @@ workspaces/*/data/VideoImports/*
 !workspaces/*/data/VideoImports/filter_flags.json
 __pycache__/
 *.pyc
+
+# Session/tool scratch and local runtime db
+.codex/*
+!.codex/.gitkeep
+data/workbench.db

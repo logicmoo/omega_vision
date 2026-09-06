@@ -737,8 +737,8 @@ def _demo_suite():
     replay = SymbolicStore(InMemorySemanticBackend()).replay(sem.snapshot())
     replay_ok = replay.get("predictions", pred.prediction_id) is not None
     tests = len(list((_REPO_ROOT / "tests").glob("test_*.py"))) if (_REPO_ROOT / "tests").is_dir() else 0
-    docs = len([p for p in (_REPO_ROOT / "workbench" / "docs").rglob("*.md") if p.stat().st_size > 0]) \
-        if (_REPO_ROOT / "workbench" / "docs").is_dir() else 0
+    docs = len([p for p in (_REPO_ROOT / "docs").rglob("*.md") if p.stat().st_size > 0]) \
+        if (_REPO_ROOT / "docs").is_dir() else 0
     scripts = len([p for p in (_REPO_ROOT / "scripts").glob("phase*_*.py")]) if (_REPO_ROOT / "scripts").is_dir() else 0
     panels = [_panel("acceptance flow: induce → predict → grade → replay", [(0, 0, "regen", _GREEN)])]
     passed = (before_outcome and closed.grade == 1.0 and replay_ok

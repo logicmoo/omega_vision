@@ -75,7 +75,7 @@ def test_scene_split_segments_a_cut(tmp_path):
     a = [_frame_png(tmp_path, f"a{i}.png", 8 + i * 4) for i in range(3)]
     g = np.full((48, 96, 3), 200, np.uint8)              # very different frame = a cut
     b = [_save(g, tmp_path / f"b{i}.png") for i in range(3)]
-    ss = __import__("scene_split")
+    from omega_vision.perception import scene_split as ss
     cuts = set(ss.scene_cuts(a + b))
     assert 3 in cuts                                       # boundary at the a->b cut
 

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -15,13 +15,13 @@ def write_operation(root: Path, workspace: str, filename: str, document: dict) -
 def test_workspace_operations_extend_and_override_defaults(tmp_path: Path) -> None:
     write_operation(
         tmp_path,
-        "shared",
+        "shared_library_system",
         "echo.json",
         {"id": "shared.echo", "implementation": "core.echo", "inputs": {"value": "Any"}, "outputs": {"value": "Any"}},
     )
     write_operation(
         tmp_path,
-        "shared",
+        "shared_library_system",
         "constant.json",
         {"id": "shared.constant", "implementation": "core.constant", "inputs": {}, "outputs": {"value": "Any"}},
     )
@@ -53,7 +53,7 @@ def test_workspace_operations_extend_and_override_defaults(tmp_path: Path) -> No
 def test_legacy_catalog_is_derived_from_filesystem_documents(tmp_path: Path) -> None:
     write_operation(
         tmp_path,
-        "shared",
+        "shared_library_system",
         "compare.json",
         {
             "id": "shared.compare",
@@ -71,8 +71,9 @@ def test_legacy_catalog_is_derived_from_filesystem_documents(tmp_path: Path) -> 
         {
             "id": "shared.compare",
             "label": "Compare Artifacts",
-            "ports": "left + right â†’ evidence",
+            "ports": "left + right → evidence",
             "routes": "artifact.compare",
             "definition": documents[0],
+            "source": "workspaces/shared_library_system/design/operations",
         }
     ]

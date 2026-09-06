@@ -99,7 +99,7 @@ def test_windows_omniroute_launcher_uses_the_official_gateway_and_bootstrap() ->
     assert "serve --port %OMNIROUTE_PORT% --no-open --no-tray --log" in launcher
     assert "bootstrap_backend_credential" in bootstrap
     assert 'set "OMNIROUTE_PORT=20128"' in demo
-    assert "scripts\\bootstrap_omniroute.py" in demo
+    assert "%ROOT%bootstrap_omniroute.py" in demo
 
 
 def test_retired_development_routers_have_no_launcher_or_startup_hook() -> None:

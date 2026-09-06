@@ -7,10 +7,10 @@ from fastapi.responses import Response
 from resource_store import get_filesystem_provider
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-TODO_PATH = REPOSITORY_ROOT / "workbench" / "docs" / "todo" / "WORKFLOW_RUNNER_EXPERIENCE.md"
-MOCKUP_PATH = REPOSITORY_ROOT / "workbench" / "docs" / "todo" / "assets" / "workflow_runner_mockup.png"
-CHRONOLOGY_MOCKUP_PATH = REPOSITORY_ROOT / "workbench" / "docs" / "todo" / "assets" / "workflow_runner_chronology_mockup.png"
-HUMAN_INPUT_MOCKUP_PATH = REPOSITORY_ROOT / "workbench" / "docs" / "todo" / "assets" / "workflow_runner_human_input_mockup.png"
+TODO_PATH = REPOSITORY_ROOT / "docs" / "todo" / "WORKFLOW_RUNNER_EXPERIENCE.md"
+MOCKUP_PATH = REPOSITORY_ROOT / "docs" / "todo" / "assets" / "workflow_runner_mockup.png"
+CHRONOLOGY_MOCKUP_PATH = REPOSITORY_ROOT / "docs" / "todo" / "assets" / "workflow_runner_chronology_mockup.png"
+HUMAN_INPUT_MOCKUP_PATH = REPOSITORY_ROOT / "docs" / "todo" / "assets" / "workflow_runner_human_input_mockup.png"
 
 router = APIRouter(prefix="/workflow-runner/todo", tags=["workflow-runner"])
 

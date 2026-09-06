@@ -191,7 +191,7 @@ def test_domain_neutral_manifests_keep_arc3_at_the_adapter_boundary() -> None:
     }.issubset(operation_ids)
 
     workflow_catalog = json.loads(
-        (ROOT / "config" / "llm_workflows.json").read_text(encoding="utf-8")
+        (ROOT / "python" / "arc_cli_debugger" / "config" / "llm_workflows.json").read_text(encoding="utf-8")
     )
     workflow = next(
         item

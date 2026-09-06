@@ -18,8 +18,8 @@ from workflow_operations import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKFLOW_PATH = ROOT / "config" / "llm_workflows.json"
-GRAPH_PATH = ROOT / "config" / "workflow_datatypes.svg"
+WORKFLOW_PATH = ROOT / "python" / "arc_cli_debugger" / "config" / "llm_workflows.json"
+GRAPH_PATH = ROOT / "python" / "arc_cli_debugger" / "config" / "workflow_datatypes.svg"
 
 
 def test_semantic_object_has_multiple_representations() -> None:

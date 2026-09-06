@@ -201,17 +201,29 @@ def _rewrite_data_paths(paths: list[Path], replacements: list[tuple[str, str]]) 
                 path.write_text(migrated, encoding="utf-8")
 
 
-_VISION_DATA_ROOT = Path(
-    os.environ.get("OMEGA_VISION_DATA")
-    or (Path(__file__).resolve().parents[3] / "data" / "omega_vision")
-)
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _vision_data_root(root: Path) -> Path:
+    """Vision data home: env override, the shared repo store for real
+    workspaces, or the caller's own data dir (tests, external roots)."""
+    env = os.environ.get("OMEGA_VISION_DATA")
+    if env:
+        return Path(env)
+    try:
+        root.resolve().relative_to((_REPO_ROOT / "workspaces").resolve())
+    except ValueError:
+        return root / "data"
+    return _REPO_ROOT / "data" / "omega_vision"
+
 
 
 def _imports_root(root: Path) -> Path:
     resolved_root = root.resolve()
-    canonical = _VISION_DATA_ROOT / "video_import"
-    legacy = _VISION_DATA_ROOT / "VideoImports"
-    vision_root = _VISION_DATA_ROOT / "vision_frames"
+    data_home = _vision_data_root(root)
+    canonical = data_home / "video_import"
+    legacy = data_home / "VideoImports"
+    vision_root = data_home / "vision_frames"
     with _data_layout_lock:
         if resolved_root in _migrated_data_roots:
             return canonical
@@ -245,7 +257,7 @@ def _imports_root(root: Path) -> Path:
                         f"data/vision_frames/video/{destination.name}/",
                     )
                 )
-        curated_root = _VISION_DATA_ROOT / "arc3_games" / "curated"
+        curated_root = _vision_data_root(root) / "arc3_games" / "curated"
         if curated_root.is_dir():
             replacements.extend(
                 (
@@ -261,7 +273,7 @@ def _imports_root(root: Path) -> Path:
 
 
 def _vision_frames_root(root: Path) -> Path:
-    path = _VISION_DATA_ROOT / "vision_frames"
+    path = _vision_data_root(root) / "vision_frames"
     path.mkdir(parents=True, exist_ok=True)
     return path
 

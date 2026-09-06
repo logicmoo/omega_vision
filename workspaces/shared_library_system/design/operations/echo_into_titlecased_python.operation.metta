@@ -15,9 +15,9 @@
     (text Text)
   ))
   (python (
-    (importMode module)
+    (importMode file)
     (module shared_operation_callables)
-    (file workbench/server/shared_operation_callables.py)
+    (file workspaces/titlecase_demo/shared_operation_callables.py)
     (className null)
     (callable to_titlecase)
     (constructorArgs ([]))

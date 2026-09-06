@@ -9,7 +9,7 @@ set "ARC3_LAUNCH_CWD=%CD%"
 
 rem Resolve the code checkout from this batch file without changing the caller's
 rem working directory. This keeps workspace-local resources discoverable.
-for %%I in ("%~dp0..") do set "REPO_ROOT=%%~fI"
+for %%I in ("%~dp0..\..\..") do set "REPO_ROOT=%%~fI"
 
 rem A project virtual environment must not inherit a machine-wide PYTHONHOME or
 rem PYTHONPATH. Either variable can make Python search an unrelated installation
@@ -68,7 +68,7 @@ if errorlevel 1 (
     )
 )
 
-"%VENV_PYTHON%" "%REPO_ROOT%\scripts\interactive_runner.py" %*
+"%VENV_PYTHON%" "%~dp0interactive_runner.py" %*
 set "EXIT_CODE=%ERRORLEVEL%"
 
 endlocal & exit /b %EXIT_CODE%

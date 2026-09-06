@@ -61,7 +61,7 @@ def test_inherited_model_is_available_before_full_model_enumeration() -> None:
     assert "plannerModelTouchedRef.current = true" in source
     assert "extractorModelTouchedRef.current = true" in source
     assert "turtleModelTouchedRef.current = true" in source
-    assert 'from "./ColoredTagCombobox"' in source
+    assert 'from "@app/components/ColoredTagCombobox"' in source
     assert "modelCapabilityTags" in source
     assert "videoModelDescription" in source
     assert '"image output": "#ff8bd1"' in source

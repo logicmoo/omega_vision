@@ -43,7 +43,7 @@ def test_example_file_is_valid_json() -> None:
 
 
 def test_interactive_launcher_installs_workflow_gui() -> None:
-    text = (ROOT / "scripts" / "interactive_runner.py").read_text(encoding="utf-8")
+    text = (ROOT / "python" / "arc_cli_debugger" / "cli" / "interactive_runner.py").read_text(encoding="utf-8")
 
     assert "install_workflow_editor_ui" in text
     assert "install_workflow_ui" not in text

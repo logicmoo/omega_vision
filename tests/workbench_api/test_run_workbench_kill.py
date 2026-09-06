@@ -51,10 +51,10 @@ def test_every_long_running_demo_service_uses_the_python_process_launcher() -> N
         "mailbox_server", "clawrouter", "omniroute",
         "workbench-api", "workbench-web",
     ):
-        assert f'"%ROOT%scripts\\start_with_policy.py" --service {service}' in demo
+        assert f'"%ROOT%start_with_policy.py" --service {service}' in demo
     assert "--service freerouter" not in demo
     assert demo.count('-- "%ComSpec%" /d /c') == 5
-    assert demo.count('--cwd "%ROOT%."') == 5
+    assert demo.count('--cwd "%REPO_ROOT%."') == 5
     assert '--cwd "%ROOT%"' not in demo
 
 

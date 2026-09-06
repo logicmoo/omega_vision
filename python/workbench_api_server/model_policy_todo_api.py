@@ -8,8 +8,8 @@ from resource_store import get_filesystem_provider
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-TODO_PATH = REPOSITORY_ROOT / "workbench" / "docs" / "todo" / "MODEL_RUNTIME_USAGE_AND_BENCHMARKING_POLICIES.md"
-MOCKUP_PATH = REPOSITORY_ROOT / "workbench" / "docs" / "todo" / "assets" / "model_runtime_policy_mockup.png"
+TODO_PATH = REPOSITORY_ROOT / "docs" / "todo" / "MODEL_RUNTIME_USAGE_AND_BENCHMARKING_POLICIES.md"
+MOCKUP_PATH = REPOSITORY_ROOT / "docs" / "todo" / "assets" / "model_runtime_policy_mockup.png"
 
 router = APIRouter(prefix="/model-policy/todo", tags=["model-policy"])
 

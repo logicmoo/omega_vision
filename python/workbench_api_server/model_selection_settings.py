@@ -7,7 +7,7 @@ from resource_store import get_filesystem_provider
 
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKSPACES_ROOT = ROOT / "workbench" / "workspaces"
+WORKSPACES_ROOT = ROOT / "workspaces"
 SYSTEM_POLICY_PATH = (
     WORKSPACES_ROOT
     / "shared_library_system"
