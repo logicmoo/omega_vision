@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/sonic__c1_bw.jpg",
+  "provenance": "data/recognition_reduce/pool/sonic__c1_bw.provenance.json",
+  "createdAt": "2026-09-03T16:42:10.212269Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 212,
+    "height": 420
+  },
+  "originalDimensions": {
+    "width": 212,
+    "height": 420
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/sonic__c1_bw.jpg",
+    "dimensions": {
+      "width": 212,
+      "height": 420
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/sonic__c1_bw.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/sonic__c1_bw.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 212,
+        "height": 420
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T16:42:10.212269Z"
+    }
+  ]
+}

@@ -1,0 +1,455 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01_members/cut_04_main_green_body.png",
+  "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01_members/cut_04_main_green_body.provenance.json",
+  "createdAt": "2026-09-02T22:57:09.979593Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 403,
+    "height": 423
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/SILO_1/current_image.png",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01.png",
+    "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01.provenance.json"
+  },
+  "source": {
+    "objectName": "main_green_body"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01.png",
+      "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_outlines/verify_main_green_body_f987a4bae650.png",
+      "geometryHash": "f987a4bae6503e38b29f780637bc8086a8966b601bf5560f3ad4dfa7e1b0cb1d",
+      "traceVerified": true
+    },
+    "cropBox": [
+      139,
+      79,
+      542,
+      502
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          320,
+          80
+        ],
+        [
+          409,
+          80
+        ],
+        [
+          409,
+          169
+        ],
+        [
+          389,
+          169
+        ],
+        [
+          389,
+          249
+        ],
+        [
+          539,
+          249
+        ],
+        [
+          539,
+          499
+        ],
+        [
+          390,
+          499
+        ],
+        [
+          390,
+          450
+        ],
+        [
+          339,
+          450
+        ],
+        [
+          339,
+          499
+        ],
+        [
+          190,
+          499
+        ],
+        [
+          190,
+          400
+        ],
+        [
+          140,
+          400
+        ],
+        [
+          140,
+          249
+        ],
+        [
+          339,
+          249
+        ],
+        [
+          339,
+          169
+        ],
+        [
+          320,
+          169
+        ]
+      ]
+    ],
+    "holes": [
+      [
+        [
+          330,
+          90
+        ],
+        [
+          399,
+          90
+        ],
+        [
+          399,
+          159
+        ],
+        [
+          330,
+          159
+        ]
+      ],
+      [
+        [
+          240,
+          300
+        ],
+        [
+          339,
+          300
+        ],
+        [
+          339,
+          449
+        ],
+        [
+          240,
+          449
+        ]
+      ],
+      [
+        [
+          210,
+          310
+        ],
+        [
+          229,
+          310
+        ],
+        [
+          229,
+          329
+        ],
+        [
+          210,
+          329
+        ]
+      ],
+      [
+        [
+          200,
+          320
+        ],
+        [
+          209,
+          320
+        ],
+        [
+          209,
+          329
+        ],
+        [
+          200,
+          329
+        ]
+      ]
+    ]
+  },
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/SILO_1/current_image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T00:18:35.991026Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
+      "operation": "import_curated_data_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T19:29:52.528822Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_outlines/verify_yellow_background_d9c1bb99a28e.png",
+          "geometryHash": "d9c1bb99a28e955edc8222c3add26d415493c90962faa3988950390edb844602",
+          "traceVerified": true
+        },
+        "removedBox": [
+          0,
+          0,
+          640,
+          640
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the yellow background is a uniform empty canvas layer with no additional scene content; removing it reveals a flat transparent/blank field.",
+          "colors": [
+            "#FFDC00"
+          ],
+          "continueEdges": [
+            "No internal object edges continue through this removal; only the outer silhouettes of remaining foreground objects stay as exposed boundaries against the revealed blank layer."
+          ],
+          "texture": "Solid flat fill, no gradient, no pattern, no noise."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T22:56:44.346431Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01_members/cut_04_main_green_body.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 403,
+        "height": 423
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 640
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_members/scene_after_01.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_outlines/verify_main_green_body_f987a4bae650.png",
+          "geometryHash": "f987a4bae6503e38b29f780637bc8086a8966b601bf5560f3ad4dfa7e1b0cb1d",
+          "traceVerified": true
+        },
+        "cropBox": [
+          139,
+          79,
+          542,
+          502
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              320,
+              80
+            ],
+            [
+              409,
+              80
+            ],
+            [
+              409,
+              169
+            ],
+            [
+              389,
+              169
+            ],
+            [
+              389,
+              249
+            ],
+            [
+              539,
+              249
+            ],
+            [
+              539,
+              499
+            ],
+            [
+              390,
+              499
+            ],
+            [
+              390,
+              450
+            ],
+            [
+              339,
+              450
+            ],
+            [
+              339,
+              499
+            ],
+            [
+              190,
+              499
+            ],
+            [
+              190,
+              400
+            ],
+            [
+              140,
+              400
+            ],
+            [
+              140,
+              249
+            ],
+            [
+              339,
+              249
+            ],
+            [
+              339,
+              169
+            ],
+            [
+              320,
+              169
+            ]
+          ]
+        ],
+        "holes": [
+          [
+            [
+              330,
+              90
+            ],
+            [
+              399,
+              90
+            ],
+            [
+              399,
+              159
+            ],
+            [
+              330,
+              159
+            ]
+          ],
+          [
+            [
+              240,
+              300
+            ],
+            [
+              339,
+              300
+            ],
+            [
+              339,
+              449
+            ],
+            [
+              240,
+              449
+            ]
+          ],
+          [
+            [
+              210,
+              310
+            ],
+            [
+              229,
+              310
+            ],
+            [
+              229,
+              329
+            ],
+            [
+              210,
+              329
+            ]
+          ],
+          [
+            [
+              200,
+              320
+            ],
+            [
+              209,
+              320
+            ],
+            [
+              209,
+              329
+            ],
+            [
+              200,
+              329
+            ]
+          ]
+        ]
+      },
+      "createdAt": "2026-09-02T22:57:09.979593Z"
+    }
+  ]
+}

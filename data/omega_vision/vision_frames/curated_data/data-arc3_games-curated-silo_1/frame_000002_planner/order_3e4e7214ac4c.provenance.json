@@ -1,0 +1,261 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_planner/order_3e4e7214ac4c.png",
+  "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_planner/order_3e4e7214ac4c.provenance.json",
+  "createdAt": "2026-09-02T16:51:20.380600Z",
+  "operation": "visualize_planner_order",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/SILO_1/current_image.png",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
+    "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.provenance.json"
+  },
+  "source": {},
+  "transform": {
+    "labels": [
+      {
+        "object": "left gray border strip",
+        "number": 1,
+        "point": [
+          17,
+          200
+        ]
+      },
+      {
+        "object": "red glyph (top)",
+        "number": 2,
+        "point": [
+          368,
+          122
+        ]
+      },
+      {
+        "object": "green corridor",
+        "number": 3,
+        "point": [
+          352,
+          200
+        ]
+      },
+      {
+        "object": "blue character/cursor",
+        "number": 4,
+        "point": [
+          212,
+          323
+        ]
+      },
+      {
+        "object": "yellow inner cutout",
+        "number": 5,
+        "point": [
+          300,
+          360
+        ]
+      },
+      {
+        "object": "dark red block",
+        "number": 6,
+        "point": [
+          365,
+          430
+        ]
+      },
+      {
+        "object": "red maze symbol",
+        "number": 7,
+        "point": [
+          55,
+          575
+        ]
+      },
+      {
+        "object": "blue indicator squares",
+        "number": 8,
+        "point": [
+          600,
+          610
+        ]
+      },
+      {
+        "object": "top chamber",
+        "number": 9,
+        "point": [
+          335,
+          110
+        ]
+      },
+      {
+        "object": "main green region",
+        "number": 10,
+        "point": [
+          180,
+          270
+        ]
+      },
+      {
+        "object": "bottom-left panel",
+        "number": 11,
+        "point": [
+          30,
+          545
+        ]
+      },
+      {
+        "object": "progress/health bar",
+        "number": 12,
+        "point": [
+          350,
+          610
+        ]
+      }
+    ],
+    "plannerHash": "3e4e7214ac4c39957ce27339a17524ae59f1d751b1f9da5b3f70abe39ac852b6"
+  },
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/SILO_1/current_image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T00:18:35.991026Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
+      "operation": "import_curated_data_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T16:39:11.093601Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002_planner/order_3e4e7214ac4c.png",
+      "operation": "visualize_planner_order",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "labels": [
+          {
+            "object": "left gray border strip",
+            "number": 1,
+            "point": [
+              17,
+              200
+            ]
+          },
+          {
+            "object": "red glyph (top)",
+            "number": 2,
+            "point": [
+              368,
+              122
+            ]
+          },
+          {
+            "object": "green corridor",
+            "number": 3,
+            "point": [
+              352,
+              200
+            ]
+          },
+          {
+            "object": "blue character/cursor",
+            "number": 4,
+            "point": [
+              212,
+              323
+            ]
+          },
+          {
+            "object": "yellow inner cutout",
+            "number": 5,
+            "point": [
+              300,
+              360
+            ]
+          },
+          {
+            "object": "dark red block",
+            "number": 6,
+            "point": [
+              365,
+              430
+            ]
+          },
+          {
+            "object": "red maze symbol",
+            "number": 7,
+            "point": [
+              55,
+              575
+            ]
+          },
+          {
+            "object": "blue indicator squares",
+            "number": 8,
+            "point": [
+              600,
+              610
+            ]
+          },
+          {
+            "object": "top chamber",
+            "number": 9,
+            "point": [
+              335,
+              110
+            ]
+          },
+          {
+            "object": "main green region",
+            "number": 10,
+            "point": [
+              180,
+              270
+            ]
+          },
+          {
+            "object": "bottom-left panel",
+            "number": 11,
+            "point": [
+              30,
+              545
+            ]
+          },
+          {
+            "object": "progress/health bar",
+            "number": 12,
+            "point": [
+              350,
+              610
+            ]
+          }
+        ],
+        "plannerHash": "3e4e7214ac4c39957ce27339a17524ae59f1d751b1f9da5b3f70abe39ac852b6"
+      },
+      "createdAt": "2026-09-02T16:51:20.380600Z"
+    }
+  ]
+}

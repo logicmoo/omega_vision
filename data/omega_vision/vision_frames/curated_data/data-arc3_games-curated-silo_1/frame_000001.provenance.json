@@ -3,7 +3,7 @@
   "version": 1,
   "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001.png",
   "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001.provenance.json",
-  "createdAt": "2026-09-02T00:18:35.964298Z",
+  "createdAt": "2026-09-02T19:29:52.517108Z",
   "operation": "import_curated_data_frame",
   "dimensions": {
     "width": 640,
@@ -49,7 +49,7 @@
         "height": 640
       },
       "transform": {},
-      "createdAt": "2026-09-02T00:18:35.964298Z"
+      "createdAt": "2026-09-02T19:29:52.517108Z"
     }
   ]
 }

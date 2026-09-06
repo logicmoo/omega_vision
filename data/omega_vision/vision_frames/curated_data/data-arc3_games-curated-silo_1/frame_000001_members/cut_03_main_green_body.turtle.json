@@ -1,0 +1,179 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001_members/cut_03_main_green_body.png",
+  "subjectName": "main_green_body",
+  "modelId": "enullm-8801-copilot_gpt-5.3-codex",
+  "prompt": "TURTLE PNG DRAW STEP.\nThe attached image is terminal object main_green_body.\nObject description: No additional description.\nReview the draft Turtle program below and return the final drawing program that should be rendered to PNG.\nPreserve accurate silhouette, colors, holes, and visible internal details. Coordinates are normalized from 0 to 1000 with top-left origin.\nAllowed commands: pen, move, line, polyline, polygon, rectangle, ellipse, dot. Use at most 200 commands.\nDRAFT TURTLE PROGRAM:\n{\"version\":1,\"background\":\"transparent\",\"penColor\":\"#32CD40\",\"penWidth\":4,\"commands\":[{\"op\":\"rectangle\",\"x\":450,\"y\":0,\"w\":200,\"h\":24},{\"op\":\"rectangle\",\"x\":450,\"y\":24,\"w\":25,\"h\":143},{\"op\":\"rectangle\",\"x\":625,\"y\":24,\"w\":25,\"h\":143},{\"op\":\"rectangle\",\"x\":450,\"y\":167,\"w\":200,\"h\":24},{\"op\":\"rectangle\",\"x\":500,\"y\":190,\"w\":125,\"h\":214},{\"op\":\"rectangle\",\"x\":0,\"y\":405,\"w\":1000,\"h\":119},{\"op\":\"rectangle\",\"x\":0,\"y\":524,\"w\":375,\"h\":238},{\"op\":\"rectangle\",\"x\":500,\"y\":524,\"w\":500,\"h\":238},{\"op\":\"rectangle\",\"x\":125,\"y\":762,\"w\":125,\"h\":119},{\"op\":\"rectangle\",\"x\":500,\"y\":762,\"w\":500,\"h\":119},{\"op\":\"rectangle\",\"x\":125,\"y\":881,\"w\":375,\"h\":119},{\"op\":\"rectangle\",\"x\":625,\"y\":881,\"w\":375,\"h\":119}]}\nAnswer ONLY with the final JSON object. Do not include Markdown or Python.",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#32CD32\",\n  \"penWidth\": 1,\n  \"commands\": [\n    {\n      \"op\": \"pen\",\n      \"color\": \"#32CD32\",\n      \"width\": 1\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 450,\n      \"y\": 0,\n      \"w\": 200,\n      \"h\": 24,\n      \"box\": [\n        450.0,\n        0.0,\n        650.0,\n        24.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 450,\n      \"y\": 24,\n      \"w\": 25,\n      \"h\": 143,\n      \"box\": [\n        450.0,\n        24.0,\n        475.0,\n        167.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 625,\n      \"y\": 24,\n      \"w\": 25,\n      \"h\": 143,\n      \"box\": [\n        625.0,\n        24.0,\n        650.0,\n        167.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 450,\n      \"y\": 167,\n      \"w\": 200,\n      \"h\": 24,\n      \"box\": [\n        450.0,\n        167.0,\n        650.0,\n        191.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 500,\n      \"y\": 190,\n      \"w\": 125,\n      \"h\": 214,\n      \"box\": [\n        500.0,\n        190.0,\n        625.0,\n        404.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 0,\n      \"y\": 405,\n      \"w\": 1000,\n      \"h\": 119,\n      \"box\": [\n        0.0,\n        405.0,\n        1000.0,\n        524.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 0,\n      \"y\": 524,\n      \"w\": 375,\n      \"h\": 238,\n      \"box\": [\n        0.0,\n        524.0,\n        375.0,\n        762.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 500,\n      \"y\": 524,\n      \"w\": 500,\n      \"h\": 238,\n      \"box\": [\n        500.0,\n        524.0,\n        1000.0,\n        762.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 125,\n      \"y\": 762,\n      \"w\": 125,\n      \"h\": 119,\n      \"box\": [\n        125.0,\n        762.0,\n        250.0,\n        881.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 500,\n      \"y\": 762,\n      \"w\": 500,\n      \"h\": 119,\n      \"box\": [\n        500.0,\n        762.0,\n        1000.0,\n        881.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 125,\n      \"y\": 881,\n      \"w\": 375,\n      \"h\": 119,\n      \"box\": [\n        125.0,\n        881.0,\n        500.0,\n        1000.0\n      ]\n    },\n    {\n      \"op\": \"rectangle\",\n      \"x\": 625,\n      \"y\": 881,\n      \"w\": 375,\n      \"h\": 119,\n      \"box\": [\n        625.0,\n        881.0,\n        1000.0,\n        1000.0\n      ]\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#32CD32",
+    "penWidth": 1,
+    "commands": [
+      {
+        "op": "pen",
+        "color": "#32CD32",
+        "width": 1
+      },
+      {
+        "op": "rectangle",
+        "x": 450,
+        "y": 0,
+        "w": 200,
+        "h": 24,
+        "box": [
+          450.0,
+          0.0,
+          650.0,
+          24.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 450,
+        "y": 24,
+        "w": 25,
+        "h": 143,
+        "box": [
+          450.0,
+          24.0,
+          475.0,
+          167.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 625,
+        "y": 24,
+        "w": 25,
+        "h": 143,
+        "box": [
+          625.0,
+          24.0,
+          650.0,
+          167.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 450,
+        "y": 167,
+        "w": 200,
+        "h": 24,
+        "box": [
+          450.0,
+          167.0,
+          650.0,
+          191.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 500,
+        "y": 190,
+        "w": 125,
+        "h": 214,
+        "box": [
+          500.0,
+          190.0,
+          625.0,
+          404.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 0,
+        "y": 405,
+        "w": 1000,
+        "h": 119,
+        "box": [
+          0.0,
+          405.0,
+          1000.0,
+          524.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 0,
+        "y": 524,
+        "w": 375,
+        "h": 238,
+        "box": [
+          0.0,
+          524.0,
+          375.0,
+          762.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 500,
+        "y": 524,
+        "w": 500,
+        "h": 238,
+        "box": [
+          500.0,
+          524.0,
+          1000.0,
+          762.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 125,
+        "y": 762,
+        "w": 125,
+        "h": 119,
+        "box": [
+          125.0,
+          762.0,
+          250.0,
+          881.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 500,
+        "y": 762,
+        "w": 500,
+        "h": 119,
+        "box": [
+          500.0,
+          762.0,
+          1000.0,
+          881.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 125,
+        "y": 881,
+        "w": 375,
+        "h": 119,
+        "box": [
+          125.0,
+          881.0,
+          500.0,
+          1000.0
+        ]
+      },
+      {
+        "op": "rectangle",
+        "x": 625,
+        "y": 881,
+        "w": 375,
+        "h": 119,
+        "box": [
+          625.0,
+          881.0,
+          1000.0,
+          1000.0
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T00:49:59.082362Z"
+}

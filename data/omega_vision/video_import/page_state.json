@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "at": "2026-09-02T09:48:06.896Z",
+  "at": "2026-09-05T20:02:55.658076Z",
   "selectedPath": "data/video_import/guess-the-201-animated-characters-3-seconds-each/video.mp4",
   "playerTime": 0,
   "markers": [
@@ -2193,422 +2193,47 @@
   "maxFrames": "200",
   "frames": [
     {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000000.png",
+      "path": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000000.png",
       "index": 0,
-      "moveNumber": 0,
       "atSeconds": 0,
       "scene": 1,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000000.provenance.json",
+      "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000000.provenance.json",
       "characters": [],
       "anonymous": 0
     },
     {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000001.png",
+      "path": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001.png",
       "index": 1,
-      "moveNumber": 1,
       "atSeconds": 1,
       "scene": 2,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000001.provenance.json",
+      "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001.provenance.json",
       "characters": [],
       "anonymous": 0
     },
     {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000002.png",
+      "path": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.png",
       "index": 2,
-      "moveNumber": 2,
       "atSeconds": 2,
       "scene": 3,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000002.provenance.json",
+      "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000002.provenance.json",
       "characters": [],
       "anonymous": 0
     },
     {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000003.png",
+      "path": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
       "index": 3,
-      "moveNumber": 3,
       "atSeconds": 3,
       "scene": 4,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000003.provenance.json",
+      "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.provenance.json",
       "characters": [],
       "anonymous": 0
     },
     {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000004.png",
+      "path": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.png",
       "index": 4,
-      "moveNumber": 4,
       "atSeconds": 4,
       "scene": 5,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000004.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000005.png",
-      "index": 5,
-      "moveNumber": 5,
-      "atSeconds": 5,
-      "scene": 6,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000005.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000006.png",
-      "index": 6,
-      "moveNumber": 6,
-      "atSeconds": 6,
-      "scene": 7,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000006.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000007.png",
-      "index": 7,
-      "moveNumber": 7,
-      "atSeconds": 7,
-      "scene": 8,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000007.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000008.png",
-      "index": 8,
-      "moveNumber": 8,
-      "atSeconds": 8,
-      "scene": 9,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000008.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000009.png",
-      "index": 9,
-      "moveNumber": 9,
-      "atSeconds": 9,
-      "scene": 10,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000009.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000010.png",
-      "index": 10,
-      "moveNumber": 10,
-      "atSeconds": 10,
-      "scene": 11,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000010.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000011.png",
-      "index": 11,
-      "moveNumber": 11,
-      "atSeconds": 11,
-      "scene": 12,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000011.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000012.png",
-      "index": 12,
-      "moveNumber": 12,
-      "atSeconds": 12,
-      "scene": 13,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000012.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000013.png",
-      "index": 13,
-      "moveNumber": 13,
-      "atSeconds": 13,
-      "scene": 14,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000013.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000014.png",
-      "index": 14,
-      "moveNumber": 14,
-      "atSeconds": 14,
-      "scene": 15,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000014.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000015.png",
-      "index": 15,
-      "moveNumber": 15,
-      "atSeconds": 15,
-      "scene": 16,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000015.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000016.png",
-      "index": 16,
-      "moveNumber": 16,
-      "atSeconds": 16,
-      "scene": 17,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000016.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000017.png",
-      "index": 17,
-      "moveNumber": 17,
-      "atSeconds": 17,
-      "scene": 18,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000017.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000018.png",
-      "index": 18,
-      "moveNumber": 18,
-      "atSeconds": 18,
-      "scene": 19,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000018.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000019.png",
-      "index": 19,
-      "moveNumber": 19,
-      "atSeconds": 19,
-      "scene": 20,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000019.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000020.png",
-      "index": 20,
-      "moveNumber": 20,
-      "atSeconds": 20,
-      "scene": 21,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000020.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000021.png",
-      "index": 21,
-      "moveNumber": 21,
-      "atSeconds": 21,
-      "scene": 22,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000021.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000022.png",
-      "index": 22,
-      "moveNumber": 22,
-      "atSeconds": 22,
-      "scene": 23,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000022.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000023.png",
-      "index": 23,
-      "moveNumber": 23,
-      "atSeconds": 23,
-      "scene": 24,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000023.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000024.png",
-      "index": 24,
-      "moveNumber": 24,
-      "atSeconds": 24,
-      "scene": 25,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000024.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000025.png",
-      "index": 25,
-      "moveNumber": 25,
-      "atSeconds": 25,
-      "scene": 26,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000025.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000026.png",
-      "index": 26,
-      "moveNumber": 26,
-      "atSeconds": 26,
-      "scene": 27,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000026.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000027.png",
-      "index": 27,
-      "moveNumber": 27,
-      "atSeconds": 27,
-      "scene": 28,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000027.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000028.png",
-      "index": 28,
-      "moveNumber": 28,
-      "atSeconds": 28,
-      "scene": 29,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000028.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000029.png",
-      "index": 29,
-      "moveNumber": 29,
-      "atSeconds": 29,
-      "scene": 30,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000029.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000030.png",
-      "index": 30,
-      "moveNumber": 30,
-      "atSeconds": 30,
-      "scene": 31,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000030.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000031.png",
-      "index": 31,
-      "moveNumber": 31,
-      "atSeconds": 31,
-      "scene": 32,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000031.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000032.png",
-      "index": 32,
-      "moveNumber": 32,
-      "atSeconds": 32,
-      "scene": 33,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000032.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000033.png",
-      "index": 33,
-      "moveNumber": 33,
-      "atSeconds": 33,
-      "scene": 34,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000033.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000034.png",
-      "index": 34,
-      "moveNumber": 34,
-      "atSeconds": 34,
-      "scene": 35,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000034.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000035.png",
-      "index": 35,
-      "moveNumber": 35,
-      "atSeconds": 35,
-      "scene": 36,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000035.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000036.png",
-      "index": 36,
-      "moveNumber": 36,
-      "atSeconds": 36,
-      "scene": 37,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000036.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000037.png",
-      "index": 37,
-      "moveNumber": 37,
-      "atSeconds": 37,
-      "scene": 38,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000037.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000038.png",
-      "index": 38,
-      "moveNumber": 38,
-      "atSeconds": 38,
-      "scene": 39,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000038.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000039.png",
-      "index": 39,
-      "moveNumber": 39,
-      "atSeconds": 39,
-      "scene": 40,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000039.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000040.png",
-      "index": 40,
-      "moveNumber": 40,
-      "atSeconds": 40,
-      "scene": 41,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000040.provenance.json",
-      "characters": [],
-      "anonymous": 0
-    },
-    {
-      "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000041.png",
-      "index": 41,
-      "moveNumber": 41,
-      "atSeconds": 41,
-      "scene": 42,
-      "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000041.provenance.json",
+      "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.provenance.json",
       "characters": [],
       "anonymous": 0
     }
@@ -3320,436 +2945,90 @@
       "id": "arc:data/arc3_games/recordings/ls20/saved_004",
       "label": "ARC playback \u00b7 data/arc3_games/recordings/ls20/saved_004",
       "kind": "arc",
+      "frames": []
+    },
+    {
+      "id": "arc:data/arc3_games/recordings/ab01-v1/saved_001",
+      "label": "ARC playback \u00b7 data/arc3_games/recordings/ab01-v1/saved_001",
+      "kind": "arc",
       "frames": [
         {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000000.png",
+          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ab01-v1-saved_001/frame_000000.png",
           "index": 0,
-          "moveNumber": 0,
           "atSeconds": 0,
           "scene": 1,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000000.provenance.json",
+          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ab01-v1-saved_001/frame_000000.provenance.json",
           "characters": [],
           "anonymous": 0
         },
         {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000001.png",
+          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ab01-v1-saved_001/frame_000001.png",
           "index": 1,
-          "moveNumber": 1,
           "atSeconds": 1,
           "scene": 2,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000001.provenance.json",
+          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ab01-v1-saved_001/frame_000001.provenance.json",
+          "characters": [],
+          "anonymous": 0
+        }
+      ]
+    },
+    {
+      "id": "arc:data/arc3_games/recordings/bunny-cast/saved_001",
+      "label": "ARC playback \u00b7 data/arc3_games/recordings/bunny-cast/saved_001",
+      "kind": "arc",
+      "frames": [
+        {
+          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000000.png",
+          "index": 0,
+          "atSeconds": 0,
+          "scene": 1,
+          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000000.provenance.json",
           "characters": [],
           "anonymous": 0
         },
         {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000002.png",
+          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000001.png",
+          "index": 1,
+          "atSeconds": 1,
+          "scene": 2,
+          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000001.provenance.json",
+          "characters": [],
+          "anonymous": 0
+        },
+        {
+          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000002.png",
           "index": 2,
-          "moveNumber": 2,
           "atSeconds": 2,
           "scene": 3,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000002.provenance.json",
+          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000002.provenance.json",
           "characters": [],
           "anonymous": 0
         },
         {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000003.png",
+          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000003.png",
           "index": 3,
-          "moveNumber": 3,
           "atSeconds": 3,
           "scene": 4,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000003.provenance.json",
+          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000003.provenance.json",
           "characters": [],
           "anonymous": 0
         },
         {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000004.png",
+          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000004.png",
           "index": 4,
-          "moveNumber": 4,
           "atSeconds": 4,
           "scene": 5,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000004.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000005.png",
-          "index": 5,
-          "moveNumber": 5,
-          "atSeconds": 5,
-          "scene": 6,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000005.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000006.png",
-          "index": 6,
-          "moveNumber": 6,
-          "atSeconds": 6,
-          "scene": 7,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000006.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000007.png",
-          "index": 7,
-          "moveNumber": 7,
-          "atSeconds": 7,
-          "scene": 8,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000007.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000008.png",
-          "index": 8,
-          "moveNumber": 8,
-          "atSeconds": 8,
-          "scene": 9,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000008.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000009.png",
-          "index": 9,
-          "moveNumber": 9,
-          "atSeconds": 9,
-          "scene": 10,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000009.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000010.png",
-          "index": 10,
-          "moveNumber": 10,
-          "atSeconds": 10,
-          "scene": 11,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000010.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000011.png",
-          "index": 11,
-          "moveNumber": 11,
-          "atSeconds": 11,
-          "scene": 12,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000011.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000012.png",
-          "index": 12,
-          "moveNumber": 12,
-          "atSeconds": 12,
-          "scene": 13,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000012.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000013.png",
-          "index": 13,
-          "moveNumber": 13,
-          "atSeconds": 13,
-          "scene": 14,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000013.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000014.png",
-          "index": 14,
-          "moveNumber": 14,
-          "atSeconds": 14,
-          "scene": 15,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000014.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000015.png",
-          "index": 15,
-          "moveNumber": 15,
-          "atSeconds": 15,
-          "scene": 16,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000015.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000016.png",
-          "index": 16,
-          "moveNumber": 16,
-          "atSeconds": 16,
-          "scene": 17,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000016.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000017.png",
-          "index": 17,
-          "moveNumber": 17,
-          "atSeconds": 17,
-          "scene": 18,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000017.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000018.png",
-          "index": 18,
-          "moveNumber": 18,
-          "atSeconds": 18,
-          "scene": 19,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000018.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000019.png",
-          "index": 19,
-          "moveNumber": 19,
-          "atSeconds": 19,
-          "scene": 20,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000019.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000020.png",
-          "index": 20,
-          "moveNumber": 20,
-          "atSeconds": 20,
-          "scene": 21,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000020.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000021.png",
-          "index": 21,
-          "moveNumber": 21,
-          "atSeconds": 21,
-          "scene": 22,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000021.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000022.png",
-          "index": 22,
-          "moveNumber": 22,
-          "atSeconds": 22,
-          "scene": 23,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000022.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000023.png",
-          "index": 23,
-          "moveNumber": 23,
-          "atSeconds": 23,
-          "scene": 24,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000023.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000024.png",
-          "index": 24,
-          "moveNumber": 24,
-          "atSeconds": 24,
-          "scene": 25,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000024.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000025.png",
-          "index": 25,
-          "moveNumber": 25,
-          "atSeconds": 25,
-          "scene": 26,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000025.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000026.png",
-          "index": 26,
-          "moveNumber": 26,
-          "atSeconds": 26,
-          "scene": 27,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000026.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000027.png",
-          "index": 27,
-          "moveNumber": 27,
-          "atSeconds": 27,
-          "scene": 28,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000027.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000028.png",
-          "index": 28,
-          "moveNumber": 28,
-          "atSeconds": 28,
-          "scene": 29,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000028.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000029.png",
-          "index": 29,
-          "moveNumber": 29,
-          "atSeconds": 29,
-          "scene": 30,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000029.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000030.png",
-          "index": 30,
-          "moveNumber": 30,
-          "atSeconds": 30,
-          "scene": 31,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000030.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000031.png",
-          "index": 31,
-          "moveNumber": 31,
-          "atSeconds": 31,
-          "scene": 32,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000031.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000032.png",
-          "index": 32,
-          "moveNumber": 32,
-          "atSeconds": 32,
-          "scene": 33,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000032.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000033.png",
-          "index": 33,
-          "moveNumber": 33,
-          "atSeconds": 33,
-          "scene": 34,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000033.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000034.png",
-          "index": 34,
-          "moveNumber": 34,
-          "atSeconds": 34,
-          "scene": 35,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000034.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000035.png",
-          "index": 35,
-          "moveNumber": 35,
-          "atSeconds": 35,
-          "scene": 36,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000035.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000036.png",
-          "index": 36,
-          "moveNumber": 36,
-          "atSeconds": 36,
-          "scene": 37,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000036.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000037.png",
-          "index": 37,
-          "moveNumber": 37,
-          "atSeconds": 37,
-          "scene": 38,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000037.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000038.png",
-          "index": 38,
-          "moveNumber": 38,
-          "atSeconds": 38,
-          "scene": 39,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000038.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000039.png",
-          "index": 39,
-          "moveNumber": 39,
-          "atSeconds": 39,
-          "scene": 40,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000039.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000040.png",
-          "index": 40,
-          "moveNumber": 40,
-          "atSeconds": 40,
-          "scene": 41,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000040.provenance.json",
-          "characters": [],
-          "anonymous": 0
-        },
-        {
-          "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000041.png",
-          "index": 41,
-          "moveNumber": 41,
-          "atSeconds": 41,
-          "scene": 42,
-          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000041.provenance.json",
+          "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000004.provenance.json",
           "characters": [],
           "anonymous": 0
         }
       ]
     }
   ],
-  "selectedFrameSourceId": "arc:data/arc3_games/recordings/ls20/saved_004",
+  "selectedFrameSourceId": "curated:data/arc3_games/curated/SILO_1",
   "picked": null,
   "kept": null,
-  "memberInputPaths": [
-    "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004/frame_move_000000.png"
-  ],
+  "memberInputPaths": [],
   "selectedWorkflowGalleryPaths": [],
   "previewSource": "selectedframe",
   "galleryScope": "included",
@@ -3781,14 +3060,175 @@
   "memberDescriptionPrompt": "SCENE OBJECTS TEXTUAL DESCRIPTION.\nDescribe this video-frame scene, then make a list of the individual things that can be visually extracted from it.\n{{goal}}\nList every distinct extractable thing you can identify. Do not return polygons coordinates in this stage.\n{{alreadyExtracted}}\nAnswer ONLY with JSON: {\"description\":\"scene description\",\"things\":[{\"name\":\"short unique name\",first pixel encountered in raster-scan,\"description\":\"visual identity location\"}]}",
   "objectPromptWriter": "OBJECT EXTRACTION PROMPT WRITER.\nWrite a better, precise visual-localization prompt for extracting the named object from the attached image.\nUse its appearance, location, parent relationship, boundaries, overlaps, and the scene context to distinguish it from its own sub-objects, neighboring objects, and background.\nThe prompt must work when the attached extraction image is either the full scene or an independently extracted image of the object's parent.\nThe generated prompt must tell a vision model to return ONLY {\"name\":\"exact name\",\"polygon\":[[x,y],...]} with 3-20 pixel-coordinate points, allow box only when polygon is impossible, and return exactly NONE when the object is not visible.\nDo not perform the extraction now. Return the complete ready-to-run prompt as JSON.\nTEXTUAL DESCRIPTION:\n{{textualDescription}}\nOBJECT NAME: {{objectName}}\nOBJECT DESCRIPTION: {{objectDescription}}\nPARENT OBJECT: {{parentName}}\nVISIBILITY: {{visibility}}\nAnswer ONLY with JSON: {\"name\":\"{{objectName}}\",\"extraction_prompt\":\"complete ready-to-run extraction prompt\"}",
   "memberDecompositionPrompt": "OBJECTS_WITH_SUB_OBJECTS.\nRefine the listed objects into a hierarchical inventory of visible, independently localizable things in the attached image.\nKeep every original object. Add meaningful visible sub-objects recursively when they can be named, counted, localized, or extracted separately.\nExamples include a face's two eyes, nose, mouth, ears, and hair; a car's individual wheels, doors, windows, lights, and mirrors; clothing bows, buttons, gloves on hands, and a reflection visible in a mirror.\nRepresent repeated countable parts as separate keyed entries with distinct globally unique names, countIndex, and countTotal. Use left/right/front/rear when visible; otherwise use stable numeric suffixes.\nCreate each sub-object as a key inside its immediate parent's sub_objects object. A sub-object may itself own another sub_objects object.\nSometimes point out a strongly implied but fully hidden part that matters to the parent or count (for example an occluded second wheel). Mark it visibility \"hidden\", explain hidden_reason, and name occluded_by. Never present an inferred hidden part as visible.\nUse visibility \"partially_hidden\" for a localized part that is only partly occluded. Do not invent unsupported parts, microscopic detail, arbitrary color patches, or duplicate aliases. Stop when a smaller part is not independently meaningful.\nTEXTUAL DESCRIPTION:\n{{textualDescription}}\nFOUND OBJECTS:\n{{objects}}\nAnswer ONLY with JSON whose top-level key is objects_with_sub_objects. Use this recursive shape:\n{\"objects_with_sub_objects\":{\"face\":{\"description\":\"visible face and location\",\"visibility\":\"visible\",\"sub_objects\":{\"left_eye\":{\"description\":\"visible left eye\",\"visibility\":\"visible\",\"countIndex\":1,\"countTotal\":2,\"sub_objects\":{}},\"right_eye\":{\"description\":\"right eye hidden by hair\",\"visibility\":\"hidden\",\"hidden_reason\":\"occluded by hair\",\"occluded_by\":[\"hair\"],\"countIndex\":2,\"countTotal\":2,\"sub_objects\":{}}}}}}",
-  "memberOrderPrompt": "OBJECT EXTRACTION PLANNER.\nUse the textual description and attached image to declare the visible relationships among every listed direct child object, then order their extraction.\nAlways remove every sub-object before its parent object so removing a whole does not erase parts that still need extraction.\nDeclare every pair of listed objects whose visible boundaries physically touch. Touching is symmetric; do not report objects that are merely near each other.\nDeclare every directed occlusion where one listed object visibly covers any part of another. Name the foreground object as occluder and the covered object as occluded.\nDeclare every directed containment where the complete visible extent of one listed object is spatially inside another listed object's boundary. Name the enclosing object as container and the inner object as contained. Do not call partial overlap or ordinary touching containment.\nOrder every occluder before the object it occludes, and every contained object before its container. Remove foreground objects first and the farthest background objects last.\nList first, before any other object, every object that is not occluded at all \u2014 no listed object covers any part of it. These fully-unoccluded objects are pure foreground, depend on nothing being removed first, and can be extracted immediately and in parallel with each other; keep their relative order among themselves free.\nAlso partition every object into ordered parallel GROUPS (waves) that can be worked on together. Group 1 is exactly the objects that are not occluded at all right now. After all of group 1 is removed, some previously-covered objects become fully unoccluded because their only occluders are now gone \u2014 those form group 2. Repeat: each later group is the set of objects that become fully unoccluded once every earlier group has been removed. Every object inside a single group must be mutually independent \u2014 none occludes, contains, or is a sub-object or parent of another object in the SAME group \u2014 so all objects in one group can be extracted in parallel. Earlier groups must be fully removed before any object in a later group. Every object appears in exactly one group, and flattening the groups in order must equal the extraction order.\nUse every object name exactly once.\nDo not outline objects and do not return polygons, coordinates, masks, or cutout instructions. Outliner handles that separately, one object at a time.\nTEXTUAL DESCRIPTION:\n{{textualDescription}}\nOBJECTS:\n{{objects}}\nNUMBER LABEL COORDINATE SPACE: width={{imageWidth}}, height={{imageHeight}}. Give one point [x,y] visibly inside each exact object so the workbench can draw its extraction-order number on the object.\nAlways include touching, occlusions, containments, and labels as arrays, using [] only when that relationship type has no entries.\nAnswer ONLY with JSON: {\"touching\":[{\"objects\":[\"exact object name\",\"exact object name\"],\"contact\":\"what visibly touches where\"}],\"occlusions\":[{\"occluder\":\"foreground exact object name\",\"occluded\":\"covered exact object name\",\"region\":\"what part is covered\"}],\"containments\":[{\"container\":\"enclosing exact object name\",\"contained\":\"fully inner exact object name\",\"evidence\":\"how its complete visible extent is inside\"}],\"order\":[\"exact object name\",...],\"groups\":[[\"exact object name\",...],...],\"labels\":[{\"object\":\"exact object name\",\"number\":1,\"point\":[x,y]}],\"reasoning\":[\"why this relationship-aware order\",...]}",
+  "memberOrderPrompt": "PARALLEL EXTRACTION PLANNER.\nGroup the listed objects into ordered waves for extraction. Objects in the same group can be lifted in parallel (none covers, contains, or is part/parent of another in that group). Group 1 is the fully-visible foreground; each later group becomes liftable only after earlier groups are removed. Use every object's exact name exactly once, and output nothing else.\nDESCRIPTION:\n{{textualDescription}}\nOBJECTS:\n{{objects}}\nAnswer ONLY with JSON: {\"groups\":[[\"exact object name\",...],...]}",
   "memberOutlinerPrompt": "OBJECT OUTLINER.\nOutline exactly ONE object in the attached current scene. Planner has already selected its order position.\nDo not outline, include, or remove any other listed object.\nTEXTUAL DESCRIPTION:\n{{textualDescription}}\nPLANNER-SELECTED OBJECT: {{nextObjectName}}\nObject description: {{nextObjectDescription}}\nPlanner position: {{plannerPosition}} of {{plannerTotal}}\nTrace the named object's visible silhouette at pixel-edge precision in THIS current image.\nExplicitly include only pixels belonging to the named object and exclude adjacent body parts, neighboring objects, shadows, and background.\nPreserve disconnected visible parts as separate polygons and enclosed transparent gaps as holes. Respect occluders: trace only the visible contour and never invent hidden pixels.\nFor parts such as a character's chest, exclude the head, arms, hands, lower body, clothing outside the chest, and background unless truly part of the named object.\nAlso describe the contour clockwise and as normalized 0..1000 move/line commands in Turtle form for inspection.\nAnswer ONLY with JSON: {\"name\":\"{{nextObjectName}}\",\"polygons\":[[[x,y],...]],\"holes\":[[[x,y],...]],\"traceClockwise\":[\"start at ...\",\"follow edge ...\",\"return to start\"],\"traceTurtle\":[{\"op\":\"move\",\"x\":0,\"y\":0},{\"op\":\"line\",\"x\":0,\"y\":0}],\"occlusion\":\"...\"} using pixel coordinates in THIS current image.\nUse polygon only as a compatibility fallback for one connected part. Use box only for a genuinely rectangular object with exact rectangular boundaries.\nIf this exact object is no longer visible, answer exactly: NONE",
   "memberExtractorPrompt": "SCENE OBJECT EXTRACTION AND BACKGROUND RECONSTRUCTION.\nRemove exactly ONE object from the attached current image using the exact geometry already produced by Outliner.\nTEXTUAL DESCRIPTION:\n{{textualDescription}}\nPLANNER-SELECTED NEXT OBJECT: {{nextObjectName}}\nObject description: {{nextObjectDescription}}\nPlanner position: {{plannerPosition}} of {{plannerTotal}}\nOUTLINER RESULT:\n{{outline}}\nDo not change the extraction order or outline another object. Outliner owns contour geometry; Extractor owns removal and reconstruction.\nDescribe what visually continues BEHIND the outlined object: background colors, gradients, lines, texture, and which surrounding edges should continue through the hole.\nAnswer ONLY with JSON: {\"name\":\"{{nextObjectName}}\",\"backgroundFill\":{\"description\":\"...\",\"colors\":[\"#RRGGBB\"],\"continueEdges\":[\"...\"],\"texture\":\"...\"}}.",
   "turtlePrompt": "TURTLE LEAF RENDERER.\nThe attached image is the terminal object {{subjectName}}. Its recursive Describer found no further sub-objects.\nObject description: {{description}}\nWrite a constrained turtle drawing program that reconstructs this one object.\nUse normalized coordinates from 0 to 1000 with origin at the top-left.\nAllowed commands: pen, move, line, polyline, polygon, rectangle, ellipse, dot.\nUse transparent background unless the object itself requires a background. Use at most 100 commands.\nAnswer ONLY with JSON: {\"version\":1,\"background\":\"transparent\",\"penColor\":\"#RRGGBB\",\"penWidth\":4,\"commands\":[{\"op\":\"move\",\"x\":0,\"y\":0},...]}",
   "turtlePngPrompt": "TURTLE PNG DRAW STEP.\nThe attached image is terminal object {{subjectName}}.\nObject description: {{description}}\nReview the draft Turtle program below and return the final drawing program that should be rendered to PNG.\nPreserve accurate silhouette, colors, holes, and visible internal details. Coordinates are normalized from 0 to 1000 with top-left origin.\nAllowed commands: pen, move, line, polyline, polygon, rectangle, ellipse, dot. Use at most 200 commands.\nDRAFT TURTLE PROGRAM:\n{{draftProgram}}\nAnswer ONLY with the final JSON object. Do not include Markdown or Python.",
   "turtleArtifacts": {},
-  "memberGoal": "any",
+  "recognitions": {
+    "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0001.png": {
+      "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0001.png",
+      "kind": "frame",
+      "label": "frame #1",
+      "frameIndex": 1,
+      "characters": [
+        {
+          "name": "Stitch",
+          "franchise": "Disney's Lilo & Stitch",
+          "confidence": 0.99,
+          "where": "left rounded portrait tile in the lower-left area",
+          "searchQuery": "Stitch Lilo and Stitch official character art",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Stitch%20Lilo%20and%20Stitch%20official%20character%20art"
+        },
+        {
+          "name": "Mirabel Madrigal",
+          "franchise": "Disney's Encanto",
+          "confidence": 0.94,
+          "where": "center rounded portrait tile in the lower-middle area",
+          "searchQuery": "Mirabel Madrigal Encanto official character image",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Mirabel%20Madrigal%20Encanto%20official%20character%20image"
+        },
+        {
+          "name": "Bluey",
+          "franchise": "Bluey",
+          "confidence": 0.98,
+          "where": "right rounded portrait tile in the lower-right area",
+          "searchQuery": "Bluey character official artwork",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Bluey%20character%20official%20artwork"
+        }
+      ],
+      "rawOutput": "{\"characters\":[{\"name\":\"Stitch\",\"franchise\":\"Disney's Lilo & Stitch\",\"confidence\":0.99,\"where\":\"left rounded portrait tile in the lower-left area\",\"searchQuery\":\"Stitch Lilo and Stitch official character art\"},{\"name\":\"Mirabel Madrigal\",\"franchise\":\"Disney's Encanto\",\"confidence\":0.94,\"where\":\"center rounded portrait tile in the lower-middle area\",\"searchQuery\":\"Mirabel Madrigal Encanto official character image\"},{\"name\":\"Bluey\",\"franchise\":\"Bluey\",\"confidence\":0.98,\"where\":\"right rounded portrait tile in the lower-right area\",\"searchQuery\":\"Bluey character official artwork\"}]}"
+    },
+    "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0002.png": {
+      "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0002.png",
+      "kind": "frame",
+      "label": "frame #2",
+      "frameIndex": 2,
+      "characters": [
+        {
+          "name": "Pikachu",
+          "franchise": "Pok\u00e9mon",
+          "confidence": 0.99,
+          "where": "lower-right quadrant, left option card (the left of the two rounded cards)",
+          "searchQuery": "Pikachu official Pokemon artwork",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Pikachu%20official%20Pokemon%20artwork"
+        },
+        {
+          "name": "Shrek",
+          "franchise": "Shrek (DreamWorks)",
+          "confidence": 0.99,
+          "where": "lower-right corner, right option card",
+          "searchQuery": "Shrek DreamWorks official character image",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Shrek%20DreamWorks%20official%20character%20image"
+        }
+      ],
+      "rawOutput": "{\"characters\":[{\"name\":\"Pikachu\",\"franchise\":\"Pok\u00e9mon\",\"confidence\":0.99,\"where\":\"lower-right quadrant, left option card (the left of the two rounded cards)\",\"searchQuery\":\"Pikachu official Pokemon artwork\"},{\"name\":\"Shrek\",\"franchise\":\"Shrek (DreamWorks)\",\"confidence\":0.99,\"where\":\"lower-right corner, right option card\",\"searchQuery\":\"Shrek DreamWorks official character image\"}]}"
+    },
+    "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0000.png": {
+      "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0000.png",
+      "kind": "frame",
+      "label": "frame #0",
+      "frameIndex": 0,
+      "characters": [
+        {
+          "name": "Moana",
+          "franchise": "Disney's Moana",
+          "confidence": 0.99,
+          "where": "left portrait tile in the lower-left area",
+          "searchQuery": "Moana Disney official character render",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Moana%20Disney%20official%20character%20render"
+        },
+        {
+          "name": "SpongeBob SquarePants",
+          "franchise": "SpongeBob SquarePants (Nickelodeon)",
+          "confidence": 0.99,
+          "where": "right portrait tile in the lower-right area",
+          "searchQuery": "SpongeBob SquarePants official character image",
+          "webSearchUrl": "https://www.bing.com/images/search?q=SpongeBob%20SquarePants%20official%20character%20image"
+        }
+      ],
+      "rawOutput": "{\"characters\":[{\"name\":\"Moana\",\"franchise\":\"Disney's Moana\",\"confidence\":0.99,\"where\":\"left portrait tile in the lower-left area\",\"searchQuery\":\"Moana Disney official character render\"},{\"name\":\"SpongeBob SquarePants\",\"franchise\":\"SpongeBob SquarePants (Nickelodeon)\",\"confidence\":0.995,\"where\":\"right portrait tile in the lower-right area\",\"searchQuery\":\"SpongeBob SquarePants official character image\"}]}"
+    },
+    "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0004.png": {
+      "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0004.png",
+      "kind": "frame",
+      "label": "frame #4",
+      "frameIndex": 4,
+      "characters": [
+        {
+          "name": "Moana",
+          "franchise": "Disney's Moana",
+          "confidence": 0.99,
+          "where": "center of the image inside the large rounded rectangle",
+          "searchQuery": "Moana Disney official render",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Moana%20Disney%20official%20render"
+        }
+      ],
+      "rawOutput": "{\"characters\":[{\"name\":\"Moana\",\"franchise\":\"Disney's Moana\",\"confidence\":0.99,\"where\":\"center of the image inside the large rounded rectangle\",\"searchQuery\":\"Moana Disney official render\"}]}"
+    },
+    "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0003.png": {
+      "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0003.png",
+      "kind": "frame",
+      "label": "frame #3",
+      "frameIndex": 3,
+      "characters": [
+        {
+          "name": "Moana",
+          "franchise": "Disney's Moana",
+          "confidence": 0.99,
+          "where": "center of the image inside the large rounded rectangular card",
+          "searchQuery": "Moana Disney official character artwork",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Moana%20Disney%20official%20character%20artwork"
+        }
+      ],
+      "rawOutput": "{\"characters\":[{\"name\":\"Moana\",\"franchise\":\"Disney's Moana\",\"confidence\":0.99,\"where\":\"center of the image inside the large rounded rectangular card\",\"searchQuery\":\"Moana Disney official character artwork\"}]}"
+    },
+    "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0005.png": {
+      "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0005.png",
+      "kind": "frame",
+      "label": "frame #5",
+      "frameIndex": 5,
+      "characters": [
+        {
+          "name": "Moana",
+          "franchise": "Disney's Moana",
+          "confidence": 0.99,
+          "where": "center portrait card, occupying most of the middle of the image",
+          "searchQuery": "Moana Disney official artwork",
+          "webSearchUrl": "https://www.bing.com/images/search?q=Moana%20Disney%20official%20artwork"
+        },
+        {
+          "name": "QUIZ logo",
+          "franchise": "Quiz graphic/logo",
+          "confidence": 0.78,
+          "where": "top-right corner inside a small white circular badge",
+          "searchQuery": "quiz logo red purple letters",
+          "webSearchUrl": "https://www.bing.com/images/search?q=quiz%20logo%20red%20purple%20letters"
+        }
+      ],
+      "rawOutput": "{\"characters\":[{\"name\":\"Moana\",\"franchise\":\"Disney's Moana\",\"confidence\":0.99,\"where\":\"center portrait card, occupying most of the middle of the image\",\"searchQuery\":\"Moana Disney official artwork\"},{\"name\":\"QUIZ logo\",\"franchise\":\"Quiz graphic/logo\",\"confidence\":0.78,\"where\":\"top-right corner inside a small white circular badge\",\"searchQuery\":\"quiz logo red purple letters\"}]}"
+    }
+  },
+  "recognitionInputs": [],
+  "recognitionMembers": [],
+  "recognitionMatches": {},
+  "recognitionInventories": [],
+  "recognitionGallery": [],
+  "memberGoal": "characters",
   "memberFill": "median",
+  "recognizeOnepassModel": "",
+  "recognizeOnepassPrompt": "MAKE OUTLINE FROM IMAGE.\nIdentify each distinct extractable object in this image AND give its exact pixel outline.\n{{goal}}\nPIXEL COORDINATE SPACE: width={{imageWidth}}, height={{imageHeight}}. Use x=0..{{maxX}} and y=0..{{maxY}} only.\nFor each object return: name, a short description, polygons (rings of >=3 pixel [x,y] points), optional holes, an optional box [x0,y0,x1,y1], and a normalized 0..1000 traceTurtle (move/line) of the main contour. NO drawing program, NO image.\nAnswer ONLY with JSON: {\"description\":\"scene\",\"objects\":[{\"name\":\"...\",\"description\":\"...\",\"polygons\":[[[x,y]]],\"holes\":[],\"box\":[x0,y0,x1,y1],\"traceTurtle\":[{\"op\":\"move\",\"x\":0,\"y\":0}]}]}",
+  "recognizeOnepassPromptSelection": "workspace",
+  "recognizeObjectsTurtleModel": "",
+  "recognizeObjectsTurtlePrompt": "MAKE TURTLE PROGRAMS FOR OBJECTS FOUND IN IMAGE (one call).\nIn a SINGLE pass, identify each object, give its pixel outline, AND a turtle program that reconstructs it.\n{{goal}}\nPIXEL COORDINATE SPACE for outlines: width={{imageWidth}}, height={{imageHeight}}. Use x=0..{{maxX}}, y=0..{{maxY}}.\nPer object: name, description, polygons, optional holes, optional box, a normalized 0..1000 traceTurtle of the contour, AND turtleProgram (coords 0..1000; ops pen/move/line/polyline/polygon/rectangle/ellipse/dot; rectangle/ellipse need box, polyline/polygon need points).\nEXAMPLE turtleProgram (red circle): {\"version\":1,\"background\":\"transparent\",\"penColor\":\"#c0392b\",\"penWidth\":6,\"commands\":[{\"op\":\"ellipse\",\"box\":[250,250,750,750],\"fill\":\"#e74c3c\"}]}\nAnswer ONLY with JSON: {\"description\":\"scene\",\"objects\":[{\"name\":\"...\",\"description\":\"...\",\"polygons\":[[[x,y]]],\"holes\":[],\"box\":[x0,y0,x1,y1],\"traceTurtle\":[{\"op\":\"move\",\"x\":0,\"y\":0}],\"turtleProgram\":{\"version\":1,\"background\":\"transparent\",\"penColor\":\"#RRGGBB\",\"penWidth\":4,\"commands\":[]}}]}",
+  "recognizeObjectsTurtlePromptSelection": "workspace",
+  "recognizeTurtleModel": "",
+  "recognizeTurtlePrompt": "MAKE TURTLE FROM CONTENT INSIDE THE OUTLINE.\nThe attached image is a single extracted object: {{subjectName}}.\nDescription: {{description}}\nWrite a turtle drawing program that reconstructs this one object as faithfully as possible. Coordinates normalized 0..1000, origin top-left.\nAllowed ops: pen, move, line, polyline, polygon, rectangle, ellipse, dot. rectangle/ellipse require box:[x0,y0,x1,y1]; polyline/polygon require points:[[x,y],...]. At most 120 commands.\nEXAMPLE (a red circle): {\"version\":1,\"background\":\"transparent\",\"penColor\":\"#c0392b\",\"penWidth\":6,\"commands\":[{\"op\":\"ellipse\",\"box\":[250,250,750,750],\"fill\":\"#e74c3c\"}]}\nAnswer ONLY with the JSON object.",
+  "recognizeTurtlePromptSelection": "workspace",
+  "recognizeTurtlePngModel": "",
+  "recognizeTurtlePngPrompt": "MAKE PNG FROM TURTLE.\nObject {{subjectName}} \u2014 {{description}}.\nThe turtle program below is rendered to a PNG locally for viewing in the UI.\nTURTLE PROGRAM:\n{{draftProgram}}",
+  "recognizeTurtlePngPromptSelection": "workspace",
   "allCallsModel": "enullm-8801-copilot_gpt-5.3-codex",
   "describerModel": "",
   "plannerModel": "",
@@ -3922,8 +3362,8 @@
   },
   "selectedRecursiveInventoryId": "",
   "collapsedLeftGalleries": {
-    "extractedImages": true,
-    "selectedImages": false,
+    "extractedImages": false,
+    "selectedImages": true,
     "objects:0": false,
     "backgrounds:0": false,
     "objects:1": false,
@@ -3946,25 +3386,27 @@
     "pilotFirst": false
   },
   "llmCallConcurrency": {
-    "describer": null,
-    "planner": null,
-    "outliner": null,
-    "extractor": null,
-    "turtle": null,
-    "turtlePng": null
+    "describer": "reserve",
+    "planner": "reserve",
+    "outliner": "reserve",
+    "extractor": "reserve",
+    "turtle": "reserve",
+    "turtlePng": "reserve",
+    "recognizer": "reserve",
+    "recognizeTurtlePng": 1
   },
   "llmCallMetrics": {
     "describer": {
-      "completed": 1983,
-      "totalDurationMs": 15020063.000000626
+      "completed": 1984,
+      "totalDurationMs": 15043127.60000065
     },
     "planner": {
       "completed": 227,
       "totalDurationMs": 15438656.00000012
     },
     "outliner": {
-      "completed": 2280,
-      "totalDurationMs": 116218312.00000107
+      "completed": 1450,
+      "totalDurationMs": 102285444.00000012
     },
     "extractor": {
       "completed": 221,
@@ -3996,7 +3438,9 @@
     "trail": true,
     "members": true,
     "finish": true,
-    "memberDescription": true
+    "memberDescription": true,
+    "arc3Player": false,
+    "gameImport": true
   },
   "pinnedMap": {},
   "stateShards": {

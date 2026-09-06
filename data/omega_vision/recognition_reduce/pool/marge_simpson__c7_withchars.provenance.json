@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/marge_simpson__c7_withchars.jpg",
+  "provenance": "data/recognition_reduce/pool/marge_simpson__c7_withchars.provenance.json",
+  "createdAt": "2026-09-03T16:41:27.390195Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 900,
+    "height": 647
+  },
+  "originalDimensions": {
+    "width": 900,
+    "height": 647
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/marge_simpson__c7_withchars.jpg",
+    "dimensions": {
+      "width": 900,
+      "height": 647
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/marge_simpson__c7_withchars.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/marge_simpson__c7_withchars.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 900,
+        "height": 647
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T16:41:27.390195Z"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/stages/moana__c4_busy__t1__parts.png",
+  "provenance": "data/recognition_reduce/stages/moana__c4_busy__t1__parts.provenance.json",
+  "createdAt": "2026-09-03T22:57:59.904097Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 224,
+    "height": 224
+  },
+  "originalDimensions": {
+    "width": 224,
+    "height": 224
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/stages/moana__c4_busy__t1__parts.png",
+    "dimensions": {
+      "width": 224,
+      "height": 224
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/stages/moana__c4_busy__t1__parts.png"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/stages/moana__c4_busy__t1__parts.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 224,
+        "height": 224
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T22:57:59.904097Z"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/pikachu__c8_typical.jpg",
+  "provenance": "data/recognition_reduce/pool/pikachu__c8_typical.provenance.json",
+  "createdAt": "2026-09-03T18:24:19.201956Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 900,
+    "height": 450
+  },
+  "originalDimensions": {
+    "width": 900,
+    "height": 450
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/pikachu__c8_typical.jpg",
+    "dimensions": {
+      "width": 900,
+      "height": 450
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/pikachu__c8_typical.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/pikachu__c8_typical.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 900,
+        "height": 450
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T18:24:19.201956Z"
+    }
+  ]
+}

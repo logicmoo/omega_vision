@@ -1,0 +1,52 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001_members/scene_after_03_members/scene_after_05_members/scene_after_02_members/cut_06_left_inner_black_marker.png",
+  "subjectName": "left_inner_black_marker",
+  "modelId": "enullm-8801-copilot_gpt-5.3-codex",
+  "prompt": "TURTLE PNG DRAW STEP.\nThe attached image is terminal object left_inner_black_marker.\nObject description: No additional description.\nReview the draft Turtle program below and return the final drawing program that should be rendered to PNG.\nPreserve accurate silhouette, colors, holes, and visible internal details. Coordinates are normalized from 0 to 1000 with top-left origin.\nAllowed commands: pen, move, line, polyline, polygon, rectangle, ellipse, dot. Use at most 200 commands.\nDRAFT TURTLE PROGRAM:\n{\"version\":1,\"background\":\"transparent\",\"penColor\":\"#000000\",\"penWidth\":4,\"commands\":[{\"op\":\"rectangle\",\"x\":333,\"y\":0,\"w\":333,\"h\":333},{\"op\":\"rectangle\",\"x\":0,\"y\":333,\"w\":333,\"h\":333},{\"op\":\"rectangle\",\"x\":333,\"y\":333,\"w\":333,\"h\":333},{\"op\":\"rectangle\",\"x\":666,\"y\":333,\"w\":334,\"h\":333},{\"op\":\"rectangle\",\"x\":333,\"y\":666,\"w\":333,\"h\":334}]}\nAnswer ONLY with the final JSON object. Do not include Markdown or Python.",
+  "rawModelOutput": "{\"version\":1,\"background\":\"transparent\",\"penColor\":\"#000000\",\"penWidth\":1,\"commands\":[{\"op\":\"pen\",\"color\":\"#000000\",\"width\":1},{\"op\":\"polygon\",\"points\":[[42,42],[458,42],[458,458],[875,458],[875,875],[42,875]]}]}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#000000",
+    "penWidth": 1,
+    "commands": [
+      {
+        "op": "pen",
+        "color": "#000000",
+        "width": 1
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            42,
+            42
+          ],
+          [
+            458,
+            42
+          ],
+          [
+            458,
+            458
+          ],
+          [
+            875,
+            458
+          ],
+          [
+            875,
+            875
+          ],
+          [
+            42,
+            875
+          ]
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T00:47:55.639330Z"
+}

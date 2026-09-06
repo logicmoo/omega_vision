@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/stages/sonic__c9_colorful__t1__partmap.png",
+  "provenance": "data/recognition_reduce/stages/sonic__c9_colorful__t1__partmap.provenance.json",
+  "createdAt": "2026-09-03T23:06:27.601023Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 224,
+    "height": 224
+  },
+  "originalDimensions": {
+    "width": 224,
+    "height": 224
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/stages/sonic__c9_colorful__t1__partmap.png",
+    "dimensions": {
+      "width": 224,
+      "height": 224
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/stages/sonic__c9_colorful__t1__partmap.png"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/stages/sonic__c9_colorful__t1__partmap.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 224,
+        "height": 224
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T23:06:27.601023Z"
+    }
+  ]
+}

@@ -1,0 +1,241 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/next_pass_45_top_gray_sign_tile.png",
+  "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/next_pass_45_top_gray_sign_tile.provenance.json",
+  "createdAt": "2026-09-02T23:04:48.630167Z",
+  "operation": "enlarge_object_for_analysis",
+  "dimensions": {
+    "width": 772,
+    "height": 772
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/cut_45_top_gray_sign_tile.png",
+    "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/cut_45_top_gray_sign_tile.provenance.json"
+  },
+  "source": {
+    "objectName": "top_gray_sign_tile"
+  },
+  "transform": {
+    "sourceDimensions": {
+      "width": 74,
+      "height": 74
+    },
+    "scale": 9,
+    "resizedDimensions": {
+      "width": 666,
+      "height": 666
+    },
+    "padding": {
+      "left": 53,
+      "top": 53,
+      "right": 53,
+      "bottom": 53
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T00:18:36.024826Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+      "operation": "import_curated_data_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T19:29:52.540155Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_main_green_body_7c2236d99f7e.png",
+          "geometryHash": "7c2236d99f7e652db1dc6b541d238e0759e12882916a2531c9ea637012d09bc5",
+          "traceVerified": true
+        },
+        "removedBox": [
+          139,
+          79,
+          543,
+          503
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the green body, the underlying layer is a flat bright-yellow background, while the excluded interior holes remain occupied by their own visible objects (top gray sign tile, central yellow cavity, and inner black/blue marker region).",
+          "colors": [
+            "#FFDC00"
+          ],
+          "continueEdges": [
+            "Continue the yellow background seamlessly across the entire removed green silhouette.",
+            "Maintain sharp boundaries around preserved hole contents: the gray sign tile perimeter, the black/blue marker-region perimeter, and the existing central yellow cavity boundary.",
+            "Keep neighboring object edges (left gray wall, lower gray/maroon block, bottom-left tile, and bottom UI strip) unchanged where they border the removed area."
+          ],
+          "texture": "Solid flat fill, no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:04:12.529845Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/cut_45_top_gray_sign_tile.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 74,
+        "height": 74
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 640
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_top_gray_sign_tile_3a12c863d879.png",
+          "geometryHash": "3a12c863d879ffb43a667e98ca6758a3b456e6c1107ed3e7e9f907a68d4e451c",
+          "traceVerified": true
+        },
+        "cropBox": [
+          329,
+          89,
+          403,
+          163
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              330,
+              90
+            ],
+            [
+              400,
+              90
+            ],
+            [
+              400,
+              160
+            ],
+            [
+              330,
+              160
+            ]
+          ]
+        ],
+        "holes": [
+          [
+            [
+              350,
+              110
+            ],
+            [
+              380,
+              110
+            ],
+            [
+              380,
+              140
+            ],
+            [
+              370,
+              140
+            ],
+            [
+              370,
+              120
+            ],
+            [
+              350,
+              120
+            ]
+          ],
+          [
+            [
+              350,
+              130
+            ],
+            [
+              360,
+              130
+            ],
+            [
+              360,
+              140
+            ],
+            [
+              350,
+              140
+            ]
+          ]
+        ]
+      },
+      "createdAt": "2026-09-02T23:04:48.572300Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/next_pass_45_top_gray_sign_tile.png",
+      "operation": "enlarge_object_for_analysis",
+      "dimensions": {
+        "width": 772,
+        "height": 772
+      },
+      "transform": {
+        "sourceDimensions": {
+          "width": 74,
+          "height": 74
+        },
+        "scale": 9,
+        "resizedDimensions": {
+          "width": 666,
+          "height": 666
+        },
+        "padding": {
+          "left": 53,
+          "top": 53,
+          "right": 53,
+          "bottom": 53
+        }
+      },
+      "createdAt": "2026-09-02T23:04:48.630167Z"
+    }
+  ]
+}

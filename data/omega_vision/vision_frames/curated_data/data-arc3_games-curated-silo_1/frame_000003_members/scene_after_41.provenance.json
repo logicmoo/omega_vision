@@ -1,0 +1,148 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41.png",
+  "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41.provenance.json",
+  "createdAt": "2026-09-02T23:04:12.529845Z",
+  "operation": "remove_object_from_scene",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+    "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.provenance.json"
+  },
+  "source": {
+    "objectName": "main_green_body",
+    "cutout": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/cut_41_main_green_body.png",
+    "fillInstructions": {
+      "description": "Behind the green body, the underlying layer is a flat bright-yellow background, while the excluded interior holes remain occupied by their own visible objects (top gray sign tile, central yellow cavity, and inner black/blue marker region).",
+      "colors": [
+        "#FFDC00"
+      ],
+      "continueEdges": [
+        "Continue the yellow background seamlessly across the entire removed green silhouette.",
+        "Maintain sharp boundaries around preserved hole contents: the gray sign tile perimeter, the black/blue marker-region perimeter, and the existing central yellow cavity boundary.",
+        "Keep neighboring object edges (left gray wall, lower gray/maroon block, bottom-left tile, and bottom UI strip) unchanged where they border the removed area."
+      ],
+      "texture": "Solid flat fill, no gradient or pattern."
+    }
+  },
+  "transform": {
+    "fill": "median",
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+      "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_main_green_body_7c2236d99f7e.png",
+      "geometryHash": "7c2236d99f7e652db1dc6b541d238e0759e12882916a2531c9ea637012d09bc5",
+      "traceVerified": true
+    },
+    "removedBox": [
+      139,
+      79,
+      543,
+      503
+    ],
+    "maskScale": 4,
+    "fillInstructions": {
+      "description": "Behind the green body, the underlying layer is a flat bright-yellow background, while the excluded interior holes remain occupied by their own visible objects (top gray sign tile, central yellow cavity, and inner black/blue marker region).",
+      "colors": [
+        "#FFDC00"
+      ],
+      "continueEdges": [
+        "Continue the yellow background seamlessly across the entire removed green silhouette.",
+        "Maintain sharp boundaries around preserved hole contents: the gray sign tile perimeter, the black/blue marker-region perimeter, and the existing central yellow cavity boundary.",
+        "Keep neighboring object edges (left gray wall, lower gray/maroon block, bottom-left tile, and bottom UI strip) unchanged where they border the removed area."
+      ],
+      "texture": "Solid flat fill, no gradient or pattern."
+    },
+    "imageGeneration": {
+      "renderer": "median"
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T00:18:36.024826Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+      "operation": "import_curated_data_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T19:29:52.540155Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_main_green_body_7c2236d99f7e.png",
+          "geometryHash": "7c2236d99f7e652db1dc6b541d238e0759e12882916a2531c9ea637012d09bc5",
+          "traceVerified": true
+        },
+        "removedBox": [
+          139,
+          79,
+          543,
+          503
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the green body, the underlying layer is a flat bright-yellow background, while the excluded interior holes remain occupied by their own visible objects (top gray sign tile, central yellow cavity, and inner black/blue marker region).",
+          "colors": [
+            "#FFDC00"
+          ],
+          "continueEdges": [
+            "Continue the yellow background seamlessly across the entire removed green silhouette.",
+            "Maintain sharp boundaries around preserved hole contents: the gray sign tile perimeter, the black/blue marker-region perimeter, and the existing central yellow cavity boundary.",
+            "Keep neighboring object edges (left gray wall, lower gray/maroon block, bottom-left tile, and bottom UI strip) unchanged where they border the removed area."
+          ],
+          "texture": "Solid flat fill, no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:04:12.529845Z"
+    }
+  ]
+}

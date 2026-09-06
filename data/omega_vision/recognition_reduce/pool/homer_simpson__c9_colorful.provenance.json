@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/homer_simpson__c9_colorful.jpg",
+  "provenance": "data/recognition_reduce/pool/homer_simpson__c9_colorful.provenance.json",
+  "createdAt": "2026-09-03T16:48:10.505504Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 600,
+    "height": 900
+  },
+  "originalDimensions": {
+    "width": 600,
+    "height": 900
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/homer_simpson__c9_colorful.jpg",
+    "dimensions": {
+      "width": 600,
+      "height": 900
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/homer_simpson__c9_colorful.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/homer_simpson__c9_colorful.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 600,
+        "height": 900
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T16:48:10.505504Z"
+    }
+  ]
+}

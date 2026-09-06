@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/marge_simpson__c10_modality.jpg",
+  "provenance": "data/recognition_reduce/pool/marge_simpson__c10_modality.provenance.json",
+  "createdAt": "2026-09-04T15:29:57.292938Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 900,
+    "height": 900
+  },
+  "originalDimensions": {
+    "width": 900,
+    "height": 900
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/marge_simpson__c10_modality.jpg",
+    "dimensions": {
+      "width": 900,
+      "height": 900
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/marge_simpson__c10_modality.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/marge_simpson__c10_modality.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 900,
+        "height": 900
+      },
+      "transform": {},
+      "createdAt": "2026-09-04T15:29:57.292938Z"
+    }
+  ]
+}

@@ -1,0 +1,3850 @@
+{
+  "bart_simpson__c1_bw": {
+    "slug": "bart_simpson",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "bart_simpson__c2_flip": {
+    "slug": "bart_simpson",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "bart_simpson__c3_rot45": {
+    "slug": "bart_simpson",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "bart_simpson__c4_busy": {
+    "slug": "bart_simpson",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1990/12408/12.jpg",
+    "candidates": [
+      {
+        "file": "bart_simpson__c4_busy__1.jpg",
+        "url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1990/12408/12.jpg"
+      },
+      {
+        "file": "bart_simpson__c4_busy__2.jpg",
+        "url": "https://imgix.ranker.com/list_img_v2/16404/3256404/original/3256404-u1?auto=format&q=50&fit=crop&fm=pjpg&dpr=2&crop=faces&h=418.848167539267&w=800"
+      },
+      {
+        "file": "bart_simpson__c4_busy__3.jpg",
+        "url": "https://static1.colliderimages.com/wordpress/wp-content/uploads/2022/11/the-simpsons-bart-vs-thanksgiving-lisa.jpg"
+      },
+      {
+        "file": "bart_simpson__c4_busy__4.jpg",
+        "url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiRsuXw3kEsGRKxnz6E7e5dlemPG46a7js0uqS_Au3Ommda4VIFG54grL80oYX77MLxJ-8CyMwWcmpJBbiyQnXbOoYQxfrZv_P3Kcd4IFImmuhiIX83ep_HA-9kEvz8twpUVm0o__YRPQa_ZwoFD5FKT8yqRn7gc3rGDuiSnwAGpzL8T7-3T_l2uM6DSBk/s1280/Treehouse+of+Horror+Episode+7.mp4_20230925_125257.956.png"
+      }
+    ]
+  },
+  "bart_simpson__c5_new": {
+    "slug": "bart_simpson",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i.ytimg.com/vi/Kd5-KAYIHFY/maxresdefault.jpg",
+    "candidates": [
+      {
+        "file": "bart_simpson__c5_new__1.jpg",
+        "url": "https://i.ytimg.com/vi/Kd5-KAYIHFY/maxresdefault.jpg"
+      },
+      {
+        "file": "bart_simpson__c5_new__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/50bc7de0-8299-41c9-91b0-e56f2553b401/dborxxp-3d071355-43e8-477d-a841-bb075d159ed5.jpg/v1/fill/w_1023,h_810,q_75,strp/bart_simpson_in_different_styles_by_cindywuzheer_dborxxp-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9ODEwIiwicGF0aCI6IlwvZlwvNTBiYzdkZTAtODI5OS00MWM5LTkxYjAtZTU2ZjI1NTNiNDAxXC9kYm9yeHhwLTNkMDcxMzU1LTQzZTgtNDc3ZC1hODQxLWJiMDc1ZDE1OWVkNS5qcGciLCJ3aWR0aCI6Ijw9MTAyMyJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.udxVvqIbcyX2TLiPlt3eUWCifGgUQWMZJvtQJ_mQbXY"
+      },
+      {
+        "file": "bart_simpson__c5_new__3.jpg",
+        "url": "https://i.etsystatic.com/22264022/r/il/e57d3f/4681734649/il_570xN.4681734649_kmhz.jpg"
+      },
+      {
+        "file": "bart_simpson__c5_new__4.jpg",
+        "url": "https://i.pinimg.com/736x/c1/bd/33/c1bd3330b5a2c6e807ee97f1d81f1cce.jpg"
+      }
+    ]
+  },
+  "bart_simpson__c6_verybusy": {
+    "slug": "bart_simpson",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://y.yarn.co/06980fd3-1454-4eb1-9cdd-8ccf5219457c_screenshot.jpg",
+    "candidates": [
+      {
+        "file": "bart_simpson__c6_verybusy__1.jpg",
+        "url": "https://y.yarn.co/06980fd3-1454-4eb1-9cdd-8ccf5219457c_screenshot.jpg"
+      },
+      {
+        "file": "bart_simpson__c6_verybusy__2.jpg",
+        "url": "https://external-preview.redd.it/NlOc9whbW1TPK3dJXjRH0z1Xn8QDDHlK9pI0CudzOJE.jpg?auto=webp&s=9ed3b6d8e6b523cd9b363fcc6500b9d1dfd6672d"
+      },
+      {
+        "file": "bart_simpson__c6_verybusy__3.jpg",
+        "url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg"
+      },
+      {
+        "file": "bart_simpson__c6_verybusy__4.jpg",
+        "url": "https://wallpapers.com/images/hd/rallying-crowd-from-the-simpsons-movie-pmlietgwyj4ra6w5.jpg"
+      }
+    ]
+  },
+  "bart_simpson__c7_withchars": {
+    "slug": "bart_simpson",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://wallpapercave.com/wp/vjrd4UJ.jpg",
+    "candidates": [
+      {
+        "file": "bart_simpson__c7_withchars__1.jpg",
+        "url": "https://wallpapercave.com/wp/vjrd4UJ.jpg"
+      },
+      {
+        "file": "bart_simpson__c7_withchars__2.jpg",
+        "url": "https://faroutmagazine.co.uk/static/uploads/1/2023/05/The-20-best-characters-in-The-Simpsons-Far-Out-Magazine-1140x855.jpg"
+      },
+      {
+        "file": "bart_simpson__c7_withchars__3.jpg",
+        "url": "https://i.pinimg.com/originals/3d/bf/2f/3dbf2f38a6692dd7c668d27347efbe62.jpg"
+      },
+      {
+        "file": "bart_simpson__c7_withchars__4.jpg",
+        "url": "https://static.wikia.nocookie.net/simpsons/images/3/39/Site-community-image/revision/latest/scale-to-width-down/1200?cb=20241016083756"
+      }
+    ]
+  },
+  "bart_simpson__c8_typical": {
+    "slug": "bart_simpson",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://c8.alamy.com/comp/PM64GR/film-still-publicity-stills-from-the-simpsons-episode-behind-the-laughter-homer-simpson-bart-simpson-may-21-2000-file-reference-30846105tha-for-editorial-use-only-all-rights-reserved-PM64GR.jpg",
+    "candidates": [
+      {
+        "file": "bart_simpson__c8_typical__1.jpg",
+        "url": "https://c8.alamy.com/comp/PM64GR/film-still-publicity-stills-from-the-simpsons-episode-behind-the-laughter-homer-simpson-bart-simpson-may-21-2000-file-reference-30846105tha-for-editorial-use-only-all-rights-reserved-PM64GR.jpg"
+      },
+      {
+        "file": "bart_simpson__c8_typical__2.jpg",
+        "url": "https://static1.colliderimages.com/wordpress/wp-content/uploads/2023/10/the-simpsons-season-six-bart-of-darkness.jpg"
+      },
+      {
+        "file": "bart_simpson__c8_typical__3.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2024/09/bart-looks-surprised-as-he-walks-through-a-school-hallway-full-of-stunned-students-in-the-simpsons-season-30.jpg"
+      },
+      {
+        "file": "bart_simpson__c8_typical__4.jpg",
+        "url": "https://cdn.seat42f.com/wp-content/uploads/2018/09/30171413/THE-SIMPSONS-Season-30-Episode-1-Barts-Not-Dead-4.jpg"
+      }
+    ]
+  },
+  "lisa_simpson__c1_bw": {
+    "slug": "lisa_simpson",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "lisa_simpson__c2_flip": {
+    "slug": "lisa_simpson",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "lisa_simpson__c3_rot45": {
+    "slug": "lisa_simpson",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "lisa_simpson__c4_busy": {
+    "slug": "lisa_simpson",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/cc/b3/73/ccb373e677111fa5b0604d7faa88f2dd.jpg",
+    "candidates": [
+      {
+        "file": "lisa_simpson__c4_busy__1.jpg",
+        "url": "https://i.pinimg.com/736x/cc/b3/73/ccb373e677111fa5b0604d7faa88f2dd.jpg"
+      },
+      {
+        "file": "lisa_simpson__c4_busy__2.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2019/12/Lisa-Cropped.jpg"
+      },
+      {
+        "file": "lisa_simpson__c4_busy__3.jpg",
+        "url": "https://i.pinimg.com/originals/97/c4/df/97c4df86cd4dbb133ad1859221d6de02.jpg"
+      },
+      {
+        "file": "lisa_simpson__c4_busy__4.jpg",
+        "url": "https://y.yarn.co/05ac2273-a161-4ae5-9c2f-efb9f26ca897_screenshot.jpg"
+      }
+    ]
+  },
+  "lisa_simpson__c5_new": {
+    "slug": "lisa_simpson",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/intermediary/f/0d106aec-aa8b-4364-a1db-9ddb20508038/dat82ev-7e848c01-199f-43c0-bb2c-497fd7182d46.png",
+    "candidates": [
+      {
+        "file": "lisa_simpson__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/intermediary/f/0d106aec-aa8b-4364-a1db-9ddb20508038/dat82ev-7e848c01-199f-43c0-bb2c-497fd7182d46.png"
+      },
+      {
+        "file": "lisa_simpson__c5_new__2.jpg",
+        "url": "https://i.ytimg.com/vi/kDkYb8F74oc/maxresdefault.jpg"
+      },
+      {
+        "file": "lisa_simpson__c5_new__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/580f0ab3-6afe-4b46-aef7-a4ea833c460b/d4sybwt-944174f4-4efc-4818-bbd1-223e3c51164d.jpg/v1/fill/w_900,h_1273,q_75,strp/the_simpons___lisa_simpsons_by_himurapt89_d4sybwt-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTI3MyIsInBhdGgiOiJcL2ZcLzU4MGYwYWIzLTZhZmUtNGI0Ni1hZWY3LWE0ZWE4MzNjNDYwYlwvZDRzeWJ3dC05NDQxNzRmNC00ZWZjLTQ4MTgtYmJkMS0yMjNlM2M1MTE2NGQuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.zMpFj_to09SkWcyS-gDsJ6G0YN7nfruHTg4zFprv5jI"
+      },
+      {
+        "file": "lisa_simpson__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/97614e59-2534-4dd0-b26b-68f9bbd759af/dfc9mxr-a1d2078a-c21b-4e88-8659-585eb755de95.png/v1/fill/w_1280,h_1992,q_80,strp/lisa_simpson___fancy_dress_by_c_hats_dfc9mxr-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTk5MiIsInBhdGgiOiJcL2ZcLzk3NjE0ZTU5LTI1MzQtNGRkMC1iMjZiLTY4ZjliYmQ3NTlhZlwvZGZjOW14ci1hMWQyMDc4YS1jMjFiLTRlODgtODY1OS01ODVlYjc1NWRlOTUucG5nIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.4nKIYTQKZPg-Skz1vUOnMSPPxNPEuRl0CEiu54zk-x0"
+      }
+    ]
+  },
+  "lisa_simpson__c6_verybusy": {
+    "slug": "lisa_simpson",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://y.yarn.co/06980fd3-1454-4eb1-9cdd-8ccf5219457c_screenshot.jpg",
+    "candidates": [
+      {
+        "file": "lisa_simpson__c6_verybusy__1.jpg",
+        "url": "https://y.yarn.co/06980fd3-1454-4eb1-9cdd-8ccf5219457c_screenshot.jpg"
+      },
+      {
+        "file": "lisa_simpson__c6_verybusy__2.jpg",
+        "url": "https://external-preview.redd.it/NlOc9whbW1TPK3dJXjRH0z1Xn8QDDHlK9pI0CudzOJE.jpg?auto=webp&s=9ed3b6d8e6b523cd9b363fcc6500b9d1dfd6672d"
+      },
+      {
+        "file": "lisa_simpson__c6_verybusy__3.jpg",
+        "url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg"
+      },
+      {
+        "file": "lisa_simpson__c6_verybusy__4.jpg",
+        "url": "https://wallpapers.com/images/hd/rallying-crowd-from-the-simpsons-movie-pmlietgwyj4ra6w5.jpg"
+      }
+    ]
+  },
+  "lisa_simpson__c7_withchars": {
+    "slug": "lisa_simpson",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2023/09/lisa-marge-lindsey-naegle-edna-and-patty-against-a-springfield-background-in-the-simpsons.jpg",
+    "candidates": [
+      {
+        "file": "lisa_simpson__c7_withchars__1.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2023/09/lisa-marge-lindsey-naegle-edna-and-patty-against-a-springfield-background-in-the-simpsons.jpg"
+      },
+      {
+        "file": "lisa_simpson__c7_withchars__2.jpg",
+        "url": "https://wallpapers.com/images/hd/lisa-simpson-formal-picture-4zl13lx3gbw3bfb8.jpg"
+      },
+      {
+        "file": "lisa_simpson__c7_withchars__3.jpg",
+        "url": "https://static.wikia.nocookie.net/simpsons/images/3/39/Site-community-image/revision/latest/scale-to-width-down/1200?cb=20241016083756"
+      },
+      {
+        "file": "lisa_simpson__c7_withchars__4.jpg",
+        "url": "https://static0.gamerantimages.com/wordpress/wp-content/uploads/2022/07/Lisa-hangs-out-with-her-new-friends-in-The-Simpsons.jpg"
+      }
+    ]
+  },
+  "lisa_simpson__c8_typical": {
+    "slug": "lisa_simpson",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://c8.alamy.com/comp/PM6HJH/film-still-from-the-simpsons-episode-lisas-wedding-lisa-simpson-hugh-parkfield-homer-simpson-1995-PM6HJH.jpg",
+    "candidates": [
+      {
+        "file": "lisa_simpson__c8_typical__1.jpg",
+        "url": "https://c8.alamy.com/comp/PM6HJH/film-still-from-the-simpsons-episode-lisas-wedding-lisa-simpson-hugh-parkfield-homer-simpson-1995-PM6HJH.jpg"
+      },
+      {
+        "file": "lisa_simpson__c8_typical__2.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2019/07/Lisa-at-a-beauty-pageant.jpg"
+      },
+      {
+        "file": "lisa_simpson__c8_typical__3.jpg",
+        "url": "https://cdn.mos.cms.futurecdn.net/FNDHgjP5yNCVpNSZCmRjWB-970-80.jpg"
+      },
+      {
+        "file": "lisa_simpson__c8_typical__4.jpg",
+        "url": "https://static0.cbrimages.com/wordpress/wp-content/uploads/2023/04/lisa-simpson-in-lisa-vs-malibu-stacy.jpg?q=50&fit=crop&w=825&dpr=1.5"
+      }
+    ]
+  },
+  "homer_simpson__c1_bw": {
+    "slug": "homer_simpson",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "homer_simpson__c2_flip": {
+    "slug": "homer_simpson",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "homer_simpson__c3_rot45": {
+    "slug": "homer_simpson",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "homer_simpson__c4_busy": {
+    "slug": "homer_simpson",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://64.media.tumblr.com/d1e725c24c921922b4132ba2cc628fa8/tumblr_mmfxe8I1Qf1spyd5uo1_500.png",
+    "candidates": [
+      {
+        "file": "homer_simpson__c4_busy__1.jpg",
+        "url": "https://64.media.tumblr.com/d1e725c24c921922b4132ba2cc628fa8/tumblr_mmfxe8I1Qf1spyd5uo1_500.png"
+      },
+      {
+        "file": "homer_simpson__c4_busy__2.jpg",
+        "url": "https://ichef.bbci.co.uk/news/976/cpsprodpb/38B0/production/_87321541_homersimpson.jpg"
+      },
+      {
+        "file": "homer_simpson__c4_busy__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/1b302966-37e9-407c-bcb1-734ab28f6bc6/dh1lhip-a47e25cf-8e8a-48fb-a712-e2b645666493.png/v1/fill/w_1280,h_534,q_80,strp/the_simpsons_movie__screenshot__by_colmodo_dh1lhip-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NTM0IiwicGF0aCI6IlwvZlwvMWIzMDI5NjYtMzdlOS00MDdjLWJjYjEtNzM0YWIyOGY2YmM2XC9kaDFsaGlwLWE0N2UyNWNmLThlOGEtNDhmYi1hNzEyLWUyYjY0NTY2NjQ5My5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.YJK3juNDBIBq9jYnGN5y2xrzslUjV2nlvw-CT4m9F2o"
+      },
+      {
+        "file": "homer_simpson__c4_busy__4.jpg",
+        "url": "https://i.pinimg.com/originals/21/75/22/217522e259a3a1f21a06d26c3b55d927.jpg"
+      }
+    ]
+  },
+  "homer_simpson__c5_new": {
+    "slug": "homer_simpson",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i0.wp.com/mossandfog.com/wp-content/uploads/2023/01/MossandFog_Homer_Simpson_in_the_style_of_KATSUSHIKA_HOKUSAI_.png?resize=1024,1024&ssl=1",
+    "candidates": [
+      {
+        "file": "homer_simpson__c5_new__1.jpg",
+        "url": "https://i0.wp.com/mossandfog.com/wp-content/uploads/2023/01/MossandFog_Homer_Simpson_in_the_style_of_KATSUSHIKA_HOKUSAI_.png?resize=1024,1024&ssl=1"
+      },
+      {
+        "file": "homer_simpson__c5_new__2.jpg",
+        "url": "https://external-preview.redd.it/6-6mtE1mrA3dc1VaaeMzLiPK8wrlouLwWiBX33ltF3I.png?auto=webp&s=b2b79b5a66d156a72091303710f2ee7330c4d29d"
+      },
+      {
+        "file": "homer_simpson__c5_new__3.jpg",
+        "url": "https://i0.wp.com/mossandfog.com/wp-content/uploads/2023/01/MossandFog_Homer_Simpson_in_the_style_of_Jean-Michel_Basquiat-1.png?resize=1024,1024&ssl=1"
+      },
+      {
+        "file": "homer_simpson__c5_new__4.jpg",
+        "url": "https://external-preview.redd.it/tRnTKSt_7xNHYjzp8CQz6q_UTH9ljxB7A63lvGoBz3s.png?auto=webp&s=38604fcedd4beb40e45205b5b72fb291fb6b923c"
+      }
+    ]
+  },
+  "homer_simpson__c6_verybusy": {
+    "slug": "homer_simpson",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg",
+    "candidates": [
+      {
+        "file": "homer_simpson__c6_verybusy__1.jpg",
+        "url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg"
+      },
+      {
+        "file": "homer_simpson__c6_verybusy__2.jpg",
+        "url": "https://external-preview.redd.it/NlOc9whbW1TPK3dJXjRH0z1Xn8QDDHlK9pI0CudzOJE.jpg?auto=webp&s=9ed3b6d8e6b523cd9b363fcc6500b9d1dfd6672d"
+      },
+      {
+        "file": "homer_simpson__c6_verybusy__3.jpg",
+        "url": "https://wallpapers.com/images/hd/rallying-crowd-from-the-simpsons-movie-pmlietgwyj4ra6w5.jpg"
+      },
+      {
+        "file": "homer_simpson__c6_verybusy__4.jpg",
+        "url": "https://y.yarn.co/b2ece224-b058-48fb-bddf-845be3fba960_screenshot.jpg"
+      }
+    ]
+  },
+  "homer_simpson__c7_withchars": {
+    "slug": "homer_simpson",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://wallpapercave.com/wp/vjrd4UJ.jpg",
+    "candidates": [
+      {
+        "file": "homer_simpson__c7_withchars__1.jpg",
+        "url": "https://wallpapercave.com/wp/vjrd4UJ.jpg"
+      },
+      {
+        "file": "homer_simpson__c7_withchars__2.jpg",
+        "url": "http://img1.wikia.nocookie.net/__cb20131101233808/simpsons/images/f/f4/TheSimpsonsCast.jpg"
+      },
+      {
+        "file": "homer_simpson__c7_withchars__3.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2023/07/the-simpsons-cast-of-characters.jpg"
+      },
+      {
+        "file": "homer_simpson__c7_withchars__4.jpg",
+        "url": "https://i.ebayimg.com/images/g/uGsAAOSwSelhDaB9/s-l1600.jpg"
+      }
+    ]
+  },
+  "homer_simpson__c8_typical": {
+    "slug": "homer_simpson",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://c8.alamy.com/comp/PM64GR/film-still-publicity-stills-from-the-simpsons-episode-behind-the-laughter-homer-simpson-bart-simpson-may-21-2000-file-reference-30846105tha-for-editorial-use-only-all-rights-reserved-PM64GR.jpg",
+    "candidates": [
+      {
+        "file": "homer_simpson__c8_typical__1.jpg",
+        "url": "https://c8.alamy.com/comp/PM64GR/film-still-publicity-stills-from-the-simpsons-episode-behind-the-laughter-homer-simpson-bart-simpson-may-21-2000-file-reference-30846105tha-for-editorial-use-only-all-rights-reserved-PM64GR.jpg"
+      },
+      {
+        "file": "homer_simpson__c8_typical__2.jpg",
+        "url": "https://static1.cbrimages.com/wordpress/wp-content/uploads/2024/08/homer-simpson-sadly-talking-to-smithers-at-his-desk-in-the-simpsons.jpg"
+      },
+      {
+        "file": "homer_simpson__c8_typical__3.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2025/05/homer-looks-excited-and-hopeful-standing-at-the-stairs-in-the-simpsons-season-36-episode-16.jpg"
+      },
+      {
+        "file": "homer_simpson__c8_typical__4.jpg",
+        "url": "https://cdn.seat42f.com/wp-content/uploads/2023/03/19115325/THE-SIMPSONS-Season-34-Episode-17-Photo-Pin-Gal.jpg"
+      }
+    ]
+  },
+  "marge_simpson__c1_bw": {
+    "slug": "marge_simpson",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "marge_simpson__c2_flip": {
+    "slug": "marge_simpson",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "marge_simpson__c3_rot45": {
+    "slug": "marge_simpson",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "marge_simpson__c4_busy": {
+    "slug": "marge_simpson",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/ff/a6/6c/ffa66c860d99a9fefb98a5b6b6f01b71.png",
+    "candidates": [
+      {
+        "file": "marge_simpson__c4_busy__1.jpg",
+        "url": "https://i.pinimg.com/originals/ff/a6/6c/ffa66c860d99a9fefb98a5b6b6f01b71.png"
+      },
+      {
+        "file": "marge_simpson__c4_busy__2.jpg",
+        "url": "https://cdn.mos.cms.futurecdn.net/2Je2rkmTTcHDkVa93oMDAc-970-80.jpg"
+      },
+      {
+        "file": "marge_simpson__c4_busy__3.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2024/12/marge-panics-as-lisa-and-maggie-look-on-at-an-airport-check-in-desk-from-the-simpsons-season-36.jpg"
+      },
+      {
+        "file": "marge_simpson__c4_busy__4.jpg",
+        "url": "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/c74c/live/920dec60-2d59-11ef-a875-25d011ebc1b4.jpg"
+      }
+    ]
+  },
+  "marge_simpson__c5_new": {
+    "slug": "marge_simpson",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/b3541b28-2747-46af-bc8f-a750f2c60647/dgzfamz-3b587ef2-9ab4-4512-9805-bcf4eb7be763.png/v1/fill/w_1341,h_596,q_70,strp/simpsons__marge_simpson_drawings_by_mapsuperstar_by_mapsuperstar_dgzfamz-pre.jpg",
+    "candidates": [
+      {
+        "file": "marge_simpson__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/b3541b28-2747-46af-bc8f-a750f2c60647/dgzfamz-3b587ef2-9ab4-4512-9805-bcf4eb7be763.png/v1/fill/w_1341,h_596,q_70,strp/simpsons__marge_simpson_drawings_by_mapsuperstar_by_mapsuperstar_dgzfamz-pre.jpg"
+      },
+      {
+        "file": "marge_simpson__c5_new__2.jpg",
+        "url": "https://i.ytimg.com/vi/5lbXagtwCOw/oar2.jpg?sqp=-oaymwEkCJUDENAFSFqQAgHyq4qpAxMIARUAAAAAJQAAyEI9AICiQ3gB&rs=AOn4CLD-jBgsIKAazz_ds1-M9FV5Ta3Paw"
+      },
+      {
+        "file": "marge_simpson__c5_new__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/1ebe4583-0c5b-4cec-8784-c1e141d8169e/d9zmsdu-89612dee-c194-47b9-9957-70f11306c938.jpg/v1/fill/w_1024,h_792,q_75,strp/marge_different_looks_by_gulliver63_d9zmsdu-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NzkyIiwicGF0aCI6IlwvZlwvMWViZTQ1ODMtMGM1Yi00Y2VjLTg3ODQtYzFlMTQxZDgxNjllXC9kOXptc2R1LTg5NjEyZGVlLWMxOTQtNDdiOS05OTU3LTcwZjExMzA2YzkzOC5qcGciLCJ3aWR0aCI6Ijw9MTAyNCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.GDCZJFOwODWqmhT6H6chffPu_E9dT8UboplTzp_G32o"
+      },
+      {
+        "file": "marge_simpson__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/3a448c31-d31f-4ce1-acd8-dfb8488d1a9e/dgq1ew1-b1706598-a3a9-459c-ae08-09323229e37b.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzNhNDQ4YzMxLWQzMWYtNGNlMS1hY2Q4LWRmYjg0ODhkMWE5ZVwvZGdxMWV3MS1iMTcwNjU5OC1hM2E5LTQ1OWMtYWUwOC0wOTMyMzIyOWUzN2IuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.Ws9ls_fLkFo7lxUjvLs5tttge9aXmhqG3z2o8AzBoLw"
+      }
+    ]
+  },
+  "marge_simpson__c6_verybusy": {
+    "slug": "marge_simpson",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg",
+    "candidates": [
+      {
+        "file": "marge_simpson__c6_verybusy__1.jpg",
+        "url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg"
+      },
+      {
+        "file": "marge_simpson__c6_verybusy__2.jpg",
+        "url": "https://y.yarn.co/b2ece224-b058-48fb-bddf-845be3fba960_screenshot.jpg"
+      },
+      {
+        "file": "marge_simpson__c6_verybusy__3.jpg",
+        "url": "https://y.yarn.co/06980fd3-1454-4eb1-9cdd-8ccf5219457c_screenshot.jpg"
+      },
+      {
+        "file": "marge_simpson__c6_verybusy__4.jpg",
+        "url": "https://i.redd.it/z43os11to7d01.jpg"
+      }
+    ]
+  },
+  "marge_simpson__c7_withchars": {
+    "slug": "marge_simpson",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://wallpapercave.com/wp/vjrd4UJ.jpg",
+    "candidates": [
+      {
+        "file": "marge_simpson__c7_withchars__1.jpg",
+        "url": "https://wallpapercave.com/wp/vjrd4UJ.jpg"
+      },
+      {
+        "file": "marge_simpson__c7_withchars__2.jpg",
+        "url": "https://miro.medium.com/v2/resize:fit:1400/1*6k5I2nUn-M-tfHI_j0V-nw.png"
+      },
+      {
+        "file": "marge_simpson__c7_withchars__3.jpg",
+        "url": "http://img1.wikia.nocookie.net/__cb20131101233808/simpsons/images/f/f4/TheSimpsonsCast.jpg"
+      },
+      {
+        "file": "marge_simpson__c7_withchars__4.jpg",
+        "url": "https://cdn.wallpapersafari.com/90/56/wRnMTG.jpg"
+      }
+    ]
+  },
+  "marge_simpson__c8_typical": {
+    "slug": "marge_simpson",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://c8.alamy.com/comp/2NJFH3X/the-simpsons-from-left-marge-simpson-voice-julie-kavner-ned-flanders-voice-harry-shearer-the-many-saints-of-springfield-season-34-ep-3406-aired-feb-19-2023-photo-fox-courtesy-everett-collection-2NJFH3X.jpg",
+    "candidates": [
+      {
+        "file": "marge_simpson__c8_typical__1.jpg",
+        "url": "https://c8.alamy.com/comp/2NJFH3X/the-simpsons-from-left-marge-simpson-voice-julie-kavner-ned-flanders-voice-harry-shearer-the-many-saints-of-springfield-season-34-ep-3406-aired-feb-19-2023-photo-fox-courtesy-everett-collection-2NJFH3X.jpg"
+      },
+      {
+        "file": "marge_simpson__c8_typical__2.jpg",
+        "url": "https://wallpapercave.com/wp/wp10026028.jpg"
+      },
+      {
+        "file": "marge_simpson__c8_typical__3.jpg",
+        "url": "https://i.ytimg.com/vi/UZLv7VMg4RU/hqdefault.jpg"
+      },
+      {
+        "file": "marge_simpson__c8_typical__4.jpg",
+        "url": "https://static.wikia.nocookie.net/simpsons/images/6/63/DIsney_Plus_Capture.PNG/revision/latest/scale-to-width-down/1200?cb=20200525085405&path-prefix=fr"
+      },
+      {
+        "file": "marge_simpson__c8_typical__5.jpg",
+        "url": "https://i.pinimg.com/originals/38/e3/82/38e382c19f996726792c1cb693f98315.png"
+      },
+      {
+        "file": "marge_simpson__c8_typical__6.jpg",
+        "url": "https://i.gifer.com/Mo7n.gif"
+      }
+    ]
+  },
+  "maggie_simpson__c1_bw": {
+    "slug": "maggie_simpson",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "maggie_simpson__c2_flip": {
+    "slug": "maggie_simpson",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "maggie_simpson__c3_rot45": {
+    "slug": "maggie_simpson",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "maggie_simpson__c4_busy": {
+    "slug": "maggie_simpson",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://resizer.ladbiblegroup.com/unsafe/rs:fit:3840:0:0:0/g:sm/q:70/aHR0cHM6Ly9ldS1pbWFnZXMuY29udGVudHN0YWNrLmNvbS92My9hc3NldHMvYmx0Y2Q3NGFjYzFkMGE5OWYzYS9ibHQ3Yzg4MmQ3OTQ5Y2IxNjU4LzY3ZjEyM2IyNTkyNWM0Mjg2MDQxMDg1Zi9zaW1wc29ucy5wbmc.webp",
+    "candidates": [
+      {
+        "file": "maggie_simpson__c4_busy__1.jpg",
+        "url": "https://resizer.ladbiblegroup.com/unsafe/rs:fit:3840:0:0:0/g:sm/q:70/aHR0cHM6Ly9ldS1pbWFnZXMuY29udGVudHN0YWNrLmNvbS92My9hc3NldHMvYmx0Y2Q3NGFjYzFkMGE5OWYzYS9ibHQ3Yzg4MmQ3OTQ5Y2IxNjU4LzY3ZjEyM2IyNTkyNWM0Mjg2MDQxMDg1Zi9zaW1wc29ucy5wbmc.webp"
+      },
+      {
+        "file": "maggie_simpson__c4_busy__2.jpg",
+        "url": "https://i2-prod.themirror.com/article1561927.ece/ALTERNATES/s1200f/0_Screenshot-2025-12-14-at-60848-PM.png"
+      },
+      {
+        "file": "maggie_simpson__c4_busy__3.jpg",
+        "url": "https://wallpapers.com/images/hd/maggie-simpson-from-the-simpsons-movie-skqv467myurxaj6k.jpg"
+      },
+      {
+        "file": "maggie_simpson__c4_busy__4.jpg",
+        "url": "https://nypost.com/wp-content/uploads/sites/2/2022/07/simpsons-secret-revealed-113.jpg?w=1024"
+      }
+    ]
+  },
+  "maggie_simpson__c5_new": {
+    "slug": "maggie_simpson",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/dc175eda-706c-4b63-a70e-51188989856f/dfmi9mm-1ff129c6-1c9a-43c4-be23-11716adf3729.png/v1/fill/w_1280,h_720,q_80,strp/maggie_simpson_collage_by_zeldastrife7_dfmi9mm-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NzIwIiwicGF0aCI6IlwvZlwvZGMxNzVlZGEtNzA2Yy00YjYzLWE3MGUtNTExODg5ODk4NTZmXC9kZm1pOW1tLTFmZjEyOWM2LTFjOWEtNDNjNC1iZTIzLTExNzE2YWRmMzcyOS5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.Jnh0MxSGu0dw9FOs07gFQ1j--w6wX8ylb-WJEDeFB4E",
+    "candidates": [
+      {
+        "file": "maggie_simpson__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/dc175eda-706c-4b63-a70e-51188989856f/dfmi9mm-1ff129c6-1c9a-43c4-be23-11716adf3729.png/v1/fill/w_1280,h_720,q_80,strp/maggie_simpson_collage_by_zeldastrife7_dfmi9mm-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NzIwIiwicGF0aCI6IlwvZlwvZGMxNzVlZGEtNzA2Yy00YjYzLWE3MGUtNTExODg5ODk4NTZmXC9kZm1pOW1tLTFmZjEyOWM2LTFjOWEtNDNjNC1iZTIzLTExNzE2YWRmMzcyOS5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.Jnh0MxSGu0dw9FOs07gFQ1j--w6wX8ylb-WJEDeFB4E"
+      },
+      {
+        "file": "maggie_simpson__c5_new__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/d90e3be0-2b3b-4470-8849-b65982e613c4/d429dp7-88a660e7-99f4-4c9b-804c-ba9c8cdfecb6.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2Q5MGUzYmUwLTJiM2ItNDQ3MC04ODQ5LWI2NTk4MmU2MTNjNFwvZDQyOWRwNy04OGE2NjBlNy05OWY0LTRjOWItODA0Yy1iYTljOGNkZmVjYjYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.-R12Cn_Z2qnFoEdMsN3MqgmhtrANJGX8O_57UP3E0-4"
+      },
+      {
+        "file": "maggie_simpson__c5_new__3.jpg",
+        "url": "https://i.pinimg.com/originals/b8/35/4b/b8354bb78fcf42e96a31cf283d0f0604.jpg"
+      },
+      {
+        "file": "maggie_simpson__c5_new__4.jpg",
+        "url": "https://i.ytimg.com/vi/JjjkWIqYaX0/maxresdefault.jpg"
+      }
+    ]
+  },
+  "maggie_simpson__c6_verybusy": {
+    "slug": "maggie_simpson",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg",
+    "candidates": [
+      {
+        "file": "maggie_simpson__c6_verybusy__1.jpg",
+        "url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg"
+      },
+      {
+        "file": "maggie_simpson__c6_verybusy__2.jpg",
+        "url": "https://y.yarn.co/b2ece224-b058-48fb-bddf-845be3fba960_screenshot.jpg"
+      },
+      {
+        "file": "maggie_simpson__c6_verybusy__3.jpg",
+        "url": "https://y.yarn.co/06980fd3-1454-4eb1-9cdd-8ccf5219457c_screenshot.jpg"
+      },
+      {
+        "file": "maggie_simpson__c6_verybusy__4.jpg",
+        "url": "https://i.redd.it/z43os11to7d01.jpg"
+      }
+    ]
+  },
+  "maggie_simpson__c7_withchars": {
+    "slug": "maggie_simpson",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://media.craiyon.com/2025-06-03/Ry8yF_7FRN-rWu_JgpmZSg.webp",
+    "candidates": [
+      {
+        "file": "maggie_simpson__c7_withchars__1.jpg",
+        "url": "https://media.craiyon.com/2025-06-03/Ry8yF_7FRN-rWu_JgpmZSg.webp"
+      },
+      {
+        "file": "maggie_simpson__c7_withchars__2.jpg",
+        "url": "https://c8.alamy.com/comp/RYBFJA/lisa-homer-bart-margemaggie-simpson-the-simpsons-1989-RYBFJA.jpg"
+      },
+      {
+        "file": "maggie_simpson__c7_withchars__3.jpg",
+        "url": "https://c8.alamy.com/comp/2HYW57K/characters-dressed-as-the-simpsons-from-left-marge-holding-maggie-lisa-bart-and-homer-pose-at-the-simpsons-stamp-dedication-ceremony-held-at-fox-studio-los-angeles-2HYW57K.jpg"
+      },
+      {
+        "file": "maggie_simpson__c7_withchars__4.jpg",
+        "url": "https://i.pinimg.com/originals/91/9e/5e/919e5e0c9495a03e204f01b8a564435a.jpg"
+      }
+    ]
+  },
+  "maggie_simpson__c8_typical": {
+    "slug": "maggie_simpson",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://i2-prod.themirror.com/article1561927.ece/ALTERNATES/s1200f/0_Screenshot-2025-12-14-at-60848-PM.png",
+    "candidates": [
+      {
+        "file": "maggie_simpson__c8_typical__1.jpg",
+        "url": "https://i2-prod.themirror.com/article1561927.ece/ALTERNATES/s1200f/0_Screenshot-2025-12-14-at-60848-PM.png"
+      },
+      {
+        "file": "maggie_simpson__c8_typical__2.jpg",
+        "url": "https://i.dailymail.co.uk/1s/2025/12/15/00/104722339-15383463-The_39_year_old_actress_is_voicing_the_youngest_character_Maggie-a-78_1765756841599.jpg"
+      },
+      {
+        "file": "maggie_simpson__c8_typical__3.jpg",
+        "url": "https://static.wikia.nocookie.net/simpsons/images/0/06/S26E07_Blazed_and_Confused_-_Maggie.png/revision/latest?cb=20250731065704"
+      },
+      {
+        "file": "maggie_simpson__c8_typical__4.jpg",
+        "url": "https://static1.colliderimages.com/wordpress/wp-content/uploads/2024/08/maggie-itchy-and-scratchy-and-marge.jpg"
+      }
+    ]
+  },
+  "grandpa_simpson__c1_bw": {
+    "slug": "grandpa_simpson",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "grandpa_simpson__c2_flip": {
+    "slug": "grandpa_simpson",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "grandpa_simpson__c3_rot45": {
+    "slug": "grandpa_simpson",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "grandpa_simpson__c4_busy": {
+    "slug": "grandpa_simpson",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.kym-cdn.com/photos/images/original/002/930/940/574.png",
+    "candidates": [
+      {
+        "file": "grandpa_simpson__c4_busy__1.jpg",
+        "url": "https://i.kym-cdn.com/photos/images/original/002/930/940/574.png"
+      },
+      {
+        "file": "grandpa_simpson__c4_busy__2.jpg",
+        "url": "https://comicbook.com/wp-content/uploads/sites/4/2025/04/The-Simpsons-Grampa-Simpson-Oswald-Old-Tut-Abe.jpg?resize=768"
+      },
+      {
+        "file": "grandpa_simpson__c4_busy__3.jpg",
+        "url": "https://i.imgflip.com/1uitdh.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c4_busy__4.jpg",
+        "url": "https://uploads.dailydot.com/2024/10/grampa-abe-simpson-telling-kids-stories.png?q=65&auto=format&w=1600&ar=2:1&fit=crop"
+      }
+    ]
+  },
+  "grandpa_simpson__c5_new": {
+    "slug": "grandpa_simpson",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images.nightcafe.studio/jobs/R5zgYbXg7fKDrXo47qLx/R5zgYbXg7fKDrXo47qLx--grid.jpg?tr=w-1600,c-at_max",
+    "candidates": [
+      {
+        "file": "grandpa_simpson__c5_new__1.jpg",
+        "url": "https://images.nightcafe.studio/jobs/R5zgYbXg7fKDrXo47qLx/R5zgYbXg7fKDrXo47qLx--grid.jpg?tr=w-1600,c-at_max"
+      },
+      {
+        "file": "grandpa_simpson__c5_new__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/1350352e-e382-4f29-963e-7fcb7f9cab97/daw1cil-9627edaa-5582-4c5b-a6fe-e72023ffabc4.jpg/v1/fill/w_1024,h_1366,q_75,strp/grandpa_abraham_simpson_by_le_ducky_daw1cil-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTM2NiIsInBhdGgiOiJcL2ZcLzEzNTAzNTJlLWUzODItNGYyOS05NjNlLTdmY2I3ZjljYWI5N1wvZGF3MWNpbC05NjI3ZWRhYS01NTgyLTRjNWItYTZmZS1lNzIwMjNmZmFiYzQuanBnIiwid2lkdGgiOiI8PTEwMjQifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.n15xgyHZwlU79-5ZGRx5iAn3oOpNbJZYqdBO0mkJLDY"
+      },
+      {
+        "file": "grandpa_simpson__c5_new__3.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/039/083/248/large/edward-munn-edm-asset.jpg?1624905461"
+      },
+      {
+        "file": "grandpa_simpson__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/523c797a-2b86-476b-890b-76bfb425e9cf/dh24707-a5eec102-322e-4429-bfcc-560d91e5d17d.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzUyM2M3OTdhLTJiODYtNDc2Yi04OTBiLTc2YmZiNDI1ZTljZlwvZGgyNDcwNy1hNWVlYzEwMi0zMjJlLTQ0MjktYmZjYy01NjBkOTFlNWQxN2QuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.rlkYc9OLvh4Si4cI_CsJLeBlDRML_XZi86VdeKLK9Ag"
+      }
+    ]
+  },
+  "grandpa_simpson__c6_verybusy": {
+    "slug": "grandpa_simpson",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg",
+    "candidates": [
+      {
+        "file": "grandpa_simpson__c6_verybusy__1.jpg",
+        "url": "https://i.pinimg.com/736x/72/c9/d1/72c9d1d87e3300485abf63be5d604e99.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c6_verybusy__2.jpg",
+        "url": "https://external-preview.redd.it/NlOc9whbW1TPK3dJXjRH0z1Xn8QDDHlK9pI0CudzOJE.jpg?auto=webp&s=9ed3b6d8e6b523cd9b363fcc6500b9d1dfd6672d"
+      },
+      {
+        "file": "grandpa_simpson__c6_verybusy__3.jpg",
+        "url": "https://wallpapers.com/images/hd/rallying-crowd-from-the-simpsons-movie-pmlietgwyj4ra6w5.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c6_verybusy__4.jpg",
+        "url": "https://y.yarn.co/b2ece224-b058-48fb-bddf-845be3fba960_screenshot.jpg"
+      }
+    ]
+  },
+  "grandpa_simpson__c7_withchars": {
+    "slug": "grandpa_simpson",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://c8.alamy.com/comp/HD8Y21/the-simpsons-front-from-left-homer-simpson-abe-simpson-aka-grandpa-HD8Y21.jpg",
+    "candidates": [
+      {
+        "file": "grandpa_simpson__c7_withchars__1.jpg",
+        "url": "https://c8.alamy.com/comp/HD8Y21/the-simpsons-front-from-left-homer-simpson-abe-simpson-aka-grandpa-HD8Y21.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c7_withchars__2.jpg",
+        "url": "https://i.ytimg.com/vi/G9etT76QaKc/maxresdefault.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c7_withchars__3.jpg",
+        "url": "https://comicbook.com/wp-content/uploads/sites/4/2025/04/The-Simpsons-Abe-Orville-Oswald.jpg?w=1024"
+      },
+      {
+        "file": "grandpa_simpson__c7_withchars__4.jpg",
+        "url": "https://www.goldderby.com/wp-content/uploads/2020/03/4.17.jpg?resize=320"
+      }
+    ]
+  },
+  "grandpa_simpson__c8_typical": {
+    "slug": "grandpa_simpson",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://comicbook.com/wp-content/uploads/sites/4/2025/04/The-Simpsons-Grampa-Simpson-Oswald-Old-Tut-Abe.jpg?resize=768",
+    "candidates": [
+      {
+        "file": "grandpa_simpson__c8_typical__1.jpg",
+        "url": "https://comicbook.com/wp-content/uploads/sites/4/2025/04/The-Simpsons-Grampa-Simpson-Oswald-Old-Tut-Abe.jpg?resize=768"
+      },
+      {
+        "file": "grandpa_simpson__c8_typical__2.jpg",
+        "url": "https://c8.alamy.com/comp/PM5HMH/film-still-publicity-still-from-the-simpsons-episode-the-old-man-and-the-key-zelda-abe-simpson-march-10-2002-file-reference-30754260tha-for-editorial-use-only-all-rights-reserved-PM5HMH.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c8_typical__3.jpg",
+        "url": "https://uploads.dailydot.com/2024/10/grampa-abe-simpson-telling-kids-stories.png?q=65&auto=format&w=1600&ar=2:1&fit=crop"
+      },
+      {
+        "file": "grandpa_simpson__c8_typical__4.jpg",
+        "url": "https://i.kym-cdn.com/photos/images/original/002/930/940/574.png"
+      }
+    ]
+  },
+  "spongebob__c1_bw": {
+    "slug": "spongebob",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "spongebob__c2_flip": {
+    "slug": "spongebob",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "spongebob__c3_rot45": {
+    "slug": "spongebob",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "spongebob__c4_busy": {
+    "slug": "spongebob",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://cdni.fancaps.net/file/fancaps-movieimages/4648209.jpg",
+    "candidates": [
+      {
+        "file": "spongebob__c4_busy__1.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/4648209.jpg"
+      },
+      {
+        "file": "spongebob__c4_busy__2.jpg",
+        "url": "https://static.wikia.nocookie.net/5d22c817-6363-4092-b6b6-1d9a128e80ab/scale-to-width/755"
+      },
+      {
+        "file": "spongebob__c4_busy__3.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/4647997.jpg"
+      },
+      {
+        "file": "spongebob__c4_busy__4.jpg",
+        "url": "https://image.tmdb.org/t/p/original/6ZnHQKcqQ8nmfP6woZu2v5EtXoW.jpg"
+      }
+    ]
+  },
+  "spongebob__c5_new": {
+    "slug": "spongebob",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/f47f23cb-0561-4da1-bddc-fe33c2af10b0/dfufuf2-270f7f19-c135-4c0c-b758-685a717c409b.jpg/v1/fill/w_1280,h_1601,q_75,strp/spongebob_in_different_nickelodeon_art_styles_by_trainboy452_dfufuf2-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTYwMSIsInBhdGgiOiJcL2ZcL2Y0N2YyM2NiLTA1NjEtNGRhMS1iZGRjLWZlMzNjMmFmMTBiMFwvZGZ1ZnVmMi0yNzBmN2YxOS1jMTM1LTRjMGMtYjc1OC02ODVhNzE3YzQwOWIuanBnIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.b4LayvWTpoidMQ23KWLW-p7pVTYhANFh_K-25i_HDZc",
+    "candidates": [
+      {
+        "file": "spongebob__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/f47f23cb-0561-4da1-bddc-fe33c2af10b0/dfufuf2-270f7f19-c135-4c0c-b758-685a717c409b.jpg/v1/fill/w_1280,h_1601,q_75,strp/spongebob_in_different_nickelodeon_art_styles_by_trainboy452_dfufuf2-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTYwMSIsInBhdGgiOiJcL2ZcL2Y0N2YyM2NiLTA1NjEtNGRhMS1iZGRjLWZlMzNjMmFmMTBiMFwvZGZ1ZnVmMi0yNzBmN2YxOS1jMTM1LTRjMGMtYjc1OC02ODVhNzE3YzQwOWIuanBnIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.b4LayvWTpoidMQ23KWLW-p7pVTYhANFh_K-25i_HDZc"
+      },
+      {
+        "file": "spongebob__c5_new__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/252a292c-7d5f-4284-979e-4e38147aee3b/dk1pe8e-089e8d37-1bc5-4a2e-a3a4-89ca752a3d35.png/v1/fill/w_1280,h_720,q_80,strp/spongebob_in_different_art_styles_by_santiagotrejos_dk1pe8e-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NzIwIiwicGF0aCI6IlwvZlwvMjUyYTI5MmMtN2Q1Zi00Mjg0LTk3OWUtNGUzODE0N2FlZTNiXC9kazFwZThlLTA4OWU4ZDM3LTFiYzUtNGEyZS1hM2E0LTg5Y2E3NTJhM2QzNS5wbmciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.DnWsrY7Ip8xYzOPtKGWTbiGPL2NFd50gE7JMpinGDM0"
+      },
+      {
+        "file": "spongebob__c5_new__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/43d630c5-5de3-477d-92cc-4b74cf7624aa/di00s4h-2e196761-d287-482a-814e-785d380c59cb.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQzZDYzMGM1LTVkZTMtNDc3ZC05MmNjLTRiNzRjZjc2MjRhYVwvZGkwMHM0aC0yZTE5Njc2MS1kMjg3LTQ4MmEtODE0ZS03ODVkMzgwYzU5Y2IuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.g6INPGppVaxUPUIC7ZlsGOJ4VXP47NVDaqH1cPEuK8Y"
+      },
+      {
+        "file": "spongebob__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/cd74bf1b-e87a-445f-80f1-470f95778550/dhm21x0-3d7d1d73-6325-49f5-afe1-76c2249a8db9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2NkNzRiZjFiLWU4N2EtNDQ1Zi04MGYxLTQ3MGY5NTc3ODU1MFwvZGhtMjF4MC0zZDdkMWQ3My02MzI1LTQ5ZjUtYWZlMS03NmMyMjQ5YThkYjkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.knmbe4tISXfiGA6Bp0YOOsl8TiuTXwb3CFWmX9Dsvfs"
+      }
+    ]
+  },
+  "spongebob__c6_verybusy": {
+    "slug": "spongebob",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://y.yarn.co/c85c9606-a64a-408f-af81-bc6730183ca8_screenshot.jpg",
+    "candidates": [
+      {
+        "file": "spongebob__c6_verybusy__1.jpg",
+        "url": "https://y.yarn.co/c85c9606-a64a-408f-af81-bc6730183ca8_screenshot.jpg"
+      },
+      {
+        "file": "spongebob__c6_verybusy__2.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/4648026.jpg"
+      },
+      {
+        "file": "spongebob__c6_verybusy__3.jpg",
+        "url": "http://thespongebobsquarepants.weebly.com/uploads/1/7/1/6/17160270/4834572_orig.png"
+      },
+      {
+        "file": "spongebob__c6_verybusy__4.jpg",
+        "url": "https://media.giphy.com/media/xUPJPKpPBcyIUcuqIw/giphy.gif"
+      }
+    ]
+  },
+  "spongebob__c7_withchars": {
+    "slug": "spongebob",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://i5.walmartimages.com/asr/62b69265-fd31-4f4f-807d-6daae4f6bc85_1.750342dad8b755c5d53ea08d304ddaf9.jpeg",
+    "candidates": [
+      {
+        "file": "spongebob__c7_withchars__1.jpg",
+        "url": "https://i5.walmartimages.com/asr/62b69265-fd31-4f4f-807d-6daae4f6bc85_1.750342dad8b755c5d53ea08d304ddaf9.jpeg"
+      },
+      {
+        "file": "spongebob__c7_withchars__2.jpg",
+        "url": "https://i.pinimg.com/originals/31/cc/c4/31ccc41b914e1562a8aa172594b58d86.jpg"
+      },
+      {
+        "file": "spongebob__c7_withchars__3.jpg",
+        "url": "https://cdn.justjaredjr.com/wp-content/uploads/headlines/2019/06/sponge-every.jpg"
+      },
+      {
+        "file": "spongebob__c7_withchars__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/c9fe9e18-570d-40cd-8146-3ec6104e5bb4/dj8e4te-ebd7af1e-49f5-42df-ae77-33f90d60982c.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2M5ZmU5ZTE4LTU3MGQtNDBjZC04MTQ2LTNlYzYxMDRlNWJiNFwvZGo4ZTR0ZS1lYmQ3YWYxZS00OWY1LTQyZGYtYWU3Ny0zM2Y5MGQ2MDk4MmMucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.GRhPPFljAEUB1PybHIcoL6E1EC3d2ccoq-QTw0IWQNY"
+      }
+    ]
+  },
+  "spongebob__c8_typical": {
+    "slug": "spongebob",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://static1.colliderimages.com/wordpress/wp-content/uploads/2023/05/graveyard-shift-still.jpg",
+    "candidates": [
+      {
+        "file": "spongebob__c8_typical__1.jpg",
+        "url": "https://static1.colliderimages.com/wordpress/wp-content/uploads/2023/05/graveyard-shift-still.jpg"
+      },
+      {
+        "file": "spongebob__c8_typical__2.jpg",
+        "url": "https://thumbnails.cbsig.net/CBS_Production_Entertainment_VMS/2020/08/05/1772238915979/NICKELODEON_SPONGEBOBSQUAREPANTSHD_003_241898_1920x1080.jpg"
+      },
+      {
+        "file": "spongebob__c8_typical__3.jpg",
+        "url": "https://thumbnails.cbsig.net/CBS_Production_Entertainment_VMS/2020/05/21/1740713539760/NICKELODEON_SPONGEBOBSQUAREPANTS_215_198929_1920x1080.jpg"
+      },
+      {
+        "file": "spongebob__c8_typical__4.jpg",
+        "url": "https://thumbnails.cbsig.net/_x/w1920/CBS_Production_Entertainment_VMS/2020/08/05/1772401219751/NICKELODEON_SPONGEBOBSQUAREPANTSHD_110_242614_1920x1080.jpg"
+      }
+    ]
+  },
+  "patrick_star__c1_bw": {
+    "slug": "patrick_star",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "patrick_star__c2_flip": {
+    "slug": "patrick_star",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "patrick_star__c3_rot45": {
+    "slug": "patrick_star",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "patrick_star__c4_busy": {
+    "slug": "patrick_star",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/12/33/95/1233953288b4df9849896ddce13dd072.jpg",
+    "candidates": [
+      {
+        "file": "patrick_star__c4_busy__1.jpg",
+        "url": "https://i.pinimg.com/originals/12/33/95/1233953288b4df9849896ddce13dd072.jpg"
+      },
+      {
+        "file": "patrick_star__c4_busy__2.jpg",
+        "url": "https://i.pinimg.com/736x/ca/8d/19/ca8d196e6f5dd066ce4f9b23c11b1cb4.jpg"
+      },
+      {
+        "file": "patrick_star__c4_busy__3.jpg",
+        "url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjtRfaK_NnxYS5AOfQXuNZrxazGZsh2Xc9IIH7Xs5hf93wVYo-4hgJhA8pdCCLsxfwOYSQW9HvX8B6iGWQAZX30HwRlq86-_9DeUF4zI6jZsqfy_NExehdwOs_qZ-HVo29UhAgp/s1920/patrick_all_star_3.jpg"
+      },
+      {
+        "file": "patrick_star__c4_busy__4.jpg",
+        "url": "https://picfiles.alphacoders.com/264/thumb-1920-264357.png"
+      }
+    ]
+  },
+  "patrick_star__c5_new": {
+    "slug": "patrick_star",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/380dbd01-38ee-4146-93df-31ce051f4b83/dfnh4tj-af6a73c9-79c2-46cd-a8ad-361b83d386a3.png/v1/fill/w_1108,h_721,q_70,strp/three_styles_of_patrick_star_by_spongedrew250_dfnh4tj-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzM4MGRiZDAxLTM4ZWUtNDE0Ni05M2RmLTMxY2UwNTFmNGI4M1wvZGZuaDR0ai1hZjZhNzNjOS03OWMyLTQ2Y2QtYThhZC0zNjFiODNkMzg2YTMucG5nIiwiaGVpZ2h0IjoiPD0xMjUxIiwid2lkdGgiOiI8PTE5MjAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uud2F0ZXJtYXJrIl0sIndtayI6eyJwYXRoIjoiXC93bVwvMzgwZGJkMDEtMzhlZS00MTQ2LTkzZGYtMzFjZTA1MWY0YjgzXC9zcG9uZ2VkcmV3MjUwLTQucG5nIiwib3BhY2l0eSI6OTUsInByb3BvcnRpb25zIjowLjQ1LCJncmF2aXR5IjoiY2VudGVyIn19.6dCL-FYWi_bybIaKvPJpsWxhgDkGzERV88-ImeNXCwQ",
+    "candidates": [
+      {
+        "file": "patrick_star__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/380dbd01-38ee-4146-93df-31ce051f4b83/dfnh4tj-af6a73c9-79c2-46cd-a8ad-361b83d386a3.png/v1/fill/w_1108,h_721,q_70,strp/three_styles_of_patrick_star_by_spongedrew250_dfnh4tj-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzM4MGRiZDAxLTM4ZWUtNDE0Ni05M2RmLTMxY2UwNTFmNGI4M1wvZGZuaDR0ai1hZjZhNzNjOS03OWMyLTQ2Y2QtYThhZC0zNjFiODNkMzg2YTMucG5nIiwiaGVpZ2h0IjoiPD0xMjUxIiwid2lkdGgiOiI8PTE5MjAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uud2F0ZXJtYXJrIl0sIndtayI6eyJwYXRoIjoiXC93bVwvMzgwZGJkMDEtMzhlZS00MTQ2LTkzZGYtMzFjZTA1MWY0YjgzXC9zcG9uZ2VkcmV3MjUwLTQucG5nIiwib3BhY2l0eSI6OTUsInByb3BvcnRpb25zIjowLjQ1LCJncmF2aXR5IjoiY2VudGVyIn19.6dCL-FYWi_bybIaKvPJpsWxhgDkGzERV88-ImeNXCwQ"
+      },
+      {
+        "file": "patrick_star__c5_new__2.jpg",
+        "url": "https://i.ytimg.com/vi/bFEds_8aQ3s/oardefault.jpg?sqp=-oaymwEkCJUDENAFSFqQAgHyq4qpAxMIARUAAAAAJQAAyEI9AICiQ3gB&rs=AOn4CLBH_w8-a7Nr6gb4YkdfK25ht1XdGQ"
+      },
+      {
+        "file": "patrick_star__c5_new__3.jpg",
+        "url": "https://i.ytimg.com/vi/Fn7btyDonAE/maxresdefault.jpg"
+      },
+      {
+        "file": "patrick_star__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/dc219467-4d53-44d6-99c4-b96e0080f16a/de54ttj-099b869a-096e-4c00-9dba-45b6920969bb.jpg/v1/fill/w_1280,h_961,q_75,strp/patrick_stars_by_kyisspace_de54ttj-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9OTYxIiwicGF0aCI6IlwvZlwvZGMyMTk0NjctNGQ1My00NGQ2LTk5YzQtYjk2ZTAwODBmMTZhXC9kZTU0dHRqLTA5OWI4NjlhLTA5NmUtNGMwMC05ZGJhLTQ1YjY5MjA5NjliYi5qcGciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.7pIjobbHj0KhTtoRdyii8Xi7irL7mFMZMkbjq0QmxOs"
+      }
+    ]
+  },
+  "squidward__c1_bw": {
+    "slug": "squidward",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "squidward__c2_flip": {
+    "slug": "squidward",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "squidward__c3_rot45": {
+    "slug": "squidward",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test2.jpg",
+    "candidates": []
+  },
+  "scooby_doo__c1_bw": {
+    "slug": "scooby_doo",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "scooby_doo__c2_flip": {
+    "slug": "scooby_doo",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "scooby_doo__c3_rot45": {
+    "slug": "scooby_doo",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "shaggy__c1_bw": {
+    "slug": "shaggy",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "shaggy__c2_flip": {
+    "slug": "shaggy",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "shaggy__c3_rot45": {
+    "slug": "shaggy",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "mickey_mouse__c1_bw": {
+    "slug": "mickey_mouse",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "mickey_mouse__c2_flip": {
+    "slug": "mickey_mouse",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "mickey_mouse__c3_rot45": {
+    "slug": "mickey_mouse",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "minnie_mouse__c1_bw": {
+    "slug": "minnie_mouse",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "minnie_mouse__c2_flip": {
+    "slug": "minnie_mouse",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "minnie_mouse__c3_rot45": {
+    "slug": "minnie_mouse",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test3.jpg",
+    "candidates": []
+  },
+  "donald_duck__c1_bw": {
+    "slug": "donald_duck",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "donald_duck__c2_flip": {
+    "slug": "donald_duck",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "donald_duck__c3_rot45": {
+    "slug": "donald_duck",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "goofy__c1_bw": {
+    "slug": "goofy",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "goofy__c2_flip": {
+    "slug": "goofy",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "goofy__c3_rot45": {
+    "slug": "goofy",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "bugs_bunny__c1_bw": {
+    "slug": "bugs_bunny",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "bugs_bunny__c2_flip": {
+    "slug": "bugs_bunny",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "bugs_bunny__c3_rot45": {
+    "slug": "bugs_bunny",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "pikachu__c1_bw": {
+    "slug": "pikachu",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "pikachu__c2_flip": {
+    "slug": "pikachu",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "pikachu__c3_rot45": {
+    "slug": "pikachu",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "mario__c1_bw": {
+    "slug": "mario",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "mario__c2_flip": {
+    "slug": "mario",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "mario__c3_rot45": {
+    "slug": "mario",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "sonic__c1_bw": {
+    "slug": "sonic",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "sonic__c2_flip": {
+    "slug": "sonic",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "sonic__c3_rot45": {
+    "slug": "sonic",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "gallery.jpg",
+    "candidates": []
+  },
+  "moana__c1_bw": {
+    "slug": "moana",
+    "cond": "c1_bw",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "moana__c2_flip": {
+    "slug": "moana",
+    "cond": "c2_flip",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "moana__c3_rot45": {
+    "slug": "moana",
+    "cond": "c3_rot45",
+    "source": "transform",
+    "source_url": "",
+    "orig": "test1.jpg",
+    "candidates": []
+  },
+  "patrick_star__c6_verybusy": {
+    "slug": "patrick_star",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://y.yarn.co/c85c9606-a64a-408f-af81-bc6730183ca8_screenshot.jpg",
+    "candidates": [
+      {
+        "file": "patrick_star__c6_verybusy__1.jpg",
+        "url": "https://y.yarn.co/c85c9606-a64a-408f-af81-bc6730183ca8_screenshot.jpg"
+      },
+      {
+        "file": "patrick_star__c6_verybusy__2.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/4648026.jpg"
+      },
+      {
+        "file": "patrick_star__c6_verybusy__3.jpg",
+        "url": "http://thespongebobsquarepants.weebly.com/uploads/1/7/1/6/17160270/4834572_orig.png"
+      },
+      {
+        "file": "patrick_star__c6_verybusy__4.jpg",
+        "url": "https://media.giphy.com/media/xUPJPKpPBcyIUcuqIw/giphy.gif"
+      }
+    ]
+  },
+  "patrick_star__c7_withchars": {
+    "slug": "patrick_star",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://www.syfy.com/sites/syfy/files/2021/03/patrick_family_1_clean_v01.jpg",
+    "candidates": [
+      {
+        "file": "patrick_star__c7_withchars__1.jpg",
+        "url": "https://www.syfy.com/sites/syfy/files/2021/03/patrick_family_1_clean_v01.jpg"
+      },
+      {
+        "file": "patrick_star__c7_withchars__2.jpg",
+        "url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhefOOTD-IPvpBG3z9p_zo8trA9SOQ9vTWO6D3CkeGPPczMrJ_dUzKz0o7jDvQWKXNRHIH_p9SWuowkeoqSJXWpgYVMBRK1O-eRKdgdxWrADtjWp1W-2ZACmv9Sgcb_1siw5G0BG3lD7GPx0rpEtSnimYkcmo91xKOsuS95D4wUDmSRuC_S9-bGtXApj8aA/s1920/patrick+star+show+screen.jpg"
+      },
+      {
+        "file": "patrick_star__c7_withchars__3.jpg",
+        "url": "https://forgottentreasurez.com/wp-content/uploads/Nickelodeon-SPONGEBOB-SQUAREPANTS-Animation-Art-Sericel-Cel-Patrick-Squidward-scaled.jpeg"
+      },
+      {
+        "file": "patrick_star__c7_withchars__4.jpg",
+        "url": "https://mediaproxy.tvtropes.org/width/1200/https://static.tvtropes.org/pmwiki/pub/images/img_8521_7.jpeg"
+      }
+    ]
+  },
+  "patrick_star__c8_typical": {
+    "slug": "patrick_star",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://d3lzcn6mbbadaf.cloudfront.net/media/details/ANI-20241019072840.jpg",
+    "candidates": [
+      {
+        "file": "patrick_star__c8_typical__1.jpg",
+        "url": "https://d3lzcn6mbbadaf.cloudfront.net/media/details/ANI-20241019072840.jpg"
+      },
+      {
+        "file": "patrick_star__c8_typical__2.jpg",
+        "url": "https://m.media-amazon.com/images/M/MV5BNDY5MDRiYzYtNjY2Zi00NjYxLWI1NWMtODVjMWM3NWEzNmU4XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+      },
+      {
+        "file": "patrick_star__c8_typical__3.jpg",
+        "url": "https://images.plex.tv/photo?size=large-1280&scale=1&url=https://image.tmdb.org/t/p/original/tnkWipMbAb7Ylj1ojxqvV8YZPjB.jpg"
+      },
+      {
+        "file": "patrick_star__c8_typical__4.jpg",
+        "url": "https://m.media-amazon.com/images/M/MV5BMzRkNzc4YmMtMzAxMS00ZDMyLWI1YmItZGU2NDA4NTNkZTYxXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+      }
+    ]
+  },
+  "squidward__c4_busy": {
+    "slug": "squidward",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "http://vignette2.wikia.nocookie.net/spongebob/images/6/67/Mov_14.png/revision/latest?cb=20141118063536&path-prefix=id",
+    "candidates": [
+      {
+        "file": "squidward__c4_busy__1.jpg",
+        "url": "http://vignette2.wikia.nocookie.net/spongebob/images/6/67/Mov_14.png/revision/latest?cb=20141118063536&path-prefix=id"
+      },
+      {
+        "file": "squidward__c4_busy__2.jpg",
+        "url": "https://i.pinimg.com/736x/54/7d/e9/547de90896f3feda25a4946d89b9dfbe.jpg"
+      },
+      {
+        "file": "squidward__c4_busy__3.jpg",
+        "url": "https://i.ytimg.com/vi/JnYzrtNWM-I/maxresdefault.jpg"
+      },
+      {
+        "file": "squidward__c4_busy__4.jpg",
+        "url": "https://y.yarn.co/6e9a783a-70e8-4c81-87a7-fed42faea590_screenshot.jpg"
+      }
+    ]
+  },
+  "squidward__c5_new": {
+    "slug": "squidward",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/380dbd01-38ee-4146-93df-31ce051f4b83/dfnathk-8359c859-8037-44d6-9fe1-9202f0e3ad8e.png/v1/fill/w_1280,h_970,q_80,strp/three_style_of_squidward_tentacles_by_spongedrew250_dfnathk-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzM4MGRiZDAxLTM4ZWUtNDE0Ni05M2RmLTMxY2UwNTFmNGI4M1wvZGZuYXRoay04MzU5Yzg1OS04MDM3LTQ0ZDYtOWZlMS05MjAyZjBlM2FkOGUucG5nIiwiaGVpZ2h0IjoiPD05NzAiLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS53YXRlcm1hcmsiXSwid21rIjp7InBhdGgiOiJcL3dtXC8zODBkYmQwMS0zOGVlLTQxNDYtOTNkZi0zMWNlMDUxZjRiODNcL3Nwb25nZWRyZXcyNTAtNC5wbmciLCJvcGFjaXR5Ijo5NSwicHJvcG9ydGlvbnMiOjAuNDUsImdyYXZpdHkiOiJjZW50ZXIifX0.SaAH-fCQKyIJZhxCUR2xs1Pzu_B2JuhPF0QH5XBVUXM",
+    "candidates": [
+      {
+        "file": "squidward__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/380dbd01-38ee-4146-93df-31ce051f4b83/dfnathk-8359c859-8037-44d6-9fe1-9202f0e3ad8e.png/v1/fill/w_1280,h_970,q_80,strp/three_style_of_squidward_tentacles_by_spongedrew250_dfnathk-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzM4MGRiZDAxLTM4ZWUtNDE0Ni05M2RmLTMxY2UwNTFmNGI4M1wvZGZuYXRoay04MzU5Yzg1OS04MDM3LTQ0ZDYtOWZlMS05MjAyZjBlM2FkOGUucG5nIiwiaGVpZ2h0IjoiPD05NzAiLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS53YXRlcm1hcmsiXSwid21rIjp7InBhdGgiOiJcL3dtXC8zODBkYmQwMS0zOGVlLTQxNDYtOTNkZi0zMWNlMDUxZjRiODNcL3Nwb25nZWRyZXcyNTAtNC5wbmciLCJvcGFjaXR5Ijo5NSwicHJvcG9ydGlvbnMiOjAuNDUsImdyYXZpdHkiOiJjZW50ZXIifX0.SaAH-fCQKyIJZhxCUR2xs1Pzu_B2JuhPF0QH5XBVUXM"
+      },
+      {
+        "file": "squidward__c5_new__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/11eac61b-3681-46dd-9db9-a7ae6f3e8cb5/df0pkaz-455ddb03-aa27-4e06-80c1-9743bc0c465e.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzExZWFjNjFiLTM2ODEtNDZkZC05ZGI5LWE3YWU2ZjNlOGNiNVwvZGYwcGthei00NTVkZGIwMy1hYTI3LTRlMDYtODBjMS05NzQzYmMwYzQ2NWUucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.SuvJ4Y92Amyr7i77JPVeGSb2wIHX3E9V897lxbf0wfc"
+      },
+      {
+        "file": "squidward__c5_new__3.jpg",
+        "url": "https://lexica.art/prompt/1f163ac1-7993-40dd-a01d-affbed9fe191/opengraph-image?d26e3adb96114073"
+      },
+      {
+        "file": "squidward__c5_new__4.jpg",
+        "url": "https://preview.redd.it/drawing-squidward-in-4-different-style-v0-hqy9zqclni4a1.jpg?width=1080&crop=smart&auto=webp&s=e49a74a9e64d244484c6b9eb6c857d8a38391fd5"
+      }
+    ]
+  },
+  "squidward__c6_verybusy": {
+    "slug": "squidward",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://y.yarn.co/c85c9606-a64a-408f-af81-bc6730183ca8_screenshot.jpg",
+    "candidates": [
+      {
+        "file": "squidward__c6_verybusy__1.jpg",
+        "url": "https://y.yarn.co/c85c9606-a64a-408f-af81-bc6730183ca8_screenshot.jpg"
+      },
+      {
+        "file": "squidward__c6_verybusy__2.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/4648026.jpg"
+      },
+      {
+        "file": "squidward__c6_verybusy__3.jpg",
+        "url": "http://thespongebobsquarepants.weebly.com/uploads/1/7/1/6/17160270/4834572_orig.png"
+      },
+      {
+        "file": "squidward__c6_verybusy__4.jpg",
+        "url": "https://media.giphy.com/media/xUPJPKpPBcyIUcuqIw/giphy.gif"
+      }
+    ]
+  },
+  "squidward__c7_withchars": {
+    "slug": "squidward",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/b3541b28-2747-46af-bc8f-a750f2c60647/dgfzody-b9930401-7cb4-401d-b86b-b96ecb16d3a2.png",
+    "candidates": [
+      {
+        "file": "squidward__c7_withchars__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/b3541b28-2747-46af-bc8f-a750f2c60647/dgfzody-b9930401-7cb4-401d-b86b-b96ecb16d3a2.png"
+      },
+      {
+        "file": "squidward__c7_withchars__2.jpg",
+        "url": "https://media.craiyon.com/2026-05-14/D3O9PP7lT9ePQbP9qFGDwg.webp"
+      },
+      {
+        "file": "squidward__c7_withchars__3.jpg",
+        "url": "https://i.ytimg.com/vi/Mgx5LDet89s/maxresdefault.jpg"
+      },
+      {
+        "file": "squidward__c7_withchars__4.jpg",
+        "url": "https://c8.alamy.com/comp/HDA4EX/spongebob-squarepants-gary-the-snail-squidward-tentacles-spongebob-HDA4EX.jpg"
+      }
+    ]
+  },
+  "squidward__c8_typical": {
+    "slug": "squidward",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://cdn.rrauction.com/auction/723/3502583_1.jpg",
+    "candidates": [
+      {
+        "file": "squidward__c8_typical__1.jpg",
+        "url": "https://cdn.rrauction.com/auction/723/3502583_1.jpg"
+      },
+      {
+        "file": "squidward__c8_typical__2.jpg",
+        "url": "https://img.buzzfeed.com/buzzfeed-static/static/2022-01/13/5/asset/6101eab3fcf4/sub-buzz-4155-1642052179-5.jpg"
+      },
+      {
+        "file": "squidward__c8_typical__3.jpg",
+        "url": "https://static1.srcdn.com/wordpress/wp-content/uploads/2021/03/Squidward-with-SpongeBob-and-SpongeBob-clones-in-SB-129-episode.jpg"
+      },
+      {
+        "file": "squidward__c8_typical__4.jpg",
+        "url": "https://i.pinimg.com/736x/72/36/5f/72365fc2407cf8d48e563dd1d855149f.jpg"
+      }
+    ]
+  },
+  "scooby_doo__c4_busy": {
+    "slug": "scooby_doo",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://media.thepopverse.com/media/scooby-doo-screenshot-0qvd0kfcwfpejjgps0vhsfevsm.jpg",
+    "candidates": [
+      {
+        "file": "scooby_doo__c4_busy__1.jpg",
+        "url": "https://media.thepopverse.com/media/scooby-doo-screenshot-0qvd0kfcwfpejjgps0vhsfevsm.jpg"
+      },
+      {
+        "file": "scooby_doo__c4_busy__2.jpg",
+        "url": "https://m.media-amazon.com/images/M/MV5BMTYxOTEyOTc1NV5BMl5BanBnXkFtZTcwNzUzNzkwNA@@._V1_.jpg"
+      },
+      {
+        "file": "scooby_doo__c4_busy__3.jpg",
+        "url": "https://i.pinimg.com/736x/0a/dd/8f/0add8fd0ace966fccac8eaed4b3dcae4.jpg"
+      },
+      {
+        "file": "scooby_doo__c4_busy__4.jpg",
+        "url": "https://s1.dmcdn.net/v/VxUx-1cum_Q4zSWUu/x1080"
+      }
+    ]
+  },
+  "scooby_doo__c5_new": {
+    "slug": "scooby_doo",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i.redd.it/djrcing8rb951.jpg",
+    "candidates": [
+      {
+        "file": "scooby_doo__c5_new__1.jpg",
+        "url": "https://i.redd.it/djrcing8rb951.jpg"
+      },
+      {
+        "file": "scooby_doo__c5_new__2.jpg",
+        "url": "https://64.media.tumblr.com/5bde20ab158a266c82fc2173480f3160/tumblr_nv36wbKoMx1tg12wvo1_1280.jpg"
+      },
+      {
+        "file": "scooby_doo__c5_new__3.jpg",
+        "url": "https://static.wikia.nocookie.net/scoobydoo/images/4/4c/Mystery_Inc._concept_art.png/revision/latest/scale-to-width-down/1200?cb=20240214211218"
+      },
+      {
+        "file": "scooby_doo__c5_new__4.jpg",
+        "url": "https://rivolidesign.com/wp-content/uploads/2017/01/SG_83.jpg"
+      }
+    ]
+  },
+  "scooby_doo__c6_verybusy": {
+    "slug": "scooby_doo",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/c6/b5/8a/c6b58ae4c4dd6f2c13eb783f8e4f5592.jpg",
+    "candidates": [
+      {
+        "file": "scooby_doo__c6_verybusy__1.jpg",
+        "url": "https://i.pinimg.com/originals/c6/b5/8a/c6b58ae4c4dd6f2c13eb783f8e4f5592.jpg"
+      },
+      {
+        "file": "scooby_doo__c6_verybusy__2.jpg",
+        "url": "https://i.pinimg.com/originals/30/ae/83/30ae83a0fb5c7e91f9ebebf8f12cc27e.jpg"
+      },
+      {
+        "file": "scooby_doo__c6_verybusy__3.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/13591559.jpg"
+      },
+      {
+        "file": "scooby_doo__c6_verybusy__4.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/13593150.jpg"
+      }
+    ]
+  },
+  "scooby_doo__c7_withchars": {
+    "slug": "scooby_doo",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://static1.cbrimages.com/wordpress/wp-content/uploads/2022/09/Collage-Maker-05-Sep-2022-0227-AM.jpg",
+    "candidates": [
+      {
+        "file": "scooby_doo__c7_withchars__1.jpg",
+        "url": "https://static1.cbrimages.com/wordpress/wp-content/uploads/2022/09/Collage-Maker-05-Sep-2022-0227-AM.jpg"
+      },
+      {
+        "file": "scooby_doo__c7_withchars__2.jpg",
+        "url": "https://wallpapers.com/images/hd/scooby-doo-iconic-poster-795kyg2q5vy0lt3n.jpg"
+      },
+      {
+        "file": "scooby_doo__c7_withchars__3.jpg",
+        "url": "https://i.pinimg.com/originals/c8/c6/b0/c8c6b015a0f27987db79ead6b9d76f6f.jpg"
+      },
+      {
+        "file": "scooby_doo__c7_withchars__4.jpg",
+        "url": "https://assetsio.reedpopcdn.com/scooby-doo-(2).jpg?width=1200&height=900&fit=crop&quality=100&format=png&enable=upscale&auto=webp"
+      }
+    ]
+  },
+  "scooby_doo__c8_typical": {
+    "slug": "scooby_doo",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://m.media-amazon.com/images/M/MV5BMTU1ODg1ODMzNl5BMl5BanBnXkFtZTcwMzIwODAxNA@@._V1_.jpg",
+    "candidates": [
+      {
+        "file": "scooby_doo__c8_typical__1.jpg",
+        "url": "https://m.media-amazon.com/images/M/MV5BMTU1ODg1ODMzNl5BMl5BanBnXkFtZTcwMzIwODAxNA@@._V1_.jpg"
+      },
+      {
+        "file": "scooby_doo__c8_typical__2.jpg",
+        "url": "https://clickamericana.com/wp-content/uploads/Vintage-Scooby-Doo-TV-show-screen-still-01.jpg"
+      },
+      {
+        "file": "scooby_doo__c8_typical__3.jpg",
+        "url": "https://s1.dmcdn.net/v/Wz2Eo1e9B5zw5lraq/x720"
+      },
+      {
+        "file": "scooby_doo__c8_typical__4.jpg",
+        "url": "https://64.media.tumblr.com/7cf2f37c8a34b9e25cf769c9143cc12d/003cf7ba999f1975-0e/s640x960/578d6c74c08dcf19a0d1065dcd75065462a52ebc.pnj"
+      }
+    ]
+  },
+  "shaggy__c4_busy": {
+    "slug": "shaggy",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://vignette.wikia.nocookie.net/scoobydoo/images/3/3e/Scooby_and_Shaggy.png/revision/latest?cb=20160304160952",
+    "candidates": [
+      {
+        "file": "shaggy__c4_busy__1.jpg",
+        "url": "https://vignette.wikia.nocookie.net/scoobydoo/images/3/3e/Scooby_and_Shaggy.png/revision/latest?cb=20160304160952"
+      },
+      {
+        "file": "shaggy__c4_busy__2.jpg",
+        "url": "https://i.ytimg.com/vi/VOr_DOsKtBo/maxresdefault.jpg"
+      },
+      {
+        "file": "shaggy__c4_busy__3.jpg",
+        "url": "https://wallpapers.com/images/hd/shaggy-rogers-uzc2dzk0mf2dtgf2.jpg"
+      },
+      {
+        "file": "shaggy__c4_busy__4.jpg",
+        "url": "https://wallpapers.com/images/hd/shaggy-rogers-i1176dcboysricv9.jpg"
+      }
+    ]
+  },
+  "shaggy__c5_new": {
+    "slug": "shaggy",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i.redd.it/0quvyz5xpaka1.jpg",
+    "candidates": [
+      {
+        "file": "shaggy__c5_new__1.jpg",
+        "url": "https://i.redd.it/0quvyz5xpaka1.jpg"
+      },
+      {
+        "file": "shaggy__c5_new__2.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/089/438/914/large/gio-l-black-72-sem-titulo2-20250617202247.jpg?1750954456"
+      },
+      {
+        "file": "shaggy__c5_new__3.jpg",
+        "url": "https://cdn-uploads.huggingface.co/production/uploads/1659892034602-62e3edcdac55121820952dc4.png"
+      },
+      {
+        "file": "shaggy__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/bf678f2b-7840-4d15-9188-f19ea24d1a73/dgf0jd1-a2281102-375d-454a-a993-f7986f6308eb.jpg/v1/fill/w_1075,h_743,q_70,strp/shaggy_rogers__by_favoritecartoongirl_dgf0jd1-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9ODg1IiwicGF0aCI6IlwvZlwvYmY2NzhmMmItNzg0MC00ZDE1LTkxODgtZjE5ZWEyNGQxYTczXC9kZ2YwamQxLWEyMjgxMTAyLTM3NWQtNDU0YS1hOTkzLWY3OTg2ZjYzMDhlYi5qcGciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.d2RW5lNR7NlGmWfUdVUuInkgWFlrJKJjorGaqiYy4lo"
+      }
+    ]
+  },
+  "shaggy__c6_verybusy": {
+    "slug": "shaggy",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/50/a6/d3/50a6d3076b9323ef79307ad4b54d6a23.jpg",
+    "candidates": [
+      {
+        "file": "shaggy__c6_verybusy__1.jpg",
+        "url": "https://i.pinimg.com/originals/50/a6/d3/50a6d3076b9323ef79307ad4b54d6a23.jpg"
+      },
+      {
+        "file": "shaggy__c6_verybusy__2.jpg",
+        "url": "https://i.pinimg.com/736x/ba/81/1a/ba811a4bae9359560c3587b99549f422.jpg"
+      },
+      {
+        "file": "shaggy__c6_verybusy__3.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/7553498.jpg"
+      },
+      {
+        "file": "shaggy__c6_verybusy__4.jpg",
+        "url": "https://www.sarah-michelle-gellar.org/photos/albums/films/Scooby-Doo/Caps/0300.jpg"
+      }
+    ]
+  },
+  "shaggy__c7_withchars": {
+    "slug": "shaggy",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://images5.alphacoders.com/123/1235499.jpg",
+    "candidates": [
+      {
+        "file": "shaggy__c7_withchars__1.jpg",
+        "url": "https://images5.alphacoders.com/123/1235499.jpg"
+      },
+      {
+        "file": "shaggy__c7_withchars__2.jpg",
+        "url": "https://people.com/thmb/gwWp1h-QOxlgo32aFH8m3b3ZXlw=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc():focal(749x0:751x2)/scooby-doo-tout-091124-ae4067d33fa64e639331cc90797b100c.jpg"
+      },
+      {
+        "file": "shaggy__c7_withchars__3.jpg",
+        "url": "https://c8.alamy.com/comp/2JD85MW/scrappyvelmascoobyshaggy-scooby-doo-and-scrappy-doo-1979-2JD85MW.jpg"
+      },
+      {
+        "file": "shaggy__c7_withchars__4.jpg",
+        "url": "https://c8.alamy.com/comp/2JHN13E/linda-cardinelli-matthew-lillard-freddie-prinze-jr-sarah-michelle-gellar-scooby-doo-scooby-doo-2002-2JHN13E.jpg"
+      }
+    ]
+  },
+  "shaggy__c8_typical": {
+    "slug": "shaggy",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://vignette.wikia.nocookie.net/scoobydoo/images/3/3e/Scooby_and_Shaggy.png/revision/latest?cb=20160304160952",
+    "candidates": [
+      {
+        "file": "shaggy__c8_typical__1.jpg",
+        "url": "https://vignette.wikia.nocookie.net/scoobydoo/images/3/3e/Scooby_and_Shaggy.png/revision/latest?cb=20160304160952"
+      },
+      {
+        "file": "shaggy__c8_typical__2.jpg",
+        "url": "https://mrwallpaper.com/images/file/shaggy-rogers-the-lovable-canine-companion-on-the-iconic-animated-series-scooby-doo-i1176dcboysricv9.jpg"
+      },
+      {
+        "file": "shaggy__c8_typical__3.jpg",
+        "url": "https://c8.alamy.com/comp/HD8MYA/scooby-doo-where-are-you-scooby-doo-shaggy-rogers-1969-1972-HD8MYA.jpg"
+      },
+      {
+        "file": "shaggy__c8_typical__4.jpg",
+        "url": "https://artinsights.com/wp-content/uploads/2020/03/4530WitchesGhost950-scaled.jpg"
+      }
+    ]
+  },
+  "mickey_mouse__c4_busy": {
+    "slug": "mickey_mouse",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/2b/76/f8/2b76f8d2b0ab989762891987a118e8a5.jpg",
+    "candidates": [
+      {
+        "file": "mickey_mouse__c4_busy__1.jpg",
+        "url": "https://i.pinimg.com/736x/2b/76/f8/2b76f8d2b0ab989762891987a118e8a5.jpg"
+      },
+      {
+        "file": "mickey_mouse__c4_busy__2.jpg",
+        "url": "https://i0.wp.com/highdefdiscnews.com/wp-content/uploads/2018/10/celebrating_mickey_16.png?ssl=1"
+      },
+      {
+        "file": "mickey_mouse__c4_busy__3.jpg",
+        "url": "https://i0.wp.com/highdefdiscnews.com/wp-content/uploads/2018/10/celebrating_mickey_49.png?ssl=1"
+      },
+      {
+        "file": "mickey_mouse__c4_busy__4.jpg",
+        "url": "https://i.pinimg.com/736x/7a/14/a5/7a14a5c06e76a00fee3807470eb1dfcd.jpg"
+      }
+    ]
+  },
+  "mickey_mouse__c5_new": {
+    "slug": "mickey_mouse",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i.ytimg.com/vi/SEeqoiZ-EMQ/maxresdefault.jpg",
+    "candidates": [
+      {
+        "file": "mickey_mouse__c5_new__1.jpg",
+        "url": "https://i.ytimg.com/vi/SEeqoiZ-EMQ/maxresdefault.jpg"
+      },
+      {
+        "file": "mickey_mouse__c5_new__2.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/053/546/126/large/queenry-creations-1.jpg?1662472766"
+      },
+      {
+        "file": "mickey_mouse__c5_new__3.jpg",
+        "url": "https://i.pinimg.com/736x/35/d5/33/35d5334e5ac2b2f202794e46c54f2c91.jpg"
+      },
+      {
+        "file": "mickey_mouse__c5_new__4.jpg",
+        "url": "https://i.pinimg.com/736x/cb/5a/d9/cb5ad93c9487dee077322b044784f18b.jpg"
+      }
+    ]
+  },
+  "mickey_mouse__c6_verybusy": {
+    "slug": "mickey_mouse",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://64.media.tumblr.com/83f800dbdf41deda093668452c6a1f34/tumblr_n25oaiOWzd1rcb0d2o1_640.jpg",
+    "candidates": [
+      {
+        "file": "mickey_mouse__c6_verybusy__1.jpg",
+        "url": "https://64.media.tumblr.com/83f800dbdf41deda093668452c6a1f34/tumblr_n25oaiOWzd1rcb0d2o1_640.jpg"
+      },
+      {
+        "file": "mickey_mouse__c6_verybusy__2.jpg",
+        "url": "https://howtodisney.com/wp-content/uploads/2024/07/Untitled-design-67-780x405.jpg"
+      },
+      {
+        "file": "mickey_mouse__c6_verybusy__3.jpg",
+        "url": "https://insidethemagic.net/wp-content/uploads/2023/12/Untitled-design-2023-12-28T105859.329.jpg"
+      },
+      {
+        "file": "mickey_mouse__c6_verybusy__4.jpg",
+        "url": "https://static.wikia.nocookie.net/soundeffects/images/b/bf/The_Mickey_Mouse_Club_Intro_Disney_Crowd_Cheering_Sound-1.png/revision/latest?cb=20171129134808"
+      }
+    ]
+  },
+  "mickey_mouse__c7_withchars": {
+    "slug": "mickey_mouse",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/cb/12/be/cb12beff41610013f47468cab82a4bc2.jpg",
+    "candidates": [
+      {
+        "file": "mickey_mouse__c7_withchars__1.jpg",
+        "url": "https://i.pinimg.com/originals/cb/12/be/cb12beff41610013f47468cab82a4bc2.jpg"
+      },
+      {
+        "file": "mickey_mouse__c7_withchars__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/f83f4b15-f55e-4fca-9301-07ea6a9f9bdc/djk8gsc-509859c3-39c3-4705-a9ed-eb415d1053d4.png/v1/fill/w_1280,h_1952,q_80,strp/mickey_mouse_and_friends_cast_of_characters_by_gikesmanners1995_djk8gsc-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTk1MiIsInBhdGgiOiIvZi9mODNmNGIxNS1mNTVlLTRmY2EtOTMwMS0wN2VhNmE5ZjliZGMvZGprOGdzYy01MDk4NTljMy0zOWMzLTQ3MDUtYTllZC1lYjQxNWQxMDUzZDQucG5nIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.MUEHXjIVIhYKVGruM5LLBDt5td0cfhMDc4mn3NEi5sQ"
+      },
+      {
+        "file": "mickey_mouse__c7_withchars__3.jpg",
+        "url": "https://lumiere-a.akamaihd.net/v1/images/og_mickeymousefranchise_ddt-16970_e126497b.jpeg?region=0,0,1200,630"
+      },
+      {
+        "file": "mickey_mouse__c7_withchars__4.jpg",
+        "url": "https://a-static.besthdwallpaper.com/walt-disney-poster-mickey-mouse-and-friends-wallpaper-1400x1050-83292_21.jpg"
+      }
+    ]
+  },
+  "mickey_mouse__c8_typical": {
+    "slug": "mickey_mouse",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://images.plex.tv/photo?size=large-1280&scale=1&url=https://image.tmdb.org/t/p/original/zxOsX9doQTsMW8ra07Q2occTQVy.jpg",
+    "candidates": [
+      {
+        "file": "mickey_mouse__c8_typical__1.jpg",
+        "url": "https://images.plex.tv/photo?size=large-1280&scale=1&url=https://image.tmdb.org/t/p/original/zxOsX9doQTsMW8ra07Q2occTQVy.jpg"
+      },
+      {
+        "file": "mickey_mouse__c8_typical__2.jpg",
+        "url": "https://walter.trakt.tv/images/episodes/002/999/714/screenshots/thumb/48e1c3aa5c.jpg"
+      },
+      {
+        "file": "mickey_mouse__c8_typical__3.jpg",
+        "url": "https://external-preview.redd.it/steamboat-silly-last-of-the-the-wonderful-world-of-mickey-v0-0Zo5mOQr-oG4QvXmdEW88kPBEKdn0qtrlZbc3ZdojhA.jpg?auto=webp&s=02c1a67dae8d7fe8077a1fa635f588b2a7fd9c4c"
+      },
+      {
+        "file": "mickey_mouse__c8_typical__4.jpg",
+        "url": "https://s1.dmcdn.net/v/UpydZ1cmqUxrTfy2Z/x720"
+      }
+    ]
+  },
+  "minnie_mouse__c4_busy": {
+    "slug": "minnie_mouse",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/81/7c/96/817c968667f9f940a528aa9409665975.jpg",
+    "candidates": [
+      {
+        "file": "minnie_mouse__c4_busy__1.jpg",
+        "url": "https://i.pinimg.com/736x/81/7c/96/817c968667f9f940a528aa9409665975.jpg"
+      },
+      {
+        "file": "minnie_mouse__c4_busy__2.jpg",
+        "url": "https://d23.com/app/uploads/2023/06/1180w-600h_061523_Animated-Shorts-Restoration_00.jpg"
+      },
+      {
+        "file": "minnie_mouse__c4_busy__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/961976eb-231a-460d-ba7f-0baf9d90190b/dgh9c50-8d6e531c-7f11-40f2-afd8-c65fb16cd121.jpg/v1/fill/w_1140,h_540,q_75,strp/minnie_mouse_puffy_cheeks_scene_57__by_romanceguy_dgh9c50-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NTQwIiwicGF0aCI6Ii9mLzk2MTk3NmViLTIzMWEtNDYwZC1iYTdmLTBiYWY5ZDkwMTkwYi9kZ2g5YzUwLThkNmU1MzFjLTdmMTEtNDBmMi1hZmQ4LWM2NWZiMTZjZDEyMS5qcGciLCJ3aWR0aCI6Ijw9MTE0MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.B6j9yfBnHdZY9lHdpHAREdCNda698BthMSJSQ7fDrnw"
+      },
+      {
+        "file": "minnie_mouse__c4_busy__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/a9b8e541-f3a8-41a2-96a5-cddcfcdfc58e/djggybs-0b2b7588-94a1-4c80-9668-7017cd0ba491.jpg/v1/fill/w_1280,h_640,q_75,strp/minnie_screenshot_15_by_mac876_djggybs-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NjQwIiwicGF0aCI6IlwvZlwvYTliOGU1NDEtZjNhOC00MWEyLTk2YTUtY2RkY2ZjZGZjNThlXC9kamdneWJzLTBiMmI3NTg4LTk0YTEtNGM4MC05NjY4LTcwMTdjZDBiYTQ5MS5qcGciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.KAbZZuBkJih_XAeNUfTQASVCH45PE-qFXrVUC3ajrcM"
+      }
+    ]
+  },
+  "minnie_mouse__c5_new": {
+    "slug": "minnie_mouse",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/56539335/r/il/3ff9e2/6765816330/il_794xN.6765816330_m6tf.jpg",
+    "candidates": [
+      {
+        "file": "minnie_mouse__c5_new__1.jpg",
+        "url": "https://i.etsystatic.com/56539335/r/il/3ff9e2/6765816330/il_794xN.6765816330_m6tf.jpg"
+      },
+      {
+        "file": "minnie_mouse__c5_new__2.jpg",
+        "url": "https://i.etsystatic.com/37542714/r/il/35e642/7394762605/il_794xN.7394762605_iwdu.jpg"
+      },
+      {
+        "file": "minnie_mouse__c5_new__3.jpg",
+        "url": "https://i.pinimg.com/736x/6d/c1/7f/6dc17f9478fe44ae300220b24d91b2a5.jpg"
+      },
+      {
+        "file": "minnie_mouse__c5_new__4.jpg",
+        "url": "https://i.etsystatic.com/52749320/r/il/2d9530/7194511739/il_794xN.7194511739_jc2g.jpg"
+      }
+    ]
+  },
+  "minnie_mouse__c6_verybusy": {
+    "slug": "minnie_mouse",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://64.media.tumblr.com/83f800dbdf41deda093668452c6a1f34/tumblr_n25oaiOWzd1rcb0d2o1_640.jpg",
+    "candidates": [
+      {
+        "file": "minnie_mouse__c6_verybusy__1.jpg",
+        "url": "https://64.media.tumblr.com/83f800dbdf41deda093668452c6a1f34/tumblr_n25oaiOWzd1rcb0d2o1_640.jpg"
+      },
+      {
+        "file": "minnie_mouse__c6_verybusy__2.jpg",
+        "url": "https://howtodisney.com/wp-content/uploads/2024/07/Untitled-design-67-780x405.jpg"
+      },
+      {
+        "file": "minnie_mouse__c6_verybusy__3.jpg",
+        "url": "https://insidethemagic.net/wp-content/uploads/2023/12/Untitled-design-2023-12-28T105859.329.jpg"
+      },
+      {
+        "file": "minnie_mouse__c6_verybusy__4.jpg",
+        "url": "https://static.wikia.nocookie.net/soundeffects/images/b/bf/The_Mickey_Mouse_Club_Intro_Disney_Crowd_Cheering_Sound-1.png/revision/latest?cb=20171129134808"
+      }
+    ]
+  },
+  "minnie_mouse__c7_withchars": {
+    "slug": "minnie_mouse",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/9b/34/17/9b341706959193b74eac4281694f4a51.jpg",
+    "candidates": [
+      {
+        "file": "minnie_mouse__c7_withchars__1.jpg",
+        "url": "https://i.pinimg.com/originals/9b/34/17/9b341706959193b74eac4281694f4a51.jpg"
+      },
+      {
+        "file": "minnie_mouse__c7_withchars__2.jpg",
+        "url": "http://www.pixelstalk.net/wp-content/uploads/2016/01/Disney-Mickey-Mouse-Charaters-Wallpaper.jpg"
+      },
+      {
+        "file": "minnie_mouse__c7_withchars__3.jpg",
+        "url": "https://lumiere-a.akamaihd.net/v1/images/og_mickeymousefranchise_ddt-16970_e126497b.jpeg?region=0,0,1200,630"
+      },
+      {
+        "file": "minnie_mouse__c7_withchars__4.jpg",
+        "url": "https://m.media-amazon.com/images/I/81DwmFUsvxL.jpg"
+      }
+    ]
+  },
+  "minnie_mouse__c8_typical": {
+    "slug": "minnie_mouse",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://disney.images.edge.bamgrid.com/ripcut-delivery/v2/variant/disney/019bbfe7-b74a-72f2-b542-9489d84081b7/compose?format=webp&width=2560",
+    "candidates": [
+      {
+        "file": "minnie_mouse__c8_typical__1.jpg",
+        "url": "https://disney.images.edge.bamgrid.com/ripcut-delivery/v2/variant/disney/019bbfe7-b74a-72f2-b542-9489d84081b7/compose?format=webp&width=2560"
+      },
+      {
+        "file": "minnie_mouse__c8_typical__2.jpg",
+        "url": "https://i.ytimg.com/vi/zvKvmUwKPts/maxresdefault.jpg"
+      },
+      {
+        "file": "minnie_mouse__c8_typical__3.jpg",
+        "url": "https://disney.images.edge.bamgrid.com/ripcut-delivery/v2/variant/disney/70cd23f8-93c0-444a-9fd9-d7620257889c/compose?format=webp&width=2560"
+      },
+      {
+        "file": "minnie_mouse__c8_typical__4.jpg",
+        "url": "https://i.ytimg.com/vi/GyqYPMTeVls/maxresdefault.jpg"
+      }
+    ]
+  },
+  "donald_duck__c4_busy": {
+    "slug": "donald_duck",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1948/461/7.jpg",
+    "candidates": [
+      {
+        "file": "donald_duck__c4_busy__1.jpg",
+        "url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1948/461/7.jpg"
+      },
+      {
+        "file": "donald_duck__c4_busy__2.jpg",
+        "url": "https://static.wikia.nocookie.net/disney/images/d/df/1934-petite-poule-avisee-05.jpg/revision/latest?cb=20140107041755"
+      },
+      {
+        "file": "donald_duck__c4_busy__3.jpg",
+        "url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1948/461/5.jpg"
+      },
+      {
+        "file": "donald_duck__c4_busy__4.jpg",
+        "url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1948/461/10.jpg"
+      }
+    ]
+  },
+  "donald_duck__c5_new": {
+    "slug": "donald_duck",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://drawingref.com/wp-content/uploads/2023/06/donald_duck_drawing_reference4-1024x1024.jpg",
+    "candidates": [
+      {
+        "file": "donald_duck__c5_new__1.jpg",
+        "url": "https://drawingref.com/wp-content/uploads/2023/06/donald_duck_drawing_reference4-1024x1024.jpg"
+      },
+      {
+        "file": "donald_duck__c5_new__2.jpg",
+        "url": "https://static.boredpanda.com/blog/wp-content/uploads/2025/07/6870f3e56c3ea__700.jpg"
+      },
+      {
+        "file": "donald_duck__c5_new__3.jpg",
+        "url": "https://i.pinimg.com/originals/aa/6a/be/aa6abe93b9ee8045553efb4640ee16db.jpg"
+      },
+      {
+        "file": "donald_duck__c5_new__4.jpg",
+        "url": "https://drawingref.com/wp-content/uploads/2023/06/donald_duck_drawing_reference2.jpg"
+      }
+    ]
+  },
+  "donald_duck__c6_verybusy": {
+    "slug": "donald_duck",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://insidethemagic.net/wp-content/uploads/2025/05/paint-the-night-donald-issue-header-2.jpg",
+    "candidates": [
+      {
+        "file": "donald_duck__c6_verybusy__1.jpg",
+        "url": "https://insidethemagic.net/wp-content/uploads/2025/05/paint-the-night-donald-issue-header-2.jpg"
+      },
+      {
+        "file": "donald_duck__c6_verybusy__2.jpg",
+        "url": "https://images.nightcafe.studio/jobs/m5EqLXitpHdCedhaLPHm/m5EqLXitpHdCedhaLPHm--1--bb7sw.jpg?tr=w-1600,c-at_max"
+      },
+      {
+        "file": "donald_duck__c6_verybusy__3.jpg",
+        "url": "https://c8.alamy.com/comp/2JYRGCD/scene-from-the-animated-film-donald-duck-and-his-companions-usa-1960-2JYRGCD.jpg"
+      },
+      {
+        "file": "donald_duck__c6_verybusy__4.jpg",
+        "url": "https://i.pinimg.com/736x/84/9e/87/849e874bf918e378c33312373e3a60ed.jpg"
+      }
+    ]
+  },
+  "donald_duck__c7_withchars": {
+    "slug": "donald_duck",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://dreamsvg.com/cdn/shop/files/DonaldDuckBundle129Files.jpg?crop=center&format=pjpg&height=1844&v=1731156551&width=1844",
+    "candidates": [
+      {
+        "file": "donald_duck__c7_withchars__1.jpg",
+        "url": "https://dreamsvg.com/cdn/shop/files/DonaldDuckBundle129Files.jpg?crop=center&format=pjpg&height=1844&v=1731156551&width=1844"
+      },
+      {
+        "file": "donald_duck__c7_withchars__2.jpg",
+        "url": "https://i.pinimg.com/originals/2d/94/68/2d946835d49c68cb00839c40d94b097d.png"
+      },
+      {
+        "file": "donald_duck__c7_withchars__3.jpg",
+        "url": "https://i.pinimg.com/originals/91/b1/40/91b1406285101853151274d689b75339.jpg"
+      },
+      {
+        "file": "donald_duck__c7_withchars__4.jpg",
+        "url": "https://images.alphacoders.com/475/475510.jpg"
+      }
+    ]
+  },
+  "donald_duck__c8_typical": {
+    "slug": "donald_duck",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://s1.dmcdn.net/v/BOjCy1Rll9FTSQvKi/x1080",
+    "candidates": [
+      {
+        "file": "donald_duck__c8_typical__1.jpg",
+        "url": "https://s1.dmcdn.net/v/BOjCy1Rll9FTSQvKi/x1080"
+      },
+      {
+        "file": "donald_duck__c8_typical__2.jpg",
+        "url": "https://s1.dmcdn.net/v/9NxgT1clcZ0OwFp5p/x720"
+      },
+      {
+        "file": "donald_duck__c8_typical__3.jpg",
+        "url": "https://s2.dmcdn.net/v/UneF11a7NnzWtkaVG/x720"
+      },
+      {
+        "file": "donald_duck__c8_typical__4.jpg",
+        "url": "https://s1.dmcdn.net/v/7iDgE1efougNZ64Kq/x720"
+      }
+    ]
+  },
+  "goofy__c4_busy": {
+    "slug": "goofy",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://www.comingsoon.net/wp-content/uploads/sites/3/2025/04/Screenshot-2025-04-07-132313.png",
+    "candidates": [
+      {
+        "file": "goofy__c4_busy__1.jpg",
+        "url": "https://www.comingsoon.net/wp-content/uploads/sites/3/2025/04/Screenshot-2025-04-07-132313.png"
+      },
+      {
+        "file": "goofy__c4_busy__2.jpg",
+        "url": "https://i.pinimg.com/originals/6e/9b/f0/6e9bf0751dbbaf82d1c83aa4d6d32500.jpg"
+      },
+      {
+        "file": "goofy__c4_busy__3.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/054/086/774/large/myke-sutherland-extremely-goofy-disneyscreencaps-com-3138.jpg?1663729966"
+      },
+      {
+        "file": "goofy__c4_busy__4.jpg",
+        "url": "https://s3.amazonaws.com/intanibase/iad_assets/1995/21140/screenshots/21140-83-watermark.jpg"
+      }
+    ]
+  },
+  "goofy__c5_new": {
+    "slug": "goofy",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/ea/1c/67/ea1c6754bc0bab4172a20362b99fc17d.jpg",
+    "candidates": [
+      {
+        "file": "goofy__c5_new__1.jpg",
+        "url": "https://i.pinimg.com/736x/ea/1c/67/ea1c6754bc0bab4172a20362b99fc17d.jpg"
+      },
+      {
+        "file": "goofy__c5_new__2.jpg",
+        "url": "https://i.pinimg.com/736x/6f/10/e6/6f10e6eb92e8e4ba33c2376e9d7162c4.jpg"
+      },
+      {
+        "file": "goofy__c5_new__3.jpg",
+        "url": "https://i.pinimg.com/736x/09/b2/53/09b253402be657e99c4e383b740f8904.jpg"
+      },
+      {
+        "file": "goofy__c5_new__4.jpg",
+        "url": "https://i.pinimg.com/736x/62/e4/ef/62e4efbfb8245a348b028227df054a59.jpg"
+      }
+    ]
+  },
+  "goofy__c6_verybusy": {
+    "slug": "goofy",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://64.media.tumblr.com/83f800dbdf41deda093668452c6a1f34/tumblr_n25oaiOWzd1rcb0d2o1_640.jpg",
+    "candidates": [
+      {
+        "file": "goofy__c6_verybusy__1.jpg",
+        "url": "https://64.media.tumblr.com/83f800dbdf41deda093668452c6a1f34/tumblr_n25oaiOWzd1rcb0d2o1_640.jpg"
+      },
+      {
+        "file": "goofy__c6_verybusy__2.jpg",
+        "url": "https://howtodisney.com/wp-content/uploads/2024/07/Untitled-design-67-780x405.jpg"
+      },
+      {
+        "file": "goofy__c6_verybusy__3.jpg",
+        "url": "https://insidethemagic.net/wp-content/uploads/2023/12/Untitled-design-2023-12-28T105859.329.jpg"
+      },
+      {
+        "file": "goofy__c6_verybusy__4.jpg",
+        "url": "https://static.wikia.nocookie.net/soundeffects/images/b/bf/The_Mickey_Mouse_Club_Intro_Disney_Crowd_Cheering_Sound-1.png/revision/latest?cb=20171129134808"
+      }
+    ]
+  },
+  "goofy__c7_withchars": {
+    "slug": "goofy",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://www.pupvine.com/wp-content/uploads/2023/03/goofy-1-800x1200.jpg",
+    "candidates": [
+      {
+        "file": "goofy__c7_withchars__1.jpg",
+        "url": "https://www.pupvine.com/wp-content/uploads/2023/03/goofy-1-800x1200.jpg"
+      },
+      {
+        "file": "goofy__c7_withchars__2.jpg",
+        "url": "https://i.pinimg.com/736x/47/79/40/477940af523153433fefc91fefd9f18e.jpg"
+      },
+      {
+        "file": "goofy__c7_withchars__3.jpg",
+        "url": "https://www.pngmart.com/files/22/Goofy-PNG-Image.png"
+      },
+      {
+        "file": "goofy__c7_withchars__4.jpg",
+        "url": "https://pngimg.com/uploads/goofy/goofy_PNG9.png"
+      }
+    ]
+  },
+  "goofy__c8_typical": {
+    "slug": "goofy",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://d23.com/app/uploads/2022/05/IMAGE-11_How-to-Hook-Up-Your-Home-Theater-1024x581.jpg",
+    "candidates": [
+      {
+        "file": "goofy__c8_typical__1.jpg",
+        "url": "https://d23.com/app/uploads/2022/05/IMAGE-11_How-to-Hook-Up-Your-Home-Theater-1024x581.jpg"
+      },
+      {
+        "file": "goofy__c8_typical__2.jpg",
+        "url": "https://img10.hotstar.com/image/upload/f_auto/sources/r1/cms/prod/8794/1168794-h-262f59e181a2"
+      },
+      {
+        "file": "goofy__c8_typical__3.jpg",
+        "url": "https://whatsondisneyplus.b-cdn.net/wp-content/uploads/2022/06/Goofy-Gymnastics.jpg"
+      },
+      {
+        "file": "goofy__c8_typical__4.jpg",
+        "url": "https://images.ctfassets.net/m3qyzuwrf176/4P1WpRk5EoMzIOTfTlRyYR/0f779a1bb07d186930fcacd2ae6727bd/_Sep1_GOOFY_MOVIE_Matinee1-banner.jpg?w=2000"
+      }
+    ]
+  },
+  "bugs_bunny__c4_busy": {
+    "slug": "bugs_bunny",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1948/5519/10.jpg",
+    "candidates": [
+      {
+        "file": "bugs_bunny__c4_busy__1.jpg",
+        "url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1948/5519/10.jpg"
+      },
+      {
+        "file": "bugs_bunny__c4_busy__2.jpg",
+        "url": "https://i.pinimg.com/originals/b3/7e/38/b37e387041e29ab33c3bf5133f99853f.jpg"
+      },
+      {
+        "file": "bugs_bunny__c4_busy__3.jpg",
+        "url": "https://images6.alphacoders.com/475/thumb-1920-475948.jpg"
+      },
+      {
+        "file": "bugs_bunny__c4_busy__4.jpg",
+        "url": "https://s3.amazonaws.com/intanibase/iad_screenshots/1991/48002/80logo.jpg"
+      }
+    ]
+  },
+  "bugs_bunny__c5_new": {
+    "slug": "bugs_bunny",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/6f75c01d-4900-4b16-a820-f8b03f999b36/dbs35ef-6f455bff-bdb4-498b-8e54-b14b4282275b.jpg/v1/fill/w_1024,h_2057,q_75,strp/bugs_bunny___styles_by_undrawachiever_dbs35ef-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjA1NyIsInBhdGgiOiJcL2ZcLzZmNzVjMDFkLTQ5MDAtNGIxNi1hODIwLWY4YjAzZjk5OWIzNlwvZGJzMzVlZi02ZjQ1NWJmZi1iZGI0LTQ5OGItOGU1NC1iMTRiNDI4MjI3NWIuanBnIiwid2lkdGgiOiI8PTEwMjQifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.pa9sHczD-vnjx_5QNhZT5AHFSO2KOzrMqRyyhJTJ1dE",
+    "candidates": [
+      {
+        "file": "bugs_bunny__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/6f75c01d-4900-4b16-a820-f8b03f999b36/dbs35ef-6f455bff-bdb4-498b-8e54-b14b4282275b.jpg/v1/fill/w_1024,h_2057,q_75,strp/bugs_bunny___styles_by_undrawachiever_dbs35ef-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjA1NyIsInBhdGgiOiJcL2ZcLzZmNzVjMDFkLTQ5MDAtNGIxNi1hODIwLWY4YjAzZjk5OWIzNlwvZGJzMzVlZi02ZjQ1NWJmZi1iZGI0LTQ5OGItOGU1NC1iMTRiNDI4MjI3NWIuanBnIiwid2lkdGgiOiI8PTEwMjQifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.pa9sHczD-vnjx_5QNhZT5AHFSO2KOzrMqRyyhJTJ1dE"
+      },
+      {
+        "file": "bugs_bunny__c5_new__2.jpg",
+        "url": "https://i.pinimg.com/originals/fb/f8/90/fbf8907c6a359b13a46e90b1d981b0e0.jpg"
+      },
+      {
+        "file": "bugs_bunny__c5_new__3.jpg",
+        "url": "https://a.1stdibscdn.com/a_19402/a_120803521680991301132/Screen_Shot_2023_04_08_at_2_59_23_PM_master.jpg"
+      },
+      {
+        "file": "bugs_bunny__c5_new__4.jpg",
+        "url": "https://i.pinimg.com/originals/f9/4e/a0/f94ea063c8f20647a6eb081e8dadfa5d.jpg"
+      }
+    ]
+  },
+  "bugs_bunny__c6_verybusy": {
+    "slug": "bugs_bunny",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/40/06/94/4006949c9a2c9220ee1a5b026067b85d.jpg",
+    "candidates": [
+      {
+        "file": "bugs_bunny__c6_verybusy__1.jpg",
+        "url": "https://i.pinimg.com/originals/40/06/94/4006949c9a2c9220ee1a5b026067b85d.jpg"
+      },
+      {
+        "file": "bugs_bunny__c6_verybusy__2.jpg",
+        "url": "http://i.mycdn.me/videoPreview?id=1390189021877&type=32&idx=11&tkn=rcvuQ--PqwidQ-xDB2rV4lovLcA&fn=external_8"
+      },
+      {
+        "file": "bugs_bunny__c6_verybusy__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/45e35feb-dd85-4aec-9f8d-79b7f9573776/d8r9p8z-250e4179-0151-46ee-bd70-7dfbc67d8712.gif?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ1ZTM1ZmViLWRkODUtNGFlYy05ZjhkLTc5YjdmOTU3Mzc3NlwvZDhyOXA4ei0yNTBlNDE3OS0wMTUxLTQ2ZWUtYmQ3MC03ZGZiYzY3ZDg3MTIuZ2lmIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.XBdTW4q1Ph84m_KaZ8KFCJrOuJX_DJ7y2t4pRHP_RFo"
+      },
+      {
+        "file": "bugs_bunny__c6_verybusy__4.jpg",
+        "url": "https://www.4pareteita.it/wp-content/uploads/2024/11/Un-avventura-spaziale-Un-film-dei-Looney-Tunes-la-spiegazione-delle-scene-post-credits.png"
+      }
+    ]
+  },
+  "bugs_bunny__c7_withchars": {
+    "slug": "bugs_bunny",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://wallpaperset.com/w/full/8/3/c/27663.jpg",
+    "candidates": [
+      {
+        "file": "bugs_bunny__c7_withchars__1.jpg",
+        "url": "https://wallpaperset.com/w/full/8/3/c/27663.jpg"
+      },
+      {
+        "file": "bugs_bunny__c7_withchars__2.jpg",
+        "url": "https://m.media-amazon.com/images/M/MV5BNWIxMGI0NjQtNjdjZi00ZDZlLWJhZmMtMTkwOTNmYmE0ZmI2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+      },
+      {
+        "file": "bugs_bunny__c7_withchars__3.jpg",
+        "url": "https://i.pinimg.com/736x/1d/73/8b/1d738bb6b77d3f4348e3f59be7c55890--looney-tunes-characters-bugs-bunny.jpg"
+      },
+      {
+        "file": "bugs_bunny__c7_withchars__4.jpg",
+        "url": "https://i.pinimg.com/originals/2d/f9/ee/2df9ee9e8ed168c44dff525627fbcbf5.jpg"
+      }
+    ]
+  },
+  "bugs_bunny__c8_typical": {
+    "slug": "bugs_bunny",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/41/ae/c9/41aec9f40ab6f5dbb0eca58412f103db.jpg",
+    "candidates": [
+      {
+        "file": "bugs_bunny__c8_typical__1.jpg",
+        "url": "https://i.pinimg.com/736x/41/ae/c9/41aec9f40ab6f5dbb0eca58412f103db.jpg"
+      },
+      {
+        "file": "bugs_bunny__c8_typical__2.jpg",
+        "url": "https://images-na.ssl-images-amazon.com/images/S/pv-target-images/b77e41646a5a81d694908e39eed6b6243022e37a68f8655b2947aa61136c1211._RI_TTW_.jpg"
+      },
+      {
+        "file": "bugs_bunny__c8_typical__3.jpg",
+        "url": "https://imageservice.sky.com/contentid/A5EK3TJRBXptA7pKRNGNm/LAND_16_9?language=eng&output-format=jpg&output-quality=19&proposition=NOWTV&territory=GB&version=3b2bbb7e-3f01-340e-935f-2179b70ab57a"
+      },
+      {
+        "file": "bugs_bunny__c8_typical__4.jpg",
+        "url": "https://static1.cbrimages.com/wordpress/wp-content/uploads/2025/02/the-looney-tunes-show.jpg"
+      }
+    ]
+  },
+  "pikachu__c4_busy": {
+    "slug": "pikachu",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/46/43/3f/46433fc3624eeb4e4aba31d0d0a60527.jpg",
+    "candidates": [
+      {
+        "file": "pikachu__c4_busy__1.jpg",
+        "url": "https://i.pinimg.com/736x/46/43/3f/46433fc3624eeb4e4aba31d0d0a60527.jpg"
+      },
+      {
+        "file": "pikachu__c4_busy__2.jpg",
+        "url": "https://64.media.tumblr.com/f94617638e4401f43b18ef66fd583d02/tumblr_midokw9R1T1qb9dbjo1_640.png"
+      },
+      {
+        "file": "pikachu__c4_busy__3.jpg",
+        "url": "https://comicvine.gamespot.com/a/uploads/original/6/67344/5865232-tumblr_inline_ohujmufkmg1r9z6eg_540.0.jpg"
+      },
+      {
+        "file": "pikachu__c4_busy__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/0f8abae8-8c04-4e2e-bb1e-dab3ae975041/dfl3rk3-185a6958-15c9-404c-b4f7-d458bf757764.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzBmOGFiYWU4LThjMDQtNGUyZS1iYjFlLWRhYjNhZTk3NTA0MVwvZGZsM3JrMy0xODVhNjk1OC0xNWM5LTQwNGMtYjRmNy1kNDU4YmY3NTc3NjQucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.a0Hl3hOdFKl77ybhYHec4ET-jrjslUVsJJncxNEpErk"
+      }
+    ]
+  },
+  "pikachu__c5_new": {
+    "slug": "pikachu",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://www.pixelstalk.net/wp-content/uploads/2016/03/Free-download-Pikachu-wallpaper-HD.jpg",
+    "candidates": [
+      {
+        "file": "pikachu__c5_new__1.jpg",
+        "url": "https://www.pixelstalk.net/wp-content/uploads/2016/03/Free-download-Pikachu-wallpaper-HD.jpg"
+      },
+      {
+        "file": "pikachu__c5_new__2.jpg",
+        "url": "https://www.pngall.com/wp-content/uploads/5/Pokemon-Pikachu.png"
+      },
+      {
+        "file": "pikachu__c5_new__3.jpg",
+        "url": "https://i.pinimg.com/originals/eb/2a/4b/eb2a4bedf397dfc7e085431c7ee0d282.png"
+      },
+      {
+        "file": "pikachu__c5_new__4.jpg",
+        "url": "http://www.cartonionline.com/wordpress/wp-content/uploads/2022/10/Pikachu.jpg"
+      }
+    ]
+  },
+  "pikachu__c6_verybusy": {
+    "slug": "pikachu",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://preview.redd.it/he-went-from-being-ridiculed-from-the-crowd-in-the-first-v0-pcu6im25j4291.jpg?width=1600&format=pjpg&auto=webp&s=d18cf7c9bf19c3ce01c0070521baae254c8732d3",
+    "candidates": [
+      {
+        "file": "pikachu__c6_verybusy__1.jpg",
+        "url": "https://preview.redd.it/he-went-from-being-ridiculed-from-the-crowd-in-the-first-v0-pcu6im25j4291.jpg?width=1600&format=pjpg&auto=webp&s=d18cf7c9bf19c3ce01c0070521baae254c8732d3"
+      },
+      {
+        "file": "pikachu__c6_verybusy__2.jpg",
+        "url": "https://i.pinimg.com/originals/36/eb/ac/36ebac1a95fb75a69094b0d9faf6fae5.jpg"
+      },
+      {
+        "file": "pikachu__c6_verybusy__3.jpg",
+        "url": "https://i.pinimg.com/originals/0f/cb/65/0fcb65fa3519623320c45c2931d77435.jpg"
+      },
+      {
+        "file": "pikachu__c6_verybusy__4.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-animeimages/2104763.jpg"
+      }
+    ]
+  },
+  "pikachu__c7_withchars": {
+    "slug": "pikachu",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://media.craiyon.com/2025-04-23/3CY13e5DQLGUdohAj46PAg.webp",
+    "candidates": [
+      {
+        "file": "pikachu__c7_withchars__1.jpg",
+        "url": "https://media.craiyon.com/2025-04-23/3CY13e5DQLGUdohAj46PAg.webp"
+      },
+      {
+        "file": "pikachu__c7_withchars__2.jpg",
+        "url": "https://media.craiyon.com/2025-04-06/UGT_-JCfTeKWVqYwx8p4qA.webp"
+      },
+      {
+        "file": "pikachu__c7_withchars__3.jpg",
+        "url": "https://i.pinimg.com/originals/ae/74/ce/ae74ce7d241274dfff6f822ce2782126.jpg"
+      },
+      {
+        "file": "pikachu__c7_withchars__4.jpg",
+        "url": "https://i.pinimg.com/originals/ec/5f/85/ec5f85f5b200590fbd7e940d5066475b.jpg"
+      }
+    ]
+  },
+  "pikachu__c8_typical": {
+    "slug": "pikachu",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://m.media-amazon.com/images/M/MV5BZDQ1NWZiNDItZWJiYy00NzhmLWJiNGMtOTNjMWNhZGYwYTNkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+    "candidates": [
+      {
+        "file": "pikachu__c8_typical__1.jpg",
+        "url": "https://m.media-amazon.com/images/M/MV5BZDQ1NWZiNDItZWJiYy00NzhmLWJiNGMtOTNjMWNhZGYwYTNkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg"
+      },
+      {
+        "file": "pikachu__c8_typical__2.jpg",
+        "url": "https://pbs.twimg.com/media/EgtfHrpXYAAMvvf.jpg:large"
+      },
+      {
+        "file": "pikachu__c8_typical__3.jpg",
+        "url": "https://cdn.vox-cdn.com/thumbor/R4_gQ9ClEYX3Qw2Jvrb5-EK33Pg=/0x0:2202x1650/1920x0/filters:focal(0x0:2202x1650):no_upscale()/cdn.vox-cdn.com/uploads/chorus_asset/file/13078929/Screen_Shot_2018_09_14_at_4.16.41_PM.png"
+      },
+      {
+        "file": "pikachu__c8_typical__4.jpg",
+        "url": "https://static1.cbrimages.com/wordpress/wp-content/uploads/2021/01/Pokemon-Pikachu-Goodbye-Ash-Kethum-Released-Pikachus-Sad-Original-Series.jpg"
+      }
+    ]
+  },
+  "mario__c4_busy": {
+    "slug": "mario",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://gaming-cdn.com/images/products/20402/screenshot/super-mario-bros-wonder-nintendo-switch-2-edition-meetup-in-bellabel-park-switch-2-nintendo-eshop-wallpaper-4.jpg?v=1757683953",
+    "candidates": [
+      {
+        "file": "mario__c4_busy__1.jpg",
+        "url": "https://gaming-cdn.com/images/products/20402/screenshot/super-mario-bros-wonder-nintendo-switch-2-edition-meetup-in-bellabel-park-switch-2-nintendo-eshop-wallpaper-4.jpg?v=1757683953"
+      },
+      {
+        "file": "mario__c4_busy__2.jpg",
+        "url": "https://sm.ign.com/t/ign_ap/gallery/s/super-mari/super-mario-bros-wonder-screenshots_nke7.1200.jpg"
+      },
+      {
+        "file": "mario__c4_busy__3.jpg",
+        "url": "https://images.nintendolife.com/screenshots/11424/900x.jpg"
+      },
+      {
+        "file": "mario__c4_busy__4.jpg",
+        "url": "https://c8.alamy.com/comp/CWW9BG/nintendo-video-game-super-mario-world-the-game-centers-on-the-quest-CWW9BG.jpg"
+      }
+    ]
+  },
+  "mario__c5_new": {
+    "slug": "mario",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/0dcbaa28-41ca-42bd-9b34-9330e2fa3286/db52flr-6d2df3d9-339d-4b85-bd37-96cec8ef12c4.png/v1/fill/w_1024,h_620/different_style___super_mario_by_retro_robosan_db52flr-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NjIwIiwicGF0aCI6IlwvZlwvMGRjYmFhMjgtNDFjYS00MmJkLTliMzQtOTMzMGUyZmEzMjg2XC9kYjUyZmxyLTZkMmRmM2Q5LTMzOWQtNGI4NS1iZDM3LTk2Y2VjOGVmMTJjNC5wbmciLCJ3aWR0aCI6Ijw9MTAyNCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.cTq32cu1rMytqqjZSdNEGFSCI4Inl8EUBqtC-K2GC10",
+    "candidates": [
+      {
+        "file": "mario__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/0dcbaa28-41ca-42bd-9b34-9330e2fa3286/db52flr-6d2df3d9-339d-4b85-bd37-96cec8ef12c4.png/v1/fill/w_1024,h_620/different_style___super_mario_by_retro_robosan_db52flr-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NjIwIiwicGF0aCI6IlwvZlwvMGRjYmFhMjgtNDFjYS00MmJkLTliMzQtOTMzMGUyZmEzMjg2XC9kYjUyZmxyLTZkMmRmM2Q5LTMzOWQtNGI4NS1iZDM3LTk2Y2VjOGVmMTJjNC5wbmciLCJ3aWR0aCI6Ijw9MTAyNCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.cTq32cu1rMytqqjZSdNEGFSCI4Inl8EUBqtC-K2GC10"
+      },
+      {
+        "file": "mario__c5_new__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/483614bc-028e-4fc6-854c-535fa9344a8a/ddpavlq-b9f606fe-265f-4637-a4b3-7defb533fa21.png/v1/fill/w_600,h_600,q_80,strp/__super_mario_styles___by_gonzartcortez_ddpavlq-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ4MzYxNGJjLTAyOGUtNGZjNi04NTRjLTUzNWZhOTM0NGE4YVwvZGRwYXZscS1iOWY2MDZmZS0yNjVmLTQ2MzctYTRiMy03ZGVmYjUzM2ZhMjEucG5nIiwiaGVpZ2h0IjoiPD02MDAiLCJ3aWR0aCI6Ijw9NjAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLndhdGVybWFyayJdLCJ3bWsiOnsicGF0aCI6Ilwvd21cLzQ4MzYxNGJjLTAyOGUtNGZjNi04NTRjLTUzNWZhOTM0NGE4YVwvZ29uemFydGNvcnRlei00LnBuZyIsIm9wYWNpdHkiOjk1LCJwcm9wb3J0aW9ucyI6MC40NSwiZ3Jhdml0eSI6ImNlbnRlciJ9fQ.WNCPtqgjzwOJ_3Tak80c_Ih19qOWqwal-Mpmf80BN8U"
+      },
+      {
+        "file": "mario__c5_new__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/e45b1391-0314-4016-bf7a-cfdb36ac8e75/dflzwtn-ded86d46-3faf-439c-bf1e-40b55b31538f.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2U0NWIxMzkxLTAzMTQtNDAxNi1iZjdhLWNmZGIzNmFjOGU3NVwvZGZsend0bi1kZWQ4NmQ0Ni0zZmFmLTQzOWMtYmYxZS00MGI1NWIzMTUzOGYuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.NokCJ4ebq4HpiFm_Of26juK2A-zdYjrl1U495RVYyO8"
+      },
+      {
+        "file": "mario__c5_new__4.jpg",
+        "url": "https://preview.redd.it/idbzub4w1ot81.png?width=1080&crop=smart&auto=webp&s=ca6332870d96e90bccdb214584fbc87fe78ff1ea"
+      }
+    ]
+  },
+  "mario__c6_verybusy": {
+    "slug": "mario",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://www.mariowiki.com/images/thumb/f/f8/TTYD_NS_Gonzales_Crowd.jpg/800px-TTYD_NS_Gonzales_Crowd.jpg",
+    "candidates": [
+      {
+        "file": "mario__c6_verybusy__1.jpg",
+        "url": "https://www.mariowiki.com/images/thumb/f/f8/TTYD_NS_Gonzales_Crowd.jpg/800px-TTYD_NS_Gonzales_Crowd.jpg"
+      },
+      {
+        "file": "mario__c6_verybusy__2.jpg",
+        "url": "https://mario.wiki.gallery/images/c/c0/Mario_Tennis_Aces_MarioCrowd.png?20180625015055"
+      },
+      {
+        "file": "mario__c6_verybusy__3.jpg",
+        "url": "https://static0.gamerantimages.com/wordpress/wp-content/uploads/2023/09/super-mario-bros-wonder-crowd-shot.jpg?q=50&fit=crop&w=825&dpr=1.5"
+      },
+      {
+        "file": "mario__c6_verybusy__4.jpg",
+        "url": "https://images.kinorium.com/movie/shot/1650347/w1500_51751313.jpg"
+      }
+    ]
+  },
+  "mario__c7_withchars": {
+    "slug": "mario",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://wallpaperaccess.com/full/4370332.jpg",
+    "candidates": [
+      {
+        "file": "mario__c7_withchars__1.jpg",
+        "url": "https://wallpaperaccess.com/full/4370332.jpg"
+      },
+      {
+        "file": "mario__c7_withchars__2.jpg",
+        "url": "https://i.pinimg.com/originals/df/e2/ef/dfe2efcdce4cd4f3a67ade00127c52de.jpg"
+      },
+      {
+        "file": "mario__c7_withchars__3.jpg",
+        "url": "https://www.hdwallpapers.in/download/luigi_mario_brothers_and_all_characters_hd_games-HD.jpg"
+      },
+      {
+        "file": "mario__c7_withchars__4.jpg",
+        "url": "https://i.pinimg.com/originals/e0/b6/48/e0b6485c5fa459565ab041eb7c5a9595.jpg"
+      }
+    ]
+  },
+  "mario__c8_typical": {
+    "slug": "mario",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://s.movieinsider.com/images/p/672644_m1669997024.jpg",
+    "candidates": [
+      {
+        "file": "mario__c8_typical__1.jpg",
+        "url": "https://s.movieinsider.com/images/p/672644_m1669997024.jpg"
+      },
+      {
+        "file": "mario__c8_typical__2.jpg",
+        "url": "https://people.com/thmb/AiFk4QIhOfRsjl5JssgouAXyH7g=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc():focal(999x0:1001x2)/super-mario-bros-still-2-5a88fb18af8549ebb071c49edce969b5.jpg"
+      },
+      {
+        "file": "mario__c8_typical__3.jpg",
+        "url": "https://staticg.sportskeeda.com/editor/2022/10/a9439-16651185028098-1920.jpg"
+      },
+      {
+        "file": "mario__c8_typical__4.jpg",
+        "url": "https://static0.cbrimages.com/wordpress/wp-content/uploads/2025/09/mario-gazes-through-a-warp-pipe-in-the-super-mario-bros-movie.jpg?q=49&fit=crop&w=825&dpr=2"
+      }
+    ]
+  },
+  "sonic__c4_busy": {
+    "slug": "sonic",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://media.doblu.com/wp-content/uploads/2022/08/22125820/Sonic-The-Hedgehog-2.mkv_snapshot_01.37.08_2022.08.22_12.51.54-scaled.jpg",
+    "candidates": [
+      {
+        "file": "sonic__c4_busy__1.jpg",
+        "url": "https://media.doblu.com/wp-content/uploads/2022/08/22125820/Sonic-The-Hedgehog-2.mkv_snapshot_01.37.08_2022.08.22_12.51.54-scaled.jpg"
+      },
+      {
+        "file": "sonic__c4_busy__2.jpg",
+        "url": "https://wallpapers.com/images/hd/sonic-2-pictures-1920-x-1080-bumbsz0myotkkpx8.jpg"
+      },
+      {
+        "file": "sonic__c4_busy__3.jpg",
+        "url": "https://mrwallpaper.com/images/file/sonic-the-hedgehog-screenshot-sc1hmk3y17lp0vmx.jpg"
+      },
+      {
+        "file": "sonic__c4_busy__4.jpg",
+        "url": "https://images.launchbox-app.com/a2296bc8-5745-4cd0-bd59-5f97a8e7eeb6.png"
+      }
+    ]
+  },
+  "sonic__c5_new": {
+    "slug": "sonic",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/e45b1391-0314-4016-bf7a-cfdb36ac8e75/dgkgaw2-f264017a-1c90-46f0-b7c3-ea046a29923a.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2U0NWIxMzkxLTAzMTQtNDAxNi1iZjdhLWNmZGIzNmFjOGU3NVwvZGdrZ2F3Mi1mMjY0MDE3YS0xYzkwLTQ2ZjAtYjdjMy1lYTA0NmEyOTkyM2EuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.V-Y8avn-1arFHyFr93yRcHjCYFfHyqwDFgn40oE2WnQ",
+    "candidates": [
+      {
+        "file": "sonic__c5_new__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/e45b1391-0314-4016-bf7a-cfdb36ac8e75/dgkgaw2-f264017a-1c90-46f0-b7c3-ea046a29923a.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2U0NWIxMzkxLTAzMTQtNDAxNi1iZjdhLWNmZGIzNmFjOGU3NVwvZGdrZ2F3Mi1mMjY0MDE3YS0xYzkwLTQ2ZjAtYjdjMy1lYTA0NmEyOTkyM2EuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.V-Y8avn-1arFHyFr93yRcHjCYFfHyqwDFgn40oE2WnQ"
+      },
+      {
+        "file": "sonic__c5_new__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/e45b1391-0314-4016-bf7a-cfdb36ac8e75/dieitj9-b9b1ded1-8b52-48db-9394-3d89de4d0be3.jpg/v1/fill/w_1280,h_960,q_75,strp/sonic_the_hedgehog_in_4_different_styles___by_jayuice_dieitj9-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9OTYwIiwicGF0aCI6IlwvZlwvZTQ1YjEzOTEtMDMxNC00MDE2LWJmN2EtY2ZkYjM2YWM4ZTc1XC9kaWVpdGo5LWI5YjFkZWQxLThiNTItNDhkYi05Mzk0LTNkODlkZTRkMGJlMy5qcGciLCJ3aWR0aCI6Ijw9MTI4MCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.CfZ2WyfUmRZ0v5MVErSufyC1G8l1baYzqMoqbJVnUb8"
+      },
+      {
+        "file": "sonic__c5_new__3.jpg",
+        "url": "https://i.ytimg.com/vi/Nh9Bzox5WpM/maxresdefault.jpg"
+      },
+      {
+        "file": "sonic__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/5561fbff-7f10-46b5-ba12-5062051b98a1/dftbwt-c2327054-bc5f-474d-9d1c-45500f2bdc01.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzU1NjFmYmZmLTdmMTAtNDZiNS1iYTEyLTUwNjIwNTFiOThhMVwvZGZ0Ynd0LWMyMzI3MDU0LWJjNWYtNDc0ZC05ZDFjLTQ1NTAwZjJiZGMwMS5wbmcifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6ZmlsZS5kb3dubG9hZCJdfQ.bXEOlar8FNcb3IT1GBiNitJ3jTmHgZZzHRUeDvF-a8Y"
+      }
+    ]
+  },
+  "sonic__c6_verybusy": {
+    "slug": "sonic",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://media.craiyon.com/2026-01-25/Ictbej_fQXyg0EiNoB5CpA.webp",
+    "candidates": [
+      {
+        "file": "sonic__c6_verybusy__1.jpg",
+        "url": "https://media.craiyon.com/2026-01-25/Ictbej_fQXyg0EiNoB5CpA.webp"
+      },
+      {
+        "file": "sonic__c6_verybusy__2.jpg",
+        "url": "https://media.craiyon.com/2025-07-21/cL6IDHgnQe23qxKeOyJGjw.webp"
+      },
+      {
+        "file": "sonic__c6_verybusy__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2d819208-bfe6-4330-aaec-c90db2bb52ac/dikbxcq-f0bd068c-f8a2-4f70-bfa4-10d24df4eb4b.jpg/v1/fill/w_894,h_894,q_70,strp/sonic_the_hedgehog_3_leaked_post_credit_scene_by_xxmcufan2020xx_dikbxcq-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjA0OCIsInBhdGgiOiJcL2ZcLzJkODE5MjA4LWJmZTYtNDMzMC1hYWVjLWM5MGRiMmJiNTJhY1wvZGlrYnhjcS1mMGJkMDY4Yy1mOGEyLTRmNzAtYmZhNC0xMGQyNGRmNGViNGIuanBnIiwid2lkdGgiOiI8PTIwNDgifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.WclFyIQ2ouzKF4uW54TRQ2TvWBFo7jj9RcgXTleSeqE"
+      },
+      {
+        "file": "sonic__c6_verybusy__4.jpg",
+        "url": "https://media.craiyon.com/2025-06-20/qsS1x_71Q3CKHFKAd6icTQ.webp"
+      }
+    ]
+  },
+  "sonic__c7_withchars": {
+    "slug": "sonic",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://wallpapers.com/images/hd/sonic-characters-1920-x-1226-wallpaper-qgrwypobyrn19tsw.jpg",
+    "candidates": [
+      {
+        "file": "sonic__c7_withchars__1.jpg",
+        "url": "https://wallpapers.com/images/hd/sonic-characters-1920-x-1226-wallpaper-qgrwypobyrn19tsw.jpg"
+      },
+      {
+        "file": "sonic__c7_withchars__2.jpg",
+        "url": "https://wallpapers.com/images/hd/sonic-characters-1819-x-2048-wallpaper-h73g7nd25ra6wsv0.jpg"
+      },
+      {
+        "file": "sonic__c7_withchars__3.jpg",
+        "url": "https://static.tvtropes.org/pmwiki/pub/images/fp2474_sonic_cast_x1000.jpg"
+      },
+      {
+        "file": "sonic__c7_withchars__4.jpg",
+        "url": "https://i.pinimg.com/originals/dc/33/fe/dc33fe2a563205b2c6b8152031047824.jpg"
+      }
+    ]
+  },
+  "sonic__c8_typical": {
+    "slug": "sonic",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://s.movieinsider.com/images/p/813897_m1724769548.png",
+    "candidates": [
+      {
+        "file": "sonic__c8_typical__1.jpg",
+        "url": "https://s.movieinsider.com/images/p/813897_m1724769548.png"
+      },
+      {
+        "file": "sonic__c8_typical__2.jpg",
+        "url": "https://thumbnails.cbsig.net/_x/w1200/CBS_Production_Entertainment_VMS/2019/11/09/1638839875734/SONH01_13_ENG_ME_24SD_16601_139344_1920x1080.jpg"
+      },
+      {
+        "file": "sonic__c8_typical__3.jpg",
+        "url": "https://www.superherohype.com/wp-content/uploads/sites/4/2025/12/download-2025-12-19T153544.291.jpg"
+      },
+      {
+        "file": "sonic__c8_typical__4.jpg",
+        "url": "https://s.movieinsider.com/images/p/813899_m1724769549.png"
+      }
+    ]
+  },
+  "moana__c4_busy": {
+    "slug": "moana",
+    "cond": "c4_busy",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/9c/cf/16/9ccf16ed0c19349c8b8bf9f7f5ac6a42.jpg",
+    "candidates": [
+      {
+        "file": "moana__c4_busy__1.jpg",
+        "url": "https://i.pinimg.com/originals/9c/cf/16/9ccf16ed0c19349c8b8bf9f7f5ac6a42.jpg"
+      },
+      {
+        "file": "moana__c4_busy__2.jpg",
+        "url": "https://i.pinimg.com/originals/65/dc/ab/65dcabc4bda7f50f9b9531b93120ba47.jpg"
+      },
+      {
+        "file": "moana__c4_busy__3.jpg",
+        "url": "https://cdni.fancaps.net/file/fancaps-movieimages/2526096.jpg"
+      },
+      {
+        "file": "moana__c4_busy__4.jpg",
+        "url": "https://www.comingsoon.net/wp-content/uploads/sites/3/2024/11/Screenshot_2023-11-29_at_10.38.54_AM_1200x675-2024-11-12T144546.018.jpg?resize=768"
+      }
+    ]
+  },
+  "moana__c5_new": {
+    "slug": "moana",
+    "cond": "c5_new",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/91/28/63/91286304512c4bed4cee4ed612d24dbc.jpg",
+    "candidates": [
+      {
+        "file": "moana__c5_new__1.jpg",
+        "url": "https://i.pinimg.com/736x/91/28/63/91286304512c4bed4cee4ed612d24dbc.jpg"
+      },
+      {
+        "file": "moana__c5_new__2.jpg",
+        "url": "https://d23.com/app/uploads/2024/10/IMAGE-2_Art-of-Moana-2.jpg"
+      },
+      {
+        "file": "moana__c5_new__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/44f6be50-58fc-4fea-a4ac-d2f7fff70469/dfb0wne-31080526-164c-4a1e-a868-57deba186e11.png/v1/fill/w_1280,h_1784,q_80,strp/disney_moana_at_my_style_by_artastic_cw_dfb0wne-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzQ0ZjZiZTUwLTU4ZmMtNGZlYS1hNGFjLWQyZjdmZmY3MDQ2OVwvZGZiMHduZS0zMTA4MDUyNi0xNjRjLTRhMWUtYTg2OC01N2RlYmExODZlMTEucG5nIiwiaGVpZ2h0IjoiPD0xNzg0Iiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uud2F0ZXJtYXJrIl0sIndtayI6eyJwYXRoIjoiXC93bVwvNDRmNmJlNTAtNThmYy00ZmVhLWE0YWMtZDJmN2ZmZjcwNDY5XC9hcnRhc3RpYy1jdy00LnBuZyIsIm9wYWNpdHkiOjk1LCJwcm9wb3J0aW9ucyI6MC40NSwiZ3Jhdml0eSI6ImNlbnRlciJ9fQ.iqHA1K89TU1loSon0hidfjmQ6hfT0i6X1UICZ-RAUfc"
+      },
+      {
+        "file": "moana__c5_new__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ad77c2d5-8497-48bf-977d-0423b82a307d/dg9ql0r-d9db2a4d-3ebc-4dac-8e8b-c5813a68fe8e.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2FkNzdjMmQ1LTg0OTctNDhiZi05NzdkLTA0MjNiODJhMzA3ZFwvZGc5cWwwci1kOWRiMmE0ZC0zZWJjLTRkYWMtOGU4Yi1jNTgxM2E2OGZlOGUuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.T-6BrhLKDlaY0O1xtkb3ldgs-y_qT_trcPlS5iL1DOo"
+      }
+    ]
+  },
+  "moana__c6_verybusy": {
+    "slug": "moana",
+    "cond": "c6_verybusy",
+    "source": "web",
+    "source_url": "https://ilarge.lisimg.com/image/18924139/1118full-moana-screenshot.jpg",
+    "candidates": [
+      {
+        "file": "moana__c6_verybusy__1.jpg",
+        "url": "https://ilarge.lisimg.com/image/18924139/1118full-moana-screenshot.jpg"
+      },
+      {
+        "file": "moana__c6_verybusy__2.jpg",
+        "url": "https://i.pinimg.com/originals/60/e9/ec/60e9ecdf407667533d1e3aaa5196dae9.jpg"
+      },
+      {
+        "file": "moana__c6_verybusy__3.jpg",
+        "url": "https://i.pinimg.com/originals/3f/71/2f/3f712f6cd10cdb42aefe1549c8a4e366.jpg"
+      },
+      {
+        "file": "moana__c6_verybusy__4.jpg",
+        "url": "https://i.pinimg.com/736x/91/c5/44/91c54448317cdc09a0d6f15e1c96c14d.jpg"
+      }
+    ]
+  },
+  "moana__c7_withchars": {
+    "slug": "moana",
+    "cond": "c7_withchars",
+    "source": "web",
+    "source_url": "https://staticg.sportskeeda.com/editor/2023/04/37226-16827813506095-1920.jpg",
+    "candidates": [
+      {
+        "file": "moana__c7_withchars__1.jpg",
+        "url": "https://staticg.sportskeeda.com/editor/2023/04/37226-16827813506095-1920.jpg"
+      },
+      {
+        "file": "moana__c7_withchars__2.jpg",
+        "url": "https://d23.com/app/uploads/2024/11/1180w_600h_111424_meet-the-characters-of-moana_00.jpg"
+      },
+      {
+        "file": "moana__c7_withchars__3.jpg",
+        "url": "https://i.pinimg.com/originals/4b/a5/7b/4ba57baf7720e51e89634873819b7cf1.jpg"
+      },
+      {
+        "file": "moana__c7_withchars__4.jpg",
+        "url": "https://lumiere-a.akamaihd.net/v1/images/p_studio_moana_2_poster_now_available_f4281ff6.jpeg"
+      }
+    ]
+  },
+  "moana__c8_typical": {
+    "slug": "moana",
+    "cond": "c8_typical",
+    "source": "web",
+    "source_url": "https://trekmovie.com/wp-content/uploads/2026/02/moana-still-1.jpg",
+    "candidates": [
+      {
+        "file": "moana__c8_typical__1.jpg",
+        "url": "https://trekmovie.com/wp-content/uploads/2026/02/moana-still-1.jpg"
+      },
+      {
+        "file": "moana__c8_typical__2.jpg",
+        "url": "https://s.yimg.com/lo/mysterio/api/314329219f0fca0692e7bac32c1d65bfa5fe835133d072e91162708707226be0/lightyear_networkapi/resizefill_w1200;quality_80;format_webp/https://media.zenfs.com/en/lansing-state-journal/f17b12f29469abb11691b7f23d3fcf2f"
+      },
+      {
+        "file": "moana__c8_typical__3.jpg",
+        "url": "https://4kwallpapers.com/images/wallpapers/moana-2-still-2024-2560x1080-19092.jpeg"
+      },
+      {
+        "file": "moana__c8_typical__4.jpg",
+        "url": "https://ichef.bbci.co.uk/ace/standard/1680/cpsprodpb/c199/live/5ee2f190-abe0-11ef-ae2f-31a18ca6b9b9.jpg"
+      }
+    ]
+  },
+  "bart_simpson__c9_colorful": {
+    "slug": "bart_simpson",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/62811773/r/il/1a5af4/7889408775/il_1080xN.7889408775_m9zf.jpg",
+    "candidates": [
+      {
+        "file": "bart_simpson__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/62811773/r/il/1a5af4/7889408775/il_1080xN.7889408775_m9zf.jpg"
+      },
+      {
+        "file": "bart_simpson__c9_colorful__2.jpg",
+        "url": "https://johnsneaker.com/wp-content/uploads/2021/06/il_fullxfull.1908531146_4srf-scaled-1.jpg"
+      },
+      {
+        "file": "bart_simpson__c9_colorful__3.jpg",
+        "url": "http://xonomax.com/cdn/shop/files/q4601.jpg?v=1732632921"
+      },
+      {
+        "file": "bart_simpson__c9_colorful__4.jpg",
+        "url": "https://static.printler.com/product-images/site-images/118508/118508-p3.jpg"
+      }
+    ]
+  },
+  "bart_simpson__c10_modality": {
+    "slug": "bart_simpson",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://media.sketchfab.com/models/cd80a18e51784533a2a9300ac9262386/thumbnails/291f9127b7cd42c4a516bfeb26ac2ea4/00f62571aa734324b1fc719637ea7130.jpeg",
+    "candidates": [
+      {
+        "file": "bart_simpson__c10_modality__1.jpg",
+        "url": "https://media.sketchfab.com/models/cd80a18e51784533a2a9300ac9262386/thumbnails/291f9127b7cd42c4a516bfeb26ac2ea4/00f62571aa734324b1fc719637ea7130.jpeg"
+      },
+      {
+        "file": "bart_simpson__c10_modality__2.jpg",
+        "url": "https://img-new.cgtrader.com/items/4315324/5e823b2cba/bart-simpson-3d-model-5e823b2cba.jpg"
+      },
+      {
+        "file": "bart_simpson__c10_modality__3.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/SX/hEFzeM/tb/bartsimpsoncharacterriggedforcinema4dmb3dmodel004/jpg/1664208266/1920x1080/fit_q87/78f7d84562d992573b51464a0a935d405bd3167d/bartsimpsoncharacterriggedforcinema4dmb3dmodel004.jpg"
+      },
+      {
+        "file": "bart_simpson__c10_modality__4.jpg",
+        "url": "https://www.renderhub.com/hikkijack/bart-simpson/bart-simpson-01.jpg?1716899186"
+      }
+    ]
+  },
+  "lisa_simpson__c9_colorful": {
+    "slug": "lisa_simpson",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/59318461/r/il/119922/6864943394/il_1080xN.6864943394_6rts.jpg",
+    "candidates": [
+      {
+        "file": "lisa_simpson__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/59318461/r/il/119922/6864943394/il_1080xN.6864943394_6rts.jpg"
+      },
+      {
+        "file": "lisa_simpson__c9_colorful__2.jpg",
+        "url": "https://i.etsystatic.com/15943157/r/il/1372dc/3970965370/il_fullxfull.3970965370_r5j8.jpg"
+      },
+      {
+        "file": "lisa_simpson__c9_colorful__3.jpg",
+        "url": "https://www.picclickimg.com/lQUAAOSw79hkMCwS/The-Simpsons-Lisa-Simpson-Poster-Bedroom-Wall-Art.webp"
+      },
+      {
+        "file": "lisa_simpson__c9_colorful__4.jpg",
+        "url": "https://cdn11.bigcommerce.com/s-c6ecdqcvkp/images/stencil/1280x1280/products/121643/133507/ARTOWOFB381__53248.1614001376.jpg?c=2&imbypass=on"
+      }
+    ]
+  },
+  "lisa_simpson__c10_modality": {
+    "slug": "lisa_simpson",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de25zhi-2d54d142-8783-4562-995e-01d9170b760d.png/v1/fill/w_767,h_1041,strp/lisa_simpson_3d_render_by_tppercival_de25zhi-pre.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MzgwMCIsInBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUyNXpoaS0yZDU0ZDE0Mi04NzgzLTQ1NjItOTk1ZS0wMWQ5MTcwYjc2MGQucG5nIiwid2lkdGgiOiI8PTI4MDAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.ikoMuDwwvnZYhR0UhIkxYvAzY3cnhdomxXnwTX8-g2g",
+    "candidates": [
+      {
+        "file": "lisa_simpson__c10_modality__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de25zhi-2d54d142-8783-4562-995e-01d9170b760d.png/v1/fill/w_767,h_1041,strp/lisa_simpson_3d_render_by_tppercival_de25zhi-pre.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MzgwMCIsInBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUyNXpoaS0yZDU0ZDE0Mi04NzgzLTQ1NjItOTk1ZS0wMWQ5MTcwYjc2MGQucG5nIiwid2lkdGgiOiI8PTI4MDAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.ikoMuDwwvnZYhR0UhIkxYvAzY3cnhdomxXnwTX8-g2g"
+      },
+      {
+        "file": "lisa_simpson__c10_modality__2.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/uk/RvGmgB/OS/00/jpg/1677163149/1920x1080/fit_q87/07cb5a6f9a349809f3a13a597fd3526930ae51d8/00.jpg"
+      },
+      {
+        "file": "lisa_simpson__c10_modality__3.jpg",
+        "url": "https://www.renderhub.com/hikkijack/lisa-simpson/lisa-simpson-01.jpg"
+      },
+      {
+        "file": "lisa_simpson__c10_modality__4.jpg",
+        "url": "https://media.sketchfab.com/models/af7834490855406ca91e72049a8f7aac/thumbnails/3dea21709353407584efc4ef25c0e437/028d438b09d3491198e6253aac5144d0.jpeg"
+      }
+    ]
+  },
+  "homer_simpson__c9_colorful": {
+    "slug": "homer_simpson",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/59437605/r/il/d20d7f/6854768024/il_fullxfull.6854768024_n3cf.jpg",
+    "candidates": [
+      {
+        "file": "homer_simpson__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/59437605/r/il/d20d7f/6854768024/il_fullxfull.6854768024_n3cf.jpg"
+      },
+      {
+        "file": "homer_simpson__c9_colorful__2.jpg",
+        "url": "https://i.etsystatic.com/59437605/r/il/a217ef/6902738453/il_fullxfull.6902738453_nqog.jpg"
+      },
+      {
+        "file": "homer_simpson__c9_colorful__3.jpg",
+        "url": "https://i.etsystatic.com/58364520/r/il/a95343/6841440191/il_1080xN.6841440191_2iz7.jpg"
+      },
+      {
+        "file": "homer_simpson__c9_colorful__4.jpg",
+        "url": "https://i.etsystatic.com/62561075/r/il/6fe49b/7804168637/il_794xN.7804168637_4ekb.jpg"
+      }
+    ]
+  },
+  "homer_simpson__c10_modality": {
+    "slug": "homer_simpson",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de2409k-6aa5d41a-9c62-4bde-a47b-df80fc600903.png/v1/fill/w_725,h_1102/homer_simpson_3d_render_by_tppercival_de2409k-pre.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MzgwMCIsInBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUyNDA5ay02YWE1ZDQxYS05YzYyLTRiZGUtYTQ3Yi1kZjgwZmM2MDA5MDMucG5nIiwid2lkdGgiOiI8PTI1MDAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.TcZgSYIydf2N5iRjHsnWTFKMpW94DALVu3KT9uf4Qe4",
+    "candidates": [
+      {
+        "file": "homer_simpson__c10_modality__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de2409k-6aa5d41a-9c62-4bde-a47b-df80fc600903.png/v1/fill/w_725,h_1102/homer_simpson_3d_render_by_tppercival_de2409k-pre.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MzgwMCIsInBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUyNDA5ay02YWE1ZDQxYS05YzYyLTRiZGUtYTQ3Yi1kZjgwZmM2MDA5MDMucG5nIiwid2lkdGgiOiI8PTI1MDAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.TcZgSYIydf2N5iRjHsnWTFKMpW94DALVu3KT9uf4Qe4"
+      },
+      {
+        "file": "homer_simpson__c10_modality__2.jpg",
+        "url": "https://media.craiyon.com/2025-04-12/47TFV54_TSW3WwISCGCMGQ.webp"
+      },
+      {
+        "file": "homer_simpson__c10_modality__3.jpg",
+        "url": "https://i.pinimg.com/originals/fa/26/03/fa260343b54652d2387a1bafa32e026a.png"
+      },
+      {
+        "file": "homer_simpson__c10_modality__4.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/qy/kIpYu1/5l/homersimpsonrigged3dsmodel000/jpg/1702075154/600x600/fit_q87/6c5980f9907cdebcfdc7dd9b70bb5a5b9084b20b/homersimpsonrigged3dsmodel000.jpg"
+      }
+    ]
+  },
+  "marge_simpson__c9_colorful": {
+    "slug": "marge_simpson",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/59318461/r/il/55bf83/6864888136/il_1080xN.6864888136_rl4n.jpg",
+    "candidates": [
+      {
+        "file": "marge_simpson__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/59318461/r/il/55bf83/6864888136/il_1080xN.6864888136_rl4n.jpg"
+      },
+      {
+        "file": "marge_simpson__c9_colorful__2.jpg",
+        "url": "https://jenifershop.com/wp-content/uploads/2021/06/il_fullxfull.1534636406_l53g.jpg"
+      },
+      {
+        "file": "marge_simpson__c9_colorful__3.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/1d7acebe-2434-47f3-a955-5b77fed2d046/ddccv04-46f748cc-ecc2-4b1a-bd9b-ed23aa47af24.jpg/v1/fill/w_1280,h_1707,q_75,strp/marge_simpsons_art_colorful_design_drawing__by_nweezybluestars23_ddccv04-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTcwNyIsInBhdGgiOiJcL2ZcLzFkN2FjZWJlLTI0MzQtNDdmMy1hOTU1LTViNzdmZWQyZDA0NlwvZGRjY3YwNC00NmY3NDhjYy1lY2MyLTRiMWEtYmQ5Yi1lZDIzYWE0N2FmMjQuanBnIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.VtxUoOXiI-o8EsoZfk_1C4Byzo8tdMNPNebiEOMlr5U"
+      },
+      {
+        "file": "marge_simpson__c9_colorful__4.jpg",
+        "url": "https://i.etsystatic.com/55708638/r/il/fdbfb1/6772672105/il_1080xN.6772672105_rm1r.jpg"
+      }
+    ]
+  },
+  "marge_simpson__c10_modality": {
+    "slug": "marge_simpson",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://www.renderhub.com/hikkijack/marge-simpson/marge-simpson-02.jpg?1716899186",
+    "candidates": [
+      {
+        "file": "marge_simpson__c10_modality__1.jpg",
+        "url": "https://www.renderhub.com/hikkijack/marge-simpson/marge-simpson-02.jpg?1716899186"
+      },
+      {
+        "file": "marge_simpson__c10_modality__2.jpg",
+        "url": "https://cdn.renderhub.com/sinh-nguyen/marge-simpson/marge-simpson-01.jpg"
+      },
+      {
+        "file": "marge_simpson__c10_modality__3.jpg",
+        "url": "https://fbi.cults3d.com/uploaders/14083807/illustration-file/8e992208-13d1-4417-a298-3375e800af75/Marge_Simpson.jpg"
+      },
+      {
+        "file": "marge_simpson__c10_modality__4.jpg",
+        "url": "https://cdn.renderhub.com/sinh-nguyen/marge-simpson/marge-simpson-03.jpg"
+      }
+    ]
+  },
+  "maggie_simpson__c9_colorful": {
+    "slug": "maggie_simpson",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://cdn11.bigcommerce.com/s-64ni4d05jw/images/stencil/1280x1280/products/24236/25264/Poster_Propaganda_-_The_Simpsons_-_Maggie_LL3900__29884.1705062103.jpg?c=1",
+    "candidates": [
+      {
+        "file": "maggie_simpson__c9_colorful__1.jpg",
+        "url": "https://cdn11.bigcommerce.com/s-64ni4d05jw/images/stencil/1280x1280/products/24236/25264/Poster_Propaganda_-_The_Simpsons_-_Maggie_LL3900__29884.1705062103.jpg?c=1"
+      },
+      {
+        "file": "maggie_simpson__c9_colorful__2.jpg",
+        "url": "https://i.pinimg.com/originals/a1/fe/2e/a1fe2ea85321b5853ee50a6c136cdb33.jpg"
+      },
+      {
+        "file": "maggie_simpson__c9_colorful__3.jpg",
+        "url": "https://cdnb.artstation.com/p/assets/images/images/039/038/963/large/edward-munn-edm-asset.jpg?1624789791"
+      },
+      {
+        "file": "maggie_simpson__c9_colorful__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/1d7acebe-2434-47f3-a955-5b77fed2d046/ddchu3o-0d5ab575-bdc2-403f-a893-221e9b28268b.jpg/v1/fill/w_1280,h_1707,q_75,strp/maggie_simpsons_art_colorful_design_drawing_by_nweezybluestars23_ddchu3o-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTcwNyIsInBhdGgiOiJcL2ZcLzFkN2FjZWJlLTI0MzQtNDdmMy1hOTU1LTViNzdmZWQyZDA0NlwvZGRjaHUzby0wZDVhYjU3NS1iZGMyLTQwM2YtYTg5My0yMjFlOWIyODI2OGIuanBnIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.33DJ4hWRrzmDzpQWYfznNbGopDtLOtqVUfSKKnhB6rc"
+      }
+    ]
+  },
+  "maggie_simpson__c10_modality": {
+    "slug": "maggie_simpson",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de25zqw-1734b30a-08ff-4360-b083-f93964b9bc73.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUyNXpxdy0xNzM0YjMwYS0wOGZmLTQzNjAtYjA4My1mOTM5NjRiOWJjNzMucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.cbUEf4eY47pWCyCl0qA36aMJOwiGmmZ6v9x9WScT48g",
+    "candidates": [
+      {
+        "file": "maggie_simpson__c10_modality__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de25zqw-1734b30a-08ff-4360-b083-f93964b9bc73.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUyNXpxdy0xNzM0YjMwYS0wOGZmLTQzNjAtYjA4My1mOTM5NjRiOWJjNzMucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.cbUEf4eY47pWCyCl0qA36aMJOwiGmmZ6v9x9WScT48g"
+      },
+      {
+        "file": "maggie_simpson__c10_modality__2.jpg",
+        "url": "https://pic2-cdn.creality.com/comp/model/4b02b2e837ac674c26ab50def75aa746.webp"
+      },
+      {
+        "file": "maggie_simpson__c10_modality__3.jpg",
+        "url": "https://media.sketchfab.com/models/69a82405c7aa44ec87f90efdb6c4133e/thumbnails/aa50fb3b6ebf489182b296721fdbbab1/071872273bd24e60b5455ecdc6364b20.jpeg"
+      },
+      {
+        "file": "maggie_simpson__c10_modality__4.jpg",
+        "url": "https://makerworld.bblmw.com/makerworld/model/US433b973fb0bdfe/design/2699ce2e6c6d9160.jpg?x-oss-process=image/resize,w_1000/format,webp"
+      }
+    ]
+  },
+  "grandpa_simpson__c9_colorful": {
+    "slug": "grandpa_simpson",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://cdna.artstation.com/p/assets/images/images/039/083/248/large/edward-munn-edm-asset.jpg?1624905461",
+    "candidates": [
+      {
+        "file": "grandpa_simpson__c9_colorful__1.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/039/083/248/large/edward-munn-edm-asset.jpg?1624905461"
+      },
+      {
+        "file": "grandpa_simpson__c9_colorful__2.jpg",
+        "url": "https://wallpapercave.com/wp/wp10718038.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c9_colorful__3.jpg",
+        "url": "https://wallpapercave.com/wp/wp10718049.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c9_colorful__4.jpg",
+        "url": "https://images.fineartamerica.com/images/artworkimages/mediumlarge/3/grandpa-simpson-brian-swanke.jpg"
+      }
+    ]
+  },
+  "grandpa_simpson__c10_modality": {
+    "slug": "grandpa_simpson",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://assetsfree.com/wp-content/uploads/2026/02/Playco3D-Grandpa-Abe-Simpson.webp",
+    "candidates": [
+      {
+        "file": "grandpa_simpson__c10_modality__1.jpg",
+        "url": "https://assetsfree.com/wp-content/uploads/2026/02/Playco3D-Grandpa-Abe-Simpson.webp"
+      },
+      {
+        "file": "grandpa_simpson__c10_modality__2.jpg",
+        "url": "https://fbi.cults3d.com/uploaders/20278914/illustration-file/0da83164-fb52-4a2d-bedc-cbc86208e056/03.jpg"
+      },
+      {
+        "file": "grandpa_simpson__c10_modality__3.jpg",
+        "url": "https://makerworld.bblmw.com/makerworld/model/USd8ae7dbbb81bfa/design/2025-08-19_f448ffc07e0018.png"
+      },
+      {
+        "file": "grandpa_simpson__c10_modality__4.jpg",
+        "url": "https://storage.specialstl.com/file/specialstl-new/uploads/product_image/233233/image/optimized-27ea7c63cf997dda704f4551f44866a4.jpg"
+      }
+    ]
+  },
+  "spongebob__c9_colorful": {
+    "slug": "spongebob",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://m.media-amazon.com/images/I/714o492sy+L._AC_SL1500_.jpg",
+    "candidates": [
+      {
+        "file": "spongebob__c9_colorful__1.jpg",
+        "url": "https://m.media-amazon.com/images/I/714o492sy+L._AC_SL1500_.jpg"
+      },
+      {
+        "file": "spongebob__c9_colorful__2.jpg",
+        "url": "https://www.missedprints.com/wp-content/uploads/2015/10/spongebob-squarepants-poster.jpg"
+      },
+      {
+        "file": "spongebob__c9_colorful__3.jpg",
+        "url": "https://i.pinimg.com/originals/7c/c6/9a/7cc69adce0f782f8220321bd309c2a8e.jpg"
+      },
+      {
+        "file": "spongebob__c9_colorful__4.jpg",
+        "url": "https://i.pinimg.com/736x/4e/db/b9/4edbb99bb4b98394dd9a4d022705d5ec.jpg"
+      }
+    ]
+  },
+  "spongebob__c10_modality": {
+    "slug": "spongebob",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/cdc42eb9-077d-49de-8fc5-138c5b91b7a0/dfet703-f31ffe09-e005-4cbc-939d-f4e4c6595575.png/v1/fill/w_1280,h_1280/spongebob_squarepants_render_by_lars125_dfet703-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTI4MCIsInBhdGgiOiJcL2ZcL2NkYzQyZWI5LTA3N2QtNDlkZS04ZmM1LTEzOGM1YjkxYjdhMFwvZGZldDcwMy1mMzFmZmUwOS1lMDA1LTRjYmMtOTM5ZC1mNGU0YzY1OTU1NzUucG5nIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.AUzsYcHlVqgIrYJa1ltN5Nm0AGB6dx4_UmKe25dLbho",
+    "candidates": [
+      {
+        "file": "spongebob__c10_modality__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/cdc42eb9-077d-49de-8fc5-138c5b91b7a0/dfet703-f31ffe09-e005-4cbc-939d-f4e4c6595575.png/v1/fill/w_1280,h_1280/spongebob_squarepants_render_by_lars125_dfet703-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTI4MCIsInBhdGgiOiJcL2ZcL2NkYzQyZWI5LTA3N2QtNDlkZS04ZmM1LTEzOGM1YjkxYjdhMFwvZGZldDcwMy1mMzFmZmUwOS1lMDA1LTRjYmMtOTM5ZC1mNGU0YzY1OTU1NzUucG5nIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.AUzsYcHlVqgIrYJa1ltN5Nm0AGB6dx4_UmKe25dLbho"
+      },
+      {
+        "file": "spongebob__c10_modality__2.jpg",
+        "url": "https://www.renderhub.com/alexkovalev/spongebob-squarepants/spongebob-squarepants-01.jpg"
+      },
+      {
+        "file": "spongebob__c10_modality__3.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/v3/ZGFiR6/mgtBNqkp/searchsize/jpg/1603262174/1920x1080/fit_q87/ba9cdbee4b274ef011363626e6b026c2486f9c8c/searchsize.jpg"
+      },
+      {
+        "file": "spongebob__c10_modality__4.jpg",
+        "url": "https://fbi.cults3d.com/uploaders/22976645/illustration-file/43408739-c158-4b97-99b7-e3a702584769/tbrender_003.jpg"
+      }
+    ]
+  },
+  "patrick_star__c9_colorful": {
+    "slug": "patrick_star",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/61814773/r/il/bdace0/7179062316/il_1080xN.7179062316_fmqz.jpg",
+    "candidates": [
+      {
+        "file": "patrick_star__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/61814773/r/il/bdace0/7179062316/il_1080xN.7179062316_fmqz.jpg"
+      },
+      {
+        "file": "patrick_star__c9_colorful__2.jpg",
+        "url": "https://i.pinimg.com/originals/c6/18/b4/c618b4e6d5f4a05d66af474eb2c63582.jpg"
+      },
+      {
+        "file": "patrick_star__c9_colorful__3.jpg",
+        "url": "https://www.pictorem.com/uploads/collection/D/DH2LNE10NGH/900_ThogiGio_patrick_star.jpg"
+      },
+      {
+        "file": "patrick_star__c9_colorful__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/61ec7280-30a3-4dc7-9995-2d71bafa40a0/dcn79p3-07cb097b-5e1f-47e4-8345-cbc6dedc7669.jpg/v1/fill/w_600,h_850,q_75,strp/patrick_star__2_by_real_corky_dcn79p3-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9ODUwIiwicGF0aCI6IlwvZlwvNjFlYzcyODAtMzBhMy00ZGM3LTk5OTUtMmQ3MWJhZmE0MGEwXC9kY243OXAzLTA3Y2IwOTdiLTVlMWYtNDdlNC04MzQ1LWNiYzZkZWRjNzY2OS5qcGciLCJ3aWR0aCI6Ijw9NjAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.Tc4Hgz8-H55XsgMSYeNLjkMlPcOoQfFYycEgmDxk4kQ"
+      }
+    ]
+  },
+  "patrick_star__c10_modality": {
+    "slug": "patrick_star",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://www.renderhub.com/deleon3d/patrick-star/patrick-star-05.jpg",
+    "candidates": [
+      {
+        "file": "patrick_star__c10_modality__1.jpg",
+        "url": "https://www.renderhub.com/deleon3d/patrick-star/patrick-star-05.jpg"
+      },
+      {
+        "file": "patrick_star__c10_modality__2.jpg",
+        "url": "https://media.sketchfab.com/models/efd56cae2f3845ed805adc2bc12d7443/thumbnails/6d913af3abb4485a95f076121ffc8294/dd305d21867d42a9a6f63955ec2bef31.jpeg"
+      },
+      {
+        "file": "patrick_star__c10_modality__3.jpg",
+        "url": "https://www.renderhub.com/deleon3d/patrick-star/patrick-star-01.jpg"
+      },
+      {
+        "file": "patrick_star__c10_modality__4.jpg",
+        "url": "https://img.cadnav.com/allimg/170309/cadnav-1F309151530.jpg"
+      }
+    ]
+  },
+  "squidward__c9_colorful": {
+    "slug": "squidward",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/59603119/r/il/cb8e68/7072833191/il_1080xN.7072833191_4a99.jpg",
+    "candidates": [
+      {
+        "file": "squidward__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/59603119/r/il/cb8e68/7072833191/il_1080xN.7072833191_4a99.jpg"
+      },
+      {
+        "file": "squidward__c9_colorful__2.jpg",
+        "url": "https://wallpaperaccess.com/full/9028936.jpg"
+      },
+      {
+        "file": "squidward__c9_colorful__3.jpg",
+        "url": "https://wallpaperaccess.com/full/9029017.jpg"
+      },
+      {
+        "file": "squidward__c9_colorful__4.jpg",
+        "url": "https://ih1.redbubble.net/image.451709967.2513/farp,small,wall_texture,product,750x1000.u2.jpg"
+      }
+    ]
+  },
+  "squidward__c10_modality": {
+    "slug": "squidward",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de0hlqd-125a54f8-e031-4f95-b7b1-b3907b64a811.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUwaGxxZC0xMjVhNTRmOC1lMDMxLTRmOTUtYjdiMS1iMzkwN2I2NGE4MTEucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.H8wmYYHtpJo_JwHVYCTs40M3M9fy4bzZ2CoQXFktwRU",
+    "candidates": [
+      {
+        "file": "squidward__c10_modality__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/de0hlqd-125a54f8-e031-4f95-b7b1-b3907b64a811.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGUwaGxxZC0xMjVhNTRmOC1lMDMxLTRmOTUtYjdiMS1iMzkwN2I2NGE4MTEucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.H8wmYYHtpJo_JwHVYCTs40M3M9fy4bzZ2CoQXFktwRU"
+      },
+      {
+        "file": "squidward__c10_modality__2.jpg",
+        "url": "https://media.sketchfab.com/models/8d8cae9fd10f40878df75bcea30ba2eb/thumbnails/626aadd66c40405cac9cce54bad1bf02/89326dc6d8f34fa5b672eab0adfe9cb6.jpeg"
+      },
+      {
+        "file": "squidward__c10_modality__3.jpg",
+        "url": "https://media.craiyon.com/2025-04-30/CmGdUVeNT_SoLWXXhFZKxQ.webp"
+      },
+      {
+        "file": "squidward__c10_modality__4.jpg",
+        "url": "https://www.renderhub.com/deleon3d/squidward-lula-molusco/squidward-lula-molusco-02.jpg"
+      }
+    ]
+  },
+  "scooby_doo__c9_colorful": {
+    "slug": "scooby_doo",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://xonomax.com/cdn/shop/files/598777_c2d1371f-1711-4e98-b405-a46e24eded72.jpg?v=1726816631&width=1445",
+    "candidates": [
+      {
+        "file": "scooby_doo__c9_colorful__1.jpg",
+        "url": "https://xonomax.com/cdn/shop/files/598777_c2d1371f-1711-4e98-b405-a46e24eded72.jpg?v=1726816631&width=1445"
+      },
+      {
+        "file": "scooby_doo__c9_colorful__2.jpg",
+        "url": "https://xonomax.com/cdn/shop/files/600106_9068e341-374d-48f4-9943-0c24c6e9ae10.jpg?v=1728395447&width=1445"
+      },
+      {
+        "file": "scooby_doo__c9_colorful__3.jpg",
+        "url": "https://64.media.tumblr.com/3e1264f59e51d29690d5657e3c999044/tumblr_plg1aw3Jst1qdir47_1280.jpg"
+      },
+      {
+        "file": "scooby_doo__c9_colorful__4.jpg",
+        "url": "https://i.etsystatic.com/58487823/r/il/879f5f/7275933136/il_1080xN.7275933136_oaqq.jpg"
+      }
+    ]
+  },
+  "scooby_doo__c10_modality": {
+    "slug": "scooby_doo",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://fbi.cults3d.com/uploaders/22976645/illustration-file/395f75eb-a92f-4eca-8719-ce0ed67016e2/tbrender_003-Recovered.jpg",
+    "candidates": [
+      {
+        "file": "scooby_doo__c10_modality__1.jpg",
+        "url": "https://fbi.cults3d.com/uploaders/22976645/illustration-file/395f75eb-a92f-4eca-8719-ce0ed67016e2/tbrender_003-Recovered.jpg"
+      },
+      {
+        "file": "scooby_doo__c10_modality__2.jpg",
+        "url": "https://fbi.cults3d.com/uploaders/28620123/illustration-file/3d1f4387-06ad-494d-b91c-6390025d919b/Render_1.png"
+      },
+      {
+        "file": "scooby_doo__c10_modality__3.jpg",
+        "url": "https://www.renderhub.com/sillytoys/scooby-doo/scooby-doo-08.jpg"
+      },
+      {
+        "file": "scooby_doo__c10_modality__4.jpg",
+        "url": "https://cdnb.artstation.com/p/assets/images/images/051/395/915/large/shashank-vishwakarma-1.jpg?1657188161"
+      }
+    ]
+  },
+  "shaggy__c9_colorful": {
+    "slug": "shaggy",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2b4d1a6d-6f87-4415-8cac-a41aac5bbd39/dhqadwl-c660c4f0-6fd7-49db-b79a-e7d2cd52f02a.png/v1/fill/w_894,h_894,q_70,strp/scooby_doo_shaggy_rogers_eating_pizza___by_liquidkool720_dhqadwl-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTAyNCIsInBhdGgiOiJcL2ZcLzJiNGQxYTZkLTZmODctNDQxNS04Y2FjLWE0MWFhYzViYmQzOVwvZGhxYWR3bC1jNjYwYzRmMC02ZmQ3LTQ5ZGItYjc5YS1lN2QyY2Q1MmYwMmEucG5nIiwid2lkdGgiOiI8PTEwMjQifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.ZiexoAm-ptCfjK30mxZK6pgqfrfacfTMp17JppUxNu0",
+    "candidates": [
+      {
+        "file": "shaggy__c9_colorful__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/2b4d1a6d-6f87-4415-8cac-a41aac5bbd39/dhqadwl-c660c4f0-6fd7-49db-b79a-e7d2cd52f02a.png/v1/fill/w_894,h_894,q_70,strp/scooby_doo_shaggy_rogers_eating_pizza___by_liquidkool720_dhqadwl-pre.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTAyNCIsInBhdGgiOiJcL2ZcLzJiNGQxYTZkLTZmODctNDQxNS04Y2FjLWE0MWFhYzViYmQzOVwvZGhxYWR3bC1jNjYwYzRmMC02ZmQ3LTQ5ZGItYjc5YS1lN2QyY2Q1MmYwMmEucG5nIiwid2lkdGgiOiI8PTEwMjQifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.ZiexoAm-ptCfjK30mxZK6pgqfrfacfTMp17JppUxNu0"
+      },
+      {
+        "file": "shaggy__c9_colorful__2.jpg",
+        "url": "https://i.etsystatic.com/34469835/r/il/4bdefb/4623326959/il_1080xN.4623326959_l3pe.jpg"
+      },
+      {
+        "file": "shaggy__c9_colorful__3.jpg",
+        "url": "https://images.alphacoders.com/471/thumb-1920-471196.jpg"
+      },
+      {
+        "file": "shaggy__c9_colorful__4.jpg",
+        "url": "https://picfiles.alphacoders.com/358/thumb-1920-358249.png"
+      }
+    ]
+  },
+  "shaggy__c10_modality": {
+    "slug": "shaggy",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://cdn.renderhub.com/moogar/shaggy-rogers/shaggy-rogers-01.jpg",
+    "candidates": [
+      {
+        "file": "shaggy__c10_modality__1.jpg",
+        "url": "https://cdn.renderhub.com/moogar/shaggy-rogers/shaggy-rogers-01.jpg"
+      },
+      {
+        "file": "shaggy__c10_modality__2.jpg",
+        "url": "https://pic2-cdn.creality.com/crealityCloud/common/88bb85d1ea599d1f00840adf1dfc22d8.webp"
+      },
+      {
+        "file": "shaggy__c10_modality__3.jpg",
+        "url": "https://media.sketchfab.com/models/81431d675c7744b494a13349c644eea3/thumbnails/cee4098a92c04861a290a17366dd2bc2/48d04480301e474988ebc5aa10ff1508.jpeg"
+      },
+      {
+        "file": "shaggy__c10_modality__4.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/pT/NBww18/U7lG7uCa/render_04/jpg/1398466481/1920x1080/fit_q87/34ecfd38316f73270feed14872554c03fb863112/render_04.jpg"
+      }
+    ]
+  },
+  "mickey_mouse__c9_colorful": {
+    "slug": "mickey_mouse",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/0c/e6/46/0ce6461cbb934c467c8a103b1355c415.jpg",
+    "candidates": [
+      {
+        "file": "mickey_mouse__c9_colorful__1.jpg",
+        "url": "https://i.pinimg.com/736x/0c/e6/46/0ce6461cbb934c467c8a103b1355c415.jpg"
+      },
+      {
+        "file": "mickey_mouse__c9_colorful__2.jpg",
+        "url": "https://i.etsystatic.com/55966976/r/il/c353db/6549915572/il_1080xN.6549915572_bazz.jpg"
+      },
+      {
+        "file": "mickey_mouse__c9_colorful__3.jpg",
+        "url": "https://i.pinimg.com/originals/96/6a/6e/966a6ee0f250c10824d26247f14df60c.jpg"
+      },
+      {
+        "file": "mickey_mouse__c9_colorful__4.jpg",
+        "url": "https://i.pinimg.com/originals/34/de/8a/34de8a7596179845bf7568a7e1770496.jpg"
+      }
+    ]
+  },
+  "mickey_mouse__c10_modality": {
+    "slug": "mickey_mouse",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://media.sketchfab.com/models/9c374f2b02e14efca969805f8db704d8/thumbnails/df583fcfeb98425d9334d5c1ac7c88cc/5fc23889129c4b978604ed6f1a24862c.jpeg",
+    "candidates": [
+      {
+        "file": "mickey_mouse__c10_modality__1.jpg",
+        "url": "https://media.sketchfab.com/models/9c374f2b02e14efca969805f8db704d8/thumbnails/df583fcfeb98425d9334d5c1ac7c88cc/5fc23889129c4b978604ed6f1a24862c.jpeg"
+      },
+      {
+        "file": "mickey_mouse__c10_modality__2.jpg",
+        "url": "https://preview.free3d.com/img/2023/03/3190267476789167809/zcmuzdww.jpg"
+      },
+      {
+        "file": "mickey_mouse__c10_modality__3.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/z6/n0VECf/HVq3Ru7v/stemcell_cinema_4d_physical_render/png/1541175483/1920x1080/fit_q99/5a674aaca044233200ef017d90a730184adddbdf/stemcell_cinema_4d_physical_render.jpg"
+      },
+      {
+        "file": "mickey_mouse__c10_modality__4.jpg",
+        "url": "https://preview.free3d.com/img/2023/03/3190267476789167809/ft9kbcpa.jpg"
+      }
+    ]
+  },
+  "minnie_mouse__c9_colorful": {
+    "slug": "minnie_mouse",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/736x/26/0f/66/260f6625ab6b0e5944059841b6c8073e.jpg",
+    "candidates": [
+      {
+        "file": "minnie_mouse__c9_colorful__1.jpg",
+        "url": "https://i.pinimg.com/736x/26/0f/66/260f6625ab6b0e5944059841b6c8073e.jpg"
+      },
+      {
+        "file": "minnie_mouse__c9_colorful__2.jpg",
+        "url": "https://i.pinimg.com/originals/e4/0a/1a/e40a1a22b1e6f85856886ff58851b772.jpg"
+      },
+      {
+        "file": "minnie_mouse__c9_colorful__3.jpg",
+        "url": "https://i.etsystatic.com/32100838/r/il/53d74a/3516024281/il_1588xN.3516024281_e7yk.jpg"
+      },
+      {
+        "file": "minnie_mouse__c9_colorful__4.jpg",
+        "url": "https://i.etsystatic.com/19555748/r/il/d4de96/5710391495/il_1080xN.5710391495_hjcm.jpg"
+      }
+    ]
+  },
+  "minnie_mouse__c10_modality": {
+    "slug": "minnie_mouse",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://www.renderhub.com/sillytoys/minnie-mouse-1/minnie-mouse-1-01.jpg",
+    "candidates": [
+      {
+        "file": "minnie_mouse__c10_modality__1.jpg",
+        "url": "https://www.renderhub.com/sillytoys/minnie-mouse-1/minnie-mouse-1-01.jpg"
+      },
+      {
+        "file": "minnie_mouse__c10_modality__2.jpg",
+        "url": "https://preview.free3d.com/img/2015/01/2399342408153171616/b2vxwv7t.jpg"
+      },
+      {
+        "file": "minnie_mouse__c10_modality__3.jpg",
+        "url": "https://cdn.renderhub.com/sillytoys/minnie-mouse/minnie-mouse-05.jpg"
+      },
+      {
+        "file": "minnie_mouse__c10_modality__4.jpg",
+        "url": "https://cdn.renderhub.com/lovemodel/minnie-mouse/minnie-mouse-08.jpg"
+      }
+    ]
+  },
+  "donald_duck__c9_colorful": {
+    "slug": "donald_duck",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://bookstore.gpo.gov/sites/default/files/styles/product_page_image/public/covers/potus2_0.jpg?itok=jEIslQZ1",
+    "candidates": [
+      {
+        "file": "donald_duck__c9_colorful__1.jpg",
+        "url": "https://bookstore.gpo.gov/sites/default/files/styles/product_page_image/public/covers/potus2_0.jpg?itok=jEIslQZ1"
+      },
+      {
+        "file": "donald_duck__c9_colorful__2.jpg",
+        "url": "https://www.artnews.com/wp-content/uploads/2025/06/trump-portrait-copy.jpg"
+      },
+      {
+        "file": "donald_duck__c9_colorful__3.jpg",
+        "url": "https://d.newsweek.com/en/full/2620580/donald-trump.jpg"
+      },
+      {
+        "file": "donald_duck__c9_colorful__4.jpg",
+        "url": "https://wallpaperaccess.com/full/1542277.jpg"
+      }
+    ]
+  },
+  "donald_duck__c10_modality": {
+    "slug": "donald_duck",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://preview.free3d.com/img/2023/08/3191684638720394578/zazo3p8h.jpg",
+    "candidates": [
+      {
+        "file": "donald_duck__c10_modality__1.jpg",
+        "url": "https://preview.free3d.com/img/2023/08/3191684638720394578/zazo3p8h.jpg"
+      },
+      {
+        "file": "donald_duck__c10_modality__2.jpg",
+        "url": "https://cdn.renderhub.com/kellyjohnson3dart/donald-duck-zbrush-ztl-sculpt/donald-duck-zbrush-ztl-sculpt-04.jpg"
+      },
+      {
+        "file": "donald_duck__c10_modality__3.jpg",
+        "url": "https://www.kindpng.com/picc/m/103-1033356_donald-duck-3d-render-hd-png-download.png"
+      },
+      {
+        "file": "donald_duck__c10_modality__4.jpg",
+        "url": "https://www.renderhub.com/lovemodel/donald-duck/donald-duck-06.jpg"
+      }
+    ]
+  },
+  "goofy__c9_colorful": {
+    "slug": "goofy",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://johnsneaker.com/wp-content/uploads/2021/06/il_fullxfull.2944663204_qmbl-800x800.jpg",
+    "candidates": [
+      {
+        "file": "goofy__c9_colorful__1.jpg",
+        "url": "https://johnsneaker.com/wp-content/uploads/2021/06/il_fullxfull.2944663204_qmbl-800x800.jpg"
+      },
+      {
+        "file": "goofy__c9_colorful__2.jpg",
+        "url": "https://i.etsystatic.com/9110793/r/il/222861/3904237303/il_1080xN.3904237303_t1a9.jpg"
+      },
+      {
+        "file": "goofy__c9_colorful__3.jpg",
+        "url": "http://disneyartonmain.com/cdn/shop/products/REGAGoofyAloha32x22_canvas.jpg?v=1675896785"
+      },
+      {
+        "file": "goofy__c9_colorful__4.jpg",
+        "url": "https://disneyanaplus.com/wp-content/uploads/2022/11/316385343-943153850392056-8238120938881869665-n-scaled.jpg"
+      }
+    ]
+  },
+  "goofy__c10_modality": {
+    "slug": "goofy",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://cdna.artstation.com/p/assets/images/images/070/316/390/large/bazzotti-0001.jpg?1702262159",
+    "candidates": [
+      {
+        "file": "goofy__c10_modality__1.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/070/316/390/large/bazzotti-0001.jpg?1702262159"
+      },
+      {
+        "file": "goofy__c10_modality__2.jpg",
+        "url": "https://media.sketchfab.com/models/a0dc4556d7b441cf9126bbd9cdf2fc23/thumbnails/7f8386968607403cafac045b00e44778/9c2f3dccad904fc1b46c561764040f3f.jpeg"
+      },
+      {
+        "file": "goofy__c10_modality__3.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/I7/DpYbHn/i27yPrv5/first/jpg/1480930938/1920x1080/fit_q87/f17b7c71729d31131adf292a177201a67e7f2df8/first.jpg"
+      },
+      {
+        "file": "goofy__c10_modality__4.jpg",
+        "url": "https://cdn.renderhub.com/fantasy999d/disney-goofy/disney-goofy-03.jpg"
+      }
+    ]
+  },
+  "bugs_bunny__c9_colorful": {
+    "slug": "bugs_bunny",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://www.simplevery.com/cdn/shop/products/Bugs-Bunny-Pop-Colorful-Cartoon-7.jpg?v=1713089999&width=940",
+    "candidates": [
+      {
+        "file": "bugs_bunny__c9_colorful__1.jpg",
+        "url": "https://www.simplevery.com/cdn/shop/products/Bugs-Bunny-Pop-Colorful-Cartoon-7.jpg?v=1713089999&width=940"
+      },
+      {
+        "file": "bugs_bunny__c9_colorful__2.jpg",
+        "url": "https://xonomax.com/cdn/shop/files/599569_973f0866-44f0-47ae-b6cd-0bf074e12ff3.jpg?v=1727415886&width=1445"
+      },
+      {
+        "file": "bugs_bunny__c9_colorful__3.jpg",
+        "url": "https://i.etsystatic.com/55603130/r/il/86cf66/6449807491/il_1080xN.6449807491_oc8r.jpg"
+      },
+      {
+        "file": "bugs_bunny__c9_colorful__4.jpg",
+        "url": "https://i.etsystatic.com/38563528/r/il/c1e49e/6898961908/il_1080xN.6898961908_es68.jpg"
+      }
+    ]
+  },
+  "bugs_bunny__c10_modality": {
+    "slug": "bugs_bunny",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://fbi.cults3d.com/uploaders/23384057/illustration-file/ed7771b4-c0ec-4fb4-a5d7-c7e582dc8690/BugsBunnyRender.jpg",
+    "candidates": [
+      {
+        "file": "bugs_bunny__c10_modality__1.jpg",
+        "url": "https://fbi.cults3d.com/uploaders/23384057/illustration-file/ed7771b4-c0ec-4fb4-a5d7-c7e582dc8690/BugsBunnyRender.jpg"
+      },
+      {
+        "file": "bugs_bunny__c10_modality__2.jpg",
+        "url": "https://fbi.cults3d.com/uploaders/16265463/illustration-file/ad6712b7-3a8e-4e2a-afb1-a66db17f3732/kr\u00f3lik-buggs-render-3.png"
+      },
+      {
+        "file": "bugs_bunny__c10_modality__3.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/048/091/464/large/aladdin-abdulbaki-bugs-bunny-concept-6.jpg?1649184191"
+      },
+      {
+        "file": "bugs_bunny__c10_modality__4.jpg",
+        "url": "https://cdna.artstation.com/p/assets/images/images/032/003/042/large/thomas-houis-bugsbunnyrender.jpg?1605196865"
+      }
+    ]
+  },
+  "pikachu__c9_colorful": {
+    "slug": "pikachu",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/2f/1e/a9/2f1ea96f7c6382b3c98ae0dd47249cf9.jpg",
+    "candidates": [
+      {
+        "file": "pikachu__c9_colorful__1.jpg",
+        "url": "https://i.pinimg.com/originals/2f/1e/a9/2f1ea96f7c6382b3c98ae0dd47249cf9.jpg"
+      },
+      {
+        "file": "pikachu__c9_colorful__2.jpg",
+        "url": "https://i.etsystatic.com/42020755/r/il/334c17/5019729666/il_fullxfull.5019729666_sjg0.jpg"
+      },
+      {
+        "file": "pikachu__c9_colorful__3.jpg",
+        "url": "https://i.pinimg.com/736x/e6/dc/04/e6dc0429e388bc922ec838574bff0b47.jpg"
+      },
+      {
+        "file": "pikachu__c9_colorful__4.jpg",
+        "url": "https://mmcustomartcreations.com/cdn/shop/files/Pikachu5Sizes.png?v=1752788961&width=1445"
+      }
+    ]
+  },
+  "pikachu__c10_modality": {
+    "slug": "pikachu",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://i.3dmodels.org/uploads/2023/08/23/pikachu_3d_model_1000_0001.jpg",
+    "candidates": [
+      {
+        "file": "pikachu__c10_modality__1.jpg",
+        "url": "https://i.3dmodels.org/uploads/2023/08/23/pikachu_3d_model_1000_0001.jpg"
+      },
+      {
+        "file": "pikachu__c10_modality__2.jpg",
+        "url": "https://www.renderhub.com/navaler/pikachu-pokemon/pikachu-pokemon-02.jpg"
+      },
+      {
+        "file": "pikachu__c10_modality__3.jpg",
+        "url": "https://p.turbosquid.com/ts-thumb/Fs/qfmeOR/G0/1/png/1699434147/1920x1080/fit_q87/49eb2fb9160a4007fe0b8bf16c5345a0fba2381a/1.jpg"
+      },
+      {
+        "file": "pikachu__c10_modality__4.jpg",
+        "url": "https://static.turbosquid.com/Preview/2016/11/15__15_42_35/pikachu_02.jpgD875FF06-F6BB-45DF-8137-77F5E5C51516Zoom.jpg"
+      }
+    ]
+  },
+  "mario__c9_colorful": {
+    "slug": "mario",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/37993599/r/il/a41ee7/4713871498/il_fullxfull.4713871498_duf2.jpg",
+    "candidates": [
+      {
+        "file": "mario__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/37993599/r/il/a41ee7/4713871498/il_fullxfull.4713871498_duf2.jpg"
+      },
+      {
+        "file": "mario__c9_colorful__2.jpg",
+        "url": "https://i.pinimg.com/736x/6e/93/b8/6e93b81f0132f317f4d1e2bbf1eaa094.jpg"
+      },
+      {
+        "file": "mario__c9_colorful__3.jpg",
+        "url": "https://i.pinimg.com/originals/72/a7/b5/72a7b58a553f472ddc8f86075a558898.png"
+      },
+      {
+        "file": "mario__c9_colorful__4.jpg",
+        "url": "https://i.pinimg.com/736x/6e/dd/cd/6eddcd4d819f2770c2b41aef24187304.jpg"
+      }
+    ]
+  },
+  "mario__c10_modality": {
+    "slug": "mario",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/diru3y7-2343cadf-8784-4137-837f-35f7138d64b6.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGlydTN5Ny0yMzQzY2FkZi04Nzg0LTQxMzctODM3Zi0zNWY3MTM4ZDY0YjYucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.lmA3cCvQprSTrZqRZmCfxbmfydUgHaeZork-m8OePOA",
+    "candidates": [
+      {
+        "file": "mario__c10_modality__1.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/diru3y7-2343cadf-8784-4137-837f-35f7138d64b6.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGlydTN5Ny0yMzQzY2FkZi04Nzg0LTQxMzctODM3Zi0zNWY3MTM4ZDY0YjYucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.lmA3cCvQprSTrZqRZmCfxbmfydUgHaeZork-m8OePOA"
+      },
+      {
+        "file": "mario__c10_modality__2.jpg",
+        "url": "https://www.renderhub.com/sinh-nguyen/the-super-mario-bros/the-super-mario-bros-04.jpg"
+      },
+      {
+        "file": "mario__c10_modality__3.jpg",
+        "url": "https://media.sketchfab.com/models/4fc8334dfc2f45feae13e90c28b1a347/thumbnails/89c469e84b9a45009c4ccd5783642c06/25e1a06a9ac3401fbd7729b1998149af.jpeg"
+      },
+      {
+        "file": "mario__c10_modality__4.jpg",
+        "url": "https://media.sketchfab.com/models/3e92fdffb8774fd99283b209481125e6/thumbnails/935c41815a604483bf9738693dbf1312/c482131cb5bf49a288033831a413070f.jpeg"
+      }
+    ]
+  },
+  "sonic__c9_colorful": {
+    "slug": "sonic",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.etsystatic.com/56199939/r/il/548242/7362409868/il_794xN.7362409868_sgm7.jpg",
+    "candidates": [
+      {
+        "file": "sonic__c9_colorful__1.jpg",
+        "url": "https://i.etsystatic.com/56199939/r/il/548242/7362409868/il_794xN.7362409868_sgm7.jpg"
+      },
+      {
+        "file": "sonic__c9_colorful__2.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/925a499e-b3b9-47e3-b092-7c44ecb15126/df9wmdn-8d9f2bbb-e002-4ce5-bc7a-949d54fab485.jpg/v1/fill/w_1280,h_1774,q_75,strp/sonic_the_hedgehog_poster_by_blue_kachina_df9wmdn-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTc3NCIsInBhdGgiOiJcL2ZcLzkyNWE0OTllLWIzYjktNDdlMy1iMDkyLTdjNDRlY2IxNTEyNlwvZGY5d21kbi04ZDlmMmJiYi1lMDAyLTRjZTUtYmM3YS05NDlkNTRmYWI0ODUuanBnIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.QdeXdhU_DsJFX2a1jRkB75pnQZcN1_g7q9oPbyGn4mQ"
+      },
+      {
+        "file": "sonic__c9_colorful__3.jpg",
+        "url": "https://i.pinimg.com/736x/f1/31/0f/f1310f6d7376e919b32bc28e00b1b62c.jpg"
+      },
+      {
+        "file": "sonic__c9_colorful__4.jpg",
+        "url": "https://res.cloudinary.com/cook-becker/image/fetch/q_auto:good,f_auto,w_1920/https://candb.com/site/candb/images/artwork/Sonic2_dave-rapoza_segav2.jpg"
+      }
+    ]
+  },
+  "sonic__c10_modality": {
+    "slug": "sonic",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://cdn.renderhub.com/clickdamn/sonic-the-hedgehog-1/sonic-the-hedgehog-1-02.jpg",
+    "candidates": [
+      {
+        "file": "sonic__c10_modality__1.jpg",
+        "url": "https://cdn.renderhub.com/clickdamn/sonic-the-hedgehog-1/sonic-the-hedgehog-1-02.jpg"
+      },
+      {
+        "file": "sonic__c10_modality__2.jpg",
+        "url": "https://i.pinimg.com/736x/eb/7f/7a/eb7f7a6968a8866ee03f5e010bcd4f36.jpg"
+      },
+      {
+        "file": "sonic__c10_modality__3.jpg",
+        "url": "https://i.3dmodels.org/uploads/Characters/468_Sonic/Sonic_1000_0001.jpg"
+      },
+      {
+        "file": "sonic__c10_modality__4.jpg",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9a7bfe91-c737-4379-81c5-2c818e1dc90f/di48rmx-91916e25-4eba-4cd0-ac99-f09380f3c821.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzlhN2JmZTkxLWM3MzctNDM3OS04MWM1LTJjODE4ZTFkYzkwZlwvZGk0OHJteC05MTkxNmUyNS00ZWJhLTRjZDAtYWM5OS1mMDkzODBmM2M4MjEucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.AY5DDoLcyzbxMbRfUMsz8THiNzO3qE1735sAebdQ5eo"
+      }
+    ]
+  },
+  "moana__c9_colorful": {
+    "slug": "moana",
+    "cond": "c9_colorful",
+    "source": "web",
+    "source_url": "https://i.pinimg.com/originals/4e/39/dd/4e39dd45af5162540e56f50b951a9f96.jpg",
+    "candidates": [
+      {
+        "file": "moana__c9_colorful__1.jpg",
+        "url": "https://i.pinimg.com/originals/4e/39/dd/4e39dd45af5162540e56f50b951a9f96.jpg"
+      },
+      {
+        "file": "moana__c9_colorful__2.jpg",
+        "url": "https://i.pinimg.com/originals/4b/79/ae/4b79ae8a36ffb95378483a1fe6ec8de0.jpg"
+      },
+      {
+        "file": "moana__c9_colorful__3.jpg",
+        "url": "https://i5.walmartimages.com/asr/bdc75246-96a0-4cd7-ab1c-9ac247d05862.d7ec6224683f7e4caf404b7c9bd6c856.jpeg"
+      },
+      {
+        "file": "moana__c9_colorful__4.jpg",
+        "url": "https://www.laughingplace.com/uploads/2024/10/multiple-theatrical-formats-of-moana-2-mean-new-an-3.jpg"
+      }
+    ]
+  },
+  "moana__c10_modality": {
+    "slug": "moana",
+    "cond": "c10_modality",
+    "source": "web",
+    "source_url": "https://www.renderhub.com/danyelon/moana-renderable/moana-renderable-01.jpg",
+    "candidates": [
+      {
+        "file": "moana__c10_modality__1.jpg",
+        "url": "https://www.renderhub.com/danyelon/moana-renderable/moana-renderable-01.jpg"
+      },
+      {
+        "file": "moana__c10_modality__2.jpg",
+        "url": "https://i.pinimg.com/originals/d4/ed/f9/d4edf92729fdc6e69ed4dff2f64b24c3.jpg"
+      },
+      {
+        "file": "moana__c10_modality__3.jpg",
+        "url": "https://cdn.renderhub.com/stellarvalor/moana-for-3d-print/moana-for-3d-print-10.jpg"
+      },
+      {
+        "file": "moana__c10_modality__4.jpg",
+        "url": "https://cdn.renderhub.com/stellarvalor/moana-for-3d-print/moana-for-3d-print-11.jpg"
+      }
+    ]
+  }
+}

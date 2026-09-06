@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/donald_duck__c2_flip.jpg",
+  "provenance": "data/recognition_reduce/pool/donald_duck__c2_flip.provenance.json",
+  "createdAt": "2026-09-04T16:16:50.157694Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 305,
+    "height": 420
+  },
+  "originalDimensions": {
+    "width": 305,
+    "height": 420
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/donald_duck__c2_flip.jpg",
+    "dimensions": {
+      "width": 305,
+      "height": 420
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/donald_duck__c2_flip.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/donald_duck__c2_flip.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 305,
+        "height": 420
+      },
+      "transform": {},
+      "createdAt": "2026-09-04T16:16:50.157694Z"
+    }
+  ]
+}

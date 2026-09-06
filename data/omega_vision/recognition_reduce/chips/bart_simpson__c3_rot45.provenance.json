@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/chips/bart_simpson__c3_rot45.jpg",
+  "provenance": "data/recognition_reduce/chips/bart_simpson__c3_rot45.provenance.json",
+  "createdAt": "2026-09-03T15:55:07.759690Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 1224,
+    "height": 474
+  },
+  "originalDimensions": {
+    "width": 1224,
+    "height": 474
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/chips/bart_simpson__c3_rot45.jpg",
+    "dimensions": {
+      "width": 1224,
+      "height": 474
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/chips/bart_simpson__c3_rot45.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/chips/bart_simpson__c3_rot45.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 1224,
+        "height": 474
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T15:55:07.759690Z"
+    }
+  ]
+}

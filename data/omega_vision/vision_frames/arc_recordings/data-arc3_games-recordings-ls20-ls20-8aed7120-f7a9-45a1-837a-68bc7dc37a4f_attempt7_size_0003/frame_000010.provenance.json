@@ -1,0 +1,186 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/frame_000010.png",
+  "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/frame_000010.provenance.json",
+  "createdAt": "2026-09-03T17:04:54.858468Z",
+  "operation": "import_arc_playback_frame",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/9/image.png",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/9/image.png",
+    "provenance": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/9/image.provenance.json"
+  },
+  "source": {
+    "arcRecording": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003",
+    "arcFrame": "9/image.png",
+    "frameIndex": 10,
+    "moveCount": 10,
+    "moveList": [
+      {
+        "index": 0,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/0",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:36.674023+00:00"
+      },
+      {
+        "index": 1,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/1",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:37.099143+00:00"
+      },
+      {
+        "index": 2,
+        "action": "ACTION2",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/2",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:37.452524+00:00"
+      },
+      {
+        "index": 3,
+        "action": "ACTION2",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/3",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:37.881233+00:00"
+      },
+      {
+        "index": 4,
+        "action": "ACTION4",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/4",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:39.451282+00:00"
+      },
+      {
+        "index": 5,
+        "action": "ACTION4",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/5",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:39.731323+00:00"
+      },
+      {
+        "index": 6,
+        "action": "ACTION4",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/6",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:40.037081+00:00"
+      },
+      {
+        "index": 7,
+        "action": "ACTION4",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/7",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:40.311266+00:00"
+      },
+      {
+        "index": 8,
+        "action": "ACTION4",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/8",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:41.126735+00:00"
+      },
+      {
+        "index": 9,
+        "action": "ACTION4",
+        "data": {},
+        "directory": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7/9",
+        "state": "NOT_FINISHED",
+        "level": "7",
+        "recorded_at": "2026-03-02T19:49:43.396639+00:00"
+      }
+    ],
+    "incomingAction": "ACTION4",
+    "actionData": {},
+    "actionPath": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "gameState": "NOT_FINISHED",
+    "level": "7",
+    "observation": {
+      "game_id": "ls20-9607627b",
+      "state": "NOT_FINISHED",
+      "levels_completed": 6,
+      "win_levels": 7,
+      "action_input": {
+        "id": 4,
+        "data": {
+          "game_id": "ls20-9607627b"
+        },
+        "reasoning": null
+      },
+      "guid": "8aed7120-f7a9-45a1-837a-68bc7dc37a4f",
+      "full_reset": false,
+      "available_actions": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "frame_count": 1
+    }
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/arc3_games/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/9/image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T17:04:54.847262Z"
+    },
+    {
+      "image": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/frame_000010.png",
+      "operation": "import_arc_playback_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T17:04:54.858468Z"
+    }
+  ]
+}

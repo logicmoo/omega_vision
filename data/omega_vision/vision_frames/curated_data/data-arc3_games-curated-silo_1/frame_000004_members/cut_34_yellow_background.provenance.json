@@ -1,0 +1,423 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004_members/cut_34_yellow_background.png",
+  "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004_members/cut_34_yellow_background.provenance.json",
+  "createdAt": "2026-09-02T23:03:14.077614Z",
+  "operation": "extract_object_cutout",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.png",
+    "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.provenance.json"
+  },
+  "source": {
+    "objectName": "yellow_background"
+  },
+  "transform": {
+    "inputDimensions": {
+      "width": 640,
+      "height": 640
+    },
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.png",
+      "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.png",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004_outlines/verify_yellow_background_d9c1bb99a28e.png",
+      "geometryHash": "d9c1bb99a28e955edc8222c3add26d415493c90962faa3988950390edb844602",
+      "traceVerified": true
+    },
+    "cropBox": [
+      0,
+      0,
+      640,
+      640
+    ],
+    "maskScale": 4,
+    "polygons": [
+      [
+        [
+          40,
+          0
+        ],
+        [
+          639,
+          0
+        ],
+        [
+          639,
+          600
+        ],
+        [
+          120,
+          600
+        ],
+        [
+          120,
+          639
+        ],
+        [
+          0,
+          639
+        ],
+        [
+          0,
+          520
+        ],
+        [
+          40,
+          520
+        ],
+        [
+          40,
+          0
+        ]
+      ],
+      [
+        [
+          290,
+          300
+        ],
+        [
+          340,
+          300
+        ],
+        [
+          340,
+          450
+        ],
+        [
+          240,
+          450
+        ],
+        [
+          240,
+          400
+        ],
+        [
+          290,
+          400
+        ],
+        [
+          290,
+          300
+        ]
+      ]
+    ],
+    "holes": [
+      [
+        [
+          320,
+          80
+        ],
+        [
+          320,
+          170
+        ],
+        [
+          340,
+          170
+        ],
+        [
+          340,
+          250
+        ],
+        [
+          140,
+          250
+        ],
+        [
+          140,
+          400
+        ],
+        [
+          190,
+          400
+        ],
+        [
+          190,
+          500
+        ],
+        [
+          540,
+          500
+        ],
+        [
+          540,
+          250
+        ],
+        [
+          390,
+          250
+        ],
+        [
+          390,
+          170
+        ],
+        [
+          410,
+          170
+        ],
+        [
+          410,
+          80
+        ],
+        [
+          320,
+          80
+        ]
+      ],
+      [
+        [
+          10,
+          530
+        ],
+        [
+          10,
+          630
+        ],
+        [
+          110,
+          630
+        ],
+        [
+          110,
+          530
+        ],
+        [
+          10,
+          530
+        ]
+      ]
+    ]
+  },
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T00:18:36.024826Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.png",
+      "operation": "import_curated_data_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T19:29:52.551756Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004_members/cut_34_yellow_background.png",
+      "operation": "extract_object_cutout",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "inputDimensions": {
+          "width": 640,
+          "height": 640
+        },
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000004_outlines/verify_yellow_background_d9c1bb99a28e.png",
+          "geometryHash": "d9c1bb99a28e955edc8222c3add26d415493c90962faa3988950390edb844602",
+          "traceVerified": true
+        },
+        "cropBox": [
+          0,
+          0,
+          640,
+          640
+        ],
+        "maskScale": 4,
+        "polygons": [
+          [
+            [
+              40,
+              0
+            ],
+            [
+              639,
+              0
+            ],
+            [
+              639,
+              600
+            ],
+            [
+              120,
+              600
+            ],
+            [
+              120,
+              639
+            ],
+            [
+              0,
+              639
+            ],
+            [
+              0,
+              520
+            ],
+            [
+              40,
+              520
+            ],
+            [
+              40,
+              0
+            ]
+          ],
+          [
+            [
+              290,
+              300
+            ],
+            [
+              340,
+              300
+            ],
+            [
+              340,
+              450
+            ],
+            [
+              240,
+              450
+            ],
+            [
+              240,
+              400
+            ],
+            [
+              290,
+              400
+            ],
+            [
+              290,
+              300
+            ]
+          ]
+        ],
+        "holes": [
+          [
+            [
+              320,
+              80
+            ],
+            [
+              320,
+              170
+            ],
+            [
+              340,
+              170
+            ],
+            [
+              340,
+              250
+            ],
+            [
+              140,
+              250
+            ],
+            [
+              140,
+              400
+            ],
+            [
+              190,
+              400
+            ],
+            [
+              190,
+              500
+            ],
+            [
+              540,
+              500
+            ],
+            [
+              540,
+              250
+            ],
+            [
+              390,
+              250
+            ],
+            [
+              390,
+              170
+            ],
+            [
+              410,
+              170
+            ],
+            [
+              410,
+              80
+            ],
+            [
+              320,
+              80
+            ]
+          ],
+          [
+            [
+              10,
+              530
+            ],
+            [
+              10,
+              630
+            ],
+            [
+              110,
+              630
+            ],
+            [
+              110,
+              530
+            ],
+            [
+              10,
+              530
+            ]
+          ]
+        ]
+      },
+      "createdAt": "2026-09-02T23:03:14.077614Z"
+    }
+  ]
+}

@@ -7,6 +7,12 @@ workspaces/*/data/video_import/**/*.mkv
 workspaces/*/data/video_import/**/*.mov
 workspaces/*/data/video_import/**/*.avi
 workspaces/*/data/video_import/**/*.m4v
+data/omega_vision/video_import/**/*.mp4
+data/omega_vision/video_import/**/*.webm
+data/omega_vision/video_import/**/*.mkv
+data/omega_vision/video_import/**/*.mov
+data/omega_vision/video_import/**/*.avi
+data/omega_vision/video_import/**/*.m4v
 data/omega_vision/vision_frames/video
 
 .tmp_pytest_*/

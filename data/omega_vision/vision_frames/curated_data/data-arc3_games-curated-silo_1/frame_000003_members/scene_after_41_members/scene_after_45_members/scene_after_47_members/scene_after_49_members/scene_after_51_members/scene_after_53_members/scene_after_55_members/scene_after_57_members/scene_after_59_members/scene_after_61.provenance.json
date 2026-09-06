@@ -1,0 +1,556 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59_members/scene_after_61.png",
+  "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59_members/scene_after_61.provenance.json",
+  "createdAt": "2026-09-02T23:07:21.766406Z",
+  "operation": "remove_object_from_scene",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59.png",
+    "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59.provenance.json"
+  },
+  "source": {
+    "objectName": "bottom_ui_light_gray_base",
+    "cutout": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59_members/cut_61_bottom_ui_light_gray_bas.png",
+    "fillInstructions": {
+      "description": "Behind the light-gray base is uniform bright-yellow background in this frame.",
+      "colors": [
+        "#FFDC00"
+      ],
+      "continueEdges": [
+        "Continue the yellow field seamlessly across the removed base area.",
+        "Preserve the interior hole boundaries where the dark bar and cyan indicators remain in front, keeping their edges crisp and unchanged."
+      ],
+      "texture": "Solid flat fill, no gradient or pattern."
+    }
+  },
+  "transform": {
+    "fill": "median",
+    "outlineAlignment": {
+      "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59.png",
+      "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "verified": true,
+      "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_bottom_ui_light_gray_bas_3bb6c2ea51d1.png",
+      "geometryHash": "3bb6c2ea51d1cfca3570e7d8e3582225a1bbb1c245d7c6c66c853ed1c1555559",
+      "traceVerified": true
+    },
+    "removedBox": [
+      119,
+      599,
+      640,
+      640
+    ],
+    "maskScale": 4,
+    "fillInstructions": {
+      "description": "Behind the light-gray base is uniform bright-yellow background in this frame.",
+      "colors": [
+        "#FFDC00"
+      ],
+      "continueEdges": [
+        "Continue the yellow field seamlessly across the removed base area.",
+        "Preserve the interior hole boundaries where the dark bar and cyan indicators remain in front, keeping their edges crisp and unchanged."
+      ],
+      "texture": "Solid flat fill, no gradient or pattern."
+    },
+    "imageGeneration": {
+      "renderer": "median"
+    }
+  },
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T00:18:36.024826Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+      "operation": "import_curated_data_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T19:29:52.540155Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_main_green_body_7c2236d99f7e.png",
+          "geometryHash": "7c2236d99f7e652db1dc6b541d238e0759e12882916a2531c9ea637012d09bc5",
+          "traceVerified": true
+        },
+        "removedBox": [
+          139,
+          79,
+          543,
+          503
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the green body, the underlying layer is a flat bright-yellow background, while the excluded interior holes remain occupied by their own visible objects (top gray sign tile, central yellow cavity, and inner black/blue marker region).",
+          "colors": [
+            "#FFDC00"
+          ],
+          "continueEdges": [
+            "Continue the yellow background seamlessly across the entire removed green silhouette.",
+            "Maintain sharp boundaries around preserved hole contents: the gray sign tile perimeter, the black/blue marker-region perimeter, and the existing central yellow cavity boundary.",
+            "Keep neighboring object edges (left gray wall, lower gray/maroon block, bottom-left tile, and bottom UI strip) unchanged where they border the removed area."
+          ],
+          "texture": "Solid flat fill, no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:04:12.529845Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_top_gray_sign_tile_3a12c863d879.png",
+          "geometryHash": "3a12c863d879ffb43a667e98ca6758a3b456e6c1107ed3e7e9f907a68d4e451c",
+          "traceVerified": true
+        },
+        "removedBox": [
+          329,
+          89,
+          403,
+          163
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the removed gray sign tile is a uniform flat yellow background in this frame, while the maroon glyph cutout regions remain separate and should stay untouched.",
+          "colors": [
+            "#FDD300"
+          ],
+          "continueEdges": [
+            "Continue the surrounding yellow field seamlessly across the tile’s outer rectangle.",
+            "Preserve the two interior maroon-glyph hole boundaries exactly as provided; do not fill or alter those cutout regions.",
+            "Keep adjacent green fragment edges around the tile crisp and unchanged."
+          ],
+          "texture": "Solid flat color with no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:04:48.657305Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_top_maroon_glyph_e18999cbd3c3.png",
+          "geometryHash": "e18999cbd3c34df1a388bd00c25d3b60d32e1b8bb557f1c0ae63499d841f8fdb",
+          "traceVerified": true
+        },
+        "removedBox": [
+          349,
+          109,
+          383,
+          143
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the maroon glyph is a uniform yellow-green sign-face fill within the top tile area.",
+          "colors": [
+            "#87CC25"
+          ],
+          "continueEdges": [
+            "Continue the yellow-green interior seamlessly through both glyph polygons.",
+            "Keep adjacent tile/frame edges (the surrounding bright-green border segments) sharp and unchanged outside the filled glyph area."
+          ],
+          "texture": "Solid flat fill, no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:05:12.600872Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_left_inner_black_marker_fd480e91dfda.png",
+          "geometryHash": "fd480e91dfda38efc422e3584b84b65532993209c3fbbf05b18459bc35919d13",
+          "traceVerified": true
+        },
+        "removedBox": [
+          209,
+          309,
+          232,
+          332
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the black marker is uniform bright-yellow background in this frame.",
+          "colors": [
+            "#FFDC00"
+          ],
+          "continueEdges": [
+            "Continue the yellow field seamlessly through the removed marker polygon.",
+            "Preserve the adjacent blue marker pixels at the lower-left edge as sharp boundaries without color bleed."
+          ],
+          "texture": "Solid flat fill, no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:05:35.400677Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_left_inner_blue_marker_4e949920192f.png",
+          "geometryHash": "4e949920192ffb78c7ae634b416e152d686c217a1d772d405262259250eba193",
+          "traceVerified": true
+        },
+        "removedBox": [
+          199,
+          319,
+          223,
+          343
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind both removed blue marker tiles is the same flat bright-yellow background visible around them.",
+          "colors": [
+            "#FDD300"
+          ],
+          "continueEdges": [
+            "Fill both disconnected blue polygons with continuous yellow so the surrounding background reads as one uninterrupted field.",
+            "Preserve the neighboring black marker edges (the nearby vertical and horizontal black strokes) exactly as they are at the boundaries.",
+            "Do not add any new border, shading, or interior detail across the filled tiles."
+          ],
+          "texture": "Solid flat pixel fill with no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:05:53.979771Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_lower_center_gray_cap_294c924d4a0f.png",
+          "geometryHash": "294c924d4a0f6ed55bd206cc3f6e2820d46327403479d11410023173eef36f17",
+          "traceVerified": true
+        },
+        "removedBox": [
+          339,
+          449,
+          393,
+          473
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the removed light-gray cap is a uniform bright-yellow background area.",
+          "colors": [
+            "#FDD300"
+          ],
+          "continueEdges": [
+            "Continue the surrounding yellow field cleanly through the full cap rectangle.",
+            "Keep the top edge of the maroon block immediately below (at the cap’s bottom boundary) sharp and unchanged.",
+            "Do not introduce any new outlines, shading, or interior marks."
+          ],
+          "texture": "Flat solid pixel fill with no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:06:10.620888Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_lower_center_maroon_bloc_cad230e44926.png",
+          "geometryHash": "cad230e44926ea09553f3579da2cf9a3c4aa1f6f33c156e770bb90f78eeb670a",
+          "traceVerified": true
+        },
+        "removedBox": [
+          339,
+          469,
+          392,
+          502
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the removed maroon block is the same uniform bright-yellow background that surrounds it in the current frame.",
+          "colors": [
+            "#FDD300"
+          ],
+          "continueEdges": [
+            "Continue the yellow background seamlessly across the entire removed rectangle.",
+            "Maintain clean, straight pixel boundaries where the filled area meets surrounding yellow with no visible seam.",
+            "Do not introduce any new lines, outlines, or shading artifacts."
+          ],
+          "texture": "Flat solid pixel color with no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:06:26.653641Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_bottom_left_gray_tile_cea100e92a58.png",
+          "geometryHash": "cea100e92a58ca1cc1c4920c2230fd96be40291cfe17bb19ad857efd0083e05c",
+          "traceVerified": true
+        },
+        "removedBox": [
+          9,
+          529,
+          113,
+          633
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the removed gray tile is a flat bright-yellow background, while the two maroon glyph cutout regions remain as separate foreground elements.",
+          "colors": [
+            "#FDD300"
+          ],
+          "continueEdges": [
+            "Continue the surrounding yellow field uniformly across the full tile rectangle.",
+            "Preserve both interior maroon glyph hole boundaries exactly; do not fill or alter those cutout regions.",
+            "Keep neighboring edges (left gray wall edge above-left and bottom UI boundary to the right) crisp with no new outlines."
+          ],
+          "texture": "Solid pixel fill with no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:06:43.719635Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_bottom_left_maroon_glyph_aa37c25d2418.png",
+          "geometryHash": "aa37c25d2418905b03d442fa06511a409f7e82f54ac8b62ad09a2c741dc3070e",
+          "traceVerified": true
+        },
+        "removedBox": [
+          29,
+          549,
+          93,
+          613
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the bottom-left maroon glyph is uniform bright-yellow background.",
+          "colors": [
+            "#FFDC00"
+          ],
+          "continueEdges": [
+            "Continue the yellow field seamlessly through both glyph polygons.",
+            "No other object edges pass through the removed glyph area."
+          ],
+          "texture": "Solid flat fill, no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:07:03.850273Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59_members/scene_after_61.png",
+      "operation": "remove_object_from_scene",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "fill": "median",
+        "outlineAlignment": {
+          "cutImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_members/scene_after_41_members/scene_after_45_members/scene_after_47_members/scene_after_49_members/scene_after_51_members/scene_after_53_members/scene_after_55_members/scene_after_57_members/scene_after_59.png",
+          "outlineSourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+          "dimensions": {
+            "width": 640,
+            "height": 640
+          },
+          "verified": true,
+          "verificationImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_bottom_ui_light_gray_bas_3bb6c2ea51d1.png",
+          "geometryHash": "3bb6c2ea51d1cfca3570e7d8e3582225a1bbb1c245d7c6c66c853ed1c1555559",
+          "traceVerified": true
+        },
+        "removedBox": [
+          119,
+          599,
+          640,
+          640
+        ],
+        "maskScale": 4,
+        "fillInstructions": {
+          "description": "Behind the light-gray base is uniform bright-yellow background in this frame.",
+          "colors": [
+            "#FFDC00"
+          ],
+          "continueEdges": [
+            "Continue the yellow field seamlessly across the removed base area.",
+            "Preserve the interior hole boundaries where the dark bar and cyan indicators remain in front, keeping their edges crisp and unchanged."
+          ],
+          "texture": "Solid flat fill, no gradient or pattern."
+        },
+        "imageGeneration": {
+          "renderer": "median"
+        }
+      },
+      "createdAt": "2026-09-02T23:07:21.766406Z"
+    }
+  ]
+}

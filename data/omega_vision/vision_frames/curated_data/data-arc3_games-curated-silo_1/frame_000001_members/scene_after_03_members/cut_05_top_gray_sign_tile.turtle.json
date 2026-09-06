@@ -1,0 +1,99 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001_members/scene_after_03_members/cut_05_top_gray_sign_tile.png",
+  "subjectName": "top_gray_sign_tile",
+  "modelId": "enullm-8801-copilot_gpt-5.3-codex",
+  "prompt": "TURTLE PNG DRAW STEP.\nThe attached image is terminal object top_gray_sign_tile.\nObject description: No additional description.\nReview the draft Turtle program below and return the final drawing program that should be rendered to PNG.\nPreserve accurate silhouette, colors, holes, and visible internal details. Coordinates are normalized from 0 to 1000 with top-left origin.\nAllowed commands: pen, move, line, polyline, polygon, rectangle, ellipse, dot. Use at most 200 commands.\nDRAFT TURTLE PROGRAM:\n{\"version\":1,\"background\":\"transparent\",\"penColor\":\"#AAAAAA\",\"penWidth\":1,\"commands\":[{\"op\":\"pen\",\"color\":\"#AAAAAA\",\"width\":1},{\"op\":\"polygon\",\"points\":[[14,12],[836,12],[836,735],[14,735]]},{\"op\":\"pen\",\"color\":\"#870C25\",\"width\":1},{\"op\":\"polygon\",\"points\":[[288,253],[699,253],[699,614],[562,614],[562,373],[288,373]]},{\"op\":\"polygon\",\"points\":[[288,494],[425,494],[425,614],[288,614]]}]}\nAnswer ONLY with the final JSON object. Do not include Markdown or Python.",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#AAAAAA\",\n  \"penWidth\": 1,\n  \"commands\": [\n    {\n      \"op\": \"pen\",\n      \"color\": \"#AAAAAA\",\n      \"width\": 1\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          14.0,\n          12.0\n        ],\n        [\n          836.0,\n          12.0\n        ],\n        [\n          836.0,\n          735.0\n        ],\n        [\n          14.0,\n          735.0\n        ]\n      ]\n    },\n    {\n      \"op\": \"pen\",\n      \"color\": \"#870C25\",\n      \"width\": 1\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          288.0,\n          253.0\n        ],\n        [\n          699.0,\n          253.0\n        ],\n        [\n          699.0,\n          614.0\n        ],\n        [\n          562.0,\n          614.0\n        ],\n        [\n          562.0,\n          373.0\n        ],\n        [\n          288.0,\n          373.0\n        ]\n      ]\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          288.0,\n          494.0\n        ],\n        [\n          425.0,\n          494.0\n        ],\n        [\n          425.0,\n          614.0\n        ],\n        [\n          288.0,\n          614.0\n        ]\n      ]\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#AAAAAA",
+    "penWidth": 1,
+    "commands": [
+      {
+        "op": "pen",
+        "color": "#AAAAAA",
+        "width": 1
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            14.0,
+            12.0
+          ],
+          [
+            836.0,
+            12.0
+          ],
+          [
+            836.0,
+            735.0
+          ],
+          [
+            14.0,
+            735.0
+          ]
+        ]
+      },
+      {
+        "op": "pen",
+        "color": "#870C25",
+        "width": 1
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            288.0,
+            253.0
+          ],
+          [
+            699.0,
+            253.0
+          ],
+          [
+            699.0,
+            614.0
+          ],
+          [
+            562.0,
+            614.0
+          ],
+          [
+            562.0,
+            373.0
+          ],
+          [
+            288.0,
+            373.0
+          ]
+        ]
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            288.0,
+            494.0
+          ],
+          [
+            425.0,
+            494.0
+          ],
+          [
+            425.0,
+            614.0
+          ],
+          [
+            288.0,
+            614.0
+          ]
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T00:49:48.583290Z"
+}

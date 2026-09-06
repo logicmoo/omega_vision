@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/patrick_star__c3_rot45.jpg",
+  "provenance": "data/recognition_reduce/pool/patrick_star__c3_rot45.provenance.json",
+  "createdAt": "2026-09-03T23:01:55.782647Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 496,
+    "height": 496
+  },
+  "originalDimensions": {
+    "width": 496,
+    "height": 496
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/patrick_star__c3_rot45.jpg",
+    "dimensions": {
+      "width": 496,
+      "height": 496
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/patrick_star__c3_rot45.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/patrick_star__c3_rot45.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 496,
+        "height": 496
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T23:01:55.782647Z"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000002.png",
+  "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000002.provenance.json",
+  "createdAt": "2026-09-03T10:40:36.565420Z",
+  "operation": "import_arc_playback_frame",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/recordings/bunny-cast/saved_001/1/image.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    }
+  },
+  "parent": {
+    "image": "data/arc3_games/recordings/bunny-cast/saved_001/1/image.png",
+    "provenance": "data/arc3_games/recordings/bunny-cast/saved_001/1/image.provenance.json"
+  },
+  "source": {
+    "arcRecording": "data/arc3_games/recordings/bunny-cast/saved_001",
+    "arcFrame": "1/image.png",
+    "frameIndex": 2,
+    "moveCount": 2,
+    "moveList": [
+      {
+        "index": 0,
+        "action": "ADD_CHARACTER",
+        "data": {
+          "characters": [
+            "Big Buck Bunny"
+          ],
+          "count": 2,
+          "delta": 1,
+          "added": [],
+          "removed": []
+        },
+        "directory": "data/arc3_games/recordings/bunny-cast/saved_001/0",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-08-28T02:57:11.294952Z"
+      },
+      {
+        "index": 1,
+        "action": "ADD_CHARACTER",
+        "data": {
+          "characters": [
+            "Big Buck Bunny",
+            "Butterfly"
+          ],
+          "count": 3,
+          "delta": 1,
+          "added": [
+            "Butterfly"
+          ],
+          "removed": []
+        },
+        "directory": "data/arc3_games/recordings/bunny-cast/saved_001/1",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-08-28T02:57:11.304921Z"
+      }
+    ],
+    "incomingAction": "ADD_CHARACTER",
+    "actionData": {
+      "characters": [
+        "Big Buck Bunny",
+        "Butterfly"
+      ],
+      "count": 3,
+      "delta": 1,
+      "added": [
+        "Butterfly"
+      ],
+      "removed": []
+    },
+    "actionPath": [
+      "0",
+      "1"
+    ],
+    "gameState": "NOT_FINISHED",
+    "level": "1",
+    "observation": null
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/arc3_games/recordings/bunny-cast/saved_001/1/image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T12:18:07.942261Z"
+    },
+    {
+      "image": "data/vision_frames/arc_recordings/data-arc3_games-recordings-bunny-cast-saved_001/frame_000002.png",
+      "operation": "import_arc_playback_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T10:40:36.565420Z"
+    }
+  ]
+}

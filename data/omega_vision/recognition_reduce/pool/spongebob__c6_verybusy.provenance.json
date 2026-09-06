@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/spongebob__c6_verybusy.jpg",
+  "provenance": "data/recognition_reduce/pool/spongebob__c6_verybusy.provenance.json",
+  "createdAt": "2026-09-03T18:25:39.172566Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 640,
+    "height": 480
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 480
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/spongebob__c6_verybusy.jpg",
+    "dimensions": {
+      "width": 640,
+      "height": 480
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/spongebob__c6_verybusy.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/spongebob__c6_verybusy.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 480
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T18:25:39.172566Z"
+    }
+  ]
+}

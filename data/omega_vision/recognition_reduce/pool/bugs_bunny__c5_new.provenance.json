@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/recognition_reduce/pool/bugs_bunny__c5_new.jpg",
+  "provenance": "data/recognition_reduce/pool/bugs_bunny__c5_new.provenance.json",
+  "createdAt": "2026-09-03T23:26:05.273638Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 655,
+    "height": 900
+  },
+  "originalDimensions": {
+    "width": 655,
+    "height": 900
+  },
+  "root": {
+    "firstSeenImage": "data/recognition_reduce/pool/bugs_bunny__c5_new.jpg",
+    "dimensions": {
+      "width": 655,
+      "height": 900
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/recognition_reduce/pool/bugs_bunny__c5_new.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recognition_reduce/pool/bugs_bunny__c5_new.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 655,
+        "height": 900
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T23:26:05.273638Z"
+    }
+  ]
+}

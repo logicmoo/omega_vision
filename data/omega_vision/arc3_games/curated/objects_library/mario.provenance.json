@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/arc3_games/curated/objects_library/mario.jpg",
+  "provenance": "data/arc3_games/curated/objects_library/mario.provenance.json",
+  "createdAt": "2026-09-03T13:22:33.796789Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 1551,
+    "height": 2500
+  },
+  "originalDimensions": {
+    "width": 1551,
+    "height": 2500
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/objects_library/mario.jpg",
+    "dimensions": {
+      "width": 1551,
+      "height": 2500
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/arc3_games/curated/objects_library/mario.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/objects_library/mario.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 1551,
+        "height": 2500
+      },
+      "transform": {},
+      "createdAt": "2026-09-03T13:22:33.796789Z"
+    }
+  ]
+}

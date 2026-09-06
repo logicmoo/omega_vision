@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_003/stages/frame_000001__t1__partmap.png",
+  "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_003/stages/frame_000001__t1__partmap.provenance.json",
+  "createdAt": "2026-09-04T19:31:10.713449Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 224,
+    "height": 224
+  },
+  "originalDimensions": {
+    "width": 224,
+    "height": 224
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_003/stages/frame_000001__t1__partmap.png",
+    "dimensions": {
+      "width": 224,
+      "height": 224
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_003/stages/frame_000001__t1__partmap.png"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_003/stages/frame_000001__t1__partmap.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 224,
+        "height": 224
+      },
+      "transform": {},
+      "createdAt": "2026-09-04T19:31:10.713449Z"
+    }
+  ]
+}

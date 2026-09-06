@@ -1,0 +1,313 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_bottom_ui_light_gray_bas_3bb6c2ea51d1.png",
+  "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_bottom_ui_light_gray_bas_3bb6c2ea51d1.provenance.json",
+  "createdAt": "2026-09-02T22:55:50.215857Z",
+  "operation": "verify_outliner_trace",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+    "provenance": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.provenance.json"
+  },
+  "source": {
+    "objectName": "bottom_ui_light_gray_base"
+  },
+  "transform": {
+    "polygons": [
+      [
+        [
+          120,
+          600
+        ],
+        [
+          639,
+          600
+        ],
+        [
+          639,
+          639
+        ],
+        [
+          120,
+          639
+        ]
+      ]
+    ],
+    "holes": [
+      [
+        [
+          140,
+          610
+        ],
+        [
+          549,
+          610
+        ],
+        [
+          549,
+          629
+        ],
+        [
+          140,
+          629
+        ]
+      ],
+      [
+        [
+          560,
+          610
+        ],
+        [
+          579,
+          610
+        ],
+        [
+          579,
+          629
+        ],
+        [
+          560,
+          629
+        ]
+      ],
+      [
+        [
+          590,
+          610
+        ],
+        [
+          609,
+          610
+        ],
+        [
+          609,
+          629
+        ],
+        [
+          590,
+          629
+        ]
+      ],
+      [
+        [
+          620,
+          610
+        ],
+        [
+          639,
+          610
+        ],
+        [
+          639,
+          629
+        ],
+        [
+          620,
+          629
+        ]
+      ]
+    ],
+    "traceTurtle": [
+      {
+        "op": "move",
+        "x": 188,
+        "y": 939
+      },
+      {
+        "op": "line",
+        "x": 1000,
+        "y": 939
+      },
+      {
+        "op": "line",
+        "x": 1000,
+        "y": 1000
+      },
+      {
+        "op": "line",
+        "x": 188,
+        "y": 1000
+      },
+      {
+        "op": "line",
+        "x": 188,
+        "y": 939
+      }
+    ],
+    "geometryHash": "3bb6c2ea51d1cfca3570e7d8e3582225a1bbb1c245d7c6c66c853ed1c1555559",
+    "traceAgreement": 1.0,
+    "boundaryCoverage": 0.6769
+  },
+  "lineage": [
+    {
+      "image": "data/arc3_games/curated/SILO_1/parent_image.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T00:18:36.024826Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003.png",
+      "operation": "import_curated_data_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-02T19:29:52.540155Z"
+    },
+    {
+      "image": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000003_outlines/verify_bottom_ui_light_gray_bas_3bb6c2ea51d1.png",
+      "operation": "verify_outliner_trace",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {
+        "polygons": [
+          [
+            [
+              120,
+              600
+            ],
+            [
+              639,
+              600
+            ],
+            [
+              639,
+              639
+            ],
+            [
+              120,
+              639
+            ]
+          ]
+        ],
+        "holes": [
+          [
+            [
+              140,
+              610
+            ],
+            [
+              549,
+              610
+            ],
+            [
+              549,
+              629
+            ],
+            [
+              140,
+              629
+            ]
+          ],
+          [
+            [
+              560,
+              610
+            ],
+            [
+              579,
+              610
+            ],
+            [
+              579,
+              629
+            ],
+            [
+              560,
+              629
+            ]
+          ],
+          [
+            [
+              590,
+              610
+            ],
+            [
+              609,
+              610
+            ],
+            [
+              609,
+              629
+            ],
+            [
+              590,
+              629
+            ]
+          ],
+          [
+            [
+              620,
+              610
+            ],
+            [
+              639,
+              610
+            ],
+            [
+              639,
+              629
+            ],
+            [
+              620,
+              629
+            ]
+          ]
+        ],
+        "traceTurtle": [
+          {
+            "op": "move",
+            "x": 188,
+            "y": 939
+          },
+          {
+            "op": "line",
+            "x": 1000,
+            "y": 939
+          },
+          {
+            "op": "line",
+            "x": 1000,
+            "y": 1000
+          },
+          {
+            "op": "line",
+            "x": 188,
+            "y": 1000
+          },
+          {
+            "op": "line",
+            "x": 188,
+            "y": 939
+          }
+        ],
+        "geometryHash": "3bb6c2ea51d1cfca3570e7d8e3582225a1bbb1c245d7c6c66c853ed1c1555559",
+        "traceAgreement": 1.0,
+        "boundaryCoverage": 0.6769
+      },
+      "createdAt": "2026-09-02T22:55:50.215857Z"
+    }
+  ]
+}

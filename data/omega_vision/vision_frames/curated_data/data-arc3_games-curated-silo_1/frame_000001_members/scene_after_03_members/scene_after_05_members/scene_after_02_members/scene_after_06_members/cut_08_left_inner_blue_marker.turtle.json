@@ -1,0 +1,44 @@
+{
+  "kind": "turtle_program",
+  "version": 1,
+  "sourceImage": "data/vision_frames/curated_data/data-arc3_games-curated-silo_1/frame_000001_members/scene_after_03_members/scene_after_05_members/scene_after_02_members/scene_after_06_members/cut_08_left_inner_blue_marker.png",
+  "subjectName": "left_inner_blue_marker",
+  "modelId": "enullm-8801-copilot_gpt-5.3-codex",
+  "prompt": "TURTLE PNG DRAW STEP.\nThe attached image is terminal object left_inner_blue_marker.\nObject description: No additional description.\nReview the draft Turtle program below and return the final drawing program that should be rendered to PNG.\nPreserve accurate silhouette, colors, holes, and visible internal details. Coordinates are normalized from 0 to 1000 with top-left origin.\nAllowed commands: pen, move, line, polyline, polygon, rectangle, ellipse, dot. Use at most 200 commands.\nDRAFT TURTLE PROGRAM:\n{\"version\":1,\"background\":\"transparent\",\"penColor\":\"#0074D9\",\"penWidth\":1,\"commands\":[{\"op\":\"pen\",\"color\":\"#0074D9\",\"width\":1},{\"op\":\"polygon\",\"points\":[[77,77],[846,77],[846,846],[77,846]]}]}\nAnswer ONLY with the final JSON object. Do not include Markdown or Python.",
+  "rawModelOutput": "{\n  \"version\": 1,\n  \"background\": \"transparent\",\n  \"penColor\": \"#0074D9\",\n  \"penWidth\": 1,\n  \"commands\": [\n    {\n      \"op\": \"pen\",\n      \"color\": \"#0074D9\",\n      \"width\": 1\n    },\n    {\n      \"op\": \"polygon\",\n      \"points\": [\n        [\n          77.0,\n          77.0\n        ],\n        [\n          846.0,\n          77.0\n        ],\n        [\n          846.0,\n          846.0\n        ],\n        [\n          77.0,\n          846.0\n        ]\n      ]\n    }\n  ]\n}",
+  "program": {
+    "version": 1,
+    "background": "transparent",
+    "penColor": "#0074D9",
+    "penWidth": 1,
+    "commands": [
+      {
+        "op": "pen",
+        "color": "#0074D9",
+        "width": 1
+      },
+      {
+        "op": "polygon",
+        "points": [
+          [
+            77.0,
+            77.0
+          ],
+          [
+            846.0,
+            77.0
+          ],
+          [
+            846.0,
+            846.0
+          ],
+          [
+            77.0,
+            846.0
+          ]
+        ]
+      }
+    ]
+  },
+  "createdAt": "2026-09-03T00:50:20.951236Z"
+}

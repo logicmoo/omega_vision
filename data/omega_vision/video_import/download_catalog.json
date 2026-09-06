@@ -288,71 +288,6 @@
         "kind": "frames",
         "mode": "scenes",
         "count": 25,
-        "elapsedSeconds": 66.8,
-        "everySeconds": null,
-        "perScene": 1,
-        "window": [
-          0.0,
-          null
-        ],
-        "framesDir": "data/video_import/guess-the-201-animated-characters-3-seconds-each/frames",
-        "at": "2026-09-01T06:11:23.928669Z"
-      },
-      {
-        "kind": "frames",
-        "mode": "scenes",
-        "count": 25,
-        "elapsedSeconds": 10.4,
-        "everySeconds": null,
-        "perScene": 1,
-        "startScene": 2,
-        "endScene": null,
-        "skipScenes": 1,
-        "window": [
-          0.0,
-          null
-        ],
-        "framesDir": "data/video_import/guess-the-201-animated-characters-3-seconds-each/frames",
-        "at": "2026-09-01T06:46:47.302633Z"
-      },
-      {
-        "kind": "frames",
-        "mode": "scenes",
-        "count": 25,
-        "elapsedSeconds": 116.8,
-        "everySeconds": null,
-        "perScene": 1,
-        "startScene": 2,
-        "endScene": null,
-        "skipScenes": 1,
-        "window": [
-          0.0,
-          null
-        ],
-        "framesDir": "data/video_import/guess-the-201-animated-characters-3-seconds-each/frames",
-        "at": "2026-09-01T06:53:33.236237Z"
-      },
-      {
-        "kind": "frames",
-        "mode": "scenes",
-        "count": 25,
-        "elapsedSeconds": 117.4,
-        "everySeconds": null,
-        "perScene": 1,
-        "startScene": 2,
-        "endScene": null,
-        "skipScenes": 1,
-        "window": [
-          0.0,
-          null
-        ],
-        "framesDir": "data/video_import/guess-the-201-animated-characters-3-seconds-each/frames",
-        "at": "2026-09-01T07:08:58.566898Z"
-      },
-      {
-        "kind": "frames",
-        "mode": "scenes",
-        "count": 25,
         "elapsedSeconds": 54.4,
         "everySeconds": null,
         "perScene": 1,
@@ -580,6 +515,64 @@
         "threshold": 28.0,
         "elapsedSeconds": 92.9,
         "at": "2026-09-01T19:24:51.181439Z"
+      },
+      {
+        "kind": "scenes",
+        "count": 242,
+        "threshold": 28.0,
+        "elapsedSeconds": 360.5,
+        "at": "2026-09-02T12:21:52.048757Z"
+      },
+      {
+        "kind": "frames",
+        "mode": "interval",
+        "count": 6,
+        "elapsedSeconds": 1.9,
+        "everySeconds": 3.0,
+        "perScene": null,
+        "startScene": null,
+        "endScene": null,
+        "skipScenes": null,
+        "window": [
+          1.5,
+          null
+        ],
+        "framesDir": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2",
+        "at": "2026-09-03T00:53:21.176416Z"
+      },
+      {
+        "kind": "frames",
+        "mode": "interval",
+        "count": 5,
+        "elapsedSeconds": 0.7,
+        "everySeconds": 0.5,
+        "perScene": null,
+        "startScene": null,
+        "endScene": null,
+        "skipScenes": null,
+        "window": [
+          0.0,
+          null
+        ],
+        "framesDir": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2",
+        "at": "2026-09-03T10:40:44.311790Z"
+      },
+      {
+        "kind": "frames",
+        "mode": "interval",
+        "count": 150,
+        "elapsedSeconds": 15.0,
+        "everySeconds": 0.2,
+        "perScene": null,
+        "startScene": null,
+        "endScene": null,
+        "skipScenes": null,
+        "window": [
+          0.0,
+          null
+        ],
+        "framesDir": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2",
+        "at": "2026-09-03T10:41:12.174625Z"
       }
     ]
   },
@@ -587,7 +580,7 @@
     "title": "Mr Bean Is HOMELESS! _ Mr Bean Animated Season 1 _ Full Episodes _ Mr Bean World",
     "url": "C:\\snet\\PeTTa\\repos\\symbolic_learner_workbench\\workbench\\workspaces\\arc3_random_player\\data\\VideoImports\\importables\\Mr Bean Is HOMELESS! _ Mr Bean Animated Season 1 _ Full Episodes _ Mr Bean World.mp4",
     "note": "imported from disk",
-    "downloadedPath": "data/video_import/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-b30cd4/video.mp4",
+    "downloadedPath": "data/video_import/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world/video.mp4",
     "downloadedAt": "2026-08-28T17:03:36.302539Z",
     "extractions": [
       {
@@ -673,6 +666,57 @@
         ],
         "framesDir": "data/video_import/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-b30cd4/frames",
         "at": "2026-08-28T19:46:01.027241Z"
+      },
+      {
+        "kind": "frames",
+        "mode": "interval",
+        "count": 300,
+        "elapsedSeconds": 14.6,
+        "everySeconds": 1.0,
+        "perScene": null,
+        "startScene": null,
+        "endScene": null,
+        "skipScenes": null,
+        "window": [
+          0.0,
+          null
+        ],
+        "framesDir": "data/vision_frames/video/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-a619d702",
+        "at": "2026-09-03T10:41:46.682521Z"
+      },
+      {
+        "kind": "frames",
+        "mode": "interval",
+        "count": 600,
+        "elapsedSeconds": 25.9,
+        "everySeconds": 0.3,
+        "perScene": null,
+        "startScene": null,
+        "endScene": null,
+        "skipScenes": null,
+        "window": [
+          0.0,
+          null
+        ],
+        "framesDir": "data/vision_frames/video/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-a619d702",
+        "at": "2026-09-03T10:43:07.684787Z"
+      },
+      {
+        "kind": "frames",
+        "mode": "interval",
+        "count": 496,
+        "elapsedSeconds": 10.7,
+        "everySeconds": 0.1,
+        "perScene": null,
+        "startScene": null,
+        "endScene": null,
+        "skipScenes": null,
+        "window": [
+          0.0,
+          null
+        ],
+        "framesDir": "data/vision_frames/video/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-a619d702",
+        "at": "2026-09-03T10:43:39.446186Z"
       }
     ]
   }

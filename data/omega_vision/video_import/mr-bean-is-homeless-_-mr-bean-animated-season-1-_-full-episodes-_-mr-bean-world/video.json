@@ -491,5 +491,11 @@
     "secondsPerVideoSecond": 0.0094,
     "threshold": 28.0,
     "at": "2026-08-28T03:55:41.061968Z"
+  },
+  "lastExtract": {
+    "count": 496,
+    "elapsedSeconds": 10.7,
+    "secondsPerFrame": 0.022,
+    "at": "2026-09-03T10:43:39.442790Z"
   }
 }
