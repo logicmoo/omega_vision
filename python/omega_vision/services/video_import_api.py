@@ -39,6 +39,9 @@ from fastapi.responses import Response, StreamingResponse
 from arc3_play_api import (
     _all_game_dirs,
     _curated_games_container,
+    _curated_games_containers,
+    _data_homes,
+    _data_rel_of,
     _game_slug,
     _game_write_dir,
     _iter_recording_dirs,
@@ -183,7 +186,10 @@ _STREAM_SOURCE_SCHEMES = {"http", "https", "rtsp", "rtmp", "rtmps", "srt"}
 
 
 def _video_frame_source_id(root: Path, video_path: Path) -> str:
-    relative = video_path.parent.resolve().relative_to(root.resolve()).as_posix()
+    try:
+        relative = _data_rel_of(root, video_path.parent)
+    except ValueError:
+        relative = video_path.parent.resolve().as_posix()
     digest = hashlib.sha256(relative.encode("utf-8")).hexdigest()[:8]
     return f"{_slug(video_path.parent.name)}-{digest}"
 
@@ -489,7 +495,7 @@ def _image_provenance_path(image_path: Path) -> Path:
 
 def _workspace_relative(root: Path, path: Path) -> str:
     try:
-        return path.resolve().relative_to(root.resolve()).as_posix()
+        return _data_rel_of(root, path)
     except ValueError:
         return str(path.resolve())
 
@@ -681,7 +687,7 @@ def download_catalog(workspaceId: str) -> dict[str, Any]:
         backfilled = True
     if backfilled:
         path.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
-    return {"entries": entries, "path": path.relative_to(root).as_posix()}
+    return {"entries": entries, "path": _data_rel_of(root, path)}
 
 
 @router.post("/catalog")
@@ -708,7 +714,7 @@ def add_catalog_entry(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     entries.append({"title": title, "url": url, **({"note": note} if note else {})})
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
-    return {"entries": entries, "path": path.relative_to(root).as_posix()}
+    return {"entries": entries, "path": _data_rel_of(root, path)}
 
 
 def _update_catalog_for_video(root: Path, video_path: Path, updates: dict[str, Any],
@@ -731,7 +737,10 @@ def _update_catalog_for_video(root: Path, video_path: Path, updates: dict[str, A
         return
     _, meta = _video_meta(video_path)
     source = str(meta.get("source") or "")
-    rel = video_path.relative_to(root).as_posix() if video_path.is_relative_to(root) else str(video_path)
+    try:
+        rel = _data_rel_of(root, video_path)
+    except ValueError:
+        rel = str(video_path)
     changed = False
     for entry in entries:
         if not isinstance(entry, dict):
@@ -765,14 +774,14 @@ def list_importables(workspaceId: str) -> dict[str, Any]:
     drop.mkdir(parents=True, exist_ok=True)
     files = [
         {
-            "path": entry.relative_to(root).as_posix(),
+            "path": _data_rel_of(root, entry),
             "name": entry.name,
             "bytes": entry.stat().st_size,
         }
         for entry in sorted(drop.iterdir())
         if entry.is_file() and entry.suffix.lower() in _VIDEO_SUFFIXES
     ]
-    return {"dropDir": drop.relative_to(root).as_posix(), "files": files}
+    return {"dropDir": _data_rel_of(root, drop), "files": files}
 
 
 @router.get("/page-state")
@@ -1176,14 +1185,14 @@ def list_videos(workspaceId: str) -> dict[str, Any]:
                     except (OSError, json.JSONDecodeError):
                         meta = {}
                 videos.append({
-                    "path": entry.relative_to(root).as_posix(),
+                    "path": _data_rel_of(root, entry),
                     "bytes": entry.stat().st_size,
                     "title": meta.get("title") or directory.name,
                     "source": meta.get("source") or "",
                     "duration": meta.get("duration"),
                     "importedAt": meta.get("downloaded_at") or meta.get("imported_at") or "",
                     "frameCount": len(frames),
-                    "framesDir": frames_dir.relative_to(root).as_posix() if frames else None,
+                    "framesDir": _data_rel_of(root, frames_dir) if frames else None,
                     "lastExtract": meta.get("lastExtract"),
                     "scenes": meta.get("scenes") or [],
                     "captions": meta.get("captions") or [],
@@ -1308,7 +1317,7 @@ def _finalize_download(
         encoding="utf-8",
     )
     result = {
-        "path": video_file.relative_to(root).as_posix(),
+        "path": _data_rel_of(root, video_file),
         "title": title,
         "duration": info.get("duration"),
     }
@@ -1558,7 +1567,7 @@ def import_file(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         }, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
-    result = {"path": target.relative_to(root).as_posix(), "title": title, "duration": duration}
+    result = {"path": _data_rel_of(root, target), "title": title, "duration": duration}
     _append_catalog_entry(root, {
         "title": title,
         "url": str(candidate),
@@ -1613,7 +1622,7 @@ async def upload_video(
         }, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
-    result = {"path": target.relative_to(root).as_posix(), "title": title, "duration": duration, "bytes": size}
+    result = {"path": _data_rel_of(root, target), "title": title, "duration": duration, "bytes": size}
     _append_catalog_entry(root, {
         "title": title,
         "url": f"upload: {original}",
@@ -1696,7 +1705,7 @@ def _import_image_archive(
                 ) from error
             frames.append(
                 {
-                    "path": output_path.relative_to(root).as_posix(),
+                    "path": _data_rel_of(root, output_path),
                     "index": index,
                     "atSeconds": float(index),
                     "scene": index + 1,
@@ -1715,7 +1724,7 @@ def _import_image_archive(
     return {
         "archive": filename,
         "frames": frames,
-        "manifest": manifest_path.relative_to(root).as_posix(),
+        "manifest": _data_rel_of(root, manifest_path),
     }
 
 
@@ -1768,7 +1777,7 @@ def _import_recognition_images(
                 status_code=400,
                 detail=f"'{filename}' is not a valid image",
             ) from error
-        rel = target.relative_to(root).as_posix()
+        rel = _data_rel_of(root, target)
         added.append({
             "path": rel,
             "name": Path(filename).stem or rel,
@@ -2105,7 +2114,7 @@ def extract_frames(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                         image_format="PNG",
                     )
                     frames.append({
-                        "path": frame_path.relative_to(root).as_posix(),
+                        "path": _data_rel_of(root, frame_path),
                         "index": ordinal,
                         "atSeconds": round(at, 2),
                         "provenance": frame_provenance["provenance"],
@@ -2123,7 +2132,7 @@ def extract_frames(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             job.update({
                 "state": "done", "frames": frames, "done": len(frames), "total": len(frames),
                 "elapsedSeconds": round(elapsed, 1), "etaSeconds": 0.0,
-                "framesDir": frames_dir.relative_to(root).as_posix(),
+                "framesDir": _data_rel_of(root, frames_dir),
                 "interrupted": bool(job.get("cancel")),
             })
             # Remember the pace so the next estimate is grounded in a real run.
@@ -2153,7 +2162,7 @@ def extract_frames(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                 "endScene": end_scene if mode == "scenes" else None,
                 "skipScenes": skip_scenes if mode == "scenes" else None,
                 "window": [start_seconds, end_seconds],
-                "framesDir": frames_dir.relative_to(root).as_posix(),
+                "framesDir": _data_rel_of(root, frames_dir),
                 "at": _utc_now(),
             })
         except Exception as error:  # noqa: BLE001 - surfaced via the job record
@@ -2244,10 +2253,13 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
     Includes the canonical Recognition set, any ``data/*`` directory in the
     reduction layout (``pool/`` and/or ``manifest.json``), and every frame-based
     source family the Objects page offers (ARC recordings, curated data, videos)
-    — grouped the same way. Counts are read straight from disk so the selector
-    reflects real reusable work; switching sets never has to redo reduction.
+    — grouped the same way. Sets are resolved down the workspace inheritance
+    chain of data homes (workspace override -> included workspaces -> shared
+    repo store); the nearest home wins for a given set id. Counts are read
+    straight from disk so the selector reflects real reusable work; switching
+    sets never has to redo reduction.
     """
-    data_dir = root / "data"
+    homes = _data_homes(root)
     sets: list[dict[str, Any]] = []
     seen: set[str] = set()
 
@@ -2255,7 +2267,10 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
             group: str = "Loaded sources", group_key: str = "4-loaded") -> None:
         if not set_id or set_id in seen:
             return
-        d = root / rel_dir
+        try:
+            d = _safe_workspace_child(root, rel_dir)
+        except ValueError:
+            return
         image_count = len(_resolve_set_images(d))
         reduced_count = 0
         mp = d / "manifest.json"
@@ -2282,19 +2297,22 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
         })
 
     add(_CANONICAL_IMAGE_SET, "data/recognition_reduce", group="Recognition", group_key="0-recognition")
-    if data_dir.is_dir():
+    for data_dir in homes:
+        if not data_dir.is_dir():
+            continue
         for child in sorted(data_dir.iterdir()):
             if child.is_dir() and child.name != _CANONICAL_IMAGE_SET and ((child / "pool").is_dir() or (child / "manifest.json").is_file()):
                 add(child.name, f"data/{child.name}", group="Reduced sets", group_key="4-loaded")
     # Frame-based source families (organised like the Objects source combobox).
     for rec_base, group, group_key in _FRAME_SET_FAMILIES:
-        rec_dir = data_dir / rec_base
-        if not rec_dir.is_dir():
-            continue
-        for child in sorted(rec_dir.iterdir()):
-            if child.is_dir():
-                leaf = child.name.replace("data-arc3_games-recordings-", "").replace("data-arc3_games-curated-", "").replace("-", " ")
-                add(f"{rec_base}/{child.name}", f"data/{rec_base}/{child.name}", label=leaf, group=group, group_key=group_key)
+        for data_dir in homes:
+            rec_dir = data_dir / rec_base
+            if not rec_dir.is_dir():
+                continue
+            for child in sorted(rec_dir.iterdir()):
+                if child.is_dir():
+                    leaf = child.name.replace("data-arc3_games-recordings-", "").replace("data-arc3_games-curated-", "").replace("-", " ")
+                    add(f"{rec_base}/{child.name}", f"data/{rec_base}/{child.name}", label=leaf, group=group, group_key=group_key)
     return sets
 
 
@@ -2310,7 +2328,10 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
     if any(p == ".." for p in parts):
         return {"tiers": [], "count": 0, "items": [], "set": set_id}
     base = f"data/{set_id}"
-    d = root / base
+    try:
+        d = _safe_workspace_child(root, base)
+    except ValueError:
+        return {"tiers": [], "count": 0, "items": [], "set": set_id}
     pool = d / "pool"
 
     def base_name(value: Any) -> str:
@@ -2400,7 +2421,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                         "level": src.get("level") or "",
                         "parentImage": parent.get("image") or "",
                         "rootImage": root_.get("firstSeenImage") or "",
-                        "provenancePath": img.parent.joinpath(img.stem + ".provenance.json").relative_to(root).as_posix(),
+                        "provenancePath": _data_rel_of(root, img.parent.joinpath(img.stem + ".provenance.json")),
                     }
                 except (OSError, json.JSONDecodeError):
                     action = ""
@@ -2408,7 +2429,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
             items.append({
                 "id": idv, "slug": set_leaf, "cond": stem,
                 "label": set_leaf.replace("_", " ").replace("-", " "),
-                "input": img.name, "inputPath": img.relative_to(root).as_posix(),
+                "input": img.name, "inputPath": _data_rel_of(root, img),
                 "source": "recording", "source_url": "", "action": action, "provenance": prov,
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
                 "rows": normalize_rows(m.get("rows")),
@@ -2497,7 +2518,15 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
     ]
     transforms = {"c1_bw", "c2_flip", "c3_rot45"}
     bases = ["data/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
-    default_base = next((b for b in bases if (root / b).is_dir()), bases[0])
+
+    def base_dir(rel: str) -> Path:
+        """Chain-resolved directory for a base rel path (see _data_homes)."""
+        try:
+            return _safe_workspace_child(root, rel)
+        except ValueError:
+            return root / rel
+
+    default_base = next((b for b in bases if base_dir(b).is_dir()), bases[0])
 
     def base_name(value: Any) -> str:
         return str(value or "").replace("\\", "/").split("/")[-1]
@@ -2508,14 +2537,14 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
             return ""
         for b in bases:
             rel = f"{b}/{sub}/{leaf}"
-            if (root / rel).is_file():
+            if base_dir(rel).is_file():
                 return rel
         return f"{default_base}/{sub}/{leaf}"
 
     manifest: dict[str, Any] = {}
     tiers: list[Any] = []
     for b in bases:
-        mp = root / b / "manifest.json"
+        mp = base_dir(b) / "manifest.json"
         if mp.is_file():
             try:
                 mj = json.loads(mp.read_text(encoding="utf-8"))
@@ -2530,7 +2559,7 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
 
     prov: dict[str, Any] = {}
     for b in bases:
-        pp = root / b / "provenance.json"
+        pp = base_dir(b) / "provenance.json"
         if pp.is_file():
             try:
                 loaded = json.loads(pp.read_text(encoding="utf-8"))
@@ -2542,7 +2571,7 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
 
     pool_ids: set[str] = set(manifest.keys())
     for b in bases:
-        pool = root / b / "pool"
+        pool = base_dir(b) / "pool"
         if pool.is_dir():
             for image in pool.glob("*.jpg"):
                 pool_ids.add(image.stem)
@@ -2650,7 +2679,7 @@ def frame_at_cursor(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     finally:
         reader.close()
     return {
-        "path": frame_path.relative_to(root).as_posix(),
+        "path": _data_rel_of(root, frame_path),
         "atSeconds": round(at_seconds, 2),
         "index": index,
         "provenance": provenance["provenance"],
@@ -2889,7 +2918,7 @@ def planner_visualization(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         image_format="PNG",
     )
     return {
-        "visualizationImage": output_path.relative_to(root).as_posix(),
+        "visualizationImage": _data_rel_of(root, output_path),
         "provenance": provenance["provenance"],
         "plannerHash": digest,
         "dimensions": {"width": width, "height": height},
@@ -3053,7 +3082,7 @@ def outline_verification(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         image_format="PNG",
     )
     return {
-        "verificationImage": output_path.relative_to(root).as_posix(),
+        "verificationImage": _data_rel_of(root, output_path),
         "provenance": provenance["provenance"],
         "geometryHash": geometry_hash,
         "dimensions": {"width": width, "height": height},
@@ -3319,19 +3348,19 @@ def member_cut(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         scene_path,
         operation="remove_object_from_scene",
         parent_image=image_path,
-        source={"objectName": name, "cutout": cutout_path.relative_to(root).as_posix(), "fillInstructions": fill_instructions},
+        source={"objectName": name, "cutout": _data_rel_of(root, cutout_path), "fillInstructions": fill_instructions},
         transform={"fill": fill_mode, "outlineAlignment": alignment, "removedBox": [x0, y0, x1, y1], "maskScale": scale, "fillInstructions": fill_instructions, "imageGeneration": image_generation},
         image_format="PNG",
     )
     return {
-        "cutout": cutout_path.relative_to(root).as_posix(),
+        "cutout": _data_rel_of(root, cutout_path),
         "cutoutProvenance": cutout_provenance["provenance"],
-        "nextPassImage": next_pass_path.relative_to(root).as_posix(),
+        "nextPassImage": _data_rel_of(root, next_pass_path),
         "nextPassProvenance": _workspace_relative(root, _image_provenance_path(next_pass_path)),
         "nextPassScale": next_pass_scale,
         "nextPassPadding": padding,
         "enlargedForNextPass": enlarge_for_next_pass,
-        "scene": scene_path.relative_to(root).as_posix(),
+        "scene": _data_rel_of(root, scene_path),
         "sceneProvenance": scene_provenance["provenance"],
         "box": [x0, y0, x1, y1],
         "name": name,
@@ -3387,7 +3416,7 @@ def member_return(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         transform={"pasteAt": [max(0, x0), max(0, y0)], "box": box_raw},
         image_format="PNG",
     )
-    return {"scene": returned_path.relative_to(root).as_posix(), "provenance": provenance["provenance"]}
+    return {"scene": _data_rel_of(root, returned_path), "provenance": provenance["provenance"]}
 
 
 @router.post("/turtle-render")
@@ -3996,24 +4025,27 @@ def _curated_source_images(root: Path, source_dir: Path) -> list[Path]:
 @router.get("/curated-image-sources")
 def list_curated_image_sources(workspaceId: str) -> dict[str, Any]:
     root = _workspace_root(workspaceId)
-    data_root = _curated_games_container(root)
     sources: list[dict[str, Any]] = []
-    if data_root.is_dir():
+    seen: set[str] = set()
+    for data_root in _curated_games_containers(root):
+        if not data_root.is_dir():
+            continue
         for source_dir in sorted(
             (entry for entry in data_root.iterdir() if entry.is_dir()),
             key=lambda path: path.name.lower(),
         ):
-            if source_dir.name.lower() in _CURATED_DATA_EXCLUDES:
+            if source_dir.name.lower() in _CURATED_DATA_EXCLUDES or source_dir.name.lower() in seen:
                 continue
             images = _curated_source_images(root, source_dir)
             if not images:
                 continue
+            seen.add(source_dir.name.lower())
             sources.append(
                 {
-                    "path": source_dir.relative_to(root).as_posix(),
+                    "path": _data_rel_of(root, source_dir),
                     "label": source_dir.name,
                     "frames": len(images),
-                    "preview": images[0].relative_to(root).as_posix(),
+                    "preview": _data_rel_of(root, images[0]),
                 }
             )
     return {"sources": sources}
@@ -4051,14 +4083,14 @@ def import_curated_image_source(body: dict[str, Any] = Body(...)) -> dict[str, A
                 parent_image=source_path,
                 source={
                     "curatedSource": source_rel,
-                    "sourceImage": source_path.relative_to(root).as_posix(),
+                    "sourceImage": _data_rel_of(root, source_path),
                     "frameIndex": index,
                 },
                 image_format="PNG",
             )
         frames.append(
             {
-                "path": output_path.relative_to(root).as_posix(),
+                "path": _data_rel_of(root, output_path),
                 "index": index,
                 "atSeconds": float(index),
                 "scene": index + 1,
@@ -4073,7 +4105,7 @@ def import_curated_image_source(body: dict[str, Any] = Body(...)) -> dict[str, A
     return {
         "source": source_rel,
         "frames": frames,
-        "manifest": manifest_path.relative_to(root).as_posix(),
+        "manifest": _data_rel_of(root, manifest_path),
     }
 
 
@@ -4093,11 +4125,11 @@ def list_arc_recordings(workspaceId: str) -> dict[str, Any]:
                 manifest = {}
             recordings.append(
                 {
-                    "path": recording_dir.relative_to(root).as_posix(),
+                    "path": _data_rel_of(root, recording_dir),
                     "gameId": str(manifest.get("game_id") or game_root.name),
                     "level": manifest.get("level"),
                     "frames": len(images),
-                    "preview": images[0].relative_to(root).as_posix(),
+                    "preview": _data_rel_of(root, images[0]),
                     "updatedAt": manifest.get("updated_at"),
                 }
             )
@@ -4174,7 +4206,7 @@ def import_arc_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             )
         frames.append(
             {
-                "path": output_path.relative_to(root).as_posix(),
+                "path": _data_rel_of(root, output_path),
                 "index": index,
                 "atSeconds": float(index),
                 "scene": index + 1,
@@ -4193,7 +4225,7 @@ def import_arc_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     return {
         "recording": recording_rel,
         "frames": frames,
-        "manifest": manifest_path.relative_to(root).as_posix(),
+        "manifest": _data_rel_of(root, manifest_path),
     }
 
 
@@ -4304,7 +4336,7 @@ def detect_stream_scenes(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                     )
                     marker = {"atSeconds": round(at_seconds, 2), "score": round(score, 1)}
                     frame_row = {
-                        "path": path.relative_to(root).as_posix(),
+                        "path": _data_rel_of(root, path),
                         "index": scene_index - 1,
                         "atSeconds": round(at_seconds, 2),
                         "scene": scene_index,
@@ -4337,7 +4369,7 @@ def detect_stream_scenes(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                     "state": "done",
                     "elapsedSeconds": round(elapsed, 1),
                     "interrupted": bool(job.get("cancel")),
-                    "manifest": manifest_path.relative_to(root).as_posix(),
+                    "manifest": _data_rel_of(root, manifest_path),
                 }
             )
         except Exception as error:  # noqa: BLE001 - surfaced through job status
@@ -4650,12 +4682,12 @@ def trim_video(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             job.update({
                 "state": "done", "done": job["total"], "etaSeconds": 0.0,
                 "elapsedSeconds": round(time.monotonic() - started, 1),
-                "resultPath": target.relative_to(root).as_posix(),
+                "resultPath": _data_rel_of(root, target),
                 "interrupted": bool(job.get("cancel")),
             })
             _update_catalog_for_video(root, video_path, {}, extraction={
                 "kind": "trim",
-                "resultPath": target.relative_to(root).as_posix(),
+                "resultPath": _data_rel_of(root, target),
                 "keptSeconds": round(kept_total, 1),
                 "at": _utc_now(),
             })
@@ -4773,7 +4805,7 @@ def list_filters(workspaceId: str) -> dict[str, Any]:
             "id": f"lut:{entry.stem}",
             "title": f"LUT · {entry.stem}",
             "filter": "lut",
-            "lutPath": entry.relative_to(root).as_posix(),
+            "lutPath": _data_rel_of(root, entry),
             "params": {},
             "description": f".cube color LUT ({entry.name})",
             "lut": True,
@@ -4782,8 +4814,8 @@ def list_filters(workspaceId: str) -> dict[str, Any]:
     ]
     return {
         "filters": _apply_filter_flags(root, [*_BUILTIN_FILTERS, *published, *luts, *_discover_skills(root)]),
-        "path": path.relative_to(root).as_posix(),
-        "lutsDir": luts_dir.relative_to(root).as_posix(),
+        "path": _data_rel_of(root, path),
+        "lutsDir": _data_rel_of(root, luts_dir),
         "skillsDir": _skills_dir(root).relative_to(root).as_posix(),
         # The full vote ledger, including non-filter actors such as group
         # selectors (select:unique, select:spread, ...).
@@ -4910,7 +4942,7 @@ def classify_retinters(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     luts_dir = _luts_dir(root)
     lut_entries = [
         {"id": f"lut:{entry.stem}", "title": f"LUT · {entry.stem}", "filter": "lut",
-         "lutPath": entry.relative_to(root).as_posix(), "params": {}}
+         "lutPath": _data_rel_of(root, entry), "params": {}}
         for entry in sorted(luts_dir.glob("*.cube"))
     ] if luts_dir.is_dir() else []
     entries = [entry for entry in [*_BUILTIN_FILTERS, *published, *lut_entries, *_discover_skills(root)]
@@ -5113,7 +5145,7 @@ def _discover_skills(root: Path) -> list[dict[str, Any]]:
             "id": f"skill:{entry.stem}",
             "title": str(meta.get("title") or entry.stem),
             "filter": "skill",
-            "skillPath": entry.relative_to(root).as_posix(),
+            "skillPath": _data_rel_of(root, entry),
             "params": meta.get("params") if isinstance(meta.get("params"), dict) else {},
             # Optional per-param choice lists — the UI renders these as combos.
             "paramChoices": meta.get("paramChoices") if isinstance(meta.get("paramChoices"), dict) else {},
@@ -5225,7 +5257,7 @@ def apply_filter(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                     source={"filter": label},
                     transform={"filter": label},
                 )
-            results.append({"source": str(frame_rel), "path": target.relative_to(root).as_posix(), "provenance": provenance["provenance"]})
+            results.append({"source": str(frame_rel), "path": _data_rel_of(root, target), "provenance": provenance["provenance"]})
         return {"filter": label, "frames": results, "count": len(results)}
 
     # applyTo == "video": re-encode the whole video through the filter.
@@ -5292,12 +5324,12 @@ def apply_filter(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             job.update({
                 "state": "done", "done": job["total"], "etaSeconds": 0.0,
                 "elapsedSeconds": round(time.monotonic() - started, 1),
-                "resultPath": target.relative_to(root).as_posix(),
+                "resultPath": _data_rel_of(root, target),
                 "interrupted": bool(job.get("cancel")),
             })
             _update_catalog_for_video(root, video_path, {}, extraction={
                 "kind": f"filter:{label}",
-                "resultPath": target.relative_to(root).as_posix(),
+                "resultPath": _data_rel_of(root, target),
                 "at": _utc_now(),
             })
         except Exception as error:  # noqa: BLE001 - surfaced via the job record
@@ -5409,12 +5441,12 @@ def preview_filter(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             source={"sourceVideo": video_rel, "atSeconds": float(at_seconds), "videoFrameIndex": index},
             image_format="PNG",
         )
-        before_rel = before_path.relative_to(root).as_posix()
+        before_rel = _data_rel_of(root, before_path)
     else:
         source = _complex_test_card()
         before_path = previews_dir / "testcard.png"
         _save_image_with_provenance(root, source, before_path, operation="generate_filter_test_card", image_format="PNG")
-        before_rel = before_path.relative_to(root).as_posix()
+        before_rel = _data_rel_of(root, before_path)
     filtered = transform(source).convert("RGB")
     after_path = previews_dir / f"preview_{_slug(label)[:60]}.png"
     provenance = _save_image_with_provenance(
@@ -5430,7 +5462,7 @@ def preview_filter(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     return {
         "filter": label,
         "before": before_rel,
-        "after": after_path.relative_to(root).as_posix(),
+        "after": _data_rel_of(root, after_path),
         "provenance": provenance["provenance"],
     }
 
@@ -5627,7 +5659,7 @@ def filter_gallery(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                         transform={"filter": spec},
                         image_format="PNG",
                     )
-                    record["path"] = target.relative_to(root).as_posix()
+                    record["path"] = _data_rel_of(root, target)
                     record["provenance"] = provenance["provenance"]
                 except Exception as error:  # noqa: BLE001 - one bad filter must not sink the grid
                     record["error"] = str(error)
@@ -5806,7 +5838,7 @@ def materialize_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             "index": ordinal,
             "action": action,
             "data": action_data,
-            "directory": (level_dir / str(ordinal)).relative_to(root).as_posix(),
+            "directory": _data_rel_of(root, level_dir / str(ordinal)),
             "state": "NOT_FINISHED",
             "level": "1",
             "recorded_at": _utc_now(),
@@ -5819,7 +5851,7 @@ def materialize_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "game_id": game_id,
         "game_directory": game_dir,
         "level": "1",
-        "level_directory": level_dir.relative_to(root).as_posix(),
+        "level_directory": _data_rel_of(root, level_dir),
         "started_at": _utc_now(),
         "updated_at": _utc_now(),
         "last_event": "video_import",
@@ -5830,7 +5862,7 @@ def materialize_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         encoding="utf-8",
     )
     return {
-        "levelDir": level_dir.relative_to(root).as_posix(),
+        "levelDir": _data_rel_of(root, level_dir),
         "gameDirectory": game_dir,
         "moveCount": len(moves),
     }

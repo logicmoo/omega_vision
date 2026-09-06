@@ -53,6 +53,54 @@ def _vision_data_root(root: Path) -> Path:
         return root / "data"
     return _REPO_ROOT / "data" / "omega_vision"
 
+
+def _data_homes(root: Path) -> list[Path]:
+    """Every data home visible to this root, highest precedence first:
+    the workspace's own data/, each included workspace's data/ down the
+    inheritance chain, then the shared repo store. The env override and
+    non-workspace roots (tests, external) keep the single-home contract
+    of _vision_data_root."""
+    env = os.environ.get("OMEGA_VISION_DATA")
+    if env:
+        return [Path(env)]
+    workspaces_root = (_REPO_ROOT / "workspaces").resolve()
+    try:
+        root.resolve().relative_to(workspaces_root)
+    except ValueError:
+        return [root / "data"]
+    layers = [root]
+    try:
+        from workspace_inheritance import effective_workspace_layers
+
+        layers = effective_workspace_layers(root, workspaces_root)
+    except Exception:  # noqa: BLE001 - inheritance problems never hide data
+        pass
+    homes: list[Path] = []
+    for layer in reversed(layers):  # workspace first, deepest include last
+        home = layer / "data"
+        if home not in homes:
+            homes.append(home)
+    homes.append(_REPO_ROOT / "data" / "omega_vision")
+    return homes
+
+
+def _data_rel_of(root: Path, path: Path) -> str:
+    """Workspace-facing relative path for a file in the workspace itself or
+    in any visible data home (expressed as data/<...> for data homes).
+    Raises ValueError like Path.relative_to when the path is in neither."""
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(root.resolve()).as_posix()
+    except ValueError:
+        pass
+    for home in _data_homes(root):
+        try:
+            tail = resolved.relative_to(home.resolve()).as_posix()
+        except ValueError:
+            continue
+        return "data" if tail == "." else f"data/{tail}"
+    raise ValueError(f"path is outside the workspace and its data homes: {path}")
+
 _THUMBNAIL_CACHE_DIR = Path(__file__).resolve().parent / "environment_thumbnails"
 _THUMBNAIL_SCALE = 4
 
@@ -217,9 +265,21 @@ def _importables_container(root: Path) -> Path:
     return _vision_data_root(root) / "arc3_games" / "importables"
 
 
+def _importables_containers(root: Path) -> list[Path]:
+    """Every visible importables dir, workspace overrides first."""
+    _migrate_arc3_games_root(root)
+    return [home / "arc3_games" / "importables" for home in _data_homes(root)]
+
+
 def _curated_games_container(root: Path) -> Path:
     _migrate_arc3_games_root(root)
     return _vision_data_root(root) / "arc3_games" / "curated"
+
+
+def _curated_games_containers(root: Path) -> list[Path]:
+    """Every visible curated-games dir, workspace overrides first."""
+    _migrate_arc3_games_root(root)
+    return [home / "arc3_games" / "curated" for home in _data_homes(root)]
 
 
 def _games_container(root: Path) -> Path:
@@ -240,6 +300,29 @@ def _game_write_dir(root: Path, game_dir: str) -> Path:
 
 
 def _safe_workspace_child(root: Path, relative: str) -> Path:
+    """Resolve a workspace-facing relative path. data/... paths resolve down
+    the inheritance chain of data homes (workspace override -> included
+    workspaces -> shared repo store), preferring the first existing hit and
+    falling back to the canonical write home. Other paths stay inside the
+    workspace root exactly as before."""
+    rel = str(relative).replace("\\", "/").lstrip("/")
+    if rel == "data" or rel.startswith("data/"):
+        tail = rel[5:] if len(rel) > 5 else ""
+        fallback: Path | None = None
+        for home in _data_homes(root):
+            resolved_home = home.resolve()
+            candidate = (resolved_home / tail).resolve() if tail else resolved_home
+            if candidate != resolved_home and resolved_home not in candidate.parents:
+                raise ValueError("path escapes workspace data home")
+            if fallback is None:
+                fallback = candidate
+            if candidate.exists():
+                return candidate
+        write_home = _vision_data_root(root).resolve()
+        candidate = (write_home / tail).resolve() if tail else write_home
+        if candidate != write_home and write_home not in candidate.parents:
+            raise ValueError("path escapes workspace data home")
+        return candidate
     resolved_root = root.resolve()
     resolved = (resolved_root / relative).resolve()
     if resolved != resolved_root and resolved_root not in resolved.parents:
@@ -248,12 +331,13 @@ def _safe_workspace_child(root: Path, relative: str) -> Path:
 
 
 def _game_dirs_for(root: Path, game_dir: str) -> list[Path]:
-    """Every existing directory for one game: new location first, then legacy."""
-    candidates = [
-        _game_write_dir(root, game_dir),
-        root / "data" / "Recordings" / game_dir,
-        root / "data" / game_dir,
-    ]
+    """Every existing directory for one game across all visible data homes:
+    new location first, then legacy locations."""
+    candidates = [_game_write_dir(root, game_dir)]
+    for home in _data_homes(root):
+        candidates.append(home / "arc3_games" / "recordings" / game_dir)
+        candidates.append(home / "Recordings" / game_dir)
+        candidates.append(home / game_dir)
     seen: set[Path] = set()
     result: list[Path] = []
     for candidate in candidates:
@@ -265,18 +349,23 @@ def _game_dirs_for(root: Path, game_dir: str) -> list[Path]:
 
 
 def _all_game_dirs(root: Path) -> list[Path]:
-    """Every per-game recording directory, including legacy locations."""
+    """Every per-game recording directory across all visible data homes,
+    including legacy locations."""
     seen: set[Path] = set()
     result: list[Path] = []
     recordings_root = _migrate_arc3_games_root(root)
-    if recordings_root.is_dir():
-        for path in recordings_root.iterdir():
+    containers = [recordings_root] + [home / "arc3_games" / "recordings" for home in _data_homes(root)]
+    for container in containers:
+        if not container.is_dir():
+            continue
+        for path in container.iterdir():
             if path.is_dir() and path.resolve() not in seen:
                 seen.add(path.resolve())
                 result.append(path)
-    data_root = root / "data"
-    if data_root.is_dir():
-        for path in data_root.iterdir():
+    for home in _data_homes(root):
+        if not home.is_dir():
+            continue
+        for path in home.iterdir():
             if (
                 path.is_dir()
                 and path.name.lower() not in _DATA_ROOT_NON_GAME_DIRS
@@ -394,7 +483,7 @@ def _scan_setup_dir(directory: Path, root: Path) -> dict[str, Any]:
             suffix = entry.suffix.lower()
             name = entry.name.lower()
             try:
-                candidate = entry.relative_to(root).as_posix()
+                candidate = _data_rel_of(root, entry)
             except ValueError:
                 candidate = entry.as_posix()
             if suffix in _SCAN_IMAGE_SUFFIXES:
@@ -419,7 +508,7 @@ def _scan_setup_dir(directory: Path, root: Path) -> dict[str, Any]:
     for values in results.values():
         values.sort()
     try:
-        path = directory.relative_to(root).as_posix()
+        path = _data_rel_of(root, directory)
     except ValueError:
         path = directory.as_posix()
     return {"path": path, "results": results}
@@ -1199,7 +1288,7 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
         match = re.search(r'"game_id"\s*:\s*"([^"]+)"', head)
         found.append(
             {
-                "path": path.relative_to(root).as_posix(),
+                "path": _data_rel_of(root, path),
                 "name": path.name,
                 "gameId": match.group(1) if match else None,
                 "sizeBytes": path.stat().st_size,
@@ -1225,7 +1314,7 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
                         score = None
                 found.append(
                     {
-                        "path": run_dir.relative_to(root).as_posix(),
+                        "path": _data_rel_of(root, run_dir),
                         "name": f"{game_dir.name}/{run_dir.name}",
                         "gameId": game_dir.name,
                         "sizeBytes": log_path.stat().st_size,
@@ -1296,9 +1385,8 @@ def _import_recording_as_movelist(root: Path, rel_path: str, label: str | None) 
     Recording (with images) can be materialized later on demand (see
     import_movelists_from_recordings' counterpart, "Import All Movelists",
     which replays a move-list through a real session to produce one)."""
-    source = (root / rel_path).resolve()
     try:
-        source.relative_to(root)
+        source = _safe_workspace_child(root, rel_path)
     except ValueError as error:
         raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
     if not source.is_file():
@@ -1394,9 +1482,8 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
     _ensure_python_path()
     from image_codec import frame_to_png_bytes
 
-    source = (root / rel_path).resolve()
     try:
-        source.relative_to(root)
+        source = _safe_workspace_child(root, rel_path)
     except ValueError as error:
         raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
     if not source.is_file():
@@ -1426,7 +1513,7 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
     _purge_prior_import(root, game_dir, rel_path)
 
     def relative(path: Path) -> str:
-        return path.relative_to(root).as_posix()
+        return _data_rel_of(root, path)
 
     def grid_of(event: dict[str, Any]) -> Any:
         frames = event["data"].get("frame") or []
@@ -1720,9 +1807,8 @@ def _import_release_run_as_movelist(root: Path, rel_dir: str, label: str | None)
     Recording from the move-list later on demand, only if actually needed)."""
     _ensure_python_path()
 
-    run_dir = (root / rel_dir).resolve()
     try:
-        run_dir.relative_to(root)
+        run_dir = _safe_workspace_child(root, rel_dir)
     except ValueError as error:
         raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
     log_path = run_dir / "workspace" / "log.txt"
@@ -1827,9 +1913,8 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
     _ensure_python_path()
     from image_codec import frame_to_png_bytes
 
-    run_dir = (root / rel_dir).resolve()
     try:
-        run_dir.relative_to(root)
+        run_dir = _safe_workspace_child(root, rel_dir)
     except ValueError as error:
         raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
     log_path = run_dir / "workspace" / "log.txt"
@@ -1863,7 +1948,7 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
     _purge_prior_import(root, game_dir, rel_dir)
 
     def relative(path: Path) -> str:
-        return path.relative_to(root).as_posix()
+        return _data_rel_of(root, path)
 
     level_dirs: list[Path] = []
     level_moves: list[dict[str, Any]] = []
@@ -2091,7 +2176,7 @@ def _dedupe_recordings_in(root: Path, game_root: Path) -> list[str]:
         for cluster in clusters[:-1]:  # keep only the most recent run
             for _, path in cluster:
                 shutil.rmtree(path, ignore_errors=True)
-                removed.append(path.relative_to(root).as_posix())
+                removed.append(_data_rel_of(root, path))
     return removed
 
 
@@ -2200,8 +2285,8 @@ def _sort_recordings_by_size_in(root: Path, game_root: Path) -> list[tuple[str, 
         if entry.name == new_name:
             continue
         new_path = entry.parent / new_name
-        old_rel = entry.relative_to(root).as_posix()
-        new_rel = new_path.relative_to(root).as_posix()
+        old_rel = _data_rel_of(root, entry)
+        new_rel = _data_rel_of(root, new_path)
         pairs.append((old_rel, new_rel, entry, new_path))
 
     # Two-phase (stage under temp names first) so re-ranking never collides
@@ -2250,7 +2335,7 @@ def retain_largest_recordings(workspaceId: str, keep: int, gameId: str | None = 
             continue
         ranked = _ranked_recordings_by_size_in(root, game_root)
         for _size, entry in ranked[keep:]:
-            removed.append(entry.relative_to(root).as_posix())
+            removed.append(_data_rel_of(root, entry))
             shutil.rmtree(entry, ignore_errors=True)
     return {"removed": removed, "count": len(removed)}
 
@@ -2271,7 +2356,7 @@ def clear_recordings(workspaceId: str, gameId: str | None = None) -> dict[str, A
         if not game_root.is_dir():
             continue
         for entry in _iter_recording_dirs(game_root):
-            removed.append(entry.relative_to(root).as_posix())
+            removed.append(_data_rel_of(root, entry))
             shutil.rmtree(entry, ignore_errors=True)
     with _sessions_lock:
         sessions = list(_sessions.values())
@@ -2340,7 +2425,7 @@ def _savepoint_from_recording(root: Path, game_dir: str, entry: Path) -> dict[st
         "game_id": manifest.get("game_id") or game_dir,
         "game_directory": game_dir,
         "level": manifest.get("level"),
-        "level_directory": entry.relative_to(root).as_posix(),
+        "level_directory": _data_rel_of(root, entry),
         "move_index": len(moves) - 1,
         "state": last_move.get("state") or "NOT_FINISHED",
         "session_id": manifest.get("session_id") or f"derived-{entry.name}",
@@ -2358,7 +2443,7 @@ def _import_movelists_from_recordings_in(root: Path, game_root: Path) -> int:
         existing_dirs = {str(entry.get("level_directory")) for entry in entries if entry.get("level_directory")}
         created = 0
         for recording_dir in _iter_recording_dirs(game_root):
-            rel = recording_dir.relative_to(root).as_posix()
+            rel = _data_rel_of(root, recording_dir)
             if rel in existing_dirs:
                 continue
             savepoint = _savepoint_from_recording(root, game_root.name, recording_dir)
@@ -2530,7 +2615,7 @@ def silo_files(workspaceId: str, dir: str) -> dict[str, Any]:
         {
             "name": entry.name,
             "bytes": entry.stat().st_size,
-            "path": entry.relative_to(root).as_posix(),
+            "path": _data_rel_of(root, entry),
         }
         for entry in sorted(directory.iterdir())
         if entry.is_file()
@@ -2563,7 +2648,7 @@ def silo_write(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / name
     target.write_text(content, encoding="utf-8")
-    return {"path": target.relative_to(root).as_posix(), "bytes": len(content.encode("utf-8"))}
+    return {"path": _data_rel_of(root, target), "bytes": len(content.encode("utf-8"))}
 
 
 @router.post("/sessions/{session_id}/recording")

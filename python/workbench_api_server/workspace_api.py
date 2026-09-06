@@ -1675,6 +1675,32 @@ def read_workspace_file(workspace_id: str, path: str = Query(...)) -> dict[str, 
         raise HTTPException(status_code=400, detail=str(error)) from error
 
 
+def _vision_data_fallbacks(root: Path) -> list[Path]:
+    """Data homes visible to a workspace beyond its own data/ dir: each
+    included workspace's data/ down the inheritance chain, then the shared
+    repo vision store (or its OMEGA_VISION_DATA override). Empty for roots
+    outside the workspaces container (tests, external checkouts)."""
+    workspaces_root = DEFAULT_WORKSPACES_ROOT.resolve()
+    try:
+        root.resolve().relative_to(workspaces_root)
+    except ValueError:
+        return []
+    layers: list[Path] = [root]
+    try:
+        layers = effective_workspace_layers(root, workspaces_root)
+    except Exception:  # noqa: BLE001 - inheritance problems never hide data
+        pass
+    own = (root / "data").resolve()
+    homes: list[Path] = []
+    for layer in reversed(layers):
+        home = (layer / "data").resolve()
+        if home != own and home not in homes:
+            homes.append(home)
+    env = os.getenv("OMEGA_VISION_DATA")
+    homes.append(Path(env).resolve() if env else (workspaces_root.parent / "data" / "omega_vision").resolve())
+    return homes
+
+
 @router.get("/{workspace_id}/asset")
 def read_workspace_asset(workspace_id: str, path: str = Query(...)) -> FileResponse:
     try:
@@ -1685,6 +1711,18 @@ def read_workspace_asset(workspace_id: str, path: str = Query(...)) -> FileRespo
         if target != root and root not in target.parents:
             raise ValueError("asset path escapes workspace")
         if not target.is_file():
+            # data/... assets resolve down the workspace inheritance chain and
+            # into the shared repo vision store when absent locally.
+            rel = str(path).replace("\\", "/").lstrip("/")
+            if not requested.is_absolute() and rel.startswith("data/"):
+                tail = rel[5:]
+                for home in _vision_data_fallbacks(root):
+                    try:
+                        candidate = _safe_child(home, tail)
+                    except ValueError:
+                        continue
+                    if candidate.is_file():
+                        return FileResponse(candidate)
             raise ValueError("asset not found")
         return FileResponse(target)
     except KeyError as error:
