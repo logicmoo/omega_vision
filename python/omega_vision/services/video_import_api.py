@@ -209,19 +209,7 @@ def _rewrite_data_paths(paths: list[Path], replacements: list[tuple[str, str]]) 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
-
-def _vision_data_root(root: Path) -> Path:
-    """Vision data home: env override, the shared repo store for real
-    workspaces, or the caller's own data dir (tests, external roots)."""
-    env = os.environ.get("OMEGA_VISION_DATA")
-    if env:
-        return Path(env)
-    try:
-        root.resolve().relative_to((_REPO_ROOT / "workspaces").resolve())
-    except ValueError:
-        return root / "data"
-    return _REPO_ROOT / "data" / "omega_vision"
-
+from omega_vision.inherited_source_overlay import vision_data_root as _vision_data_root  # noqa: E402
 
 
 def _imports_root(root: Path) -> Path:

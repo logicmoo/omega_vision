@@ -41,65 +41,16 @@ router = APIRouter(prefix="/arc3-play", tags=["arc3-play"])
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _PYTHON_ROOT = _REPO_ROOT / "python"
-def _vision_data_root(root: Path) -> Path:
-    """Vision data home: env override, the shared repo store for real
-    workspaces, or the caller's own data dir (tests, external roots)."""
-    env = os.environ.get("OMEGA_VISION_DATA")
-    if env:
-        return Path(env)
-    try:
-        root.resolve().relative_to((_REPO_ROOT / "workspaces").resolve())
-    except ValueError:
-        return root / "data"
-    return _REPO_ROOT / "data" / "omega_vision"
 
-
-def _data_homes(root: Path) -> list[Path]:
-    """Every data home visible to this root, highest precedence first:
-    the workspace's own data/, each included workspace's data/ down the
-    inheritance chain, then the shared repo store. The env override and
-    non-workspace roots (tests, external) keep the single-home contract
-    of _vision_data_root."""
-    env = os.environ.get("OMEGA_VISION_DATA")
-    if env:
-        return [Path(env)]
-    workspaces_root = (_REPO_ROOT / "workspaces").resolve()
-    try:
-        root.resolve().relative_to(workspaces_root)
-    except ValueError:
-        return [root / "data"]
-    layers = [root]
-    try:
-        from workspace_inheritance import effective_workspace_layers
-
-        layers = effective_workspace_layers(root, workspaces_root)
-    except Exception:  # noqa: BLE001 - inheritance problems never hide data
-        pass
-    homes: list[Path] = []
-    for layer in reversed(layers):  # workspace first, deepest include last
-        home = layer / "data"
-        if home not in homes:
-            homes.append(home)
-    homes.append(_REPO_ROOT / "data" / "omega_vision")
-    return homes
-
-
-def _data_rel_of(root: Path, path: Path) -> str:
-    """Workspace-facing relative path for a file in the workspace itself or
-    in any visible data home (expressed as data/<...> for data homes).
-    Raises ValueError like Path.relative_to when the path is in neither."""
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(root.resolve()).as_posix()
-    except ValueError:
-        pass
-    for home in _data_homes(root):
-        try:
-            tail = resolved.relative_to(home.resolve()).as_posix()
-        except ValueError:
-            continue
-        return "data" if tail == "." else f"data/{tail}"
-    raise ValueError(f"path is outside the workspace and its data homes: {path}")
+# Chain-aware data resolution lives in the shared overlay module: every data
+# home follows the same canonical layout under <root>/data/, stacked as
+# workspace -> included workspaces -> shared repo store (see module docs).
+from omega_vision.inherited_source_overlay import (  # noqa: E402
+    data_homes as _data_homes,
+    data_rel_of as _data_rel_of,
+    resolve_workspace_child as _safe_workspace_child,
+    vision_data_root as _vision_data_root,
+)
 
 _THUMBNAIL_CACHE_DIR = Path(__file__).resolve().parent / "environment_thumbnails"
 _THUMBNAIL_SCALE = 4
@@ -297,37 +248,6 @@ def _game_write_dir(root: Path, game_dir: str) -> Path:
     """Where a specific game's new recordings/savepoints are written."""
     _migrate_arc3_games_root(root)
     return _games_container(root) / game_dir
-
-
-def _safe_workspace_child(root: Path, relative: str) -> Path:
-    """Resolve a workspace-facing relative path. data/... paths resolve down
-    the inheritance chain of data homes (workspace override -> included
-    workspaces -> shared repo store), preferring the first existing hit and
-    falling back to the canonical write home. Other paths stay inside the
-    workspace root exactly as before."""
-    rel = str(relative).replace("\\", "/").lstrip("/")
-    if rel == "data" or rel.startswith("data/"):
-        tail = rel[5:] if len(rel) > 5 else ""
-        fallback: Path | None = None
-        for home in _data_homes(root):
-            resolved_home = home.resolve()
-            candidate = (resolved_home / tail).resolve() if tail else resolved_home
-            if candidate != resolved_home and resolved_home not in candidate.parents:
-                raise ValueError("path escapes workspace data home")
-            if fallback is None:
-                fallback = candidate
-            if candidate.exists():
-                return candidate
-        write_home = _vision_data_root(root).resolve()
-        candidate = (write_home / tail).resolve() if tail else write_home
-        if candidate != write_home and write_home not in candidate.parents:
-            raise ValueError("path escapes workspace data home")
-        return candidate
-    resolved_root = root.resolve()
-    resolved = (resolved_root / relative).resolve()
-    if resolved != resolved_root and resolved_root not in resolved.parents:
-        raise ValueError("path escapes workspace root")
-    return resolved
 
 
 def _game_dirs_for(root: Path, game_dir: str) -> list[Path]:

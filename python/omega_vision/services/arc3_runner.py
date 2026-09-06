@@ -11,9 +11,26 @@ from typing import Any, Iterable, Mapping, Sequence
 
 import arc_agi
 
-from action_tree import ActionTreeStore, StateNode
 from image_codec import extract_latest_frame, frame_to_png_bytes
-from project_paths import action_trees_root, prompts_root, prompts_path
+
+# Action trees are retired from the play engine. The store is only used when
+# the optional module is importable (debugger/test environments); the server
+# runs treeless and play recording is unaffected (PlaySession writes its own
+# data/arc3_games/recordings/... level dirs).
+try:
+    from action_tree import ActionTreeStore, StateNode
+except ImportError:  # pragma: no cover - server environments run treeless
+    ActionTreeStore = None  # type: ignore[assignment]
+    StateNode = None  # type: ignore[assignment]
+
+try:
+    from project_paths import action_trees_root, prompts_root, prompts_path
+except ImportError:  # pragma: no cover - fall back to the packaged copies
+    from omega_vision.project_paths import (  # type: ignore[no-redef]
+        action_trees_root,
+        prompts_root,
+        prompts_path,
+    )
 
 try:
     from arcengine import GameAction, GameState
@@ -100,7 +117,7 @@ class Arc3Runner:
         self.tree_root = (
             Path(tree_root).expanduser().resolve()
             if tree_root is not None
-            else action_trees_root()
+            else (action_trees_root() if ActionTreeStore is not None else None)
         )
         self.arc = (
             arc_agi.Arcade(arc_api_key=arc_api_key)
@@ -579,6 +596,11 @@ class Arc3Runner:
         )
 
     def _start_action_tree(self) -> None:
+        if ActionTreeStore is None or self.tree_root is None:
+            # Retired feature: run treeless (no persisted action-tree nodes).
+            self.tree_store = None
+            self.current_node = None
+            return
         self.tree_store = ActionTreeStore(
             self.tree_root,
             self.game_id,

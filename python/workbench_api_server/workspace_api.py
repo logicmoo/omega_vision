@@ -1676,29 +1676,12 @@ def read_workspace_file(workspace_id: str, path: str = Query(...)) -> dict[str, 
 
 
 def _vision_data_fallbacks(root: Path) -> list[Path]:
-    """Data homes visible to a workspace beyond its own data/ dir: each
-    included workspace's data/ down the inheritance chain, then the shared
-    repo vision store (or its OMEGA_VISION_DATA override). Empty for roots
-    outside the workspaces container (tests, external checkouts)."""
-    workspaces_root = DEFAULT_WORKSPACES_ROOT.resolve()
-    try:
-        root.resolve().relative_to(workspaces_root)
-    except ValueError:
-        return []
-    layers: list[Path] = [root]
-    try:
-        layers = effective_workspace_layers(root, workspaces_root)
-    except Exception:  # noqa: BLE001 - inheritance problems never hide data
-        pass
+    """Data homes visible to a workspace beyond its own data/ dir, in overlay
+    precedence order (see omega_vision.inherited_source_overlay)."""
+    from omega_vision.inherited_source_overlay import data_layers
+
     own = (root / "data").resolve()
-    homes: list[Path] = []
-    for layer in reversed(layers):
-        home = (layer / "data").resolve()
-        if home != own and home not in homes:
-            homes.append(home)
-    env = os.getenv("OMEGA_VISION_DATA")
-    homes.append(Path(env).resolve() if env else (workspaces_root.parent / "data" / "omega_vision").resolve())
-    return homes
+    return [home for _source, _layer_id, home in data_layers(root) if home.resolve() != own]
 
 
 @router.get("/{workspace_id}/asset")
@@ -1725,6 +1708,81 @@ def read_workspace_asset(workspace_id: str, path: str = Query(...)) -> FileRespo
                         return FileResponse(candidate)
             raise ValueError("asset not found")
         return FileResponse(target)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (OSError, ValueError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@router.get("/{workspace_id}/data-listing")
+def workspace_data_listing(workspace_id: str, directory: str = Query("", description="Canonical sub-path under each layer's data/ dir")) -> dict[str, Any]:
+    """Enumerate one canonical data directory across the workspace's full
+    inheritance chain.
+
+    Every data home follows the same exact layout under ``<root>/data/``
+    (``arc3_games/recordings``, ``arc3_games/curated``, ``vision_frames/...``,
+    ``recognition_reduce``, ``video_import``, ``object_memory``, ...). The
+    listing walks the chain in precedence order — the workspace's own
+    ``data/``, each included workspace's ``data/`` (workspace.json includes,
+    nearest first), then the shared repo store (or its OMEGA_VISION_DATA
+    override) — and reports each layer's entries plus a merged effective view
+    where the nearest layer wins per name and farther hits are recorded as
+    ``shadows``. Entry ``rel`` values are workspace-facing ``data/...`` paths
+    usable directly with the asset route and the vision APIs."""
+    try:
+        workspace = _resolve_workspace_without_counts(workspace_id)
+        root = Path(workspace["root"]).resolve()
+        rel = str(directory or "").replace("\\", "/").strip("/")
+        if rel and any(part in {"", ".", ".."} for part in rel.split("/")):
+            raise ValueError("directory must be a plain relative path")
+
+        from omega_vision.inherited_source_overlay import data_layers
+
+        seen_roots: set[Path] = set()
+        payload_layers: list[dict[str, Any]] = []
+        merged: dict[str, dict[str, Any]] = {}
+        for source, layer_id, data_root in data_layers(root):
+            resolved_root = data_root.resolve()
+            if resolved_root in seen_roots:
+                continue
+            seen_roots.add(resolved_root)
+            target = (resolved_root / rel).resolve() if rel else resolved_root
+            if target != resolved_root and resolved_root not in target.parents:
+                raise ValueError("directory escapes the data home")
+            entries: list[dict[str, Any]] = []
+            if target.is_dir():
+                for child in sorted(target.iterdir(), key=lambda p: p.name.lower()):
+                    try:
+                        stat = child.stat()
+                    except OSError:
+                        continue
+                    kind = "directory" if child.is_dir() else "file"
+                    entry = {
+                        "name": child.name,
+                        "kind": kind,
+                        "size": stat.st_size if kind == "file" else None,
+                        "modified": stat.st_mtime,
+                        "rel": "data/" + (f"{rel}/" if rel else "") + child.name,
+                    }
+                    entries.append(entry)
+                    origin = layer_id or "global"
+                    if child.name in merged:
+                        merged[child.name]["shadows"].append(origin)
+                    else:
+                        merged[child.name] = {**entry, "origin": origin, "shadows": []}
+            payload_layers.append({
+                "source": source,
+                "workspaceId": layer_id,
+                "dataRoot": str(target),
+                "exists": target.is_dir(),
+                "entries": entries,
+            })
+        return {
+            "workspaceId": workspace_id,
+            "directory": rel,
+            "layers": payload_layers,
+            "merged": [merged[name] for name in sorted(merged, key=str.lower)],
+        }
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except (OSError, ValueError) as error:
