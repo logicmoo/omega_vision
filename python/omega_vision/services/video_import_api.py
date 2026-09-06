@@ -2224,14 +2224,19 @@ def _resolve_set_images(d: Path) -> list[Path]:
     return sorted(list(d.glob("*.png")) + list(d.glob("*.jpg")))
 
 
-# Frame-based source families that are offered as image sets even though they
-# do not use the reduction ``pool/`` layout. Groups mirror the Objects page's
-# source combobox (describeFrameSource) so both pages organise identically.
+# Frame-based source families offered in the selector as Sequence Sets:
+# ordered scene/frame sequences imported from Games (ARC recordings) or
+# Movies (videos), which later populate reduce-style Image Sets. The
+# canonical Sequence Set format IS the ARC recording layout
+# (recording.json + <step>/image.png + state.json); the flat frame_*.png
+# vision_frames dumps are a legacy layout readers still accept. Groups
+# mirror the Objects page's source combobox (describeFrameSource) so both
+# pages organise identically.
 _FRAME_SET_FAMILIES = (
-    ("arc3_games/recordings", "ARC recordings", "2-arc"),
-    ("vision_frames/arc_recordings", "ARC recordings", "2-arc"),
-    ("vision_frames/curated_data", "Curated data", "1-curated"),
-    ("vision_frames/video", "Videos", "3-video"),
+    ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),
+    ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),
+    ("vision_frames/curated_data", "Sequence Sets · Curated", "1-curated"),
+    ("vision_frames/video", "Sequence Sets · Movies", "3-video"),
 )
 
 
@@ -2290,7 +2295,7 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
             continue
         for child in sorted(data_dir.iterdir()):
             if child.is_dir() and child.name != _CANONICAL_IMAGE_SET and ((child / "pool").is_dir() or (child / "manifest.json").is_file()):
-                add(child.name, f"data/{child.name}", group="Reduced sets", group_key="4-loaded")
+                add(child.name, f"data/{child.name}", group="Image Sets", group_key="4-loaded")
     # Frame-based source families (organised like the Objects source combobox).
     for rec_base, group, group_key in _FRAME_SET_FAMILIES:
         for data_dir in homes:

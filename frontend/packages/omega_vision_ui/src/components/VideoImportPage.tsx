@@ -7240,7 +7240,7 @@ export function VideoImportPage({
             <span className="video-import-topbar-sep">·</span>
             <span className="video-import-topbar-title">Video Import 2</span>
           </div>
-          <span className="video-import-topbar-desc">Rebuilt from its own build prompt: import → timeline → the preview stack for building filter chains → probes and entity strips → materialize. Every gallery collapses, every step interrupts.</span>
+          <span className="video-import-topbar-desc">Rebuilt from its own build prompt: import → timeline → the preview stack for building filter chains → probes and entity strips → materialize. Cobbling filters together materializes new Sequence Sets automatically; Sequence Sets (from Movies or Games) later populate Image Sets. Every gallery collapses, every step interrupts.</span>
         </div>
         <nav className="video-import-human-nav" aria-label="Video Import steps">
           {VIDEO_IMPORT_SUBVIEWS.map((entry) => (
@@ -7413,11 +7413,11 @@ export function VideoImportPage({
         </div>
       </Section>
 
-      <Section {...section("gameImport", "IMPORT · ARC3 RECORDINGS", `${arcRecordings.length} recording(s)`)}>
+      <Section {...section("gameImport", "SEQUENCE SETS · IMPORT GAME MOVES", `${arcRecordings.length} recording(s)`)}>
         <div className="vi2-body">
           <div className="video-import-row">
             <select className="video-import-catalog" value="" disabled={busy} onChange={(event) => { if (event.target.value) void importArcRecording(event.target.value); }}>
-              <option value="">ARC playbacks… ({arcRecordings.length})</option>
+              <option value="">Select a game recording to import its moves as a Sequence Set… ({arcRecordings.length})</option>
               {arcRecordings.map((recording) => (<option key={recording.path} value={recording.path}>{recording.gameId} · {recording.frames} frames · {recording.path}</option>))}
             </select>
           </div>
@@ -8437,9 +8437,9 @@ export function VideoImportPage({
               </label>
             </details>
             <button disabled={busy || !isRunnableVisionModel(effectiveTurtlePngModel) || !Object.values(turtleArtifacts).some((artifact) => artifact.rawProgram && !artifact.renderedImage)} onClick={() => startServerStage("turtlePng")}>Call LLM · Turtle PNG</button>
-            <b>IMPORT GAME</b>
+            <b>MAKE SEQUENCE SET</b>
             <label>game id <input type="text" value={gameId} disabled={busy} onChange={(event) => setGameId(event.target.value)} /></label>
-            <button disabled={busy || !frames.length || !gameId.trim()} onClick={() => void materialize()}>Materialize as recording</button>
+            <button disabled={busy || !frames.length || !gameId.trim()} onClick={() => void materialize()}>Materialize filtered frames as a Sequence Set</button>
           </div>
         </Section>
       )}

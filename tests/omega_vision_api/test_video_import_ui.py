@@ -600,7 +600,7 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     assert "scene scan stop requested; detected markers will be preserved" in source
     assert "■ Stop frame extraction" in source
     assert "frame extraction stop requested; completed frames will be preserved" in source
-    assert "ARC playbacks…" in source
+    assert "Select a game recording to import its moves as a Sequence Set…" in source
     assert "move-list provenance" in source
     assert "Publish (WHIP)" in source
     assert "Watch (HLS)" in source

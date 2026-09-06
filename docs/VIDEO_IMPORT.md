@@ -2,10 +2,31 @@
 
 # Video Import — Help
 
-The Video Import page (KNOWLEDGE → Video Import) is the full loop for turning
+The Video Import page (OMEGA VISION → Video Import) is the full loop for turning
 a video you have the rights to into a playable ARC3 game recording: import →
 timeline editing → frame extraction → a **preview system** for building
 filter chains → entity extraction from input images → materialize.
+
+## Sequence Sets and Image Sets
+
+The page's outputs follow one vocabulary:
+
+- A **Sequence Set** is an ordered scene/frame sequence stored under the
+  canonical data layout. Sequence Sets always follow the same on-disk format
+  as ARC game recordings — `recording.json` plus ordered step directories
+  (`0/`, `1/`, …) each holding `image.png` and `state.json` — no matter the
+  source: **Movies** (imported/downloaded videos), **Games** (select a game
+  recording and import its moves), or curated drops. They can also be made
+  automatically by cobbling filters together: materializing a filter chain
+  writes its frames out as a new Sequence Set in that same recording format.
+  (Flat `frame_*.png` dumps under `data/vision_frames/...` are a legacy
+  layout that readers still accept.)
+- An **Image Set** is a reduce-style set (`pool/` + `manifest.json`, e.g.
+  `recognition_reduce`) that Sequence Sets populate later through reduction
+  and extraction.
+- The shared set selector on Recognition/Objects lists both, resolved down
+  the workspace inheritance chain (workspace `data/`, included workspaces,
+  then the shared repo store) — the nearest home wins per set id.
 
 Everything runs in the workbench itself (Python/PIL/scikit-image skills,
 LUTs, yt-dlp) — a model only enters where explicitly chosen (MEMBERS, TURTLE).
