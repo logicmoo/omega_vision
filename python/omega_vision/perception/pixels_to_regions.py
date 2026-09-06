@@ -234,8 +234,130 @@ def region_polygons(labels: np.ndarray, big: set, tolerance: float = 1.5) -> dic
     return polygons
 
 
+def _neighbors8(point: tuple[int, int], pool: set) -> list[tuple[int, int]]:
+    x, y = point
+    return [(x + dx, y + dy)
+            for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+            if (dx or dy) and (x + dx, y + dy) in pool]
+
+
+def _prune_spurs(points: set, dist: np.ndarray) -> set:
+    """Keep only the CREST of the medial axis (think of the part as a sand
+    mound: height = distance to the nearest edge; the midline is the ridge
+    of highest points). The exact medial axis grows spurs that CLIMB from
+    every corner up to the crest — a solid rectangle would get 4 diagonals.
+    From each endpoint, walk while the height keeps climbing and prune that
+    climb (when its length fits the corner geometry), leaving the rectangle
+    a single straight line ending as far from the short sides as it is from
+    the long sides. Ridges (constant height) never climb, so they survive."""
+    pts = set(points)
+    for _ in range(12):
+        changed = False
+        for endpoint in [p for p in pts if len(_neighbors8(p, pts)) == 1]:
+            if endpoint not in pts:
+                continue
+            branch = [endpoint]
+            prev: tuple[int, int] | None = None
+            cur = endpoint
+            while True:
+                nxt = [n for n in _neighbors8(cur, pts) if n != prev]
+                if len(nxt) != 1:
+                    break  # junction or chain end: the climb stops here
+                if dist[nxt[0][1], nxt[0][0]] <= dist[cur[1], cur[0]] + 0.2:
+                    break  # stopped climbing: we reached the crest plateau
+                branch.append(nxt[0])
+                prev, cur = cur, nxt[0]
+            climb = branch[:-1]  # keep the top pixel: the crest starts there
+            if not climb:
+                continue
+            top = branch[-1]
+            crest_h = float(dist[top[1], top[0]])
+            if len(climb) <= 1.6 * crest_h + 3:
+                pts -= set(climb)
+                changed = True
+        if not changed:
+            break
+    return pts
+
+
+def _skeleton_paths(mask: np.ndarray, origin: tuple[int, int]) -> list[list[tuple[int, int]]]:
+    """Medial-axis CREST of one region mask, walked into ordered polylines
+    (endpoints first, then leftover loops — a donut yields the ring circle).
+    Returns (x, y) paths in full-image coordinates."""
+    from skimage.morphology import medial_axis  # noqa: PLC0415
+
+    padded = np.pad(mask, 1)
+    skeleton, dist = medial_axis(padded, return_distance=True)
+    ys, xs = np.nonzero(skeleton)
+    if xs.size == 0:
+        return []
+    oy, ox = origin[0] - 1, origin[1] - 1
+    points = {(int(x), int(y)) for x, y in zip(xs, ys)}
+    points = _prune_spurs(points, dist)
+    if not points:
+        # everything pruned (e.g. a square: crest degenerates to the peak)
+        peak = int(np.argmax(dist))
+        py, px = np.unravel_index(peak, dist.shape)
+        return [[(int(px) + ox, int(py) + oy)]]
+
+    def neighbors(point: tuple[int, int], pool: set) -> list[tuple[int, int]]:
+        return _neighbors8(point, pool)
+
+    remaining = set(points)
+    paths: list[list[tuple[int, int]]] = []
+    while remaining:
+        endpoints = [p for p in remaining if len(neighbors(p, remaining)) <= 1]
+        current = endpoints[0] if endpoints else next(iter(remaining))
+        path = [current]
+        remaining.discard(current)
+        while True:
+            options = neighbors(current, remaining)
+            if not options:
+                break
+            current = options[0]
+            path.append(current)
+            remaining.discard(current)
+        if len(path) >= 2:
+            paths.append([(x + ox, y + oy) for x, y in path])
+    if not paths:
+        # crest degenerated to a peak (e.g. a square): keep the highest point
+        best = max(points, key=lambda p: dist[p[1], p[0]])
+        return [[(best[0] + ox, best[1] + oy)]]
+    return paths
+
+
+def region_midlines(labels: np.ndarray, big: set, tolerance: float = 1.5) -> dict[int, list[list[tuple[int, int]]]]:
+    """Medial-axis MIDLINES for every part — solid parts get their structural
+    skeleton, stroke-like parts get their stroke path — as simplified
+    polylines. Stored separately from the outer/inner edge polygons."""
+    from skimage import measure  # noqa: PLC0415
+
+    midlines: dict[int, list[list[tuple[int, int]]]] = {}
+    for gid in big:
+        ys, xs = np.nonzero(labels == gid)
+        if xs.size == 0:
+            continue
+        y0, y1, x0, x1 = ys.min(), ys.max(), xs.min(), xs.max()
+        sub = labels[y0:y1 + 1, x0:x1 + 1] == gid
+        paths = _skeleton_paths(sub, (int(y0), int(x0)))
+        simplified: list[list[tuple[int, int]]] = []
+        for path in paths:
+            arr = np.asarray([(y, x) for x, y in path], dtype=float)
+            keep = measure.approximate_polygon(arr, tolerance=tolerance)
+            pts = [(int(round(x)), int(round(y))) for y, x in keep]
+            if len(pts) >= 2:
+                simplified.append(pts)
+        if not simplified and paths:
+            # crest degenerated to a peak (e.g. a square) — keep the point
+            simplified = [[paths[0][0]]]
+        if simplified:
+            midlines[gid] = simplified
+    return midlines
+
+
 def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | None = None,
-              polygons: dict[int, dict] | None = None) -> str:
+              polygons: dict[int, dict] | None = None,
+              midlines: dict[int, list[list[tuple[int, int]]]] | None = None) -> str:
     neigh = defaultdict(set)
     for a, b in pairs:
         neigh[a].add(b)
@@ -246,10 +368,12 @@ def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | No
         ":- dynamic region/4.", ":- dynamic adjacent/2.", ":- dynamic shared_edge/3.",
         ":- dynamic encloses/2.", ":- dynamic border/1.", ":- dynamic img_size/2.",
         ":- dynamic perimeter/2.", ":- dynamic polygon/2.", ":- dynamic hole/2.",
+        ":- dynamic midline/2.",
         ":- discontiguous region/4.", ":- discontiguous adjacent/2.",
         ":- discontiguous shared_edge/3.", ":- discontiguous encloses/2.",
         ":- discontiguous border/1.", ":- discontiguous perimeter/2.",
         ":- discontiguous polygon/2.", ":- discontiguous hole/2.",
+        ":- discontiguous midline/2.",
         f"img_size({w}, {h}).", "",
     ]
     for gid in sorted(big, key=lambda g: -info[g]["area"]):
@@ -263,6 +387,10 @@ def to_prolog(info, pairs, big: set, w: int, h: int, perims: dict[int, int] | No
             for hole_points in polygons[gid]["holes"]:
                 inner = ",".join(f"xy({x},{y})" for x, y in hole_points)
                 L.append(f"hole(r{gid}, [{inner}]).")
+        if midlines and gid in midlines:
+            for line in midlines[gid]:
+                mid = ",".join(f"xy({x},{y})" for x, y in line)
+                L.append(f"midline(r{gid}, [{mid}]).")
         if i["border"]:
             L.append(f"border(r{gid}).")
     L.append("")
@@ -316,7 +444,8 @@ def extract_region_facts(
     pairs = adjacency(labels)
     perims = perimeters(labels)
     return {
-        "prolog": to_prolog(info, pairs, big, w, h, perims, region_polygons(labels, big)),
+        "prolog": to_prolog(info, pairs, big, w, h, perims, region_polygons(labels, big),
+                            region_midlines(labels, big)),
         "width": w,
         "height": h,
         "regionCount": len(big),
@@ -376,7 +505,8 @@ def main(argv: list[str]) -> int:
           f"min_area={min_area}px -> {len(big)} regions, {sum(1 for a,b in pairs if a in big and b in big)} adjacencies")
     if args.prolog:
         Path(args.prolog).write_text(
-            to_prolog(info, pairs, big, w, h, perims, region_polygons(labels, big)), encoding="utf-8")
+            to_prolog(info, pairs, big, w, h, perims, region_polygons(labels, big),
+                      region_midlines(labels, big)), encoding="utf-8")
         print("wrote", args.prolog)
     if args.grid:
         if idx is None:

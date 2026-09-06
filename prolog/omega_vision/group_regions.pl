@@ -19,6 +19,7 @@
 :- dynamic perimeter/2.
 :- dynamic polygon/2.
 :- dynamic hole/2.
+:- dynamic midline/2.
 
 % ---- parts map: the FIRST artifact Prolog produces --------------------------
 % Every part as simplified boundary polygons, OUTER edge (silhouette,
@@ -159,10 +160,12 @@ report :-
     format("~n== ~w regions, ~w enclosures, ~w background, ~w objects, ~w part groups ==~n",
            [NR, NE, NB, NO, NG]),
     part_map(Parts), length(Parts, NP),
-    format("~n== parts map (~w polygons, outer + holes, largest first) ==~n", [NP]),
+    aggregate_all(count, midline(_, _), NM),
+    format("~n== parts map (~w polygons, outer + holes, ~w midlines, largest first) ==~n", [NP, NM]),
     forall((nth1(I, Parts, part(Id, Col, Area, _, Outer, Holes)), I =< 12),
            ( length(Outer, NPts), length(Holes, NH),
-             format("  ~w (~w, ~w px): ~w-gon, ~w hole(s)~n", [Id, Col, Area, NPts, NH]) )),
+             aggregate_all(count, midline(Id, _), NMid),
+             format("  ~w (~w, ~w px): ~w-gon, ~w hole(s), ~w midline(s)~n", [Id, Col, Area, NPts, NH, NMid]) )),
     format("~n== containment groups (encloses) ==~n"),
     forall((group(P, Cs), length(Cs, L), L >= 1),
            ( region(P, Col, _, _), format("  ~w (~w) encloses ~w~n", [P, Col, Cs]) )),
