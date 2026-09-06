@@ -736,7 +736,7 @@ def _demo_suite():
                                                                     evidence=("independent_outcome",))))
     replay = SymbolicStore(InMemorySemanticBackend()).replay(sem.snapshot())
     replay_ok = replay.get("predictions", pred.prediction_id) is not None
-    tests = len(list((_REPO_ROOT / "tests").glob("test_*.py"))) if (_REPO_ROOT / "tests").is_dir() else 0
+    tests = len(list((_REPO_ROOT / "tests").rglob("test_*.py"))) if (_REPO_ROOT / "tests").is_dir() else 0
     docs = len([p for p in (_REPO_ROOT / "docs").rglob("*.md") if p.stat().st_size > 0]) \
         if (_REPO_ROOT / "docs").is_dir() else 0
     scripts = len([p for p in (_REPO_ROOT / "scripts").glob("phase*_*.py")]) if (_REPO_ROOT / "scripts").is_dir() else 0

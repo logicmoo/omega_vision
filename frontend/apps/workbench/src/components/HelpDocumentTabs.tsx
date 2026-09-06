@@ -6,9 +6,9 @@ type HelpTab={id:string;label:string;path?:string;repositoryPath?:string;plugin?
 type OpenedDocument={path:string;content:string};
 
 const docTabs:HelpTab[]=[
- {id:"theses",label:"Theses",repositoryPath:"workbench/docs/design/EXECUTIVE_VISION.md"},
- {id:"videoImport",label:"Video Import",repositoryPath:"workbench/docs/VIDEO_IMPORT.md"},
- {id:"googleMeet",label:"Google Meet",repositoryPath:"workbench/docs/GOOGLE_MEET_BRIDGE.md"},
+ {id:"theses",label:"Theses",repositoryPath:"docs/design/EXECUTIVE_VISION.md"},
+ {id:"videoImport",label:"Video Import",repositoryPath:"docs/VIDEO_IMPORT.md"},
+ {id:"googleMeet",label:"Google Meet",repositoryPath:"docs/GOOGLE_MEET_BRIDGE.md"},
  {id:"overview",label:"Overview",path:"docs/system_overview.md"},
  {id:"goals",label:"Goals",path:"docs/goals.md"},
  {id:"plans",label:"Planning",path:"docs/plans.md"},
@@ -50,7 +50,7 @@ async function readPluginDoc(pluginId:string){
  return {content:String(payload.content||""),source:String(payload.source||""),generated:Boolean(payload.generated)};
 }
 
-const repositoryPath=(path:string)=>`workbench/workspaces/shared_library_system/${path}`;
+const repositoryPath=(path:string)=>`workspaces/shared_library_system/${path}`;
 function resolveMarkdownPath(currentPath:string,href:string){
  const clean=href.split("#",1)[0];
  if(clean.startsWith("/"))return clean.replace(/^\/+/,"");
