@@ -4288,6 +4288,23 @@ export function VideoImportPage({
     })();
     return () => { cancelled = true; };
   }, [workspaceId, selectedImageSet]);
+  // Re-read the disk manifest on demand (per-row refresh button) or while any
+  // offline transformation todos are still pending/claimed, so pooler progress
+  // (extraction/grouping/turtle cells) lands live without a manual reload.
+  const refreshReduceManifest = useCallback(async () => {
+    if (!workspaceId) return;
+    try {
+      const resp = await fetch(`${API}/reduce-manifest?workspaceId=${encodeURIComponent(workspaceId)}&set=${encodeURIComponent(selectedImageSet)}`, { cache: "no-store" });
+      if (resp.ok) { const mf = await resp.json(); if (mf && Array.isArray(mf.items)) setRecognitionReduce(mf); }
+    } catch { /* ignore */ }
+  }, [workspaceId, selectedImageSet]);
+  useEffect(() => {
+    const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
+    const pending = items.some((it: any) => Array.isArray(it.transforms) && it.transforms.some((t: any) => t.status !== "done"));
+    if (!pending) return;
+    const id = window.setInterval(() => { void refreshReduceManifest(); }, 8000);
+    return () => window.clearInterval(id);
+  }, [recognitionReduce, refreshReduceManifest]);
   // Discover the image sets available on disk for the shared selector. Purely
   // filesystem-derived, so it reflects real reusable work per set.
   useEffect(() => {
@@ -6809,17 +6826,127 @@ export function VideoImportPage({
             list = list.filter((it: any) => !reduceOnlyGood || (it.rows || []).some((r: any) => r.kind !== "oneshot" && (r.agree?.score ?? 0) >= 0.7));
             if (q) list = list.filter((it: any) => String(it.id || "").toLowerCase().includes(q) || String(nameBySlug.get(it.slug) || it.slug || "").toLowerCase().includes(q) || String(COND_LABELS[it.cond] || it.cond || "").toLowerCase().includes(q));
             list.sort((a: any, b: any) => (slugRank(a.slug) - slugRank(b.slug)) || (condRank(a.cond) - condRank(b.cond)));
+            // Frame-based sequence sets (numeric unit dirs) sort numerically and
+            // collapse by a natural sequence property when the set has one —
+            // game level (scenes) — falling back to buckets of 10 frames, so
+            // "Collapse all" always yields navigable chunks.
+            const frameUnitOf = (it: any): number => {
+              const n = parseInt(String(it.cond || "").split("/")[0], 10);
+              return Number.isFinite(n) ? n : -1;
+            };
+            const isFrameSet = list.length > 0 && list.every((it: any) => frameUnitOf(it) >= 0);
+            if (isFrameSet) list.sort((a: any, b: any) => frameUnitOf(a) - frameUnitOf(b));
+            const levelSet = new Set(list.map((it: any) => String(it.level || "")).filter(Boolean));
+            const useLevels = isFrameSet && levelSet.size > 1;
+            const FRAME_BUCKET = 10;
+            const groupKeyOf = (it: any): string => {
+              if (!isFrameSet) return String(it.slug);
+              if (useLevels) return `${it.slug}#L${it.level || "?"}`;
+              return `${it.slug}#${Math.floor(frameUnitOf(it) / FRAME_BUCKET)}`;
+            };
+            const groupLabelOf = (it: any): string => {
+              const base = nameBySlug.get(it.slug) || it.slug;
+              if (!isFrameSet) return String(base);
+              if (useLevels) return `${base} · level ${it.level || "?"}`;
+              const b = Math.floor(frameUnitOf(it) / FRAME_BUCKET) * FRAME_BUCKET;
+              return `${base} · frames ${b}–${b + FRAME_BUCKET - 1}`;
+            };
             const countBySlug = new Map<string, number>();
             const reducedBySlug = new Map<string, number>();
+            const hasTransforms = list.some((it: any) => (it.transformsTotal || 0) > 0);
+            const itemDone = (it: any) => hasTransforms
+              ? (it.transformsTotal || 0) > 0 && it.transformsDone === it.transformsTotal
+              : (it.rows || []).length > 0;
             for (const it of list) {
-              countBySlug.set(it.slug, (countBySlug.get(it.slug) || 0) + 1);
-              if ((it.rows || []).length > 0) reducedBySlug.set(it.slug, (reducedBySlug.get(it.slug) || 0) + 1);
+              const gk = groupKeyOf(it);
+              countBySlug.set(gk, (countBySlug.get(gk) || 0) + 1);
+              if (itemDone(it)) reducedBySlug.set(gk, (reducedBySlug.get(gk) || 0) + 1);
             }
-            const orderedSlugsInList: string[] = Array.from(new Set<string>(list.map((it: any) => String(it.slug))));
+            const orderedSlugsInList: string[] = Array.from(new Set<string>(list.map(groupKeyOf)));
             const toggleChar = (slug: string) => setCollapsedReduceChars((prev) => { const next = new Set(prev); if (next.has(slug)) next.delete(slug); else next.add(slug); return next; });
             const collapseAll = () => setCollapsedReduceChars(new Set(orderedSlugsInList));
             const expandAll = () => setCollapsedReduceChars(new Set());
-            const reducedCount = list.filter((it: any) => (it.rows || []).length > 0).length;
+            const reducedCount = list.filter(itemDone).length;
+            const doneWord = hasTransforms ? "transformed" : "reduced";
+            // One cell per offline transformation todo, in dependency order
+            // (anything that depends on something else renders to its right):
+            // done work shows its text/debug image, claimed work shows who
+            // started it and when, pending work shows what it's waiting for.
+            const fmtMs = (ms: any) => (typeof ms === "number" ? (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`) : "");
+            const agoOf = (iso: string) => {
+              const t = Date.parse(iso);
+              if (!Number.isFinite(t)) return "";
+              const m = Math.round((Date.now() - t) / 60000);
+              return m < 1 ? "just now" : m < 60 ? `${m}m ago` : `${Math.round(m / 60)}h ago`;
+            };
+            const renderTransformStrip = (it: any, inputRel: string) => {
+              const doneBy = new Set((it.transforms || []).filter((t: any) => t.status === "done").map((t: any) => String(t.output)));
+              return (
+                <div className="video-import-transform-strip">
+                  <figure className="video-import-reduce-stage is-submitted">
+                    <img className="video-import-reduce-stageimg" src={asset(inputRel)} alt={it.id} loading="lazy" />
+                    <figcaption>input</figcaption>
+                  </figure>
+                  {(it.transforms || []).map((t: any, ti: number) => {
+                    const secs = fmtMs(t.elapsedMs);
+                    if (t.status === "done") {
+                      const s = t.summary || {};
+                      const hasStats = Object.keys(s).length > 0 || (Array.isArray(t.groups) && t.groups.length > 0);
+                      // Image-only transform (e.g. parts_debug overlay) renders as a plain figure.
+                      if (t.debugImage && !hasStats) {
+                        return (
+                          <figure key={ti} className="video-import-reduce-stage">
+                            <img className="video-import-reduce-stageimg" src={asset(t.debugImage)} alt={t.name} loading="lazy" />
+                            <figcaption>{t.name} · {t.doer}{secs ? ` · ${secs}` : ""}</figcaption>
+                          </figure>
+                        );
+                      }
+                      // Otherwise show whatever is available — summary text, debug image, or both.
+                      return (
+                        <div key={ti} className="video-import-transform-cell is-done" title={t.resultPath || t.output}>
+                          <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""}</span></div>
+                          {t.debugImage && <img className="video-import-transform-thumb" src={asset(t.debugImage)} alt={t.name} loading="lazy" />}
+                          {Array.isArray(t.groups) && t.groups.length > 0 ? (
+                            <div className="video-import-transform-groups">
+                              {t.groups.map((g: any) => <span key={g.id} className="video-import-transform-chip">{g.id} · {(g.members || []).length}</span>)}
+                              {Array.isArray(t.partOf) && t.partOf.length > 0 && <span className="video-import-transform-note">{t.partOf.length} part-of</span>}
+                              {Array.isArray(t.background) && t.background.length > 0 && <span className="video-import-transform-note">bg {t.background.join(",")}</span>}
+                            </div>
+                          ) : (
+                            <div className="video-import-transform-stats">
+                              {s.regionCount != null && <span>{s.regionCount} regions</span>}
+                              {s.adjacencyCount != null && <span>{s.adjacencyCount} adjacent</span>}
+                              {s.blobCount != null && <span>{s.blobCount} blobs</span>}
+                              {s.groupCount != null && <span>{s.groupCount} groups</span>}
+                              {s.objectCount != null && <span>{s.objectCount} objects</span>}
+                              {s.programCount != null && <span>{s.programCount} programs</span>}
+                              {Array.isArray(s.partColors) && s.partColors.length > 0 && (
+                                <span className="video-import-transform-colors">{s.partColors.map((c: string, ci: number) => <i key={ci} style={{ background: c }} title={c} />)}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    if (t.status === "claimed") {
+                      return (
+                        <div key={ti} className="video-import-transform-cell is-started">
+                          <div className="video-import-transform-title">{t.name}</div>
+                          <div className="video-import-transform-wait">⏳ started{t.claimedBy ? ` · ${t.claimedBy}` : ""}{t.claimedAt ? ` · ${agoOf(t.claimedAt)}` : ""}</div>
+                        </div>
+                      );
+                    }
+                    const unmet = (t.dependsOn || []).filter((d: string) => !doneBy.has(String(d))).map((d: string) => String(d).split("/")[0]);
+                    return (
+                      <div key={ti} className="video-import-transform-cell is-waiting">
+                        <div className="video-import-transform-title">{t.name}</div>
+                        <div className="video-import-transform-wait">{unmet.length ? `waiting for ${unmet.join(", ")}…` : "queued…"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            };
             // Ordered per-frame identity->cell maps for BOTH lines, so the
             // induction rows can resolve object permanence across the whole
             // sequence at the chosen horizon (identity = LLM label / Prolog id).
@@ -6851,7 +6978,7 @@ export function VideoImportPage({
             const llmReadyAll = llmMaps.every((f) => f instanceof Map);
             return (
               <div className="video-import-reduce">
-                {!recogHeadCollapsed && <h3 className="video-import-recognition-subhead">All images · {reducedCount} of {recognitionReduce.items.length} reduced</h3>}
+                {!recogHeadCollapsed && <h3 className="video-import-recognition-subhead">All images · {reducedCount} of {recognitionReduce.items.length} {doneWord}</h3>}
                 {!recogHeadCollapsed && <div className="video-import-reduce-explain">One row per image. Each row is a reduction pipeline that <b>grows rightward</b> as the image gets reduced: the input, then one cell per shot-tier (1-shot reference, then cheaper N-shot passes) with its part/relation counts and <b>agreement</b> vs the 1-shot. Click a row for the full symbolic strip + per-tier MeTTa. Web scenes are <b>real fetched images</b> (source link) — not generated.</div>}
                 {recognitionReduce.sequenceParts && Array.isArray(recognitionReduce.sequenceParts.parts) && recognitionReduce.sequenceParts.parts.length > 0 && (() => {
                   const sp = recognitionReduce.sequenceParts;
@@ -6917,20 +7044,21 @@ export function VideoImportPage({
                 <div className="video-import-reduce-listbox" role="listbox" aria-label="All reduced images">
                   {list.flatMap((it: any, idx: number) => {
                     const prev = idx > 0 ? list[idx - 1] : null;
-                    const newGroup = !prev || prev.slug !== it.slug;
+                    const gk = groupKeyOf(it);
+                    const newGroup = !prev || groupKeyOf(prev) !== gk;
                     const inputRel = it.inputPath || `data/recognition_reduce/pool/${String(it.input || "").split("/").pop()}`;
                     const web = isWeb(it);
                     const open = it.id === expandedReduceId;
                     const tiers = (it.rows || []);
-                    const charCollapsed = collapsedReduceChars.has(it.slug);
+                    const charCollapsed = collapsedReduceChars.has(gk);
                     const els: any[] = [];
                     if (newGroup) els.push(
-                      <div className={`video-import-reduce-listsep${charCollapsed ? " is-collapsed" : ""}`} key={`sep-${it.slug}`} role="button" tabIndex={0}
-                        onClick={() => toggleChar(it.slug)}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleChar(it.slug); } }}>
+                      <div className={`video-import-reduce-listsep${charCollapsed ? " is-collapsed" : ""}`} key={`sep-${gk}`} role="button" tabIndex={0}
+                        onClick={() => toggleChar(gk)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleChar(gk); } }}>
                         <span className="video-import-reduce-sepchevron">{charCollapsed ? "▸" : "▾"}</span>
-                        <span className="video-import-reduce-sepname">{nameBySlug.get(it.slug) || it.slug}</span>
-                        <span className="video-import-reduce-sepcount">{reducedBySlug.get(it.slug) || 0}/{countBySlug.get(it.slug) || 0} reduced</span>
+                        <span className="video-import-reduce-sepname">{groupLabelOf(it)}</span>
+                        <span className="video-import-reduce-sepcount">{reducedBySlug.get(gk) || 0}/{countBySlug.get(gk) || 0} {doneWord}</span>
                       </div>
                     );
                     if (charCollapsed) return els;
@@ -6973,9 +7101,13 @@ export function VideoImportPage({
                                 {it.source_url ? <a href={it.source_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>source ↗</a> : null}
                               </span>
                             ) : <span className="video-import-reduce-tag derived">derived</span>}
+                            <button type="button" className="video-import-reduce-rowrefresh" title="Re-read this row's on-disk state (todos.json + outputs)"
+                              onClick={(e) => { e.stopPropagation(); void refreshReduceManifest(); }}>⟳ refresh</button>
                           </div>
                           {tiers.length === 0
-                            ? <div className="video-import-reduce-listcell is-pending">reducing…</div>
+                            ? (Array.isArray(it.transforms) && it.transforms.length > 0
+                                ? renderTransformStrip(it, inputRel)
+                                : <div className="video-import-reduce-listcell is-pending">reducing…</div>)
                             : (() => {
                                 const graphParts: any[] = [];
                                 const stageEls = tiers.map((row: any, ri: number) => {
@@ -7203,7 +7335,18 @@ export function VideoImportPage({
                         {open && (
                           <div className="video-import-reduce-expanded">
                             <div className="video-import-reduce-tiers">
-                              {(it.rows || []).length === 0 ? <div className="video-import-reduce-empty">No reduction rows yet — generation in progress.</div> : (it.rows || []).map((row: any, ri: number) => {
+                              {(it.rows || []).length === 0 && Array.isArray(it.transforms) && it.transforms.length > 0
+                                ? it.transforms.filter((t: any) => t.status === "done" && t.resultPath).map((t: any, ti: number) => (
+                                    <details className="video-import-reduce-row" key={`tf-${ti}`} onToggle={(e: any) => { if (e.currentTarget.open) loadReduceMetta(t.resultPath); }}>
+                                      <summary>
+                                        <span className="video-import-reduce-tier">{t.name}</span>
+                                        <span className="video-import-reduce-model">{t.doer}</span>
+                                        <span className="video-import-reduce-parts">{fmtMs(t.elapsedMs)}{t.completedAt ? ` · ${t.completedAt}` : ""}</span>
+                                      </summary>
+                                      <pre className="video-import-reduce-metta">{reduceMetta[t.resultPath] || "loading…"}</pre>
+                                    </details>
+                                  ))
+                                : (it.rows || []).length === 0 ? <div className="video-import-reduce-empty">No reduction rows yet — generation in progress.</div> : (it.rows || []).map((row: any, ri: number) => {
                                 const isRef = row.kind === "oneshot";
                                 const rv = row.agree?.verdict || (isRef ? "ref" : "");
                                 const rp = Math.round((row.agree?.score ?? 0) * 100);
@@ -8721,7 +8864,7 @@ export function VideoImportPage({
           {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && (
             <div className="video-import-reduce-tabs" role="tablist" aria-label="Reduction views">
               <button type="button" role="tab" aria-selected={reduceTab === "inputs"} className={reduceTab === "inputs" ? "is-active" : ""} onClick={() => setReduceTab("inputs")}>Inputs · {selectedImageSet === "recognition_reduce" ? "20 × 10" : recognitionReduce.items.length}</button>
-              <button type="button" role="tab" aria-selected={reduceTab === "extractions"} className={reduceTab === "extractions" ? "is-active" : ""} onClick={() => setReduceTab("extractions")}>Extractions · {recognitionReduce.items.filter((it: any) => (it.rows || []).length > 0).length}/{recognitionReduce.items.length}</button>
+              <button type="button" role="tab" aria-selected={reduceTab === "extractions"} className={reduceTab === "extractions" ? "is-active" : ""} onClick={() => setReduceTab("extractions")}>Extractions · {recognitionReduce.items.filter((it: any) => ((it.transformsTotal || 0) > 0 ? it.transformsDone === it.transformsTotal : (it.rows || []).length > 0)).length}/{recognitionReduce.items.length}</button>
             </div>
           )}
 

@@ -2225,6 +2225,111 @@ def _resolve_set_images(d: Path) -> list[Path]:
     return sorted(list(d.glob("*.png")) + list(d.glob("*.jpg")))
 
 
+def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
+    """Summarise a unit's offline transformation todos for the manifest.
+
+    Frame units under a sequence set may carry a ``todos.json`` work queue
+    (see transform_task_pooler): each todo produces ``<transformation>/<doer>/``
+    with the result.pl + meta.json (+ optional debug_image.png) contract. This
+    reads that queue plus each done todo's small meta.json and returns cells the
+    Recognition list can render in dependency order — done work shows its text/
+    image, claimed work shows who started it, pending work shows what it waits
+    on. Only small sidecar files are read here; big result.pl files are fetched
+    lazily by the UI (grouping facts are the exception — tiny, parsed for chips).
+    """
+    tj = unit_dir / "todos.json"
+    if not tj.is_file():
+        return None
+    try:
+        payload = json.loads(tj.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    entries = [t for t in (payload.get("todos") or [])
+               if isinstance(t, dict) and t.get("transformation") and t.get("output")]
+    if not entries:
+        return None
+    # Topological order (dependsOn refers to output keys), priority tiebreak,
+    # so anything that depends on something else renders to its right.
+    by_output = {str(t.get("output")): t for t in entries}
+    placed: list[dict[str, Any]] = []
+    placed_keys: set[str] = set()
+    remaining = sorted(entries, key=lambda t: (t.get("priority") or 0, str(t.get("output"))))
+    while remaining:
+        progressed = False
+        for t in list(remaining):
+            deps = [d for d in (t.get("dependsOn") or []) if d in by_output]
+            if all(d in placed_keys for d in deps):
+                placed.append(t)
+                placed_keys.add(str(t.get("output")))
+                remaining.remove(t)
+                progressed = True
+        if not progressed:  # dependency cycle — append what's left in priority order
+            placed.extend(remaining)
+            break
+    cells: list[dict[str, Any]] = []
+    done = 0
+    for t in placed:
+        output = str(t.get("output"))
+        out_dir = unit_dir / output
+        status = str(t.get("status") or "pending")
+        if status == "done":
+            done += 1
+        cell: dict[str, Any] = {
+            "name": str(t.get("transformation")),
+            "doer": str(t.get("doer") or ""),
+            "output": output,
+            "status": status,
+            "priority": t.get("priority"),
+            "dependsOn": [d for d in (t.get("dependsOn") or [])],
+            "type": t.get("type") or "",
+            "elapsedMs": t.get("elapsedMs"),
+            "completedAt": t.get("completedAt") or "",
+            "claimedBy": t.get("claimedBy") or "",
+            "claimedAt": t.get("claimedAt") or "",
+        }
+        if status == "done":
+            rp = out_dir / "result.pl"
+            if rp.is_file():
+                cell["resultPath"] = _data_rel_of(root, rp)
+            di = out_dir / "debug_image.png"
+            if di.is_file():
+                cell["debugImage"] = _data_rel_of(root, di)
+            mp = out_dir / "meta.json"
+            if mp.is_file():
+                try:
+                    meta = json.loads(mp.read_text(encoding="utf-8"))
+                    summary = {k: meta[k] for k in (
+                        "regionCount", "adjacencyCount", "blobCount", "groupCount",
+                        "objectCount", "programCount", "width", "height") if k in meta}
+                    parts = meta.get("parts")
+                    if isinstance(parts, list) and parts:
+                        summary["partCount"] = len(parts)
+                        summary["partColors"] = [str(p.get("color") or "") for p in parts[:8]]
+                    if summary:
+                        cell["summary"] = summary
+                except (OSError, json.JSONDecodeError):
+                    pass
+            # Grouping facts are tiny — parse them here so the row can show
+            # group chips without fetching the .pl client-side.
+            if "grouping" in cell["name"] and rp.is_file():
+                try:
+                    text = rp.read_text(encoding="utf-8")
+                    groups = [{"id": gid, "members": [m.strip() for m in members.split(",") if m.strip()]}
+                              for gid, members in re.findall(r"part_group\((\w+),\s*\[([^\]]*)\]\)", text)]
+                    if groups:
+                        cell["groups"] = groups
+                    part_of = re.findall(r"part_of\((\w+),\s*(\w+)\)", text)
+                    if part_of:
+                        cell["partOf"] = [[a, b] for a, b in part_of]
+                    background = re.findall(r"background\((\w+)\)", text)
+                    if background:
+                        cell["background"] = background
+                except OSError:
+                    pass
+        cells.append(cell)
+    return {"list": cells, "done": done, "total": len(cells)}
+
+
 # Frame-based source families offered in the selector as Sequence Sets:
 # ordered scene/frame sequences imported from Games (ARC recordings) or
 # Movies (videos), which later populate reduce-style Image Sets. The
@@ -2395,6 +2500,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
             # made (operation) and WHERE it came from (source recording/frame, parent,
             # root) -> surfaced as item.provenance so the UI can show each image's origin.
             action = ""
+            level = ""
             prov: dict[str, Any] | None = None
             pp = img.parent / (img.stem + ".provenance.json")
             if pp.is_file():
@@ -2402,6 +2508,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                     pj = json.loads(pp.read_text(encoding="utf-8"))
                     src = pj.get("source") or {}
                     action = src.get("incomingAction") or ""
+                    level = str(src.get("level") or "")
                     parent = pj.get("parent") or {}
                     root_ = pj.get("root") or {}
                     prov = {
@@ -2420,13 +2527,28 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                 except (OSError, json.JSONDecodeError):
                     action = ""
                     prov = None
+            # ARC recording frames also carry state.json (level, incoming action)
+            # -> natural collapse grouping (level/scene) even without provenance.
+            if not action or not level:
+                sj = img.parent / "state.json"
+                if sj.is_file():
+                    try:
+                        st = json.loads(sj.read_text(encoding="utf-8"))
+                        if not level:
+                            level = str(st.get("level") or "")
+                        if not action:
+                            action = str(st.get("incoming_action") or "")
+                    except (OSError, json.JSONDecodeError):
+                        pass
             items.append({
                 "id": idv, "slug": set_leaf, "cond": stem,
                 "label": set_leaf.replace("_", " ").replace("-", " "),
                 "input": img.name, "inputPath": _data_rel_of(root, img),
-                "source": "recording", "source_url": "", "action": action, "provenance": prov,
+                "source": "recording", "source_url": "", "action": action, "level": level, "provenance": prov,
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
                 "rows": normalize_rows(m.get("rows")),
+                **({"transforms": tr["list"], "transformsDone": tr["done"], "transformsTotal": tr["total"]}
+                   if (tr := _unit_transforms(root, img.parent)) else {}),
             })
     sequence_parts: dict[str, Any] | None = None
     sp_path = d / "sequence_parts.json"
