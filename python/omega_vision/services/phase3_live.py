@@ -55,7 +55,7 @@ def _frame_objects(setdir: Path, idv: str) -> list:
     """Real objects in one frame via the LLM-free recogniser: identity (colour-free
     scale/rotation-normalised shape name), colour, and centroid position. Skips the
     background flood."""
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     png = next(iter(setdir.glob(f"{idv}.png")), None)
     if not png:
         return []

@@ -54,7 +54,7 @@ def _bbox(*cellsets):
 # --- occlusion completion ---------------------------------------------------
 
 def _occlusion_demo(did, title, full, hidden, candidate):
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     full_s = {tuple(c) for c in full}
     hid_s = {tuple(c) for c in hidden}
     frag = sorted(full_s - hid_s)
@@ -96,7 +96,7 @@ def _occlusion_demo(did, title, full, hidden, candidate):
 
 
 def _demo_occlusion_reject():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     T = [(0, 0), (1, 0), (2, 0), (1, 1)]
     frag = [(0, 0), (1, 0), (2, 0)]
     r = sa.complete_occluded(frag, [(9, 9)], candidates={tuple(sa._canon_key(T)): "tetromino_T"})
@@ -119,7 +119,7 @@ def _demo_progressive_reveal():
     (canonical form) stays PROVISIONAL — refined as parts arrive — only finalised once
     the whole object is uncovered. Early on the object may even read as several
     DISJOINT pieces before a later chunk connects them into one."""
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     from scipy import ndimage
     import numpy as _np
     # The object as the ordered CHUNKS a moving player reveals (each chunk = a part).
@@ -216,14 +216,14 @@ def _demo_progressive_reveal():
 # --- identity (recolor / resize) --------------------------------------------
 
 def _frame_col(color, off, cx=5, cy=5):
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     sig = sa._shape_key((None, sa._canon_br([tuple(c) for c in off])))
     return {"metta": "", "geom": [{"id": "p", "sig": sig, "color": color,
                                    "off": [list(c) for c in off], "cx": cx, "cy": cy}]}
 
 
 def _demo_recolor():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     mem = tempfile.mkdtemp()
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     sa.remember_objects([_frame_col(_RED, L)], "demo-1", mem, write=True)
@@ -245,7 +245,7 @@ def _demo_recolor():
 
 
 def _demo_resize():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     mem = tempfile.mkdtemp()
     base = [(0, 0), (1, 0)]
     big = [(0, 0), (1, 0), (2, 0), (3, 0), (0, 1), (1, 1), (2, 1), (3, 1)]
@@ -268,7 +268,7 @@ def _demo_resize():
 # --- recognition (store -> recognize / new distinguished) --------------------
 
 def _demo_store_then_recognize():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     mem = tempfile.mkdtemp()
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     sa.remember_objects([_frame_col(_RED, L)], "demo-1", mem, write=True)
@@ -290,7 +290,7 @@ def _demo_store_then_recognize():
 
 
 def _demo_new_distinguished():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     mem = tempfile.mkdtemp()
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     T = [(0, 0), (1, 0), (2, 0), (1, 1)]
@@ -312,7 +312,7 @@ def _demo_new_distinguished():
 
 def _frame_objs(specs):
     """A frame with several objects: specs = [(color, offsets, cx, cy), ...]."""
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     geom = []
     for i, (color, off, cx, cy) in enumerate(specs):
         sig = sa._shape_key((None, sa._canon_br([tuple(c) for c in off])))
@@ -331,7 +331,7 @@ def _placed(specs):
 
 
 def _demo_rotation():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     mem = tempfile.mkdtemp()
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     rot = list(sa._norm([(y, -x) for (x, y) in L]))          # 90° rotation
@@ -353,7 +353,7 @@ def _demo_rotation():
 
 
 def _demo_reflection():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     mem = tempfile.mkdtemp()
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     refl = list(sa._norm([(-x, y) for (x, y) in L]))         # mirror left-right
@@ -374,7 +374,7 @@ def _demo_reflection():
 
 
 def _demo_addition():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     A = [(0, 0), (0, 1)]                       # domino
     B = [(0, 0), (1, 0), (2, 0)]              # I-tromino
     C = [(0, 0), (1, 0), (1, 1)]             # V-tromino (the ADDED object)
@@ -397,7 +397,7 @@ def _demo_addition():
 
 
 def _demo_removal():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     A = [(0, 0), (0, 1)]
     B = [(0, 0), (1, 0), (2, 0)]
     C = [(0, 0), (1, 0), (1, 1)]
@@ -419,7 +419,7 @@ def _demo_removal():
 
 
 def _demo_correspondence():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     A = [(0, 0), (0, 1), (0, 2), (1, 2)]     # L
     B = [(0, 0), (1, 0), (2, 0), (1, 1)]     # T
     # same two objects, moved to new positions in state 2
@@ -447,7 +447,7 @@ def _demo_correspondence():
 # --- regeneration -----------------------------------------------------------
 
 def _demo_noise():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     base = [(0, 0), (0, 1), (0, 2), (1, 2)]          # L-tetromino
     specks = [(4, 0), (5, 3), (3, 5)]                # scattered noise pixels
     noisy = base + specks
@@ -470,7 +470,7 @@ def _demo_noise():
 
 
 def _demo_degradation():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     base = [(0, 0), (1, 0), (2, 0), (1, 1)]          # T-tetromino
     base_id = sa._identity_name(base)
     scaled = [(x * 3 + dx, y * 3 + dy) for (x, y) in base for dx in range(3) for dy in range(3)]
@@ -492,7 +492,7 @@ def _demo_degradation():
 
 
 def _demo_properties():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     ident = sa._identity_name(L)
     xs = [x for x, _ in L]; ys = [y for _, y in L]
@@ -511,7 +511,7 @@ def _demo_properties():
 
 def _demo_relationships():
     import numpy as np
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     labels = np.zeros((11, 13), dtype=int)
     labels[2:5, 1:4] = 1          # left block
     labels[2:5, 4:7] = 2          # right block (adjacent to 1)
@@ -541,7 +541,7 @@ def _demo_relationships():
 
 
 def _demo_recolor_change():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     mem = tempfile.mkdtemp()
     sa.remember_objects([_frame_col(_RED, L)], "demo-1", mem, write=True)
@@ -561,7 +561,7 @@ def _demo_recolor_change():
 
 
 def _demo_resize_change():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     base = [(0, 0), (1, 0)]
     big = [(x * 2 + dx, y * 2 + dy) for (x, y) in base for dx in range(2) for dy in range(2)]
     mem = tempfile.mkdtemp()
@@ -581,7 +581,7 @@ def _demo_resize_change():
 
 
 def _demo_dedup():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     mem = tempfile.mkdtemp()
     sa.remember_objects([_frame_col(_RED, L)], "demo-1", mem, write=True)
@@ -599,7 +599,7 @@ def _demo_dedup():
 
 
 def _demo_encounter_history():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     mem = tempfile.mkdtemp()
     seen_series = []
@@ -671,7 +671,7 @@ def _demo_environments():
     import os
     import numpy as np
     from scipy import ndimage
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     from omega_vision import environment_progression_fixtures
     fx = environment_progression_fixtures()
     groups = {"rendered_arcade": fx.rendered_arcade,
@@ -760,8 +760,8 @@ def _demo_suite():
 def _demo_phase3():
     """Phase 3 live over real ls20 frames: induce a motion rule from A→B, predict
     the mover's position in C BEFORE observing, then grade against the real C."""
-    import symbolic_arc as sa
-    import phase3_pipeline as p3
+    from omega_vision.perception import symbolic_arc as sa
+    from omega_vision.services import phase3_live as p3
     res = p3.run_live_phase3()
     if not res.get("ok"):
         return {"id": "phase3-live", "group": "Phase 3 — live learning",
@@ -797,7 +797,7 @@ def _demo_phase3():
 
 
 def _demo_regeneration():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     snap = sa.registry_snapshot(tempfile.mkdtemp(), include_turtles=True)
     shp = next((s for s in snap["shapes"] if s["name"] == "pentomino_V"), None) or snap["shapes"][0]
     want = {(int(x), int(y)) for x, y in shp["cells"]}
@@ -834,7 +834,7 @@ def _demo_regeneration():
 # --- replay / determinism ---------------------------------------------------
 
 def _demo_replay():
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     L = [(0, 0), (0, 1), (0, 2), (1, 2)]
     a = _frame_col(_RED, L)
     b = _frame_col(_RED, L)
@@ -864,7 +864,7 @@ def _grid_to_cells(idx, hexpal):
 
 def _demo_input_gradient():
     import numpy as np
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     from PIL import Image
     y, x = np.mgrid[0:128, 0:128]
     gr = np.stack([x * 2 % 256, y * 2 % 256, (x + y) % 256], axis=-1).astype(np.uint8)
@@ -883,7 +883,7 @@ def _demo_input_gradient():
 
 def _demo_input_video():
     import numpy as np
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     from PIL import Image
     d = Path(tempfile.mkdtemp())
     frames = []
@@ -938,7 +938,7 @@ def _demo_mem_root() -> Path:
     """Root of the isolated demo object-memory stores (object_memory_demo)."""
     global _demo_mem_root_cache
     if _demo_mem_root_cache is None:
-        import symbolic_arc as sa  # noqa: PLC0415
+        from omega_vision.perception import symbolic_arc as sa  # noqa: PLC0415
         _demo_mem_root_cache = Path(sa.memory_dir()).parent / "object_memory_demo"
     return _demo_mem_root_cache
 
@@ -954,7 +954,7 @@ def _demo_parts_root() -> Path:
     data."""
     global _demo_parts_root_cache
     if _demo_parts_root_cache is None:
-        import symbolic_arc as sa  # noqa: PLC0415
+        from omega_vision.perception import symbolic_arc as sa  # noqa: PLC0415
         _demo_parts_root_cache = Path(sa.memory_dir()).parent / "recognition_demo_parts"
     return _demo_parts_root_cache
 
@@ -1151,7 +1151,7 @@ def _demo_live_ls20_sequence():
     recognized — proof the recogniser separates shape identity from colour. NEW
     objects (first sighting) render blue, RECOGNIZED objects render green."""
     import json as _json
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     import numpy as _np
 
     key = _current_ls20_key()
@@ -1551,7 +1551,7 @@ def _preview_live_ls20():
     no part-graph, no scoring -- so it is a safe 'unstarted' preview. Uses the same
     (longest) recording the live demo plays."""
     import json as _json
-    import symbolic_arc as sa
+    from omega_vision.perception import symbolic_arc as sa
     setdir = None
     root = _LS20_DIR.parent
     if root.is_dir():
@@ -1912,7 +1912,7 @@ def _wipe_demo_memory(only: str | None) -> None:
     try:
         import shutil  # noqa: PLC0415
         import re as _re  # noqa: PLC0415
-        import symbolic_arc as sa  # noqa: PLC0415
+        from omega_vision.perception import symbolic_arc as sa  # noqa: PLC0415
         root = Path(sa.memory_dir()).parent / "object_memory_demo"
     except Exception:  # noqa: BLE001
         return

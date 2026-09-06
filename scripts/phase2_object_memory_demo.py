@@ -26,7 +26,7 @@ from omega_vision import (
     SymbolicMemory,
     SymbolicStore,
 )
-from workbench.server.runtime import DEFAULT_GRID, analyze_grid
+from omega_vision.perception.grid_analysis import DEFAULT_GRID, analyze_grid
 
 
 AFTER_GRID = [

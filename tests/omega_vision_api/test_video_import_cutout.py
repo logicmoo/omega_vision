@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 import pytest
 
-import video_import_api
+from omega_vision.services import video_import_api
 
 
 def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: Path) -> None:

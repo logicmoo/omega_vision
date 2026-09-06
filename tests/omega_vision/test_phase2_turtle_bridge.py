@@ -2,7 +2,7 @@ from pathlib import Path
 
 from omega_vision import GenerativeForm
 from swipl_bridge import SWIPrologBridge
-from workbench.server.runtime import DEFAULT_GRID, analyze_grid
+from omega_vision.perception.grid_analysis import DEFAULT_GRID, analyze_grid
 
 
 ROOT = Path(__file__).resolve().parents[1]

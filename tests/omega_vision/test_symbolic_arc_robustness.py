@@ -10,7 +10,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "workbench" / "server" / "generative_vision" / "prolog"))
 
-import symbolic_arc as sa  # noqa: E402
+from omega_vision.perception import symbolic_arc as sa  # noqa: E402
 
 
 def test_denoise_keeps_largest_component_and_recovers_identity():

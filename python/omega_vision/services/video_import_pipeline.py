@@ -47,7 +47,7 @@ from workflow_providers import _llm_complete
 # Page-state helpers live in video_import_api. Importing them here is safe
 # because video_import_api never imports this module at top level (its control
 # endpoints import it lazily at call time), so there is no import cycle.
-from video_import_api import (
+from omega_vision.services.video_import_api import (
     _atomic_json_write,
     _imports_root,
     _page_state_lock,

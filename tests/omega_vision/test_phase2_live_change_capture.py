@@ -11,7 +11,7 @@ from omega_vision import (
     SemanticGridCaptureObserver,
     SymbolicStore,
 )
-from workbench.server.runtime import analyze_grid
+from omega_vision.perception.grid_analysis import analyze_grid
 
 
 def test_live_capture_persists_evidence_backed_transition_changes(tmp_path: Path) -> None:

@@ -403,7 +403,7 @@ def enclosures(region_info, pairs) -> list[tuple[int, int]]:
     return out
 
 
-from color_names import nearest_name as _color_name
+from omega_vision.perception.color_names import nearest_name as _color_name
 
 # dihedral group D4 (the 8 flips/rotations) as integer (x, y) maps.
 _D4 = (

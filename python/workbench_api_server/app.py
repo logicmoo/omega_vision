@@ -12,8 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from arc3_play_api import router as arc3_play_router
-from registry_api import router as registry_router
-from video_import_api import router as video_import_router
+from omega_vision.services.registry_api import router as registry_router
+from omega_vision.services.video_import_api import router as video_import_router
 from datatype_api import router as datatype_router
 from goal_run_api import router as goal_run_router
 from jobs_api import router as jobs_router
@@ -21,7 +21,7 @@ from mailbox_api_lib import router as mailbox_router
 from prompt_api import router as prompt_router
 from routes.artifacts import router as artifacts_router
 from routes.workflow import router as workflow_router
-from runtime import analyze_grid
+from omega_vision.perception.grid_analysis import analyze_grid
 from store import DATATYPE_MANIFEST, WorkbenchStore
 from operation_api import router as operation_router
 from operation_library import legacy_catalog_view, load_shared_operation_documents

@@ -29,7 +29,7 @@ def registry_snapshot(
     """The entire object-memory registry: the shape vocabulary plus, per scope
     (game / `_all_games_`), its identities and placements. `game` filters to one
     scope; identity is shared per game between its levels."""
-    import symbolic_arc as sa  # lazy: pulls numpy/scipy/PIL
+    from omega_vision.perception import symbolic_arc as sa  # lazy: pulls numpy/scipy/PIL
 
     snap = sa.registry_snapshot(include_turtles=includeTurtles)
     snap["games"] = sorted(k for k in snap.get("scopes", {}))
@@ -46,7 +46,7 @@ def recognition_demos() -> dict:
     pass/fail per demo, plus a `running` flag). Never computes and never starts a
     run on its own — the tests only run when the user presses a button (Run all or
     a single test). Until then this returns the empty 'not run yet' state."""
-    import recognition_demos as rd  # lazy: pulls numpy/scipy/PIL/swipl
+    from omega_vision.demos import recognition_demos as rd  # lazy: pulls numpy/scipy/PIL/swipl
 
     return rd.get_demo_state()
 
@@ -56,7 +56,7 @@ def recognition_demos_run(payload: dict | None = Body(default=None)) -> dict:
     """Ask the SERVER to (re)run the sanity tests in the background. Returns the
     running state immediately; the page observes results via GET. `only` reruns a
     single test by id."""
-    import recognition_demos as rd
+    from omega_vision.demos import recognition_demos as rd
 
     only = None
     if isinstance(payload, dict) and payload.get("only"):
@@ -67,7 +67,7 @@ def recognition_demos_run(payload: dict | None = Body(default=None)) -> dict:
 @router.post("/recognition/demos/stop")
 def recognition_demos_stop() -> dict:
     """Stop any in-flight sanity-test run (keeps the last cached results)."""
-    import recognition_demos as rd
+    from omega_vision.demos import recognition_demos as rd
 
     return rd.stop_demo_run()
 
@@ -76,7 +76,7 @@ def recognition_demos_stop() -> dict:
 def recognition_demos_clear(payload: dict | None = Body(default=None)) -> dict:
     """Stop any in-flight run and clear cached results. With {"only": id}, clear
     just that one test back to its 'not run' state; otherwise clear everything."""
-    import recognition_demos as rd
+    from omega_vision.demos import recognition_demos as rd
 
     only = None
     if isinstance(payload, dict) and payload.get("only"):
@@ -92,7 +92,7 @@ async def recognition_demos_ws(websocket: WebSocket) -> None:
     / stop / clear / play / seek arrive as command messages, so buttons just send.
     """
     await websocket.accept()
-    import recognition_demos as rd
+    from omega_vision.demos import recognition_demos as rd
 
     stop_flag = asyncio.Event()
 
@@ -176,7 +176,7 @@ def recognition_phase3() -> dict:
     """OBSERVE the latest Phase 3 live-learning run: a real transition rule induced
     from the recogniser's frames, a prediction recorded before its outcome, and the
     independent grade. Never starts a run on its own."""
-    import phase3_pipeline as p3
+    from omega_vision.services import phase3_live as p3
 
     return p3.get_state()
 
@@ -185,7 +185,7 @@ def recognition_phase3() -> dict:
 def recognition_phase3_run() -> dict:
     """Run the Phase 3 pipeline on the SERVER over live ls20 frames: feed the real
     recogniser encounters into GameObjectLearnerPayload -> learn -> predict -> grade."""
-    import phase3_pipeline as p3
+    from omega_vision.services import phase3_live as p3
 
     return p3.start_run()
 
@@ -193,7 +193,7 @@ def recognition_phase3_run() -> dict:
 @router.post("/recognition/phase3/clear")
 def recognition_phase3_clear() -> dict:
     """Stop any in-flight Phase 3 run and clear its cached result."""
-    import phase3_pipeline as p3
+    from omega_vision.services import phase3_live as p3
 
     return p3.clear_state()
 

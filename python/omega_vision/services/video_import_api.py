@@ -800,7 +800,7 @@ async def pipeline_start(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
     workspace_id = str(payload.get("workspaceId") or "")
     if not workspace_id:
         raise HTTPException(status_code=400, detail="workspaceId is required")
-    from video_import_pipeline import start_run
+    from omega_vision.services.video_import_pipeline import start_run
 
     concurrency = payload.get("concurrency")
     return await asyncio.to_thread(
@@ -825,7 +825,7 @@ def pipeline_status(workspaceId: str) -> dict[str, Any]:
     """Current headless pipeline status for a workspace. Includes a `runs` array
     (one per active/finished lane) so simultaneous lanes are all visible; the
     top-level fields mirror a representative run for legacy consumers."""
-    from video_import_pipeline import get_run, get_runs
+    from omega_vision.services.video_import_pipeline import get_run, get_runs
 
     primary = get_run(workspaceId)
     base = primary.snapshot() if primary else {"workspaceId": workspaceId, "status": "idle"}
@@ -859,7 +859,7 @@ def pipeline_stop(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if not workspace_id:
         raise HTTPException(status_code=400, detail="workspaceId is required")
     lane = str(payload["lane"]).strip() if payload.get("lane") else None
-    from video_import_pipeline import stop_run
+    from omega_vision.services.video_import_pipeline import stop_run
 
     return {"workspaceId": workspace_id, "stopping": stop_run(workspace_id, lane)}
 
@@ -873,7 +873,7 @@ async def pipeline_ws(websocket: WebSocket) -> None:
     accepts commands (start/stop/clear) so buttons are just messages.
     """
     await websocket.accept()
-    from video_import_pipeline import get_run, get_runs, start_run, stop_run
+    from omega_vision.services.video_import_pipeline import get_run, get_runs, start_run, stop_run
 
     state = {"workspaceId": "", "last_key": None, "last_state_mtime": 0.0, "last_jobs": None}
     stop_flag = asyncio.Event()
@@ -1003,7 +1003,7 @@ async def pipeline_ws(websocket: WebSocket) -> None:
                                             (str(message["lane"]).strip() if message.get("lane") else None))
                     state["last_key"] = None
                 elif command == "clear":
-                    from video_import_pipeline import clear_llm_work
+                    from omega_vision.services.video_import_pipeline import clear_llm_work
 
                     await asyncio.to_thread(clear_llm_work, workspace_id)
                     try:
@@ -1801,7 +1801,7 @@ def _render_turtle_on_demand(workspace_id: str, source_rel: str) -> dict[str, An
     """UI-only, best-effort local render of a turtle program that already exists
     in turtleArtifacts (keyed by sourceImage). Never raises for a bad program —
     returns a status so the caller can show the program plus a note instead."""
-    import video_import_pipeline as vip  # noqa: PLC0415
+    from omega_vision.services import video_import_pipeline as vip  # noqa: PLC0415
 
     state = vip.load_state(workspace_id)
     artifacts = state.get("turtleArtifacts") if isinstance(state.get("turtleArtifacts"), dict) else {}
@@ -2427,7 +2427,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
     # object-permanence default horizon (frames) baked into the metta; the UI
     # slider previews other values live and initializes from this.
     try:
-        from generative_vision.prolog import symbolic_arc as _sa_mod  # noqa: PLC0415
+        from omega_vision.perception import symbolic_arc as _sa_mod  # noqa: PLC0415
         occlusion_horizon = int(getattr(_sa_mod, "DEFAULT_OCCLUSION_HORIZON", 4))
     except Exception:  # noqa: BLE001
         occlusion_horizon = 4

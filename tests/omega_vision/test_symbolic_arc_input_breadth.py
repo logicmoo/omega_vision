@@ -11,7 +11,7 @@ from PIL import Image
 _SERVER = Path(__file__).resolve().parents[1] / "workbench" / "server" / "generative_vision" / "prolog"
 sys.path.insert(0, str(_SERVER))
 
-import symbolic_arc as sa  # noqa: E402
+from omega_vision.perception import symbolic_arc as sa  # noqa: E402
 
 
 def _save(arr, path):

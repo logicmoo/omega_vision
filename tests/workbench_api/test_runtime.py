@@ -1,4 +1,4 @@
-from runtime import DEFAULT_GRID, analyze_grid
+from omega_vision.perception.grid_analysis import DEFAULT_GRID, analyze_grid
 
 
 def test_default_grid_extracts_real_objects() -> None:

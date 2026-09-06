@@ -27,7 +27,7 @@ from omega_vision import (
     phase2_transformation_learner,
     phase2_transition_analyzer,
 )
-from workbench.server.runtime import DEFAULT_GRID, analyze_grid
+from omega_vision.perception.grid_analysis import DEFAULT_GRID, analyze_grid
 
 
 def test_semantic_capture_persists_and_links_observations_encounters_and_turtles(tmp_path: Path) -> None:

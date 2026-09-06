@@ -1,4 +1,4 @@
-from workbench.server.runtime import analyze_grid
+from omega_vision.perception.grid_analysis import analyze_grid
 
 
 def test_hollow_object_exposes_exact_hole_boundary_and_topology() -> None:

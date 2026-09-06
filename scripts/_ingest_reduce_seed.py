@@ -12,8 +12,8 @@ from pathlib import Path
 SERVER = r"C:\snet\PeTTa\repos\symbolic_learner_workbench\workbench\server"
 sys.path.insert(0, SERVER)
 
-import video_import_api as vip  # noqa: E402
-from video_import_pipeline import load_state  # noqa: E402
+from omega_vision.services import video_import_api as vip  # noqa: E402
+from omega_vision.services.video_import_pipeline import load_state  # noqa: E402
 
 WS = "guess201_reid"
 root = Path(vip._workspace_root(WS))

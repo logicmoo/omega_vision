@@ -2,7 +2,7 @@
 ellipse/rectangle commands that lack an explicit box (models often emit
 center+radius or x/y/width/height) so more turtle PNGs render locally."""
 
-from video_import_pipeline import normalize_turtle_program, parse_onepass_output
+from omega_vision.services.video_import_pipeline import normalize_turtle_program, parse_onepass_output
 
 
 def test_ellipse_center_radius_scalar_to_box() -> None:

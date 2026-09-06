@@ -4,7 +4,7 @@ from omega_vision import (
     PythonProvider,
     normalize_grid_structure,
 )
-from workbench.server.runtime import DEFAULT_GRID, analyze_grid
+from omega_vision.perception.grid_analysis import DEFAULT_GRID, analyze_grid
 
 
 def test_grid_adapter_wraps_existing_extractor_with_exact_phase1_provenance() -> None:

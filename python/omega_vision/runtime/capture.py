@@ -7,8 +7,8 @@ from pathlib import Path
 import json
 from typing import Any, Callable, Mapping
 
-from project_paths import PROJECT_ROOT
-from swipl_bridge import SWIPrologBridge
+from omega_vision.project_paths import PROJECT_ROOT
+from omega_vision.prolog_bridge import SWIPrologBridge
 
 from omega_vision.adapters.adapters import GridAdapter
 from omega_vision.forms.forms import GenerativeForm, FitResult
@@ -46,7 +46,7 @@ def standard_semantic_grid_observer(
 ) -> "SemanticGridCaptureObserver":
     """Compose the canonical live grid observer without coupling it to Phase 1."""
 
-    from workbench.server.runtime import analyze_grid
+    from omega_vision.perception.grid_analysis import analyze_grid
 
     from omega_vision.core.memory import SymbolicMemory
     from omega_vision.adapters.providers import PythonProvider
