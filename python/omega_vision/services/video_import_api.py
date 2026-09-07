@@ -4252,8 +4252,11 @@ def _arc_recording_images(recording_dir: Path) -> list[Path]:
 
 
 def _natural_path_key(path: Path) -> tuple[Any, ...]:
+    """Type-stable natural sort key: every part is a (kind, number, text)
+    triple so int and str parts never compare against each other directly
+    (numeric runs sort before words at the same position)."""
     return tuple(
-        int(part) if part.isdigit() else part.lower()
+        (0, int(part), "") if part.isdigit() else (1, 0, part.lower())
         for segment in path.parts
         for part in re.split(r"(\d+)", segment)
         if part
