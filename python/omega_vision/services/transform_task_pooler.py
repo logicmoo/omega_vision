@@ -33,8 +33,9 @@ import argparse
 import json
 import os
 import sys
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -159,13 +160,19 @@ def load_unit(todo_file: Path, *, retry_errors: bool) -> tuple[dict, list[dict],
 
 def one_pass(roots: list[Path], *, workers: int, limit: int, retry_errors: bool,
              only_types: set[str] | None, skip_types: set[str] | None,
-             should_abort: Callable[[], bool] | None = None) -> int:
+             should_abort: Callable[[], bool] | None = None,
+             report: Callable[[dict[str, Any]], None] | None = None) -> int:
     """Collect every workable todo under the roots, order them by priority
     (lower first, then unit id), and execute. Claim files make concurrent
     poolers/servers safe; dependency-blocked tasks wait for a later pass.
     Todo ``type`` tags (ui / llm / p_shot / py_pl) select work via
     only_types/skip_types. ``should_abort`` is polled before each task so a
-    retargeted/paused control file stops the rest of the pass promptly."""
+    retargeted/paused control file stops the rest of the pass promptly.
+    ``report`` (when given) receives a progress snapshot on every task
+    start/finish AND every few seconds from a ticker thread, so heartbeats
+    stay fresh even while long tasks run — status readers (the /pooler
+    endpoint, other poolers' liveness checks) always see what is being
+    worked on right now."""
     tasks: list[tuple[int, str, dict, list[dict], dict]] = []
     for todo_file in find_todo_files(roots):
         loaded = load_unit(todo_file, retry_errors=retry_errors)
@@ -186,36 +193,92 @@ def one_pass(roots: list[Path], *, workers: int, limit: int, retry_errors: bool,
     if not tasks:
         return 0
 
+    total = len(tasks)
+    state_lock = threading.Lock()
+    active: dict[int, str] = {}
+    recent: list[str] = []
+    counts: dict[str, int] = {"done": 0}
+
+    def _snapshot() -> dict[str, Any]:
+        with state_lock:
+            return {
+                "done": counts["done"], "total": total,
+                "active": sorted(active.values()),
+                "recent": list(recent),
+                "results": {k: v for k, v in counts.items() if k != "done"},
+            }
+
+    def _tell() -> None:
+        if report is not None:
+            try:
+                report(_snapshot())
+            except Exception:  # noqa: BLE001 - reporting never kills work
+                pass
+
     def run_task(item: tuple[int, str, dict, list[dict], dict]) -> tuple[dict, dict, dict, int] | None:
         if should_abort is not None and should_abort():
             return None
         _prio, _uid, unit, entries, todo = item
-        step = run_transform_step(unit, todo["transformation"], todo["doer"],
-                                  todo.get("options") or {},
-                                  depends_on=todo.get("dependsOn") or [])
-        pending = write_unit_todos(unit, entries, [step])
+        label = f"{unit['id']} · {todo['transformation']}/{todo['doer']}"
+        token = id(item)
+        with state_lock:
+            active[token] = label
+        _tell()
+        try:
+            step = run_transform_step(unit, todo["transformation"], todo["doer"],
+                                      todo.get("options") or {},
+                                      depends_on=todo.get("dependsOn") or [])
+            pending = write_unit_todos(unit, entries, [step])
+        finally:
+            with state_lock:
+                active.pop(token, None)
+        status = str(step.get("status") or "unknown")
+        with state_lock:
+            counts["done"] += 1
+            counts[status] = counts.get(status, 0) + 1
+            note = f"{label}: {status}"
+            if status == "written":
+                note += f" {step.get('elapsedMs', 0) / 1000:.1f}s"
+            recent.append(note)
+            del recent[:-8]
+        _tell()
         return unit, todo, step, pending
 
+    stop_ticker = threading.Event()
+
+    def _tick() -> None:
+        while not stop_ticker.wait(5.0):
+            _tell()
+
+    ticker = threading.Thread(target=_tick, name="pooler-heartbeat", daemon=True)
+    ticker.start()
     done = 0
-    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-        for result in pool.map(run_task, tasks):
-            if result is None:
-                continue
-            unit, todo, step, pending = result
-            done += 1
-            status = step.get("status")
-            detail = ""
-            if status == "written":
-                detail = f" {step.get('elapsedMs', 0) / 1000:.1f}s"
-            elif status == "blocked":
-                detail = f" (needs {step.get('missing')})"
-            elif status == "claimed":
-                detail = f" (by {step.get('claimedBy')})"
-            elif status == "error":
-                detail = f" {str(step.get('error', ''))[:120]}"
-            kind = f" [{todo['type']}]" if todo.get("type") else ""
-            print(f"[pooler] {unit['id']} p{todo.get('priority', 100)}{kind} "
-                  f"{step['step']}: {status}{detail} | {pending} pending", flush=True)
+    try:
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+            futures = [pool.submit(run_task, item) for item in tasks]
+            for future in as_completed(futures):
+                result = future.result()
+                if result is None:
+                    continue
+                unit, todo, step, pending = result
+                done += 1
+                status = step.get("status")
+                detail = ""
+                if status == "written":
+                    detail = f" {step.get('elapsedMs', 0) / 1000:.1f}s"
+                elif status == "blocked":
+                    detail = f" (needs {step.get('missing')})"
+                elif status == "claimed":
+                    detail = f" (by {step.get('claimedBy')})"
+                elif status == "error":
+                    detail = f" {str(step.get('error', ''))[:120]}"
+                kind = f" [{todo['type']}]" if todo.get("type") else ""
+                print(f"[pooler] {unit['id']} p{todo.get('priority', 100)}{kind} "
+                      f"{step['step']}: {status}{detail} | {pending} pending", flush=True)
+    finally:
+        stop_ticker.set()
+        ticker.join(timeout=1.0)
+        _tell()
     return done
 
 
@@ -305,9 +368,16 @@ def _control_loop_locked(control_path: Path, *, retry_errors: bool,
                     "skip": sorted(_ctl_types(live, "skipTypes", skip_type) or ())} != baseline
 
         write_status(control_path, "working", ctl)
+        report_lock = threading.Lock()
+
+        def _report(progress: dict[str, Any]) -> None:
+            with report_lock:
+                write_status(control_path, "working", ctl, progress)
+
         done = one_pass([root], workers=baseline["workers"], limit=0,
                         retry_errors=retry_errors, only_types=only_types,
-                        skip_types=skip_types, should_abort=_changed)
+                        skip_types=skip_types, should_abort=_changed,
+                        report=_report)
         write_status(control_path, "idle", ctl, {"lastPassDone": done, "lastPassAt": _utc_now()})
         if done:
             print(f"[pooler] pass complete: {done} task(s) worked", flush=True)

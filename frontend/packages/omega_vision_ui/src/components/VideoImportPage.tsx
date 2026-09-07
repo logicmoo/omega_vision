@@ -7272,11 +7272,19 @@ export function VideoImportPage({
                     const state = alive ? String(st.state || "idle") : "off";
                     const rootLeaf = String(ctl.root || "").split("/").filter(Boolean).pop() || "—";
                     const paused = String(ctl.command || "") !== "run";
+                    const total = Number(st.total || 0);
+                    const done = Number(st.done || 0);
+                    const activeTasks: string[] = Array.isArray(st.active) ? st.active : [];
+                    const progress = state === "working" && total ? ` · ${done}/${total}` : "";
+                    const nowDoing = state === "working" && activeTasks.length
+                      ? ` · ${activeTasks[0]}${activeTasks.length > 1 ? ` +${activeTasks.length - 1}` : ""}`
+                      : "";
+                    const recentLines: string[] = Array.isArray(st.recent) ? st.recent : [];
                     return (
                       <span className="video-import-pooler-ctl"
-                        title={`External pooler — ${alive ? `pid ${poolerInfo.alivePid}` : "not running"} · state ${state} · set ${String(ctl.root || "(none)")} · driven by pooler_control.json`}>
+                        title={`External pooler — ${alive ? `pid ${poolerInfo.alivePid}` : "not running"} · state ${state} · set ${String(ctl.root || "(none)")} · driven by pooler_control.json${recentLines.length ? `\nrecent:\n${recentLines.join("\n")}` : ""}`}>
                         <span className={`video-import-pooler-dot ${alive ? (state === "working" ? "working" : "idle") : "off"}`} />
-                        <span className="video-import-pooler-state">{alive ? `pooler ${state} · ${rootLeaf}` : "pooler off"}</span>
+                        <span className="video-import-pooler-state">{alive ? `pooler ${state} · ${rootLeaf}${progress}${nowDoing}` : "pooler off"}</span>
                         <label className="video-import-imageset-selector" title="Concurrent pooler workers (written to the control file; takes effect immediately, even mid-pass).">
                           <span>workers</span>
                           <input className="video-import-pooler-workers" type="number" min={1} max={32} value={poolerWorkers}
