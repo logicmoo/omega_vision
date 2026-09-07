@@ -4,9 +4,17 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
+MAILBOX_PLUGIN = ROOT / "plugins" / "mailbox_chat"
 MAILBOX_SRC = ROOT / "plugins" / "mailbox_chat" / "src"
+WS_COLLAB_PLUGIN = ROOT / "plugins" / "ws_collab"
+
+if not MAILBOX_PLUGIN.is_dir() or not WS_COLLAB_PLUGIN.is_dir():
+    pytest.skip("optional mailbox plugins are not checked out", allow_module_level=True)
+
 sys.path.insert(0, str(MAILBOX_SRC))
 
 from mailbox_chat.ws_collab_api import handle_ws_collab_get  # noqa: E402
