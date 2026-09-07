@@ -12,8 +12,8 @@ if str(SERVER) not in sys.path:
 import arc3_play_api
 
 
-def test_games_container_and_write_dir_point_at_recordings() -> None:
-    root = Path("/workspace")
+def test_games_container_and_write_dir_point_at_recordings(tmp_path: Path) -> None:
+    root = tmp_path / "workspace"
     assert arc3_play_api._games_container(root) == root / "data" / "recordings"
     assert arc3_play_api._game_write_dir(root, "ar25") == root / "data" / "recordings" / "ar25"
 
