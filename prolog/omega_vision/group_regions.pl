@@ -205,6 +205,11 @@ regroup_by_color([G|T], Out) :-
     regroup_by_color(T, Rest),
     append(Parts, Rest, Out).
 
+% A very large color mass is a structural object in its own right. Remove it
+% before clustering attached details so it cannot bridge unrelated parts.
+split_mixed_group(Members, Split) :-
+    split_dominant_color_mass(Members, Split),
+    !.
 split_mixed_group(Members, Split) :-
     group_color_census(Members, Census),
     include([_-Ids]>>(length(Ids, N), N >= 2), Census, Multi),
@@ -213,6 +218,79 @@ split_mixed_group(Members, Split) :-
     !,
     findall(Ids, member(_-Ids, Census), Split).
 split_mixed_group(Members, [Members]).
+
+dominant_color_min_group_percent(67).
+dominant_color_min_image_percent(10).
+
+split_dominant_color_mass(Members, [MassMembers|OtherGroups]) :-
+    dominant_color_mass(Members, Color),
+    include(region_has_color(Color), Members, MassMembers),
+    exclude(region_has_color(Color), Members, OtherMembers),
+    MassMembers \== [],
+    OtherMembers \== [],
+    partition_attached_subset(OtherMembers, RawOtherGroups),
+    regroup_by_color(RawOtherGroups, OtherGroups).
+
+dominant_color_mass(Members, Color) :-
+    group_color_areas(Members, ColorAreas),
+    keysort(ColorAreas, Ascending),
+    reverse(Ascending, [ColorArea-Color|_]),
+    member_area_sum(Members, GroupArea),
+    img_size(Width, Height),
+    ImageArea is Width * Height,
+    dominant_color_min_group_percent(GroupPercent),
+    dominant_color_min_image_percent(ImagePercent),
+    ColorArea * 100 >= GroupArea * GroupPercent,
+    ColorArea * 100 >= ImageArea * ImagePercent.
+
+group_color_areas(Members, ColorAreas) :-
+    findall(Color,
+            ( member(Id, Members),
+              region(Id, Color, _, _)
+            ),
+            RawColors),
+    sort(RawColors, Colors),
+    findall(Area-Color,
+            ( member(Color, Colors),
+              include(region_has_color(Color), Members, ColorMembers),
+              member_area_sum(ColorMembers, Area)
+            ),
+            ColorAreas).
+
+region_has_color(Color, Id) :-
+    region(Id, Color, _, _).
+
+member_area_sum(Members, Area) :-
+    findall(MemberArea,
+            ( member(Id, Members),
+              region(Id, _, MemberArea, _)
+            ),
+            Areas),
+    sum_list(Areas, Area).
+
+partition_attached_subset([], []).
+partition_attached_subset([Seed|Rest], [Group|Groups]) :-
+    scluster_within([Seed|Rest], Seed, Group),
+    subtract(Rest, Group, Remaining),
+    partition_attached_subset(Remaining, Groups).
+
+scluster_within(Allowed, Seed, Members) :-
+    scluster_within_([Seed], Allowed, [], Raw),
+    sort(Raw, Members).
+
+scluster_within_([], _, Seen, Seen).
+scluster_within_([X|Queue], Allowed, Seen, Members) :-
+    ( memberchk(X, Seen)
+    -> scluster_within_(Queue, Allowed, Seen, Members)
+    ;  findall(Y,
+               ( attached(X, Y),
+                 memberchk(Y, Allowed),
+                 \+ memberchk(Y, Seen)
+               ),
+               Neighbors),
+       append(Queue, Neighbors, Next),
+       scluster_within_(Next, Allowed, [X|Seen], Members)
+    ).
 
 % Census: [Color-[MemberIds...]] for one group, colors sorted.
 group_color_census(Members, Census) :-

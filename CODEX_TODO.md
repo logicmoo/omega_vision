@@ -52,6 +52,17 @@ values here.
   selector, the two todo actions, and three extraction cells for one input in
   compare mode.
 
+- Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
+  color occupying at least two-thirds of an attached group's area and ten
+  percent of the input image. It then recomputes attachment components among
+  the remaining members without traversing through the removed mass, preventing
+  a large solid region from bridging unrelated details into one group. Two
+  focused SWI-Prolog regression tests pass, the production frontend build
+  passes, and grouping outputs were regenerated for the active image plus steps
+  0-20. Full-suite collection remains blocked by the existing stale
+  `ARC3_RUNTIME_HOME` configuration and unavailable `scipy`/`mailbox_chat`
+  dependencies in the system Python environment.
+
 - Video Import now resolves the workspace's inherited effective model through
   `model-selection?include_models=false` before the full Model Policy registry
   finishes enumerating. The inherited model stays first and selected in Member
