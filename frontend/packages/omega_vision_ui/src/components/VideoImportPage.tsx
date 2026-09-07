@@ -3123,6 +3123,30 @@ export function VideoImportPage({
   // scans data/omega_vision for todos.json and does the actual work.
   const [seedTodosBusy, setSeedTodosBusy] = useState(false);
   const [seedTodosNote, setSeedTodosNote] = useState("");
+  // External pooler (control-file driven): one pooler serves the ACTIVE todo
+  // set; stamping retargets it. UI shows liveness and drives workers/pause/exit.
+  const [poolerInfo, setPoolerInfo] = useState<any>(null);
+  const [poolerWorkers, setPoolerWorkers] = useState<number>(10);
+  const poolerWorkersTouched = useRef(false);
+  const refreshPooler = useCallback(async () => {
+    try {
+      const resp = await fetch(`${API}/pooler`, { cache: "no-store" });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      setPoolerInfo(data);
+      const w = Number(data?.control?.workers);
+      if (!poolerWorkersTouched.current && Number.isFinite(w) && w >= 1) setPoolerWorkers(w);
+    } catch { /* ignore */ }
+  }, []);
+  const poolerCmd = useCallback(async (patch: { command?: string; workers?: number }) => {
+    try {
+      const resp = await fetch(`${API}/pooler`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (resp.ok) setPoolerInfo(await resp.json());
+    } catch { /* ignore */ }
+  }, []);
   // Registry commit mode for the reduce: by default every reduced sequence is
   // COMMITTED to the canonical object registry (new objects stored, recognized
   // ones accumulate evidence). Flip this on for a recognize-only pass that
@@ -4355,21 +4379,29 @@ export function VideoImportPage({
     try {
       const resp = await fetch(`${API}/sequence-sets/transform`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceId, set: selectedImageSet, planOnly: true }),
+        body: JSON.stringify({ workspaceId, set: selectedImageSet, planOnly: true, poolerWorkers }),
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
         setSeedTodosNote(String(data?.detail || `HTTP ${resp.status}`));
         return;
       }
-      setSeedTodosNote(`stamped ${data.moveCount} units · ${data.pendingTotal} pending — pooler picks them up`);
+      setSeedTodosNote(`stamped ${data.moveCount} units · ${data.pendingTotal} pending — pooler moved to this set`);
       await refreshReduceManifest();
+      await refreshPooler();
     } catch (error: any) {
       setSeedTodosNote(String(error?.message || error));
     } finally {
       setSeedTodosBusy(false);
     }
-  }, [workspaceId, selectedImageSet, seedTodosBusy, refreshReduceManifest]);
+  }, [workspaceId, selectedImageSet, seedTodosBusy, refreshReduceManifest, refreshPooler, poolerWorkers]);
+  // Keep the pooler chip live while the Extractions list is on screen.
+  useEffect(() => {
+    if (!recognitionReduce) return;
+    void refreshPooler();
+    const id = window.setInterval(() => { void refreshPooler(); }, 8000);
+    return () => window.clearInterval(id);
+  }, [recognitionReduce != null, refreshPooler]);
   useEffect(() => {
     const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
     const pending = items.some((it: any) => Array.isArray(it.transforms) && it.transforms.some((t: any) => t.status !== "done"));
@@ -7233,6 +7265,33 @@ export function VideoImportPage({
                     {seedTodosBusy ? "adding todos…" : "⊕ Add todos (pooler)"}
                   </button>
                   {seedTodosNote ? <span className="video-import-reduce-partsbar-note">{seedTodosNote}</span> : null}
+                  {(() => {
+                    const st = poolerInfo?.status || {};
+                    const ctl = poolerInfo?.control || {};
+                    const alive = Boolean(poolerInfo?.alivePid);
+                    const state = alive ? String(st.state || "idle") : "off";
+                    const rootLeaf = String(ctl.root || "").split("/").filter(Boolean).pop() || "—";
+                    const paused = String(ctl.command || "") !== "run";
+                    return (
+                      <span className="video-import-pooler-ctl"
+                        title={`External pooler — ${alive ? `pid ${poolerInfo.alivePid}` : "not running"} · state ${state} · set ${String(ctl.root || "(none)")} · driven by pooler_control.json`}>
+                        <span className={`video-import-pooler-dot ${alive ? (state === "working" ? "working" : "idle") : "off"}`} />
+                        <span className="video-import-pooler-state">{alive ? `pooler ${state} · ${rootLeaf}` : "pooler off"}</span>
+                        <label className="video-import-imageset-selector" title="Concurrent pooler workers (written to the control file; takes effect immediately, even mid-pass).">
+                          <span>workers</span>
+                          <input className="video-import-pooler-workers" type="number" min={1} max={32} value={poolerWorkers}
+                            onChange={(e) => { poolerWorkersTouched.current = true; setPoolerWorkers(Math.max(1, Math.min(32, Number(e.target.value) || 10))); }}
+                            onBlur={() => void poolerCmd({ workers: poolerWorkers })} />
+                        </label>
+                        <button type="button" className="video-import-btn" onClick={() => void poolerCmd({ command: paused ? "run" : "pause" })}
+                          title={paused ? "Resume the pooler (spawns one if none is running)" : "Pause the pooler — it finishes in-flight tasks, then waits on the control file"}>
+                          {paused ? "▶ resume" : "⏸ pause"}
+                        </button>
+                        <button type="button" className="video-import-btn" onClick={() => void poolerCmd({ command: "exit" })}
+                          title="Tell the pooler process to exit. Stamping todos or Resume starts a fresh one.">✕ stop</button>
+                      </span>
+                    );
+                  })()}
                   <LaneReduceButton label={`⟳ (prolog)${recognizeOnly ? " recog" : ""}`}
                     title="Run ONLY the SWI-Prolog symbolic line + canonical registry pass for every frame — no LLM / no models. Runs simultaneously with the LLM lane."
                     laneRun={laneRuns["prolog"]} onStart={() => startServerStage("reduce", { prologOnly: true })} onStop={() => void stopServerPipeline("prolog")} />

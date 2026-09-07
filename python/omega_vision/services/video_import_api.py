@@ -14,6 +14,7 @@ have the rights to import is the caller's responsibility.
 from __future__ import annotations
 
 import os
+import sys
 import asyncio
 import base64
 import hashlib
@@ -30,6 +31,7 @@ import urllib.request
 import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -2485,18 +2487,46 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
         except (OSError, json.JSONDecodeError):
             pass
 
-    def normalize_rows(raw: Any) -> list[dict[str, Any]]:
+    def _row_doer(row: dict[str, Any]) -> str:
+        model = str(row.get("model") or "llm")
+        doer = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_") or "llm"
+        shots = str(row.get("shots") or "1")
+        return doer if shots == "1" else f"{doer}_{shots}shot"
+
+    _STEP_FILE = {"parts": "debug_image.png", "turtle": "turtle.png", "partmap": "partmap.png"}
+
+    def normalize_rows(raw: Any, unit_rel: str = "") -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
         for row in (raw or []):
             if not isinstance(row, dict):
                 continue
             nr = dict(row)
-            metta = base_name(row.get("metta"))
-            if metta:
-                nr["mettaPath"] = f"{base}/sym/{metta}"
+            # LLM tiers live canonically in the unit's transform-step dir
+            # (llm_reduction_0/<doer>/); sym/ + stages/ are the legacy layout.
+            step_rel = (f"{unit_rel}/llm_reduction_0/{_row_doer(row)}"
+                        if unit_rel and row.get("kind") != "prolog" else "")
+
+            def art(value: Any, legacy_sub: str, contract: str, step: str) -> str:
+                s = str(value or "").replace("\\", "/").lstrip("/")
+                if not s:
+                    return ""
+                leaf = s.split("/")[-1]
+                cands = []
+                if "/" in s:
+                    cands.append(s[len(base) + 1:] if s.startswith(base + "/") else s)
+                cands.append(f"{legacy_sub}/{leaf}")
+                if step and contract:
+                    cands.append(f"{step}/{contract}")
+                for rel in cands:
+                    if (d / rel).is_file():
+                        return f"{base}/{rel}"
+                return f"{base}/{cands[0]}"
+            if row.get("metta"):
+                nr["mettaPath"] = art(row.get("metta"), "sym", "result.metta", step_rel)
             stages = row.get("stages")
             if isinstance(stages, dict):
-                nr["stagePaths"] = {k: f"{base}/stages/{base_name(v)}" for k, v in stages.items() if v}
+                nr["stagePaths"] = {k: art(v, "stages", _STEP_FILE.get(k, ""), step_rel)
+                                    for k, v in stages.items() if v}
             out.append(nr)
         return out
 
@@ -2517,7 +2547,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                 "input": input_name, "inputPath": f"{base}/pool/{input_name}",
                 "source": m.get("source") or "set", "source_url": m.get("source_url") or "",
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
-                "rows": normalize_rows(m.get("rows")),
+                "rows": normalize_rows(m.get("rows"), f"transforms/{idv}"),
             })
     else:
         # Frame-based recording set: one item per frame, all grouped under the
@@ -2579,16 +2609,16 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                             action = str(st.get("incoming_action") or "")
                     except (OSError, json.JSONDecodeError):
                         pass
+            unit_dir = img.parent if img.parent != d else d / "transforms" / img.stem
             return {
                 "id": idv, "slug": set_leaf, "cond": stem,
                 "label": set_leaf.replace("_", " ").replace("-", " "),
                 "input": img.name, "inputPath": _data_rel_of(root, img),
                 "source": "recording", "source_url": "", "action": action, "level": level, "provenance": prov,
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
-                "rows": normalize_rows(m.get("rows")),
+                "rows": normalize_rows(m.get("rows"), unit_dir.relative_to(d).as_posix()),
                 **({"transforms": tr["list"], "transformsDone": tr["done"], "transformsTotal": tr["total"]}
-                   if (tr := _unit_transforms(root, img.parent if img.parent != d
-                                              else d / "transforms" / img.stem)) else {}),
+                   if (tr := _unit_transforms(root, unit_dir)) else {}),
             }
 
         images = _resolve_set_images(d)
@@ -2693,9 +2723,16 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
         return str(value or "").replace("\\", "/").split("/")[-1]
 
     def resolve(sub: str, name: Any) -> str:
-        leaf = base_name(name)
-        if not leaf:
+        raw = str(name or "").replace("\\", "/").lstrip("/")
+        if not raw:
             return ""
+        leaf = raw.split("/")[-1]
+        if "/" in raw:
+            # explicit path (canonical step layout): root-relative or base-relative
+            for b in bases:
+                rel = raw[len(b) + 1:] if raw.startswith(b + "/") else raw
+                if base_dir(f"{b}/{rel}").is_file():
+                    return f"{b}/{rel}"
         for b in bases:
             rel = f"{b}/{sub}/{leaf}"
             if base_dir(rel).is_file():
@@ -2770,13 +2807,12 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
                 if not isinstance(row, dict):
                     continue
                 normalized = dict(row)
-                metta = base_name(row.get("metta"))
-                if metta:
-                    normalized["mettaPath"] = resolve("sym", metta)
+                if row.get("metta"):
+                    normalized["mettaPath"] = resolve("sym", row.get("metta"))
                 stages = row.get("stages")
                 if isinstance(stages, dict):
                     normalized["stagePaths"] = {
-                        key: resolve("stages", base_name(val))
+                        key: resolve("stages", val)
                         for key, val in stages.items() if val
                     }
                 rows.append(normalized)
@@ -6568,18 +6604,20 @@ def write_unit_todos(unit: dict[str, Any],
 
 _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
     {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {},
-     "priority": 10, "dependsOn": []},
+     "priority": 10, "type": "py_pl", "dependsOn": []},
     {"transformation": "parts_debug_0", "doer": "python_pil", "options": {},
      "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_scikit"]},
     {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {},
-     "priority": 30, "dependsOn": ["parts_extraction_0/python_scikit"]},
+     "priority": 30, "type": "py_pl", "dependsOn": ["parts_extraction_0/python_scikit"]},
     {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {},
-     "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+     "priority": 40, "type": "py_pl", "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
 ]
 _PIPELINE_TEMPLATE_REL = "data/transform_pipeline.json"
 _PIPELINE_TEMPLATE_COMMENT = ("Initial todo template: stamped onto every unit as todos.json. "
                               "priority: lower runs first; dependsOn gates on finished steps; "
-                              "type marks task kinds (e.g. ui for debug images).")
+                              "type marks task kinds: ui (debug/preview renders), llm (1-shot "
+                              "LLM reductions), p_shot (N-shot LLM passes), py_pl (the "
+                              "python-scikit + prolog workflow).")
 
 
 def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
@@ -6670,21 +6708,148 @@ def save_pipeline_template(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     return {"file": _PIPELINE_TEMPLATE_REL, "pipeline": cleaned}
 
 
-def _llm_adoption_maker(set_base: Path):
-    """Adopt pre-existing LLM recognition reductions into unit transform dirs.
+# ---- external pooler control -------------------------------------------------
+# ONE external pooler serves the active todo set, directed by a control file it
+# keeps re-reading (including between tasks mid-pass). Stamping a set rewrites
+# root -> the pooler abandons its pass and moves over. The pooler heartbeats
+# pooler_status.json beside the control file.
+_POOLER_CONTROL_PATH = _REPO_ROOT / "data" / "omega_vision" / "pooler_control.json"
+_POOLER_DEFAULT_WORKERS = 10
 
-    The reduce pipeline stores its per-frame LLM outputs beside the set
-    (``sym/<id>__1shot.metta``, ``stages/<id>__t1__*.png``,
-    ``cache/<id>__pair1.json`` and manifest.json rows) — invisible to the
-    todos/pooler system. This copies each reduction into the unit's standard
-    ``<transformation>/<doer>/`` contract (result.metta + meta.json + stage
-    images) as an already-done ``llm_reduction_0`` step, so todos.json, the
-    Extractions cells, and the offline pooler all account for the LLM line.
-    Idempotent: once meta.json exists nothing is copied again. Returns a
-    per-unit function yielding the extra todo specs (possibly [])."""
+
+def _pooler_read(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            return payload
+    except (OSError, ValueError):
+        pass
+    return {}
+
+
+def _pooler_status_payload() -> dict[str, Any]:
+    return _pooler_read(_POOLER_CONTROL_PATH.with_name("pooler_status.json"))
+
+
+def _pooler_alive() -> int:
+    """Pid of a live pooler (fresh heartbeat, not exited), else 0."""
+    st = _pooler_status_payload()
+    try:
+        pid = int(st.get("pid") or 0)
+        if pid and st.get("state") != "exited":
+            beat = datetime.fromisoformat(str(st.get("heartbeatAt")))
+            if (datetime.now(timezone.utc) - beat).total_seconds() < 20:
+                return pid
+    except (TypeError, ValueError):
+        pass
+    return 0
+
+
+def _pooler_write_control(updates: dict[str, Any]) -> dict[str, Any]:
+    ctl = _pooler_read(_POOLER_CONTROL_PATH)
+    merged: dict[str, Any] = {
+        "kind": "pooler_control",
+        "command": ctl.get("command") or "pause",
+        "root": ctl.get("root") or "",
+        "workers": ctl.get("workers") or _POOLER_DEFAULT_WORKERS,
+        "interval": ctl.get("interval") or 5,
+        "onlyTypes": ctl.get("onlyTypes") if isinstance(ctl.get("onlyTypes"), list) else ["py_pl", "ui"],
+        "skipTypes": ctl.get("skipTypes") if isinstance(ctl.get("skipTypes"), list) else [],
+    }
+    merged.update({k: v for k, v in updates.items() if v is not None})
+    merged["updatedAt"] = _utc_now()
+    _POOLER_CONTROL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _POOLER_CONTROL_PATH.write_text(json.dumps(merged, indent=2), encoding="utf-8")
+    return merged
+
+
+def _pooler_spawn_if_dead() -> int:
+    pid = _pooler_alive()
+    if pid:
+        return pid
+    script = _REPO_ROOT / "python" / "omega_vision" / "services" / "transform_task_pooler.py"
+    flags = 0
+    if os.name == "nt":
+        flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                 | getattr(subprocess, "DETACHED_PROCESS", 0x00000008))
+    cmd = [sys.executable, str(script), "--control", str(_POOLER_CONTROL_PATH)]
+    log = open(_POOLER_CONTROL_PATH.with_name("pooler.log"), "ab")  # noqa: SIM115
+    try:
+        # first line of every run: WHAT is being started (echo of the command)
+        log.write(f"\n[spawn] {_utc_now()} $ {' '.join(cmd)}\n".encode("utf-8"))
+        log.flush()
+        proc = subprocess.Popen(
+            cmd, cwd=str(_REPO_ROOT), stdout=log, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, creationflags=flags)
+    finally:
+        log.close()
+    return proc.pid
+
+
+def _pooler_point_at(root_dir: Path, workers: Any = None) -> dict[str, Any]:
+    """Retarget the pooler at the active todo set and make sure one runs."""
+    try:
+        rel = root_dir.resolve().relative_to(_REPO_ROOT).as_posix()
+    except (OSError, ValueError):
+        rel = str(root_dir)
+    updates: dict[str, Any] = {"command": "run", "root": rel}
+    if workers is not None:
+        try:
+            updates["workers"] = max(1, min(32, int(workers)))
+        except (TypeError, ValueError):
+            pass
+    ctl = _pooler_write_control(updates)
+    return {"control": ctl, "pid": _pooler_spawn_if_dead()}
+
+
+@router.get("/pooler")
+def pooler_state() -> dict[str, Any]:
+    return {"control": _pooler_read(_POOLER_CONTROL_PATH),
+            "status": _pooler_status_payload(), "alivePid": _pooler_alive()}
+
+
+@router.post("/pooler")
+def pooler_command(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Drive the external pooler through its control file: ``command``
+    run|pause|exit, ``workers`` (1-32), ``root`` (repo-relative dir of the
+    active todo set). Running resurrects a dead pooler process."""
+    updates: dict[str, Any] = {}
+    command = str(body.get("command") or "").lower().strip()
+    if command:
+        if command not in ("run", "pause", "exit"):
+            raise HTTPException(status_code=400, detail="command must be run, pause or exit")
+        updates["command"] = command
+    if body.get("workers") is not None:
+        try:
+            updates["workers"] = max(1, min(32, int(body["workers"])))
+        except (TypeError, ValueError) as error:
+            raise HTTPException(status_code=400, detail="workers must be an integer") from error
+    if body.get("root") is not None:
+        updates["root"] = str(body["root"])
+    for key in ("onlyTypes", "skipTypes"):
+        if body.get(key) is not None:
+            if not isinstance(body[key], list):
+                raise HTTPException(status_code=400, detail=f"{key} must be a list of type tags")
+            updates[key] = [str(t) for t in body[key] if t]
+    ctl = _pooler_write_control(updates)
+    pid = _pooler_alive()
+    if ctl.get("command") == "run" and not pid:
+        pid = _pooler_spawn_if_dead()
+    return {"control": ctl, "status": _pooler_status_payload(), "alivePid": pid}
+
+
+def _llm_adoption_maker(set_base: Path):
+    """Adopt legacy LLM recognition reductions into unit transform dirs.
+
+    The canonical home of an LLM reduction is the unit's step dir
+    ``<unit>/llm_reduction_0/<doer>/`` (result.metta + meta.json + stage
+    images). Older reduces stored their outputs beside the set
+    (``sym/<id>__1shot.metta``, ``stages/<id>__t1__*.png``) — this MOVES those
+    into the step contract, deletes copy-era leftovers, and returns todo specs
+    for every step dir found, so todos.json, the Extractions cells, and the
+    pooler all account for the LLM line. Idempotent per step dir."""
     sym_dir = set_base / "sym"
-    if not sym_dir.is_dir():
-        return lambda unit: []
+    stages = set_base / "stages"
     rows_by_id: dict[str, list[dict[str, Any]]] = {}
     mp = set_base / "manifest.json"
     if mp.is_file():
@@ -6708,58 +6873,93 @@ def _llm_adoption_maker(set_base: Path):
         stem = rel.rsplit(".", 1)[0] if rel else str(unit["id"])
         idv = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_") or str(unit["id"])
         specs: list[dict[str, Any]] = []
-        for pos, metta_file in enumerate(sorted(sym_dir.glob(f"{idv}__*shot.metta"))):
+        transformation = "llm_reduction_0"
+        for pos, metta_file in enumerate(sorted(sym_dir.glob(f"{idv}__*shot.metta")) if sym_dir.is_dir() else []):
             m = re.fullmatch(rf"{re.escape(idv)}__(\d+)shot\.metta", metta_file.name)
             if m is None:
                 continue
             shots = m.group(1)
             row = next((r for r in rows_by_id.get(idv, [])
-                        if str(r.get("metta") or "") == metta_file.name), None)
+                        if str(r.get("metta") or "").split("/")[-1] == metta_file.name), None)
             model = str((row or {}).get("model") or "llm")
             doer = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_") or "llm"
             if shots != "1":
                 doer = f"{doer}_{shots}shot"
-            transformation = "llm_reduction_0"
             out_dir = unit["dir"] / transformation / doer
             meta_path = out_dir / "meta.json"
-            if not meta_path.is_file():
-                out_dir.mkdir(parents=True, exist_ok=True)
-                stages = set_base / "stages"
-                for src, dst in (
-                        (metta_file, out_dir / "result.metta"),
-                        (sym_dir / f"{idv}__{shots}shot.parts.json", out_dir / "parts.json"),
-                        (set_base / "cache" / f"{idv}__pair1.json", out_dir / "llm_objects.json"),
-                        (stages / f"{idv}__t{shots}__parts.png", out_dir / "debug_image.png"),
-                        (stages / f"{idv}__t{shots}__turtle.png", out_dir / "turtle.png"),
-                        (stages / f"{idv}__t{shots}__partmap.png", out_dir / "partmap.png")):
+            legacy_files = (
+                (metta_file, out_dir / "result.metta"),
+                (sym_dir / f"{idv}__{shots}shot.parts.json", out_dir / "result.parts.json"),
+                (stages / f"{idv}__t{shots}__parts.png", out_dir / "debug_image.png"),
+                (stages / f"{idv}__t{shots}__turtle.png", out_dir / "turtle.png"),
+                (stages / f"{idv}__t{shots}__partmap.png", out_dir / "partmap.png"),
+            )
+            if meta_path.is_file():
+                # already adopted: finish the move — align the copy-era sidecar
+                # name with the step contract and drop legacy duplicates.
+                old_sidecar = out_dir / "parts.json"
+                try:
+                    if old_sidecar.is_file() and not (out_dir / "result.parts.json").is_file():
+                        old_sidecar.rename(out_dir / "result.parts.json")
+                except OSError:
+                    pass
+                for src, dst in legacy_files:
                     try:
-                        if src.is_file():
-                            shutil.copy2(src, dst)
+                        if src.is_file() and dst.is_file():
+                            src.unlink()
                     except OSError:
                         pass
-                meta: dict[str, Any] = {
-                    "kind": "sequence_set_transformation",
-                    "transformation": transformation,
-                    "doer": doer,
-                    "options": {},
-                    "createdAt": _utc_now(),
-                    "adoptedFrom": f"sym/{metta_file.name}",
-                    "model": model,
-                    "shots": int(shots),
-                }
-                if row is not None:
-                    if isinstance(row.get("elapsedMs"), (int, float)):
-                        meta["elapsedMs"] = row["elapsedMs"]
-                    if isinstance(row.get("nparts"), int):
-                        meta["regionCount"] = row["nparts"]
-                    if isinstance(row.get("ngroups"), int):
-                        meta["groupCount"] = row["ngroups"]
-                    if isinstance(row.get("nrels"), int):
-                        meta["relationCount"] = row["nrels"]
-                meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False),
-                                     encoding="utf-8")
+                specs.append({"transformation": transformation, "doer": doer, "options": {},
+                              "type": "p_shot" if doer.endswith("shot") else "llm",
+                              "dependsOn": [], "priority": 5 + pos})
+                continue
+            out_dir.mkdir(parents=True, exist_ok=True)
+            for src, dst in legacy_files:
+                try:
+                    if src.is_file():
+                        shutil.move(str(src), str(dst))
+                except OSError:
+                    pass
+            cache_src = set_base / "cache" / f"{idv}__pair1.json"
+            try:
+                if cache_src.is_file():
+                    shutil.copy2(cache_src, out_dir / "llm_objects.json")
+            except OSError:
+                pass
+            meta: dict[str, Any] = {
+                "kind": "sequence_set_transformation",
+                "transformation": transformation,
+                "doer": doer,
+                "options": {},
+                "createdAt": _utc_now(),
+                "adoptedFrom": f"sym/{metta_file.name}",
+                "model": model,
+                "shots": int(shots),
+            }
+            if row is not None:
+                if isinstance(row.get("elapsedMs"), (int, float)):
+                    meta["elapsedMs"] = row["elapsedMs"]
+                if isinstance(row.get("nparts"), int):
+                    meta["regionCount"] = row["nparts"]
+                if isinstance(row.get("ngroups"), int):
+                    meta["groupCount"] = row["ngroups"]
+                if isinstance(row.get("nrels"), int):
+                    meta["relationCount"] = row["nrels"]
+            meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False),
+                                 encoding="utf-8")
             specs.append({"transformation": transformation, "doer": doer, "options": {},
+                          "type": "p_shot" if doer.endswith("shot") else "llm",
                           "dependsOn": [], "priority": 5 + pos})
+        # canonical-layout steps written directly by the reduce pipeline
+        known = {s["doer"] for s in specs}
+        step_root = unit["dir"] / transformation
+        if step_root.is_dir():
+            for meta_f in sorted(step_root.glob("*/meta.json")):
+                doer = meta_f.parent.name
+                if doer not in known:
+                    specs.append({"transformation": transformation, "doer": doer, "options": {},
+                                  "type": "p_shot" if doer.endswith("shot") else "llm",
+                                  "dependsOn": [], "priority": 5 + len(specs)})
         return specs
 
     return adopt
@@ -6822,6 +7022,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                            key=lambda p: int(p.name)):
             units.append({"id": path.name, "dir": path, "image": path / "image.png"})
         target = recording_rel
+        pooler_root = recording_dir
     else:
         try:
             set_base = _resolve_set_dir(root, f"data/{set_id}")
@@ -6848,6 +7049,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=404, detail=f"image set has no images: {set_id}")
         adopt = _llm_adoption_maker(set_base)
         target = f"data/{set_id}"
+        pooler_root = set_base
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
@@ -6880,6 +7082,9 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         for step in item["steps"]:
             bucket = counts.setdefault(step["step"], {})
             bucket[step["status"]] = bucket.get(step["status"], 0) + 1
+    # switching todo sets retargets the external pooler at this one (it stops
+    # what it was doing via its mid-pass control checks and moves over).
+    pooler = _pooler_point_at(pooler_root, body.get("poolerWorkers"))
     return {
         "recording": recording_rel or None,
         "set": set_id or None,
@@ -6890,4 +7095,5 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "pendingTotal": sum(item.get("pending", 0) for item in results),
         "counts": counts,
         "moves": results,
+        "pooler": pooler,
     }

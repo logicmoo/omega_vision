@@ -29,6 +29,7 @@ import json
 import mimetypes
 import os
 import re
+import shutil
 import sys
 import threading
 import time
@@ -2753,6 +2754,39 @@ _REDUCE_TRANSFORMS = {"c1_bw", "c2_flip", "c3_rot45"}
 # Independent per-tier stage panels (NO composite blob). Each of these is saved
 # as its OWN PNG so every image/stage is fully independent in the UI.
 _REDUCE_STAGE_KEYS = ["parts", "turtle", "partmap"]
+
+# Canonical on-disk home of one LLM reduction tier: the unit's transform-step
+# dir <unit>/llm_reduction_0/<doer>/ following the standard step contract
+# (result.metta + meta.json + debug_image/turtle/partmap.png). sym/ + stages/
+# remain readable as the legacy layout.
+_LLM_STEP_FILES = {"parts": "debug_image.png", "turtle": "turtle.png", "partmap": "partmap.png"}
+
+
+def _llm_doer(model_short: str, shots: Any) -> str:
+    doer = re.sub(r"[^a-z0-9]+", "_", str(model_short).lower()).strip("_") or "llm"
+    return doer if str(shots) == "1" else f"{doer}_{shots}shot"
+
+
+def _llm_step_dir(ws_dir: Path, pool_dir: Path, src_path: Path, model_short: str, shots: Any) -> Path:
+    """Step dir for one tier, using the transform system's unit-dir rule:
+    nested frames own their folder, flat/pool images use transforms/<stem>."""
+    parent = src_path.parent
+    unit_dir = parent if parent not in (ws_dir, pool_dir) else ws_dir / "transforms" / src_path.stem
+    return unit_dir / "llm_reduction_0" / _llm_doer(model_short, shots)
+
+
+def _llm_step_parts_files(ws_dir: Path) -> list[Path]:
+    """Per-frame LLM parts sidecars in the canonical step layout, one per step
+    dir (result.parts.json preferred over an adoption-era parts.json)."""
+    found: dict[Path, Path] = {}
+    for pat in ("transforms/*/llm_reduction_0/*", "*/llm_reduction_0/*"):
+        for sd in ws_dir.glob(pat):
+            for name in ("result.parts.json", "parts.json"):
+                p = sd / name
+                if p.is_file():
+                    found.setdefault(sd, p)
+                    break
+    return [found[k] for k in sorted(found, key=str)]
 _reduce_manifest_lock = threading.Lock()
 
 
@@ -2909,7 +2943,7 @@ def run_reduce(
                     emit(f"{_ts()} prolog induction: no *__prolog.parts.json in {base_rel}/sym "
                          "(run the prolog reduce first)")
             if which in ("llm", "both"):
-                llm_pj = sorted(p for p in sym_dir.glob("*shot.parts.json"))
+                llm_pj = _llm_step_parts_files(ws_dir) or sorted(sym_dir.glob("*shot.parts.json"))
                 if llm_pj:
                     fr = _sa.frames_from_parts(_load_parts(llm_pj))
                     (ws_dir / "sequence_rules_llm.metta").write_text(_sa.induce_from_frames(fr), encoding="utf-8")
@@ -3152,21 +3186,21 @@ def run_reduce(
         with _reduce_manifest_lock:
             manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    def _save_png(img: "Image.Image", name: str) -> str:
-        (stages_dir / name).parent.mkdir(parents=True, exist_ok=True)
-        img.convert("RGB").save(stages_dir / name, quality=92)
-        return f"{base_rel}/stages/{name}"
-
     def reduce_one(entry: dict[str, Any]) -> None:
         if stop_event is not None and stop_event.is_set():
             return
         idv, slug, cond = entry["id"], entry["slug"], entry["cond"]
         src_path = entry.get("src") or (pool_dir / f"{idv}.jpg")
-        expected_sym = [sym_dir / f"{idv}__{t['shots']}shot.metta" for t in tiers_meta]
-        expected_png = [stages_dir / f"{idv}__t{t['shots']}__{k}.png" for t in tiers_meta for k in _REDUCE_STAGE_KEYS]
+
+        def _tier_done(t: dict[str, Any]) -> bool:
+            sd = _llm_step_dir(ws_dir, pool_dir, src_path, t["model"], t["shots"])
+            if (sd / "result.metta").is_file() and all((sd / f).is_file() for f in _LLM_STEP_FILES.values()):
+                return True
+            return ((sym_dir / f"{idv}__{t['shots']}shot.metta").is_file()
+                    and all((stages_dir / f"{idv}__t{t['shots']}__{k}.png").is_file()
+                            for k in _REDUCE_STAGE_KEYS))
         if (not nocache and not carry_mode and not prolog_only and idv in manifest_rows
-                and all(p.is_file() for p in expected_sym)
-                and all(p.is_file() for p in expected_png)):
+                and all(_tier_done(t) for t in tiers_meta)):
             counts["done"] += 1
             return
         try:
@@ -3200,9 +3234,19 @@ def run_reduce(
                     # parent panels: [input, parts-found, turtle-render, part-map, graph]
                     panels, _boxes = rp._tier_panels(tier, src)
                     shots = tier["shots"]
+                    # LLM tier outputs land in the unit's transform-step dir
+                    # (llm_reduction_0/<doer>/) under the standard contract, so the
+                    # todos/pooler system and the Extractions cells see the LLM
+                    # line without any adoption pass. meta.json is written LAST.
+                    step_dir = _llm_step_dir(ws_dir, pool_dir, src_path, rp._short(tier["model"]), shots)
+                    step_dir.mkdir(parents=True, exist_ok=True)
+                    step_rel = step_dir.relative_to(ws_dir).as_posix()
                     stage_imgs = {"parts": panels[1], "turtle": panels[2], "partmap": panels[3]}
-                    stage_paths = {k: _save_png(stage_imgs[k], f"{idv}__t{shots}__{k}.png") for k in _REDUCE_STAGE_KEYS}
-                    sym_path = sym_dir / f"{idv}__{shots}shot.metta"
+                    stage_paths: dict[str, str] = {}
+                    for k in _REDUCE_STAGE_KEYS:
+                        stage_imgs[k].convert("RGB").save(step_dir / _LLM_STEP_FILES[k], quality=92)
+                        stage_paths[k] = f"{base_rel}/{step_rel}/{_LLM_STEP_FILES[k]}"
+                    sym_path = step_dir / "result.metta"
                     partof = tier.get("_partof") or {}
                     metta = _pair_metta(tier["facts"], partof) if partof else rp.to_metta(tier["facts"])
                     # bbox is a throwaway value derived from each turtle; keep the
@@ -3223,14 +3267,37 @@ def run_reduce(
                              "partOf": partof.get(p["id"], ""), "turtle": prog}
                             for prog, p in zip(valid, tier["facts"].get("parts", []))
                         ]
-                        (sym_dir / f"{idv}__{shots}shot.parts.json").write_text(json.dumps(geom), encoding="utf-8")
+                        (step_dir / "result.parts.json").write_text(json.dumps(geom), encoding="utf-8")
                     except Exception:  # noqa: BLE001
                         pass
+                    # cached raw LLM pair objects travel with the step; the pair
+                    # cache itself stays in cache/ (pipeline-internal).
+                    cache_f = pair_cache_dir / f"{idv}__pair1.json"
+                    if cache_f.is_file():
+                        try:
+                            shutil.copy2(cache_f, step_dir / "llm_objects.json")
+                        except OSError:
+                            pass
+                    step_meta = {
+                        "kind": "sequence_set_transformation",
+                        "transformation": "llm_reduction_0",
+                        "doer": step_dir.name,
+                        "options": {},
+                        "createdAt": datetime.now(timezone.utc).isoformat(),
+                        "model": rp._short(tier["model"]),
+                        "shots": shots,
+                        "elapsedMs": tier.get("_ms", 0),
+                        "regionCount": tier["facts"]["nparts"],
+                        "groupCount": len(set(partof.values())) if partof else 0,
+                        "relationCount": len(tier["facts"]["relations"]),
+                    }
+                    (step_dir / "meta.json").write_text(
+                        json.dumps(step_meta, indent=2, ensure_ascii=False), encoding="utf-8")
                     rows.append({
                         "shots": shots, "kind": tier["kind"], "model": rp._short(tier["model"]),
                         "nparts": tier["facts"]["nparts"], "nrels": len(tier["facts"]["relations"]),
                         "ngroups": len(set(partof.values())) if partof else 0,
-                        "metta": sym_path.name, "stages": stage_paths,
+                        "metta": f"{step_rel}/result.metta", "stages": stage_paths,
                         "elapsedMs": tier.get("_ms", 0),
                         "agree": tier.get("agree", {"score": 1.0, "verdict": "ref"}),
                     })
