@@ -655,6 +655,41 @@ function turtleToSvg(prog: any, keyBase: string, fallbackColor: string, outlineO
 }
 const streamSlug = (value: string) =>
   value.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "workbench";
+// Parse an offline turtle_programs result.pl into drawable strokes. Facts look
+// like: turtle_program(r3, outer|hole(1)|midline(2), [start(X,Y,H), forward(D),
+// turn(A), ..., close]). Coordinates are in image pixels; heading 0 = +x and
+// 90 = +y (screen-down), positive turns clockwise. Cached by text identity —
+// results are immutable once written.
+type TurtleStroke = { id: string; kind: "outer" | "inner" | "medial"; points: Array<[number, number]>; closed: boolean };
+const turtleStrokeCache = new Map<string, TurtleStroke[]>();
+function parseTurtleStrokes(text: string): TurtleStroke[] {
+  if (!text) return [];
+  const hit = turtleStrokeCache.get(text);
+  if (hit) return hit;
+  const out: TurtleStroke[] = [];
+  const factRe = /turtle_program\(\s*(\w+)\s*,\s*(outer|hole\(\d+\)|midline\(\d+\))\s*,\s*\[([^\]]*)\]/g;
+  const cmdRe = /(start|forward|turn|close)(?:\(([^)]*)\))?/g;
+  let fm: RegExpExecArray | null;
+  while ((fm = factRe.exec(text))) {
+    const id = fm[1];
+    const kind: TurtleStroke["kind"] = fm[2] === "outer" ? "outer" : (fm[2].startsWith("hole") ? "inner" : "medial");
+    const pts: Array<[number, number]> = [];
+    let x = 0, y = 0, hdg = 0, closed = false;
+    let cm: RegExpExecArray | null;
+    cmdRe.lastIndex = 0;
+    while ((cm = cmdRe.exec(fm[3]))) {
+      const args = (cm[2] || "").split(",").map((s) => Number(s.trim()));
+      if (cm[1] === "start") { x = args[0] || 0; y = args[1] || 0; hdg = args[2] || 0; pts.push([x, y]); }
+      else if (cm[1] === "forward") { const d = args[0] || 0; const r = (hdg * Math.PI) / 180; x += d * Math.cos(r); y += d * Math.sin(r); pts.push([x, y]); }
+      else if (cm[1] === "turn") { hdg += args[0] || 0; }
+      else if (cm[1] === "close") { closed = true; }
+    }
+    if (pts.length > 1) out.push({ id, kind, points: pts, closed });
+  }
+  if (turtleStrokeCache.size > 400) turtleStrokeCache.clear();
+  turtleStrokeCache.set(text, out);
+  return out;
+}
 const MAX_RECURSIVE_OBJECT_DEPTH = 9;
 const LLM_RETRY_DELAY_MS = 1000;
 const PILOT_FIRST_IMAGE_COUNT = 2;
@@ -3097,9 +3132,10 @@ export function VideoImportPage({
   // never has to redo it. The Objects page additionally offers a "live pipeline"
   // choice (objectsShowLive) that shows its own in-progress object-graphs.
   const OBJECTS_LIVE_SET = "objects_live";
+  const DEFAULT_IMAGE_SET = "arc3_games/recordings/ls20";
   const [imageSetList, setImageSetList] = useState<any[]>([]);
   const [selectedImageSet, setSelectedImageSet] = useState<string>(() => {
-    try { return window.localStorage.getItem("videoImport.imageSet") || "recognition_reduce"; } catch { return "recognition_reduce"; }
+    try { return window.localStorage.getItem("videoImport.imageSet") || DEFAULT_IMAGE_SET; } catch { return DEFAULT_IMAGE_SET; }
   });
   const [objectsShowLive, setObjectsShowLive] = useState<boolean>(() => {
     try { return (window.localStorage.getItem("videoImport.objectsShowLive") ?? "1") !== "0"; } catch { return true; }
@@ -3121,6 +3157,12 @@ export function VideoImportPage({
   // Which group tree nodes are expanded to reveal their parts (keyed metta#group),
   // so the chevron expands independently of clicking the group to highlight it.
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  // Offline transform strip interactivity: per strip row (keyed by item id),
+  // which part/group ids are selected in the grouping tree (empty = render ALL),
+  // which stroke kinds the turtle cell draws, and which tree nodes are open.
+  const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
+  const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
+  const [stripOpenGroups, setStripOpenGroups] = useState<Set<string>>(new Set());
   // Reduce section shows a collapsible char-grouped grid above a flat
   // one-row-per-image list (all 200); "reduceListQuery" filters the list.
   const [reduceListQuery, setReduceListQuery] = useState("");
@@ -4305,6 +4347,17 @@ export function VideoImportPage({
     const id = window.setInterval(() => { void refreshReduceManifest(); }, 8000);
     return () => window.clearInterval(id);
   }, [recognitionReduce, refreshReduceManifest]);
+  // Preload done turtle_programs result.pl files so the strip's turtle cell can
+  // draw strokes without a click (loadReduceMetta is a no-op once cached; it
+  // must never be called during render — it sets state synchronously).
+  useEffect(() => {
+    const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
+    for (const it of items) {
+      for (const t of (it.transforms || [])) {
+        if (t && t.status === "done" && t.resultPath && /turtle/.test(String(t.name || ""))) loadReduceMetta(String(t.resultPath));
+      }
+    }
+  }, [recognitionReduce, loadReduceMetta]);
   // Discover the image sets available on disk for the shared selector. Purely
   // filesystem-derived, so it reflects real reusable work per set.
   useEffect(() => {
@@ -4318,9 +4371,13 @@ export function VideoImportPage({
         if (cancelled) return;
         const sets = Array.isArray(data?.sets) ? data.sets : [];
         setImageSetList(sets);
-        // If the persisted selection is no longer present, fall back to canonical.
+        // If the persisted selection is no longer present, fall back to the
+        // default set, then canonical, then whatever exists.
         if (sets.length && !sets.some((s: any) => s.id === selectedImageSet)) {
-          setSelectedImageSet(sets.some((s: any) => s.id === "recognition_reduce") ? "recognition_reduce" : sets[0].id);
+          const fallback = sets.some((s: any) => s.id === DEFAULT_IMAGE_SET)
+            ? DEFAULT_IMAGE_SET
+            : (sets.some((s: any) => s.id === "recognition_reduce") ? "recognition_reduce" : sets[0].id);
+          setSelectedImageSet(fallback);
         }
       } catch { if (!cancelled) setImageSetList([]); }
     })();
@@ -6881,6 +6938,69 @@ export function VideoImportPage({
             };
             const renderTransformStrip = (it: any, inputRel: string) => {
               const doneBy = new Set((it.transforms || []).filter((t: any) => t.status === "done").map((t: any) => String(t.output)));
+              // Shared per-row context for the interactive grouping/turtle cells:
+              // part colours from the extraction cell, group membership + nesting
+              // from the grouping cell, drawable strokes from the turtle result.
+              const rowKey = String(it.id || inputRel);
+              const cells: any[] = it.transforms || [];
+              const partsCell = cells.find((t: any) => Array.isArray(t.parts) && t.parts.length > 0);
+              const partColor = new Map<string, string>();
+              ((partsCell && partsCell.parts) || []).forEach((p: any) => { if (p && p.id) partColor.set(String(p.id), String(p.color || "")); });
+              const groupingCell = cells.find((t: any) => Array.isArray(t.groups) && t.groups.length > 0);
+              const turtleCell = cells.find((t: any) => t.status === "done" && t.resultPath && /turtle/.test(String(t.name || "")));
+              const turtleText = turtleCell ? reduceMetta[String(turtleCell.resultPath)] : undefined;
+              const strokes = turtleText ? parseTurtleStrokes(turtleText) : [];
+              const selArr = stripSel[rowKey] || [];
+              const sel = selArr.length ? new Set(selArr) : null; // null = render ALL parts
+              const sk = stripStrokes[rowKey] || { outer: true, inner: true, medial: true };
+              let dims: [number, number] = [640, 640];
+              for (const c of cells) { const cs = c && c.summary; if (cs && cs.width && cs.height) { dims = [Number(cs.width), Number(cs.height)]; break; } }
+              const groupColorOf = new Map<string, string>();
+              const partGroup = new Map<string, string>();
+              ((groupingCell && groupingCell.groups) || []).forEach((g: any, gi: number) => {
+                groupColorOf.set(String(g.id), GROUP_COLORS[gi % GROUP_COLORS.length]);
+                (g.members || []).forEach((m: any) => partGroup.set(String(m), String(g.id)));
+              });
+              const childrenOf = new Map<string, string[]>();
+              const parentOf = new Map<string, string>();
+              ((groupingCell && groupingCell.partOf) || []).forEach((pair: any) => {
+                const a = String(pair[0]); const b = String(pair[1]);
+                const arr = childrenOf.get(b) || []; arr.push(a); childrenOf.set(b, arr);
+                parentOf.set(a, b);
+              });
+              const setSel = (ids: string[], additive: boolean) => setStripSel((prev) => {
+                const cur = new Set(prev[rowKey] || []);
+                if (additive) {
+                  const allIn = ids.every((i) => cur.has(i));
+                  if (allIn) ids.forEach((i) => cur.delete(i)); else ids.forEach((i) => cur.add(i));
+                  return { ...prev, [rowKey]: [...cur] };
+                }
+                const same = ids.length === cur.size && ids.every((i) => cur.has(i));
+                return { ...prev, [rowKey]: same ? [] : ids };
+              });
+              const strokeColor = (st: TurtleStroke, byGroup: boolean) =>
+                (byGroup ? groupColorOf.get(partGroup.get(st.id) || "") : undefined) || partColor.get(st.id) || "#8a8f98";
+              const strokeEl = (st: TurtleStroke, key: string, col: string) => {
+                const pts = st.points.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+                const w = st.kind === "outer" ? 2.5 : st.kind === "inner" ? 1.8 : 1.6;
+                const dash = st.kind === "medial" ? "5 4" : undefined;
+                const op = st.kind === "outer" ? 1 : 0.85;
+                return st.closed
+                  ? <polygon key={key} points={pts} fill="none" stroke={col} strokeWidth={w} strokeDasharray={dash} opacity={op} vectorEffect="non-scaling-stroke" />
+                  : <polyline key={key} points={pts} fill="none" stroke={col} strokeWidth={w} strokeDasharray={dash} opacity={op} vectorEffect="non-scaling-stroke" />;
+              };
+              const renderPartNode = (pid: string, depth: number): any => {
+                const isSel = !!sel && sel.has(pid);
+                const kids = (childrenOf.get(pid) || []).filter((k) => partGroup.get(k) === partGroup.get(pid));
+                return (
+                  <li key={pid}>
+                    <button type="button" className={isSel ? "is-sel" : ""} title={pid} onClick={(e) => setSel([pid], e.shiftKey)}>
+                      <span className="video-import-reduce-treedot" style={{ background: partColor.get(pid) || "#8a8f98" }} />{pid}
+                    </button>
+                    {depth < 3 && kids.length > 0 && <ul>{kids.map((k) => renderPartNode(k, depth + 1))}</ul>}
+                  </li>
+                );
+              };
               return (
                 <div className="video-import-transform-strip">
                   <figure className="video-import-reduce-stage is-submitted">
@@ -6892,6 +7012,81 @@ export function VideoImportPage({
                     if (t.status === "done") {
                       const s = t.summary || {};
                       const hasStats = Object.keys(s).length > 0 || (Array.isArray(t.groups) && t.groups.length > 0);
+                      // Interactive grouping cell: partOf tree (click = select; empty
+                      // selection = everything) + outer strokes over the dimmed input.
+                      if (groupingCell && t === groupingCell) {
+                        const bg = Array.isArray(t.background) ? t.background.map(String) : [];
+                        const shown = strokes.filter((st) => st.kind === "outer" && (!sel || sel.has(st.id)));
+                        return (
+                          <div key={ti} className="video-import-transform-cell is-done is-grouping" title={t.resultPath || t.output}>
+                            <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""}</span></div>
+                            <div className="video-import-transform-duo">
+                              <div className="video-import-reduce-grouptree">
+                                {(t.groups || []).map((g: any, gi: number) => {
+                                  const gid = String(g.id);
+                                  const col = groupColorOf.get(gid) || "#8a8f98";
+                                  const members = (g.members || []).map(String);
+                                  const gkey = `${rowKey}#${gid}`;
+                                  const gopen = stripOpenGroups.has(gkey);
+                                  const groupSel = !!sel && members.length > 0 && members.every((m: string) => sel.has(m));
+                                  const toggleOpen = () => setStripOpenGroups((prev) => { const n = new Set(prev); if (n.has(gkey)) n.delete(gkey); else n.add(gkey); return n; });
+                                  const roots = members.filter((m: string) => { const p = parentOf.get(m); return !p || !members.includes(p); });
+                                  return (
+                                    <details key={gi} className="video-import-reduce-groupnode" open={gopen}>
+                                      <summary className={groupSel ? "is-sel" : ""} style={{ color: col }}
+                                        onClick={(e) => { e.preventDefault(); setSel(members, e.shiftKey); }}>
+                                        <span className="video-import-reduce-groupchev" role="button" tabIndex={0}
+                                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleOpen(); }}
+                                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); toggleOpen(); } }}>{gopen ? "▾" : "▸"}</span>
+                                        <span className="video-import-reduce-groupdot" style={{ background: col }} />{gid} · {members.length}
+                                      </summary>
+                                      <ul>{roots.map((m: string) => renderPartNode(m, 0))}</ul>
+                                    </details>
+                                  );
+                                })}
+                                {bg.length > 0 && (
+                                  <button type="button" className="video-import-transform-bgchip" title={`background: ${bg.join(", ")}`}
+                                    onClick={(e) => setSel(bg, e.shiftKey)}>bg {bg.join(",")}</button>
+                                )}
+                              </div>
+                              <svg viewBox={`0 0 ${dims[0]} ${dims[1]}`} className="video-import-reduce-svg is-strip" preserveAspectRatio="xMidYMid meet">
+                                <image href={asset(inputRel)} x="0" y="0" width={dims[0]} height={dims[1]} preserveAspectRatio="xMidYMid meet" opacity={sel ? 0.12 : 0.3} />
+                                {shown.map((st, si) => strokeEl(st, `g${si}`, strokeColor(st, true)))}
+                              </svg>
+                            </div>
+                            <div className="video-import-transform-note">
+                              {Array.isArray(t.partOf) && t.partOf.length > 0 ? `${t.partOf.length} part-of · ` : ""}
+                              {sel ? `sel ${sel.size} parts` : "all parts"}
+                              {turtleCell && turtleText === undefined ? " · loading strokes…" : ""}
+                            </div>
+                          </div>
+                        );
+                      }
+                      // Interactive turtle cell: stroke-kind checkboxes + the drawn
+                      // strokes for the selected parts (or all when none selected).
+                      if (turtleCell && t === turtleCell) {
+                        const shown = strokes.filter((st) => sk[st.kind] && (!sel || sel.has(st.id)));
+                        const setKind = (k: "outer" | "inner" | "medial", v: boolean) => setStripStrokes((prev) => ({ ...prev, [rowKey]: { ...(prev[rowKey] || { outer: true, inner: true, medial: true }), [k]: v } }));
+                        return (
+                          <div key={ti} className="video-import-transform-cell is-done is-turtle" title={t.resultPath || t.output}>
+                            <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""}{s.programCount != null ? ` · ${s.programCount} programs` : ""}</span></div>
+                            <div className="video-import-transform-duo">
+                              <div className="video-import-transform-kinds">
+                                <label><input type="checkbox" checked={sk.outer} onChange={(e) => setKind("outer", e.target.checked)} />OuterEdge</label>
+                                <label><input type="checkbox" checked={sk.inner} onChange={(e) => setKind("inner", e.target.checked)} />InnerEdges</label>
+                                <label><input type="checkbox" checked={sk.medial} onChange={(e) => setKind("medial", e.target.checked)} />Medials</label>
+                              </div>
+                              <svg viewBox={`0 0 ${dims[0]} ${dims[1]}`} className="video-import-reduce-svg is-strip" preserveAspectRatio="xMidYMid meet">
+                                <image href={asset(inputRel)} x="0" y="0" width={dims[0]} height={dims[1]} preserveAspectRatio="xMidYMid meet" opacity={0.08} />
+                                {shown.map((st, si) => strokeEl(st, `t${si}`, strokeColor(st, false)))}
+                              </svg>
+                            </div>
+                            <div className="video-import-transform-note">
+                              {turtleText === undefined ? "loading strokes…" : `${shown.length} of ${strokes.length} strokes`} · {sel ? `sel ${sel.size} parts` : "all parts"}
+                            </div>
+                          </div>
+                        );
+                      }
                       // Image-only transform (e.g. parts_debug overlay) renders as a plain figure.
                       if (t.debugImage && !hasStats) {
                         return (

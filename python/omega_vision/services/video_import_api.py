@@ -2305,6 +2305,11 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                     if isinstance(parts, list) and parts:
                         summary["partCount"] = len(parts)
                         summary["partColors"] = [str(p.get("color") or "") for p in parts[:8]]
+                        # Full id->color list so the UI can colour grouping-tree
+                        # dots and turtle strokes per part.
+                        cell["parts"] = [
+                            {"id": str(p.get("id")), "color": str(p.get("color") or ""), "area": p.get("area")}
+                            for p in parts if isinstance(p, dict) and p.get("id")]
                     if summary:
                         cell["summary"] = summary
                 except (OSError, json.JSONDecodeError):
@@ -2487,9 +2492,13 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
     else:
         # Frame-based recording set: one item per frame, all grouped under the
         # set's leaf name so the Extractions list shows a single foldable group.
+        # Items are built in a thread pool — each one is a handful of small
+        # sidecar reads (provenance/state/todos/meta), which on Windows are
+        # latency-bound, so large recordings (1000+ frames) list in seconds.
         set_leaf = parts[-1] if parts else set_id
         set_leaf = set_leaf.replace("data-arc3_games-recordings-", "")
-        for img in _resolve_set_images(d):
+
+        def _build_frame_item(img: Path) -> dict[str, Any]:
             rel_to_d = img.relative_to(d).as_posix()
             stem = rel_to_d.rsplit(".", 1)[0]
             idv = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_") or img.stem
@@ -2540,7 +2549,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                             action = str(st.get("incoming_action") or "")
                     except (OSError, json.JSONDecodeError):
                         pass
-            items.append({
+            return {
                 "id": idv, "slug": set_leaf, "cond": stem,
                 "label": set_leaf.replace("_", " ").replace("-", " "),
                 "input": img.name, "inputPath": _data_rel_of(root, img),
@@ -2549,7 +2558,12 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                 "rows": normalize_rows(m.get("rows")),
                 **({"transforms": tr["list"], "transformsDone": tr["done"], "transformsTotal": tr["total"]}
                    if (tr := _unit_transforms(root, img.parent)) else {}),
-            })
+            }
+
+        images = _resolve_set_images(d)
+        if images:
+            with ThreadPoolExecutor(max_workers=min(16, max(4, len(images)))) as pool:
+                items = list(pool.map(_build_frame_item, images))
     sequence_parts: dict[str, Any] | None = None
     sp_path = d / "sequence_parts.json"
     if sp_path.is_file():
