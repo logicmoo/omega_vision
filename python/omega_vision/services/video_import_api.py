@@ -6821,6 +6821,26 @@ def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
             payload = json.loads(file.read_text(encoding="utf-8"))
             steps = payload.get("pipeline") if isinstance(payload, dict) else payload
             if isinstance(steps, list) and steps:
+                legacy_keys = {
+                    (str(step.get("transformation")), str(step.get("doer")))
+                    for step in steps if isinstance(step, dict)
+                }
+                legacy_default = {
+                    ("parts_extraction_0", "python_scikit"),
+                    ("parts_debug_0", "python_pil"),
+                    ("parts_grouping_0", "group_regions_prolog"),
+                    ("turtle_programs", "turtle_programs_prolog"),
+                }
+                # Upgrade only the exact former built-in template. User-edited
+                # templates remain authoritative.
+                if legacy_keys == legacy_default and len(steps) == len(legacy_default):
+                    upgraded = [dict(step) for step in _DEFAULT_PIPELINE_TEMPLATE]
+                    file.write_text(json.dumps({
+                        "kind": "transform_pipeline_template",
+                        "comment": _PIPELINE_TEMPLATE_COMMENT,
+                        "pipeline": upgraded,
+                    }, indent=2), encoding="utf-8")
+                    return upgraded
                 return steps
         except (OSError, ValueError):
             pass
@@ -7130,12 +7150,11 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     meta.json (attribution + stats), and optionally debug_image.png. Outputs
     travel with the game sequence: ``<move>/<transformation>/<doer>/...`` for
     recordings, ``data/<set>/transforms/<image>/<transformation>/<doer>/...``
-    for image sets. By default the full pipeline runs: parts_extraction_0 by
-    python_scikit, then parts_grouping_0 and turtle_programs by the prolog
-    rules files that do them. Pass ``transformation``/``doer`` for a single
-    step or ``pipeline`` for an explicit list. Already-transformed units are
-    skipped unless ``force``; ``moves`` limits the run to specific
-    ordinals/stems.
+    for image sets. By default the full pipeline runs all registered parts
+    extractors, then parts_grouping_0 and turtle_programs by their Prolog
+    rules. Pass ``transformation``/``doer`` for a single step or ``pipeline``
+    for an explicit list. Already-transformed units are skipped unless
+    ``force``; ``moves`` limits the run to specific ordinals/stems.
     """
     workspace_id = str(body.get("workspaceId") or "")
     if not workspace_id:
@@ -7209,6 +7228,21 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
     merge_todos = bool(body.get("mergeTodos"))
+    fresh_todos = bool(body.get("freshTodos"))
+    if merge_todos and fresh_todos:
+        raise HTTPException(status_code=400, detail="mergeTodos and freshTodos are mutually exclusive")
+    if fresh_todos:
+        live_claims = [
+            unit["dir"] / spec["transformation"] / spec["doer"] / "claim.json"
+            for unit in units
+            for spec in pipeline_specs
+            if _read_claim(unit["dir"] / spec["transformation"] / spec["doer"] / "claim.json") is not None
+        ]
+        if live_claims:
+            raise HTTPException(
+                status_code=409,
+                detail=f"cannot create fresh todos while {len(live_claims)} selected step(s) are actively claimed; pause and wait for them",
+            )
 
     def _existing_unit_specs(unit: dict[str, Any]) -> list[dict[str, Any]]:
         """The unit's already-stamped todos as pipeline specs, so a partial
@@ -7233,6 +7267,11 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     def apply_one(unit: dict[str, Any]) -> dict[str, Any]:
         extra_specs = adopt(unit) if adopt is not None else []
         unit_specs = extra_specs + pipeline_specs
+        if fresh_todos:
+            for spec in pipeline_specs:
+                output_dir = unit["dir"] / spec["transformation"] / spec["doer"]
+                if output_dir.is_dir():
+                    shutil.rmtree(output_dir)
         if merge_todos:
             merged: dict[str, dict[str, Any]] = {
                 f"{s['transformation']}/{s['doer']}": s for s in _existing_unit_specs(unit)

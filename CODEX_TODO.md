@@ -34,7 +34,23 @@ values here.
   `_REPO_ROOT parents[...]` line. Known pre-existing failures unrelated to
   this change: 3 `test_video_import_ui.py` layout tests, the
   `VisualImageDiffPage.tsx` TS7006 build errors, and full-suite collection
-  errors from a leaked `ARC3_RUNTIME_HOME` (all reproduce on the base tree).
+  errors from a leaked `ARC3_RUNTIME_HOME` plus an unavailable `mailbox_chat`
+  plugin import (all reproduce on the base tree).
+
+- Parts-extractor comparison controls (2026-09-07): the Recognition extraction
+  view has one persisted global `parts_extraction_0` selector that applies to
+  every input row. It can show OpenCV, scikit, or pure Prolog alone, or expand
+  all three paths side by side per input, including unstamped placeholders.
+  Todo stamping is split into **Add/Merge todos** (preserves current steps and
+  results) and **Fresh todos** (replaces the queue and removes only the current
+  template's outputs before recomputation). A persisted First-N limit scopes
+  either action for quick previews; zero means the complete set. The API rejects
+  a fresh reset while any selected output is actively claimed. Exact legacy
+  four-step workspace templates migrate to the three-extractor default without
+  changing user-customized templates. Focused Video Import tests (20) and the
+  production frontend build passed; live DOM inspection confirmed one global
+  selector, the two todo actions, and three extraction cells for one input in
+  compare mode.
 
 - Video Import now resolves the workspace's inherited effective model through
   `model-selection?include_models=false` before the full Model Policy registry

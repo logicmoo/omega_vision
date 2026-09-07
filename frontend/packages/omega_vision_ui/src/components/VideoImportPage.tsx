@@ -3191,15 +3191,25 @@ export function VideoImportPage({
   // which stroke kinds the turtle cell draws, and which tree nodes are open.
   const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
   const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
-  // Which parts_extraction_0 doer the transform strips display (all doers keep
-  // running side by side on disk; this only selects the shown cell).
+  // Which parts_extraction_0 doer every transform strip displays. "__all__"
+  // expands all extractor paths side by side for each input image.
   const PARTS_EXTRACTOR_DOERS = ["python_opencv", "python_scikit", "shape_finder_prolog"];
   const [partsExtractorSel, setPartsExtractorSel] = useState<string>(() => {
-    try { return window.localStorage.getItem("videoImport.partsExtractor") || "python_opencv"; } catch { return "python_opencv"; }
+    try {
+      const stored = window.localStorage.getItem("videoImport.partsExtractor") || "python_opencv";
+      return stored === "__all__" || PARTS_EXTRACTOR_DOERS.includes(stored) ? stored : "python_opencv";
+    } catch { return "python_opencv"; }
   });
+  const showAllPartsExtractors = partsExtractorSel === "__all__";
   useEffect(() => {
     try { window.localStorage.setItem("videoImport.partsExtractor", partsExtractorSel); } catch { /* ignore */ }
   }, [partsExtractorSel]);
+  const [todoPreviewCount, setTodoPreviewCount] = useState<number>(() => {
+    try { return Math.max(0, Number(window.localStorage.getItem("videoImport.todoPreviewCount")) || 0); } catch { return 0; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("videoImport.todoPreviewCount", String(todoPreviewCount)); } catch { /* ignore */ }
+  }, [todoPreviewCount]);
   const [stripOpenGroups, setStripOpenGroups] = useState<Set<string>>(new Set());
   // Reduce section shows a collapsible char-grouped grid above a flat
   // one-row-per-image list (all 200); "reduceListQuery" filters the list.
@@ -4381,21 +4391,36 @@ export function VideoImportPage({
   // Stamp todos.json across every unit of the visible image set (planOnly =
   // write the queue, run nothing) so the offline transform_task_pooler picks
   // the work up on its next scan pass.
-  const seedTodos = useCallback(async () => {
+  const seedTodos = useCallback(async (mode: "merge" | "fresh") => {
     if (!workspaceId || seedTodosBusy) return;
     setSeedTodosBusy(true);
     setSeedTodosNote("");
     try {
+      const allItems = Array.isArray(recognitionReduce?.items) ? recognitionReduce.items : [];
+      const requested = Math.max(0, Math.trunc(todoPreviewCount));
+      const moves = requested > 0
+        ? allItems.slice(0, requested).map((item: any) => String(item.id))
+        : undefined;
       const resp = await fetch(`${API}/sequence-sets/transform`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceId, set: selectedImageSet, planOnly: true, poolerWorkers }),
+        body: JSON.stringify({
+          workspaceId,
+          set: selectedImageSet,
+          planOnly: true,
+          poolerWorkers,
+          mergeTodos: mode === "merge",
+          freshTodos: mode === "fresh",
+          ...(moves ? { moves } : {}),
+        }),
       });
       const data = await resp.json().catch(() => null);
       if (!resp.ok) {
         setSeedTodosNote(String(data?.detail || `HTTP ${resp.status}`));
         return;
       }
-      setSeedTodosNote(`stamped ${data.moveCount} units · ${data.pendingTotal} pending — pooler moved to this set`);
+      const verb = mode === "merge" ? "merged" : "freshly reset";
+      const scope = moves ? `first ${data.moveCount}` : `${data.moveCount}`;
+      setSeedTodosNote(`${verb} todos for ${scope} units · ${data.pendingTotal} pending — pooler moved to this set`);
       await refreshReduceManifest();
       await refreshPooler();
     } catch (error: any) {
@@ -4403,7 +4428,8 @@ export function VideoImportPage({
     } finally {
       setSeedTodosBusy(false);
     }
-  }, [workspaceId, selectedImageSet, seedTodosBusy, refreshReduceManifest, refreshPooler, poolerWorkers]);
+  }, [workspaceId, selectedImageSet, seedTodosBusy, recognitionReduce, todoPreviewCount,
+      refreshReduceManifest, refreshPooler, poolerWorkers]);
   // Keep the pooler chip live while the Extractions list is on screen.
   useEffect(() => {
     if (!recognitionReduce) return;
@@ -7036,19 +7062,29 @@ export function VideoImportPage({
               // from the grouping cell, drawable strokes from the turtle result.
               const rowKey = String(it.id || inputRel);
               const cells: any[] = it.transforms || [];
-              // All extraction doers run side by side; the strip shows ONE
-              // extraction cell, chosen by the combobox rendered above its
-              // parts_extraction_0 label.
+              // One global selector controls every row. "All" expands the
+              // three possible extraction paths side by side for comparison;
+              // missing paths remain visible as unstamped placeholders.
               const extractionCells = cells.filter((c: any) => String(c.name) === "parts_extraction_0");
-              const shownExtraction = extractionCells.find((c: any) => String(c.doer) === partsExtractorSel)
-                || extractionCells.find((c: any) => c.status === "done")
-                || extractionCells[0];
-              const extractorOptions = Array.from(new Set([
-                ...extractionCells.map((c: any) => String(c.doer)),
-                ...PARTS_EXTRACTOR_DOERS,
-              ]));
-              const partsCell = (shownExtraction && Array.isArray(shownExtraction.parts) && shownExtraction.parts.length > 0)
-                ? shownExtraction
+              const selectedExtraction = extractionCells.find((c: any) => String(c.doer) === partsExtractorSel);
+              const primaryExtraction = showAllPartsExtractors
+                ? extractionCells.find((c: any) => String(c.doer) === "python_opencv" && c.status === "done")
+                  || extractionCells.find((c: any) => c.status === "done")
+                : selectedExtraction;
+              const shownExtractionCells = (showAllPartsExtractors ? PARTS_EXTRACTOR_DOERS : [partsExtractorSel])
+                .map((doer) => extractionCells.find((c: any) => String(c.doer) === doer) || ({
+                  name: "parts_extraction_0",
+                  doer,
+                  output: `parts_extraction_0/${doer}`,
+                  status: "missing",
+                  dependsOn: [],
+                }));
+              const displayCells = [
+                ...shownExtractionCells,
+                ...cells.filter((c: any) => String(c.name) !== "parts_extraction_0"),
+              ];
+              const partsCell = (primaryExtraction && Array.isArray(primaryExtraction.parts) && primaryExtraction.parts.length > 0)
+                ? primaryExtraction
                 : cells.find((t: any) => Array.isArray(t.parts) && t.parts.length > 0);
               const partColor = new Map<string, string>();
               ((partsCell && partsCell.parts) || []).forEach((p: any) => { if (p && p.id) partColor.set(String(p.id), String(p.color || "")); });
@@ -7113,9 +7149,8 @@ export function VideoImportPage({
                     <img className="video-import-reduce-stageimg" src={asset(inputRel)} alt={it.id} loading="lazy" />
                     <figcaption>input</figcaption>
                   </figure>
-                  {(it.transforms || []).map((t: any, ti: number) => {
+                  {displayCells.map((t: any, ti: number) => {
                     const isExtraction = String(t.name) === "parts_extraction_0";
-                    if (isExtraction && shownExtraction && t !== shownExtraction) return null;
                     const renderCell = () => {
                     const secs = fmtMs(t.elapsedMs);
                     if (t.status === "done") {
@@ -7235,7 +7270,7 @@ export function VideoImportPage({
                     if (t.status === "claimed") {
                       return (
                         <div key={ti} className="video-import-transform-cell is-started">
-                          <div className="video-import-transform-title">{t.name}</div>
+                          <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
                           <div className="video-import-transform-wait">⏳ started{t.claimedBy ? ` · ${t.claimedBy}` : ""}{t.claimedAt ? ` · ${agoOf(t.claimedAt)}` : ""}</div>
                         </div>
                       );
@@ -7243,37 +7278,18 @@ export function VideoImportPage({
                     const unmet = (t.dependsOn || []).filter((d: string) => !doneBy.has(String(d))).map((d: string) => String(d).split("/")[0]);
                     return (
                       <div key={ti} className="video-import-transform-cell is-waiting">
-                        <div className="video-import-transform-title">{t.name}</div>
-                        <div className="video-import-transform-wait">{unmet.length ? `waiting for ${unmet.join(", ")}…` : "queued…"}</div>
+                        <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
+                        <div className="video-import-transform-wait">
+                          {t.status === "missing" ? "not stamped — use Add/Merge todos" : unmet.length ? `waiting for ${unmet.join(", ")}…` : "queued…"}
+                        </div>
                       </div>
                     );
                     };
                     const cell = renderCell();
                     let header: any = null;
-                    if (isExtraction) {
-                      const selCell = extractionCells.find((c: any) => String(c.doer) === partsExtractorSel);
-                      header = (
-                        <span className="video-import-extractor-pick">
-                          <select value={partsExtractorSel} onChange={(e) => setPartsExtractorSel(e.target.value)}
-                            title="Which parts extractor this strip shows — every doer keeps its outputs side by side on disk">
-                            {extractorOptions.map((d) => {
-                              const c = extractionCells.find((x: any) => String(x.doer) === d);
-                              const mark = c ? (c.status === "done" ? "✓" : c.status === "claimed" ? "⏳" : "·") : "∅";
-                              return <option key={d} value={d}>{mark} {d}</option>;
-                            })}
-                          </select>
-                          {(!selCell || selCell.status !== "done") && (
-                            <button type="button" disabled={!!stripRefreshBusy[rowKey]}
-                              title={`Stamp a parts_extraction_0/${partsExtractorSel} todo for this unit — the pooler runs it in the background`}
-                              onClick={() => void runUnitTransformSteps(it, inputRel, [
-                                { transformation: "parts_extraction_0", doer: partsExtractorSel, options: {}, dependsOn: [], priority: 10, type: "py_pl" },
-                              ], { planOnly: true })}>
-                              {stripRefreshBusy[rowKey] ? "…" : "▶ run"}
-                            </button>
-                          )}
-                        </span>
-                      );
-                    } else if ((String(t.name) === "parts_grouping_0" || String(t.name) === "turtle_programs") && t.status === "done" && shownExtraction) {
+                    if (!isExtraction && !showAllPartsExtractors
+                        && (String(t.name) === "parts_grouping_0" || String(t.name) === "turtle_programs")
+                        && t.status === "done" && selectedExtraction) {
                       const facts = String((t.summary || {}).partsFacts || "");
                       const stale = !!facts && !facts.startsWith(`parts_extraction_0/${partsExtractorSel}/`);
                       const selDone = extractionCells.some((c: any) => String(c.doer) === partsExtractorSel && c.status === "done");
@@ -7353,12 +7369,33 @@ export function VideoImportPage({
                   );
                 })()}
                 <div className="video-import-reduce-listctrls">
+                  <label className="video-import-global-extractor"
+                    title="One selection controls the parts_extraction_0 column for every input image. Choose All to compare every extractor path per image.">
+                    <span>PARTS EXTRACTOR · ALL INPUTS</span>
+                    <select value={partsExtractorSel} onChange={(e) => setPartsExtractorSel(e.target.value)}>
+                      <option value="__all__">All extractors (compare)</option>
+                      {PARTS_EXTRACTOR_DOERS.map((doer) => <option key={doer} value={doer}>{doer}</option>)}
+                    </select>
+                    <small>parts_extraction_0</small>
+                  </label>
+                  <label className="video-import-todo-preview-count"
+                    title="Limit todo stamping to the first N input images for a quick preview. Use 0 for every image.">
+                    <span>FIRST N</span>
+                    <input type="number" min={0} max={recognitionReduce.items.length} value={todoPreviewCount}
+                      onChange={(e) => setTodoPreviewCount(Math.max(0, Math.trunc(Number(e.target.value) || 0)))} />
+                    <small>{todoPreviewCount > 0 ? "preview only" : "0 = all inputs"}</small>
+                  </label>
                   <LaneReduceButton primary label={`▶ Reduce all ${recognitionReduce.items.length} · all impls`}
                     title="Run ALL implementations (LLM 1-shot + 2-shot tiers AND the SWI-Prolog symbolic line + registry) for every pool image, server-side."
                     laneRun={laneRuns["reduce"]} onStart={() => startServerStage("reduce")} onStop={() => void stopServerPipeline("reduce")} />
-                  <button type="button" className="video-import-btn" disabled={seedTodosBusy} onClick={() => void seedTodos()}
-                    title="Stamp todos.json onto every unit of this set (writes the offline work queue, runs nothing here). The transform task pooler scans for these and does the extraction/grouping/turtle work in the background.">
-                    {seedTodosBusy ? "adding todos…" : "⊕ Add todos (pooler)"}
+                  <button type="button" className="video-import-btn" disabled={seedTodosBusy} onClick={() => void seedTodos("merge")}
+                    title="Add/update the current template steps while preserving every existing todo and completed output. The pooler runs pending work.">
+                    {seedTodosBusy ? "stamping todos…" : "⊕ Add/Merge todos"}
+                  </button>
+                  <button type="button" className="video-import-btn video-import-fresh-todos" disabled={seedTodosBusy}
+                    onClick={() => void seedTodos("fresh")}
+                    title="Fresh start: replace todos with the current template and remove those steps' existing outputs so the pooler recomputes them. Respects First N.">
+                    {seedTodosBusy ? "stamping todos…" : "↻ Fresh todos"}
                   </button>
                   {seedTodosNote ? <span className="video-import-reduce-partsbar-note">{seedTodosNote}</span> : null}
                   {(() => {

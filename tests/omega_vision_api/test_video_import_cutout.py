@@ -35,6 +35,68 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
     assert saved["lastExtract"] == {"count": 4}
 
 
+def test_legacy_default_pipeline_template_upgrades_to_all_extractors(tmp_path: Path) -> None:
+    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template.parent.mkdir(parents=True)
+    template.write_text(json.dumps({
+        "pipeline": [
+            {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {}, "priority": 10, "dependsOn": []},
+            {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_scikit"]},
+            {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_scikit"]},
+            {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+        ],
+    }), encoding="utf-8")
+
+    upgraded = video_import_api.load_pipeline_template(tmp_path)
+
+    extractor_doers = {
+        step["doer"] for step in upgraded
+        if step["transformation"] == "parts_extraction_0"
+    }
+    assert extractor_doers == {"python_opencv", "python_scikit", "shape_finder_prolog"}
+    assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == upgraded
+
+
+def test_fresh_todos_reset_only_requested_preview_units(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    set_dir = tmp_path / "image_set"
+    pool = set_dir / "pool"
+    pool.mkdir(parents=True)
+    for stem in ("a", "b"):
+        Image.new("RGB", (2, 2), "white").save(pool / f"{stem}.png")
+        output = set_dir / "transforms" / stem / "parts_extraction_0" / "python_opencv"
+        output.mkdir(parents=True)
+        (output / "meta.json").write_text('{"done":true}', encoding="utf-8")
+
+    monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
+    monkeypatch.setattr(video_import_api, "_resolve_set_dir", lambda _root, _rel: set_dir)
+    monkeypatch.setattr(video_import_api, "_pooler_point_at", lambda _root, _workers: {"ok": True})
+
+    result = video_import_api.sequence_set_transform({
+        "workspaceId": "test",
+        "set": "curated/test",
+        "pipeline": [{
+            "transformation": "parts_extraction_0",
+            "doer": "python_opencv",
+            "options": {},
+            "priority": 10,
+            "dependsOn": [],
+        }],
+        "moves": ["a"],
+        "planOnly": True,
+        "freshTodos": True,
+        "workers": 1,
+    })
+
+    assert result["moveCount"] == 1
+    assert not (set_dir / "transforms" / "a" / "parts_extraction_0" / "python_opencv").exists()
+    assert (set_dir / "transforms" / "b" / "parts_extraction_0" / "python_opencv" / "meta.json").is_file()
+    todos = json.loads((set_dir / "transforms" / "a" / "todos.json").read_text(encoding="utf-8"))
+    assert [todo["status"] for todo in todos["todos"]] == ["pending"]
+
+
 def test_video_caption_webvtt_round_trip() -> None:
     cues = [
         {"start": 1.25, "end": 3.5, "text": "Hello world"},
