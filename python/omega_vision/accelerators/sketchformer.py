@@ -1,4 +1,4 @@
-"""SoW Appendix A.2 ``accelerators/sketchformer`` — future accelerator (stub, §16)."""
+"""TODO Appendix A.2 ``accelerators/sketchformer`` — future accelerator (stub, §16)."""
 
 from .._future import future_component
 

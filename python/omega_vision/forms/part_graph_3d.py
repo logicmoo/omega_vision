@@ -1,6 +1,6 @@
-"""SoW Appendix A.2 ``forms/part_graph_3d.py`` — future form (stub only).
+"""TODO Appendix A.2 ``forms/part_graph_3d.py`` — future form (stub only).
 
-Part-graph 3D generative form for tabletop 3D robotics (SoW §16). Stub only.
+Part-graph 3D generative form for tabletop 3D robotics (TODO §16). Stub only.
 """
 
 from .._future import future_component

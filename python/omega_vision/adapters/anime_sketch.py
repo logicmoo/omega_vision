@@ -1,4 +1,4 @@
-"""SoW Appendix A.2 ``adapters/anime_sketch`` — future adapter (stub only, §16)."""
+"""TODO Appendix A.2 ``adapters/anime_sketch`` — future adapter (stub only, §16)."""
 
 from .._future import future_component
 

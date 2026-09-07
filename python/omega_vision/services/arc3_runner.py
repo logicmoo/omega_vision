@@ -16,7 +16,7 @@ from image_codec import extract_latest_frame, frame_to_png_bytes
 # Action trees are retired from the play engine. The store is only used when
 # the optional module is importable (debugger/test environments); the server
 # runs treeless and play recording is unaffected (PlaySession writes its own
-# data/arc3_games/recordings/... level dirs).
+# data/recordings/... level dirs).
 try:
     from action_tree import ActionTreeStore, StateNode
 except ImportError:  # pragma: no cover - server environments run treeless

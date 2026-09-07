@@ -39,12 +39,23 @@ part_map(Parts) :-
 
 part(Id, Color, Area, Centroid) :- region(Id, Color, Area, Centroid).
 
-% ---- background: hugs the edge and is large (bridges unrelated objects) -----
-background(Id) :-
+% ---- background: exterior plus matching-color regions in exposed cutouts -----
+% The exterior background hugs the image edge and is large. If a foreground
+% region touches it, a same-color region filling one of that region's cutouts
+% is background too rather than a detachable foreground part.
+exterior_background(Id) :-
     border(Id),
     img_size(W, H),
     region(Id, _, Area, _),
     Area >= 0.10 * W * H.
+
+background(Id) :- exterior_background(Id).
+background(Inner) :-
+    exterior_background(Bg),
+    adj(Outer, Bg),
+    region(Bg, Color, _, _),
+    region(Inner, Color, _, _),
+    in_cutout(Inner, Outer, _).
 
 foreground(Id) :- region(Id, _, _, _), \+ background(Id).
 
@@ -112,15 +123,18 @@ nonbg_cutout(Outer, Inner) :-
     in_smooth_cutout(Inner, Outer, _),
     \+ background(Outer).
 
-% Inner fills the smooth cutout Ring of Outer: enclosed, and a point of its
-% fill lies inside that hole ring. Fillpoints are guaranteed interior
-% (centroids are not: donuts, crescents), so probe those first.
-in_smooth_cutout(Inner, Outer, Ring) :-
+% Inner fills the cutout Ring of Outer: enclosed, and a point of its fill lies
+% inside that hole ring. Fillpoints are guaranteed interior (centroids are not:
+% donuts, crescents), so probe those first.
+in_cutout(Inner, Outer, Ring) :-
     encloses(Outer, Inner),
     inner_probe(Inner, CX, CY),
     hole(Outer, Ring),
-    ring_smooth(Ring),
     point_in_ring(CX, CY, Ring).
+
+in_smooth_cutout(Inner, Outer, Ring) :-
+    in_cutout(Inner, Outer, Ring),
+    ring_smooth(Ring).
 
 inner_probe(Inner, X, Y) :- fillpoint(Inner, xy(X, Y), _), !.
 inner_probe(Inner, X, Y) :- region(Inner, _, _, centroid(X, Y)).
@@ -177,7 +191,7 @@ crossings([xy(X1,Y1), xy(X2,Y2)|T], X, Y, Acc, C) :-
     ),
     crossings([xy(X2,Y2)|T], X, Y, Acc1, C).
 
-detachable(Inner) :- encloses(_, Inner).
+detachable(Inner) :- encloses(_, Inner), \+ background(Inner).
 
 scluster([], Acc, Sorted) :- sort(Acc, Sorted).
 scluster([X|Q], Acc, Out) :-
@@ -190,7 +204,113 @@ scluster([X|Q], Acc, Out) :-
 
 part_groups(Groups) :-
     findall(Id, foreground(Id), Ids),
-    partition_part_groups(Ids, [], Groups).
+    partition_part_groups(Ids, [], Raw),
+    regroup_by_color(Raw, Groups).
+
+% ---- color regrouping: a merged group whose members span several colors,
+% with two or more of those colors contributing two or more parts each, is
+% really several color-keyed siblings glued together (tile grids, mosaics).
+% Split such a group into one group per color. Groups where at most one
+% color repeats (a face with two same-color eyes, an outline with one odd
+% accent) stay merged.
+regroup_by_color([], []).
+regroup_by_color([G|T], Out) :-
+    split_mixed_group(G, Parts),
+    regroup_by_color(T, Rest),
+    append(Parts, Rest, Out).
+
+% A very large color mass is a structural object in its own right. Remove it
+% before clustering attached details so it cannot bridge unrelated parts.
+split_mixed_group(Members, Split) :-
+    split_dominant_color_mass(Members, Split),
+    !.
+split_mixed_group(Members, Split) :-
+    group_color_census(Members, Census),
+    include([_-Ids]>>(length(Ids, N), N >= 2), Census, Multi),
+    length(Multi, NM),
+    NM >= 2,
+    !,
+    findall(Ids, member(_-Ids, Census), Split).
+split_mixed_group(Members, [Members]).
+
+dominant_color_min_group_percent(67).
+dominant_color_min_image_percent(10).
+
+split_dominant_color_mass(Members, [MassMembers|OtherGroups]) :-
+    dominant_color_mass(Members, Color),
+    include(region_has_color(Color), Members, MassMembers),
+    exclude(region_has_color(Color), Members, OtherMembers),
+    MassMembers \== [],
+    OtherMembers \== [],
+    partition_attached_subset(OtherMembers, RawOtherGroups),
+    regroup_by_color(RawOtherGroups, OtherGroups).
+
+dominant_color_mass(Members, Color) :-
+    group_color_areas(Members, ColorAreas),
+    keysort(ColorAreas, Ascending),
+    reverse(Ascending, [ColorArea-Color|_]),
+    member_area_sum(Members, GroupArea),
+    img_size(Width, Height),
+    ImageArea is Width * Height,
+    dominant_color_min_group_percent(GroupPercent),
+    dominant_color_min_image_percent(ImagePercent),
+    ColorArea * 100 >= GroupArea * GroupPercent,
+    ColorArea * 100 >= ImageArea * ImagePercent.
+
+group_color_areas(Members, ColorAreas) :-
+    findall(Color,
+            ( member(Id, Members),
+              region(Id, Color, _, _)
+            ),
+            RawColors),
+    sort(RawColors, Colors),
+    findall(Area-Color,
+            ( member(Color, Colors),
+              include(region_has_color(Color), Members, ColorMembers),
+              member_area_sum(ColorMembers, Area)
+            ),
+            ColorAreas).
+
+region_has_color(Color, Id) :-
+    region(Id, Color, _, _).
+
+member_area_sum(Members, Area) :-
+    findall(MemberArea,
+            ( member(Id, Members),
+              region(Id, _, MemberArea, _)
+            ),
+            Areas),
+    sum_list(Areas, Area).
+
+partition_attached_subset([], []).
+partition_attached_subset([Seed|Rest], [Group|Groups]) :-
+    scluster_within([Seed|Rest], Seed, Group),
+    subtract(Rest, Group, Remaining),
+    partition_attached_subset(Remaining, Groups).
+
+scluster_within(Allowed, Seed, Members) :-
+    scluster_within_([Seed], Allowed, [], Raw),
+    sort(Raw, Members).
+
+scluster_within_([], _, Seen, Seen).
+scluster_within_([X|Queue], Allowed, Seen, Members) :-
+    ( memberchk(X, Seen)
+    -> scluster_within_(Queue, Allowed, Seen, Members)
+    ;  findall(Y,
+               ( attached(X, Y),
+                 memberchk(Y, Allowed),
+                 \+ memberchk(Y, Seen)
+               ),
+               Neighbors),
+       append(Queue, Neighbors, Next),
+       scluster_within_(Next, Allowed, [X|Seen], Members)
+    ).
+
+% Census: [Color-[MemberIds...]] for one group, colors sorted.
+group_color_census(Members, Census) :-
+    findall(C-Id, (member(Id, Members), region(Id, C, _, _)), Pairs),
+    keysort(Pairs, SortedPairs),
+    group_pairs_by_key(SortedPairs, Census).
 
 partition_part_groups([], _, []).
 partition_part_groups([Id|T], Seen, Out) :-
@@ -229,7 +349,7 @@ partition_objects([Id|T], Seen, Objs) :-
 report :-
     aggregate_all(count, region(_,_,_,_), NR),
     aggregate_all(count, encloses(_,_), NE),
-    findall(Id, background(Id), Bg), length(Bg, NB),
+    findall(Id, background(Id), Bg0), sort(Bg0, Bg), length(Bg, NB),
     objects(Objs), length(Objs, NO),
     part_groups(Groups),
     include([G]>>(length(G, LG), LG >= 2), Groups, RealGroups),

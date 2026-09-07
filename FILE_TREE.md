@@ -11,9 +11,9 @@ This is the clickable source map for the maintained repository. Every listed pat
 - [`python/arc_cli_debugger/config/README.md`](python/arc_cli_debugger/config/README.md) — unified provider/prompt configuration, provider cycling, comparison transcripts, artifact restoration, Unsloth Studio, Claude, and OpenAI.
 - [`DEBUGGER.md`](DEBUGGER.md) — ARC3 debugger controls, pluggable commands, action trees, provider artifacts, replay, browser terminal, and Turtle mock inspection.
 - [`KAGGLE.md`](KAGGLE.md) — ARC Prize 2026 local development, notebook generation, accelerator, submission, and troubleshooting guide.
-- [`SOW_PHASE_ARCHITECTURE.md`](SOW_PHASE_ARCHITECTURE.md) — large technical overview separating the delivered debugger from Phase 2 object semantics and Phase 3 learning/prediction.
+- [`TODO_PHASE_ARCHITECTURE.md`](TODO_PHASE_ARCHITECTURE.md) — large technical overview separating the delivered debugger from Phase 2 object semantics and Phase 3 learning/prediction.
 - [`TODO.md`](TODO.md) — post-delivery debugger maintenance plus concrete Phase 2 and Phase 3 implementation work.
-- [`SOW_DELIVERABLES.md`](SOW_DELIVERABLES.md) — completed Phase 1 debugger checklist and partial/open Phase 2 and Phase 3 outcomes with evidence links.
+- [`TODO_DELIVERABLES.md`](TODO_DELIVERABLES.md) — completed Phase 1 debugger checklist and partial/open Phase 2 and Phase 3 outcomes with evidence links.
 - [`FILE_TREE.md`](FILE_TREE.md) — this clickable source map.
 - [`docs/WORLD_ANALYSIS_WORKBENCH.md`](docs/WORLD_ANALYSIS_WORKBENCH.md) — domain-neutral AtomSpaces, observations, world models, goals, simulations, and ARC3 human-demonstration workflow.
 
@@ -196,9 +196,9 @@ The other files under `frontend/apps/workbench/src/pages/` and older shell-orien
 - [`python/omega_vision/runtime/replay.py`](python/omega_vision/runtime/replay.py) — exact semantic codecs, durable Prolog facts, queryable MeTTa AtomSpace records, and action-tree replay.
 - [`python/omega_vision/core/models.py`](python/omega_vision/core/models.py) — backend-neutral execution mode, normalized result, object, residual, atom, rule, evidence, confidence, and prediction records.
 - [`python/omega_vision/adapters/providers.py`](python/omega_vision/adapters/providers.py) — one provider interface with PROLOG, GPT-artifact, and deterministic PYTHON implementations.
-- [`python/omega_vision/forms/forms.py`](python/omega_vision/forms/forms.py) — `AbstractGenerativeForm` and the grid/Turtle `GenerativeForm` (SoW alias `CellLogoForm`); the holder can also delegate every contract method to a held subclass instance.
-- [`python/omega_vision/forms/contour_fill.py`](python/omega_vision/forms/contour_fill.py) — raster `ContourFillForm`: translation-invariant canonical fill programs with fit, residual, code length, and mirror completion (SoW A.8 task 8).
-- [`python/omega_vision/_future.py`](python/omega_vision/_future.py) — SoW §16 future-component scaffolding backing the `LayeredStrokeForm`, `PartGraph3DForm`, `Robot3DAdapter`, `RGBDObjectProposer`, `AnimeRegionProposer`, and `SketchformerEmbedding` importable stubs.
+- [`python/omega_vision/forms/forms.py`](python/omega_vision/forms/forms.py) — `AbstractGenerativeForm` and the grid/Turtle `GenerativeForm` (TODO alias `CellLogoForm`); the holder can also delegate every contract method to a held subclass instance.
+- [`python/omega_vision/forms/contour_fill.py`](python/omega_vision/forms/contour_fill.py) — raster `ContourFillForm`: translation-invariant canonical fill programs with fit, residual, code length, and mirror completion (TODO A.8 task 8).
+- [`python/omega_vision/_future.py`](python/omega_vision/_future.py) — TODO §16 future-component scaffolding backing the `LayeredStrokeForm`, `PartGraph3DForm`, `Robot3DAdapter`, `RGBDObjectProposer`, `AnimeRegionProposer`, and `SketchformerEmbedding` importable stubs.
 - [`python/omega_vision/adapters/adapters.py`](python/omega_vision/adapters/adapters.py) — modality-neutral perception adapter and thin grid-extractor adapter, with later image and simple-video providers sharing the same contracts.
 - [`python/omega_vision/core/memory.py`](python/omega_vision/core/memory.py) — residual admission, reference storage, zero-confidence commitments, positive/negative evidence updates, confidence governance, and tombstones through `SingleWriter`.
 - [`python/omega_vision/core/prediction.py`](python/omega_vision/core/prediction.py) — exact-identity rule store and prediction-before-outcome ledger.

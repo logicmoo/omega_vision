@@ -791,7 +791,7 @@
 
 # omega\_vision.accelerators.sketchformer
 
-SoW Appendix A.2 ``accelerators/sketchformer`` — future accelerator (stub, §16).
+TODO Appendix A.2 ``accelerators/sketchformer`` — future accelerator (stub, §16).
 
 <a id="omega_vision.accelerators.sketchformer.SketchformerEmbedding"></a>
 
@@ -1055,7 +1055,7 @@ def propose_candidates(observation: Any) -> Iterable[CandidateObject]
 
 # omega\_vision.adapters.anime\_sketch
 
-SoW Appendix A.2 ``adapters/anime_sketch`` — future adapter (stub only, §16).
+TODO Appendix A.2 ``adapters/anime_sketch`` — future adapter (stub only, §16).
 
 <a id="omega_vision.adapters.anime_sketch.AnimeRegionProposer"></a>
 
@@ -1298,10 +1298,10 @@ Query one normalized semantic namespace through the Prolog adapter.
 
 # omega\_vision.adapters.robot3d
 
-SoW Appendix A.2 ``adapters/robot3d`` — future adapter (stub only, §16).
+TODO Appendix A.2 ``adapters/robot3d`` — future adapter (stub only, §16).
 
 A.8 task 9 names ``Robot3DAdapter``; A.6 names ``RGBDObjectProposer``. Both are
-tabletop 3D robotics future work (SoW §16) — importable stubs only.
+tabletop 3D robotics future work (TODO §16) — importable stubs only.
 
 <a id="omega_vision.adapters.robot3d.Robot3DAdapter"></a>
 
@@ -4930,9 +4930,9 @@ def accounts(results: tuple[RecognitionBenchmarkResult, ...],
 
 # omega\_vision.forms.contour\_fill
 
-SoW Appendix A.2 ``forms/contour_fill.py`` / A.8 task 8 — the raster form.
+TODO Appendix A.2 ``forms/contour_fill.py`` / A.8 task 8 — the raster form.
 
-Raster -> a contour/fill program (SoW §5). This is one of the SoW-laid-out
+Raster -> a contour/fill program (TODO §5). This is one of the TODO-laid-out
 classes that had no prior home, so a compact, deterministic implementation lives
 here. It is intentionally small: it fulfils the :class:`AbstractGenerativeForm`
 contract (A.3) over a normalized set of filled cells per colour, so the same
@@ -4941,7 +4941,7 @@ kernel serves raster sprites by swapping the form language, not the core.
 A ``ContourFillForm`` holds a *fill program*: one layer per colour, each layer a
 set of integer ``(x, y)`` cells. Canonicalization translates to the origin and
 orders layers and cells deterministically, so identical shapes hash identically
-across machines (SoW §13 Determinism).
+across machines (TODO §13 Determinism).
 
 <a id="omega_vision.forms.contour_fill.Cell"></a>
 
@@ -5021,7 +5021,7 @@ def distance(other: AbstractGenerativeForm) -> float
 def code_length() -> float
 ```
 
-Description length = cells + per-layer parameter bits (SoW §5).
+Description length = cells + per-layer parameter bits (TODO §5).
 
 <a id="omega_vision.forms.contour_fill.ContourFillForm.residual"></a>
 
@@ -5041,7 +5041,7 @@ Explicit, measurable residual: cells the fitted account leaves uncovered.
 def complete(partial_evidence: Any = None) -> tuple["ContourFillForm", ...]
 ```
 
-Generative completion (SoW §8): mirror across the bbox vertical axis.
+Generative completion (TODO §8): mirror across the bbox vertical axis.
 
 <a id="omega_vision.forms.contour_fill.ContourFillForm.layers"></a>
 
@@ -5203,9 +5203,9 @@ def description_length() -> int
 
 # omega\_vision.forms.layered\_stroke
 
-SoW Appendix A.2 ``forms/layered_stroke.py`` — future form (stub only).
+TODO Appendix A.2 ``forms/layered_stroke.py`` — future form (stub only).
 
-Layered-stroke generative form for anime-style 2D games (SoW §16). Stub only.
+Layered-stroke generative form for anime-style 2D games (TODO §16). Stub only.
 
 <a id="omega_vision.forms.layered_stroke.LayeredStrokeForm"></a>
 
@@ -5215,9 +5215,9 @@ Layered-stroke generative form for anime-style 2D games (SoW §16). Stub only.
 
 # omega\_vision.forms.part\_graph\_3d
 
-SoW Appendix A.2 ``forms/part_graph_3d.py`` — future form (stub only).
+TODO Appendix A.2 ``forms/part_graph_3d.py`` — future form (stub only).
 
-Part-graph 3D generative form for tabletop 3D robotics (SoW §16). Stub only.
+Part-graph 3D generative form for tabletop 3D robotics (TODO §16). Stub only.
 
 <a id="omega_vision.forms.part_graph_3d.PartGraph3DForm"></a>
 
@@ -6029,12 +6029,12 @@ def compare(expected: Iterable[Any],
 
 # omega\_vision.\_future
 
-Shared scaffolding for SoW §16 "future" components.
+Shared scaffolding for TODO §16 "future" components.
 
-The SoW lays these names out as *stubs only* (Appendix A.2 comments, A.8 task 9):
+The TODO lays these names out as *stubs only* (Appendix A.2 comments, A.8 task 9):
 they must be importable so later models plug into an existing typed name, but they
 carry no acceptance bar and are not implemented in this contract. Instantiating or
-calling one raises :class:`FutureComponentError` with the SoW pointer.
+calling one raises :class:`FutureComponentError` with the TODO pointer.
 
 <a id="omega_vision._future.FutureComponentError"></a>
 
@@ -6044,7 +6044,7 @@ calling one raises :class:`FutureComponentError` with the SoW pointer.
 class FutureComponentError(NotImplementedError)
 ```
 
-Raised when a SoW §16 future component is used before it is built.
+Raised when a TODO §16 future component is used before it is built.
 
 <a id="omega_vision._future.future_component"></a>
 
@@ -6054,4 +6054,4 @@ Raised when a SoW §16 future component is used before it is built.
 def future_component(name: str, section: str, note: str)
 ```
 
-Build an importable stub class for a not-yet-in-scope SoW component.
+Build an importable stub class for a not-yet-in-scope TODO component.

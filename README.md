@@ -383,12 +383,12 @@ Application-specific documentation:
   analysis, Turtle mock display, web UI, replay, and provider evidence.
 - [Local development and Kaggle guide](KAGGLE.md) — setup, local play, notebook
   generation, submission, accelerators, and troubleshooting.
-- [Architecture](SOW_PHASE_ARCHITECTURE.md) — phase boundaries, classes,
+- [Architecture](TODO_PHASE_ARCHITECTURE.md) — phase boundaries, classes,
   modules, data contracts, per-object Turtle programs, learning, and
   prediction.
 - [Active implementation TODO](TODO.md) — current maintenance and upcoming
   semantic-learning work.
-- [SOW deliverables](SOW_DELIVERABLES.md) — delivered, partial, and open
+- [TODO deliverables](TODO_DELIVERABLES.md) — delivered, partial, and open
   outcomes with evidence links.
 
 Legacy `ARC3_*` environment variables remain compatibility aliases for the

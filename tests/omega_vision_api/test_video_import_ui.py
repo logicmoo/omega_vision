@@ -47,6 +47,24 @@ def test_user_preview_picker_has_no_number_parameter() -> None:
     assert user_picker < numbered_picker
 
 
+def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> None:
+    source = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+
+    assert 'className="video-import-global-extractor"' in source
+    assert '<option value="__all__">All extractors (compare)</option>' in source
+    assert 'const PARTS_EXTRACTOR_DOERS = ["python_opencv"]' in source
+    assert "parts_extraction_0/python_scikit" not in source
+    assert "parts_extraction_0/shape_finder_prolog" not in source
+    assert 'const showAllPartsExtractors = partsExtractorSel === "__all__"' in source
+    assert "const displayCells = [" in source
+    assert 'className="video-import-todo-preview-count"' in source
+    assert "allItems.slice(0, requested)" in source
+    assert '"⊕ Add/Merge todos"' in source
+    assert '"↻ Fresh todos"' in source
+    assert 'mergeTodos: mode === "merge"' in source
+    assert 'freshTodos: mode === "fresh"' in source
+
+
 def test_inherited_model_is_available_before_full_model_enumeration() -> None:
     source = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
 

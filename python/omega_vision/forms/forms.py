@@ -124,7 +124,7 @@ class GenerativeForm(AbstractGenerativeForm):
         return {(int(cell[0]), int(cell[1])) for cell in cells}
 
 
-# SoW A.3 name for the grid/Turtle form (importable alias).
+# TODO A.3 name for the grid/Turtle form (importable alias).
 CellLogoForm = GenerativeForm
 
 __all__ = ["AbstractGenerativeForm", "CellLogoForm", "FitResult", "GenerativeForm"]

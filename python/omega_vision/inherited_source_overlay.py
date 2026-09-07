@@ -1,8 +1,9 @@
 """inherited_source_overlay.py -- chain-aware resolution of workspace data.
 
 Every data home follows the same exact canonical layout under ``<root>/data/``
-(``arc3_games/{recordings,curated,importables}``, ``vision_frames/...``,
-``recognition_reduce``, ``video_import``, ``object_memory``, ...). A workspace
+(``recordings/``, ``importables/``, ``curated/``,
+``vision_frames/...``, ``recognition_reduce``, ``video_import``,
+``object_memory``, ...). A workspace
 sees that layout as an overlay stacked in precedence order:
 
 1. the workspace's own ``data/`` directory,

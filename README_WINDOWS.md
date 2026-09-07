@@ -535,7 +535,7 @@ The maintained root documentation identifies the repository's runtime-home behav
 - [README.md](README.md)
 - [DEBUGGER.md](DEBUGGER.md)
 - [KAGGLE.md](KAGGLE.md)
-- [SOW_PHASE_ARCHITECTURE.md](SOW_PHASE_ARCHITECTURE.md)
+- [TODO_PHASE_ARCHITECTURE.md](TODO_PHASE_ARCHITECTURE.md)
 - [TODO.md](TODO.md)
 - [FILE_TREE.md](FILE_TREE.md)
 

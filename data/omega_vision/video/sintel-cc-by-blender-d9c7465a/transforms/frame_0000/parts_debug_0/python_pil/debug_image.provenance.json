@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/video/sintel-cc-by-blender-d9c7465a/transforms/frame_0000/parts_debug_0/python_pil/debug_image.png",
+  "provenance": "data/video/sintel-cc-by-blender-d9c7465a/transforms/frame_0000/parts_debug_0/python_pil/debug_image.provenance.json",
+  "createdAt": "2026-09-07T18:52:48.417697Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 854,
+    "height": 364
+  },
+  "originalDimensions": {
+    "width": 854,
+    "height": 364
+  },
+  "root": {
+    "firstSeenImage": "data/video/sintel-cc-by-blender-d9c7465a/transforms/frame_0000/parts_debug_0/python_pil/debug_image.png",
+    "dimensions": {
+      "width": 854,
+      "height": 364
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/video/sintel-cc-by-blender-d9c7465a/transforms/frame_0000/parts_debug_0/python_pil/debug_image.png"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/video/sintel-cc-by-blender-d9c7465a/transforms/frame_0000/parts_debug_0/python_pil/debug_image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 854,
+        "height": 364
+      },
+      "transform": {},
+      "createdAt": "2026-09-07T18:52:48.417697Z"
+    }
+  ]
+}

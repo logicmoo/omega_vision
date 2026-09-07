@@ -1,0 +1,99 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_opencv",
+  "options": {},
+  "createdAt": "2026-09-07T19:19:47.104171Z",
+  "elapsedMs": 14895,
+  "width": 854,
+  "height": 364,
+  "regionCount": 7,
+  "adjacencyCount": 6,
+  "blobCount": 349,
+  "componentCount": 6,
+  "contourCount": 304,
+  "watershedSegmentCount": 6,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 248,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#878b8b",
+      "area": 310470,
+      "outer": 5,
+      "holes": 299,
+      "contours": 300,
+      "midlines": 183,
+      "fillpoints": 264,
+      "watershedSegments": 0
+    },
+    {
+      "id": "r71",
+      "color": "#797f81",
+      "area": 8,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r33",
+      "color": "#646460",
+      "area": 4,
+      "outer": 0,
+      "holes": 0,
+      "contours": 0,
+      "midlines": 0,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r243",
+      "color": "#4c595d",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r213",
+      "color": "#656e71",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r24",
+      "color": "#56514e",
+      "area": 4,
+      "outer": 0,
+      "holes": 0,
+      "contours": 0,
+      "midlines": 0,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r253",
+      "color": "#5a6469",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions_cv"
+}

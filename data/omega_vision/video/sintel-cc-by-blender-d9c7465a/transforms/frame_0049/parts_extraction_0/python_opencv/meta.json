@@ -1,0 +1,110 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_opencv",
+  "options": {},
+  "createdAt": "2026-09-07T19:24:32.282439Z",
+  "elapsedMs": 66418,
+  "width": 854,
+  "height": 364,
+  "regionCount": 8,
+  "adjacencyCount": 7,
+  "blobCount": 1252,
+  "componentCount": 6,
+  "contourCount": 505,
+  "watershedSegmentCount": 8,
+  "tolerance": 24,
+  "filterAction": "enhanced",
+  "minArea": 248,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#534935",
+      "area": 305795,
+      "outer": 20,
+      "holes": 497,
+      "contours": 498,
+      "midlines": 373,
+      "fillpoints": 140,
+      "watershedSegments": 0
+    },
+    {
+      "id": "r6",
+      "color": "#fcfdfb",
+      "area": 2095,
+      "outer": 15,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 2,
+      "fillpoints": 31,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r90",
+      "color": "#797062",
+      "area": 394,
+      "outer": 10,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 11,
+      "watershedSegments": 2
+    },
+    {
+      "id": "r724",
+      "color": "#ceccc9",
+      "area": 349,
+      "outer": 7,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 3,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r807",
+      "color": "#8c7e6e",
+      "area": 8,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r1157",
+      "color": "#ae9770",
+      "area": 7,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r1198",
+      "color": "#85643a",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r506",
+      "color": "#c6bcad",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions_cv"
+}

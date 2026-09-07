@@ -14,6 +14,82 @@ values here.
 
 ## Current recovery state
 
+- TODO terminology normalization (2026-09-08): planning, delivery, architecture,
+  API documentation, runtime messages, UI labels, tests, and historical path
+  maps now use TODO terminology exclusively. Canonical documents are
+  `TODO_DELIVERABLES.md`, `TODO_PHASE_ARCHITECTURE.md`,
+  `docs/design/TODO_VISION_AND_WORKBENCH.md`, and `_todo.txt`; the matching
+  regression module is `tests/omega_vision/test_omega_vision_todo_forms.py`.
+
+- ARC data layout flattened (2026-09-07): recordings, importables, and curated
+  moved out of `arc3_games/` to the data-home roots — canonical writes now
+  target `data/recordings/<game>/`, `data/importables/`, and `data/curated/`
+  (repo store: `data/omega_vision/{recordings,importables,curated}`); the
+  `arc3_games/` directory is gone. `_migrate_arc3_games_root` migrates
+  legacy `Recordings/`, `arc3_games/recordings`, `arc3_games/importables`,
+  and `arc3_games/curated`
+  (case-only renames handled on Windows) and rewrites persisted
+  `data/arc3_games/...` path strings; readers keep legacy fallbacks.
+  Committed repo data was git-mv'd and its JSON references rewritten.
+  Recording step subdirs are now free-form: any direct child dir holding an
+  input `image.png` is a step (`0/ 1/ 2/` or `foo/ bar/`; numeric first, then
+  named alphabetically), and nested processing output such as
+  `<step>/detect_edges_0/scikit_python/` is never treated as a step
+  (`_recording_step_dirs` in video_import_api, `_raw_base_frames` in
+  recognition_demos). Twin modules `omega_vision/services/arc3_play.py` and
+  `workbench_api_server/arc3_play_api.py` stay byte-identical except the
+  `_REPO_ROOT parents[...]` line. Known pre-existing failures unrelated to
+  this change: 3 `test_video_import_ui.py` layout tests, the
+  `VisualImageDiffPage.tsx` TS7006 build errors, and full-suite collection
+  errors from a leaked `ARC3_RUNTIME_HOME` plus an unavailable `mailbox_chat`
+  plugin import (all reproduce on the base tree).
+
+- Parts-extractor comparison controls (updated 2026-09-08): the Recognition extraction
+  view has one persisted global `parts_extraction_0` selector that applies to
+  every input row and now exposes only OpenCV. The slower scikit and pure-Prolog
+  shape implementations remain available only for explicit legacy/contract
+  use; both are absent from the reduction selector, default templates,
+  automatic downstream fallbacks, and newly stamped todos. Add/Merge also
+  removes stale `python_scikit`, `scikit_python`, and `shape_finder_prolog`
+  todo entries and retargets their downstream dependencies to OpenCV.
+  Todo stamping is split into **Add/Merge todos** (preserves current steps and
+  results) and **Fresh todos** (replaces the queue and removes only the current
+  template's outputs before recomputation). A persisted First-N limit scopes
+  either action for quick previews; zero means the complete set. The API rejects
+  a fresh reset while any selected output is actively claimed. Exact legacy
+  four-step, three-extractor, and two-extractor workspace templates migrate to
+  the active OpenCV-only extraction default without changing user-customized
+  templates. Focused OpenCV-only Video Import tests (19) and the production
+  frontend build passed; all 87 existing runtime todo files were migrated and
+  stale Prolog-extractor claims were removed.
+
+- OpenCV grouping evidence and background cutouts (2026-09-08): the sole
+  automatic extractor now appends advisory connected-component, contour
+  hierarchy, morphology, shape-metric, and watershed facts to every
+  `parts_extraction_0/python_opencv/result.pl`. Extraction metadata and the
+  Recognition UI expose component, contour, and watershed counts. All 87
+  existing OpenCV outputs were regenerated with the extended fact contract.
+  Authoritative grouping remains in `group_regions.pl`: in addition to the
+  large border-connected exterior, a region is now background when it has the
+  exterior's color, fills another region's cutout, and that cutout owner
+  touches the exterior. Such regions are excluded from foreground groups,
+  object instances, and detachable parts without altering geometric
+  `part_of/2` containment. The rule identifies the intended enclosed
+  background in 16 active recording steps and the root image; all 69 existing
+  grouping outputs were regenerated. Five focused grouping tests, two OpenCV
+  fact-contract/SWI-Prolog tests, and the production frontend build pass.
+
+- Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
+  color occupying at least two-thirds of an attached group's area and ten
+  percent of the input image. It then recomputes attachment components among
+  the remaining members without traversing through the removed mass, preventing
+  a large solid region from bridging unrelated details into one group. Two
+  focused SWI-Prolog regression tests pass, the production frontend build
+  passes, and grouping outputs were regenerated for the active image plus steps
+  0-20. Full-suite collection remains blocked by the existing stale
+  `ARC3_RUNTIME_HOME` configuration and unavailable `scikit-image`/`mailbox_chat`
+  dependencies in the system Python environment.
+
 - Video Import now resolves the workspace's inherited effective model through
   `model-selection?include_models=false` before the full Model Policy registry
   finishes enumerating. The inherited model stays first and selected in Member

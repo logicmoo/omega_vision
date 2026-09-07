@@ -1,4 +1,4 @@
-"""Occlusion-completion tests (SOW section 8): a partly-occluded object is
+"""Occlusion-completion tests (TODO section 8): a partly-occluded object is
 re-recognized and its hidden geometry is generatively completed by running the
 held form forward, accepted only when every filled cell lies under the occluder.
 A consistent completion locks with a low residual; an inconsistent one is

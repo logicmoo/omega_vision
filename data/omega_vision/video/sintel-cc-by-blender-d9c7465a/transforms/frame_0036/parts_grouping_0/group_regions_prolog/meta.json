@@ -1,0 +1,14 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_grouping_0",
+  "doer": "group_regions_prolog",
+  "options": {
+    "partsDoer": "python_opencv"
+  },
+  "createdAt": "2026-09-07T19:26:36.270498Z",
+  "elapsedMs": 506,
+  "module": "prolog/omega_vision/group_regions.pl",
+  "partsFacts": "parts_extraction_0/python_opencv/result.pl",
+  "groupCount": 1,
+  "objectCount": 1
+}

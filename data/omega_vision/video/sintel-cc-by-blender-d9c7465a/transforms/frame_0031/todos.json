@@ -1,0 +1,62 @@
+{
+  "kind": "transformation_todos",
+  "unit": "frame_0031",
+  "imagePath": "../../frame_0031.png",
+  "updatedAt": "2026-09-07T19:03:54.718521Z",
+  "todos": [
+    {
+      "transformation": "parts_extraction_0",
+      "doer": "python_opencv",
+      "options": {},
+      "output": "parts_extraction_0/python_opencv",
+      "dependsOn": [],
+      "priority": 10,
+      "type": "py_pl",
+      "status": "done",
+      "elapsedMs": 55997,
+      "completedAt": "2026-09-07T18:47:56.023866Z"
+    },
+    {
+      "transformation": "parts_debug_0",
+      "doer": "python_pil",
+      "options": {},
+      "output": "parts_debug_0/python_pil",
+      "dependsOn": [
+        "parts_extraction_0/python_opencv"
+      ],
+      "priority": 20,
+      "type": "ui",
+      "status": "done",
+      "elapsedMs": 210,
+      "completedAt": "2026-09-07T18:59:50.646467Z"
+    },
+    {
+      "transformation": "parts_grouping_0",
+      "doer": "group_regions_prolog",
+      "options": {},
+      "output": "parts_grouping_0/group_regions_prolog",
+      "dependsOn": [
+        "parts_extraction_0/python_opencv"
+      ],
+      "priority": 30,
+      "type": "py_pl",
+      "status": "done",
+      "elapsedMs": 316,
+      "completedAt": "2026-09-07T18:59:50.975919Z"
+    },
+    {
+      "transformation": "turtle_programs",
+      "doer": "turtle_programs_prolog",
+      "options": {},
+      "output": "turtle_programs/turtle_programs_prolog",
+      "dependsOn": [
+        "parts_grouping_0/group_regions_prolog"
+      ],
+      "priority": 40,
+      "type": "py_pl",
+      "status": "done",
+      "elapsedMs": 383,
+      "completedAt": "2026-09-07T18:59:51.366578Z"
+    }
+  ]
+}

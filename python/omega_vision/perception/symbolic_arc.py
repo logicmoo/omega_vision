@@ -1275,7 +1275,7 @@ def _identity_name(off) -> str:
 
 def complete_occluded(fragment, occluded, candidates: dict | None = None,
                       scales: tuple = (1, 2, 3)) -> dict | None:
-    """Generative completion of a partly-occluded object (SOW section 8).
+    """Generative completion of a partly-occluded object (TODO section 8).
 
     Given the VISIBLE cells of an object (`fragment`) and the cells hidden behind
     an occluder (`occluded`), hypothesize which held form the object is and run

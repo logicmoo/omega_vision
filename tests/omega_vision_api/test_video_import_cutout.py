@@ -35,6 +35,187 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
     assert saved["lastExtract"] == {"count": 4}
 
 
+@pytest.mark.parametrize(
+    "pipeline",
+    [
+        [
+            {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {}, "priority": 10, "dependsOn": []},
+            {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_scikit"]},
+            {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_scikit"]},
+            {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+        ],
+        [
+            {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {}, "priority": 10, "dependsOn": []},
+            {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {}, "priority": 12, "dependsOn": []},
+            {"transformation": "parts_extraction_0", "doer": "shape_finder_prolog", "options": {}, "priority": 14, "dependsOn": []},
+            {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+        ],
+        [
+            {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {}, "priority": 10, "dependsOn": []},
+            {"transformation": "parts_extraction_0", "doer": "shape_finder_prolog", "options": {}, "priority": 14, "dependsOn": []},
+            {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+        ],
+    ],
+    ids=["scikit-only-default", "three-extractor-default", "two-extractor-default"],
+)
+def test_former_builtin_pipeline_templates_upgrade_to_opencv_only(
+    tmp_path: Path,
+    pipeline: list[dict],
+) -> None:
+    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template.parent.mkdir(parents=True)
+    template.write_text(json.dumps({
+        "pipeline": pipeline,
+    }), encoding="utf-8")
+
+    upgraded = video_import_api.load_pipeline_template(tmp_path)
+
+    extractor_doers = {
+        step["doer"] for step in upgraded
+        if step["transformation"] == "parts_extraction_0"
+    }
+    assert extractor_doers == {"python_opencv"}
+    assert all(
+        step["doer"] not in {"python_scikit", "scikit_python", "shape_finder_prolog"}
+        for step in upgraded
+    )
+    assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == upgraded
+
+
+def test_merge_todos_removes_manual_extractors_and_retargets_dependencies(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    set_dir = tmp_path / "image_set"
+    pool = set_dir / "pool"
+    pool.mkdir(parents=True)
+    Image.new("RGB", (2, 2), "white").save(pool / "a.png")
+    unit_dir = set_dir / "transforms" / "a"
+    unit_dir.mkdir(parents=True)
+    (unit_dir / "todos.json").write_text(json.dumps({
+        "todos": [
+            {
+                "transformation": "parts_extraction_0",
+                "doer": "python_scikit",
+                "dependsOn": [],
+                "priority": 12,
+            },
+            {
+                "transformation": "parts_extraction_0",
+                "doer": "shape_finder_prolog",
+                "dependsOn": [],
+                "priority": 14,
+            },
+            {
+                "transformation": "parts_debug_0",
+                "doer": "python_pil",
+                "dependsOn": ["parts_extraction_0/shape_finder_prolog"],
+                "priority": 20,
+            },
+            {
+                "transformation": "parts_grouping_0",
+                "doer": "group_regions_prolog",
+                "dependsOn": ["parts_extraction_0/python_scikit"],
+                "priority": 30,
+            },
+        ],
+    }), encoding="utf-8")
+
+    monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
+    monkeypatch.setattr(video_import_api, "_resolve_set_dir", lambda _root, _rel: set_dir)
+    monkeypatch.setattr(video_import_api, "_pooler_point_at", lambda _root, _workers: {"ok": True})
+
+    video_import_api.sequence_set_transform({
+        "workspaceId": "test",
+        "set": "curated/test",
+        "pipeline": [{
+            "transformation": "parts_extraction_0",
+            "doer": "python_opencv",
+            "options": {},
+            "priority": 10,
+            "dependsOn": [],
+        }],
+        "planOnly": True,
+        "mergeTodos": True,
+        "workers": 1,
+    })
+
+    todos = json.loads((unit_dir / "todos.json").read_text(encoding="utf-8"))["todos"]
+    assert [todo["doer"] for todo in todos] == [
+        "python_opencv",
+        "python_pil",
+        "group_regions_prolog",
+    ]
+    assert todos[1]["dependsOn"] == ["parts_extraction_0/python_opencv"]
+    assert todos[2]["dependsOn"] == ["parts_extraction_0/python_opencv"]
+
+
+@pytest.mark.parametrize(
+    "doer",
+    ["python_scikit", "scikit_python", "shape_finder_prolog"],
+)
+def test_grouping_reduction_does_not_fallback_to_manual_output(
+    tmp_path: Path,
+    doer: str,
+) -> None:
+    image_path = tmp_path / "image.png"
+    Image.new("RGB", (2, 2), "white").save(image_path)
+    manual_dir = tmp_path / "parts_extraction_0" / doer
+    manual_dir.mkdir(parents=True)
+    (manual_dir / "result.pl").write_text(
+        "img_size(2, 2).\nregion(r1, white, 4, centroid(0, 0)).\n",
+        encoding="utf-8",
+    )
+    unit = {"id": "image", "dir": tmp_path, "image": image_path}
+
+    with pytest.raises(RuntimeError, match="no parts_extraction_0/.*/result.pl"):
+        video_import_api._transform_part_groups(unit, tmp_path / "groups", {})
+
+
+def test_fresh_todos_reset_only_requested_preview_units(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    set_dir = tmp_path / "image_set"
+    pool = set_dir / "pool"
+    pool.mkdir(parents=True)
+    for stem in ("a", "b"):
+        Image.new("RGB", (2, 2), "white").save(pool / f"{stem}.png")
+        output = set_dir / "transforms" / stem / "parts_extraction_0" / "python_opencv"
+        output.mkdir(parents=True)
+        (output / "meta.json").write_text('{"done":true}', encoding="utf-8")
+
+    monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
+    monkeypatch.setattr(video_import_api, "_resolve_set_dir", lambda _root, _rel: set_dir)
+    monkeypatch.setattr(video_import_api, "_pooler_point_at", lambda _root, _workers: {"ok": True})
+
+    result = video_import_api.sequence_set_transform({
+        "workspaceId": "test",
+        "set": "curated/test",
+        "pipeline": [{
+            "transformation": "parts_extraction_0",
+            "doer": "python_opencv",
+            "options": {},
+            "priority": 10,
+            "dependsOn": [],
+        }],
+        "moves": ["a"],
+        "planOnly": True,
+        "freshTodos": True,
+        "workers": 1,
+    })
+
+    assert result["moveCount"] == 1
+    assert not (set_dir / "transforms" / "a" / "parts_extraction_0" / "python_opencv").exists()
+    assert (set_dir / "transforms" / "b" / "parts_extraction_0" / "python_opencv" / "meta.json").is_file()
+    todos = json.loads((set_dir / "transforms" / "a" / "todos.json").read_text(encoding="utf-8"))
+    assert [todo["status"] for todo in todos["todos"]] == ["pending"]
+
+
 def test_video_caption_webvtt_round_trip() -> None:
     cues = [
         {"start": 1.25, "end": 3.5, "text": "Hello world"},
@@ -323,14 +504,14 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
             ),
             encoding="utf-8",
         )
-    curated = tmp_path / "data" / "curated_game"
-    curated.mkdir()
+    curated = tmp_path / "data" / "curated" / "curated_game"
+    curated.mkdir(parents=True)
     Image.new("RGB", (10, 10), "green").save(curated / "frame_10.png")
     Image.new("RGB", (10, 10), "yellow").save(curated / "frame_2.png")
 
     listing = video_import_api.list_arc_recordings("test")["recordings"]
     assert listing[0]["frames"] == 3
-    assert listing[0]["path"].startswith("data/arc3_games/recordings/")
+    assert listing[0]["path"].startswith("data/recordings/")
     imported = video_import_api.import_arc_recording(
         {
             "workspaceId": "test",
@@ -338,7 +519,7 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
         }
     )
     assert len(imported["frames"]) == 3
-    assert imported["frames"][0]["path"].startswith("data/vision_frames/")
+    assert imported["frames"][0]["path"].startswith("data/arc_recordings/")
     root_provenance = json.loads(
         (tmp_path / imported["frames"][0]["provenance"]).read_text(encoding="utf-8")
     )
@@ -355,17 +536,17 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
     curated_sources = video_import_api.list_curated_image_sources("test")["sources"]
     assert curated_sources == [
         {
-            "path": "data/arc3_games/curated/curated_game",
+            "path": "data/curated/curated_game",
             "label": "curated_game",
             "frames": 2,
-            "preview": "data/arc3_games/curated/curated_game/frame_2.png",
+            "preview": "data/curated/curated_game/frame_2.png",
         }
     ]
     curated_import = video_import_api.import_curated_image_source(
         {"workspaceId": "test", "source": curated_sources[0]["path"]}
     )
     assert len(curated_import["frames"]) == 2
-    assert curated_import["frames"][0]["path"].startswith("data/vision_frames/")
+    assert curated_import["frames"][0]["path"].startswith("data/curated_data/")
 
     archive_buffer = io.BytesIO()
     with zipfile.ZipFile(archive_buffer, "w") as archive:
@@ -380,7 +561,7 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
         archive_buffer,
     )
     assert len(archive_import["frames"]) == 2
-    assert archive_import["frames"][0]["path"].startswith("data/vision_frames/")
+    assert archive_import["frames"][0]["path"].startswith("data/image_archives/")
     archive_provenance = json.loads(
         (tmp_path / archive_import["frames"][0]["provenance"]).read_text(encoding="utf-8")
     )

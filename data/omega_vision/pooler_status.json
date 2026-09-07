@@ -1,0 +1,8 @@
+{
+  "kind": "pooler_status",
+  "pid": 91916,
+  "state": "exited",
+  "root": "data/omega_vision/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f",
+  "workers": 10,
+  "heartbeatAt": "2026-09-07T20:09:25.933598+00:00"
+}

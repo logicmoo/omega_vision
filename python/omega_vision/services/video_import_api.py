@@ -14,6 +14,7 @@ have the rights to import is the caller's responsibility.
 from __future__ import annotations
 
 import os
+import sys
 import asyncio
 import base64
 import hashlib
@@ -30,6 +31,7 @@ import urllib.request
 import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -38,7 +40,6 @@ from fastapi.responses import Response, StreamingResponse
 
 from arc3_play_api import (
     _all_game_dirs,
-    _curated_games_container,
     _curated_games_containers,
     _data_homes,
     _data_rel_of,
@@ -210,6 +211,7 @@ def _rewrite_data_paths(paths: list[Path], replacements: list[tuple[str, str]]) 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
+from omega_vision.inherited_source_overlay import data_homes as _data_homes  # noqa: E402
 from omega_vision.inherited_source_overlay import vision_data_root as _vision_data_root  # noqa: E402
 
 
@@ -218,14 +220,21 @@ def _imports_root(root: Path) -> Path:
     data_home = _vision_data_root(root)
     canonical = data_home / "video_import"
     legacy = data_home / "VideoImports"
-    vision_root = data_home / "vision_frames"
     with _data_layout_lock:
         if resolved_root in _migrated_data_roots:
             return canonical
         replacements = [
             ("data/VideoImports/", "data/video_import/"),
-            ("data/Recordings/", "data/arc3_games/recordings/"),
-            ("data/importables/", "data/arc3_games/importables/"),
+            ("data/Recordings/", "data/recordings/"),
+            ("data/arc3_games/recordings/", "data/recordings/"),
+            ("data/arc3_games/importables/", "data/importables/"),
+            ("data/arc3_games/curated/", "data/curated/"),
+            ("data/vision_frames/video/", "data/video/"),
+            ("data/vision_frames/arc_recordings/", "data/arc_recordings/"),
+            ("data/vision_frames/curated_data/", "data/curated_data/"),
+            ("data/vision_frames/image_archives/", "data/image_archives/"),
+            ("data/vision_frames/recognition_inputs/", "data/recognition_inputs/"),
+            ("data/vision_frames/live_streams/", "data/live_streams/"),
         ]
         if legacy.is_dir() and not canonical.exists():
             legacy.rename(canonical)
@@ -242,35 +251,42 @@ def _imports_root(root: Path) -> Path:
             ) if child.is_dir() else None
             if video_path is None or not frames_dir.is_dir():
                 continue
-            destination = vision_root / "video" / _video_frame_source_id(root, video_path)
+            destination = data_home / "video" / _video_frame_source_id(root, video_path)
             if not destination.exists():
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 frames_dir.rename(destination)
                 replacements.append(
                     (
                         f"data/video_import/{child.name}/frames/",
-                        f"data/vision_frames/video/{destination.name}/",
+                        f"data/video/{destination.name}/",
                     )
                 )
-        curated_root = _vision_data_root(root) / "arc3_games" / "curated"
+        curated_root = _vision_data_root(root) / "curated"
         if curated_root.is_dir():
             replacements.extend(
                 (
                     f"data/{child.name}/",
-                    f"data/arc3_games/curated/{child.name}/",
+                    f"data/curated/{child.name}/",
                 )
                 for child in curated_root.iterdir()
                 if child.is_dir()
             )
-        _rewrite_data_paths([canonical, vision_root], replacements)
+        rewrite_roots = [canonical, data_home / "vision_frames"]
+        rewrite_roots.extend(
+            data_home / family
+            for family in ("video", "arc_recordings", "curated_data", "image_archives", "recognition_inputs", "live_streams")
+        )
+        _rewrite_data_paths(rewrite_roots, replacements)
         _migrated_data_roots.add(resolved_root)
     return canonical
 
 
 def _vision_frames_root(root: Path) -> Path:
-    path = _vision_data_root(root) / "vision_frames"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    """The write home for frame-sequence families. The flat layout keeps each
+    family (video/, arc_recordings/, curated_data/, image_archives/,
+    recognition_inputs/, live_streams/) directly under the data root, so this
+    IS the data root; callers append their family segment."""
+    return _vision_data_root(root)
 
 
 def _video_frames_dir(root: Path, video_path: Path) -> Path:
@@ -2204,25 +2220,60 @@ _IMAGE_SET_LABELS = {"recognition_reduce": "Recognition · 20×10 conditions"}
 def _resolve_set_images(d: Path) -> list[Path]:
     """Return the input images for an image-set directory, layout-aware.
 
-    Supports the reduction ``pool/`` layout, flat ``frame_*.png`` recording
-    dumps (``vision_frames/arc_recordings/*``), and the nested ARC game
-    recording layout (``<attempt>/<step>/image.png`` under
-    ``arc3_games/recordings/*``). Globs are depth-bounded so listing many
-    recordings stays fast.
-    """
+    Supports the reduction ``pool/`` layout, a single ARC recording dir
+    (``recording.json`` + free-form ``<step>/image.png``, counted exactly
+    like the Objects source list), flat ``frame_*.png`` sequence dumps,
+    whole-game dirs (every child Recording concatenated), and curated-style
+    trees (every image anywhere below, ordered naturally, exactly like the
+    curated source lister)."""
     if not d.is_dir():
         return []
     pool = d / "pool"
     if pool.is_dir():
         return sorted(p for p in pool.iterdir() if p.suffix.lower() in {".jpg", ".jpeg", ".png"})
+    if (d / "recording.json").is_file():
+        return _arc_recording_images(d)
     flat = sorted(list(d.glob("frame_*.png")) + list(d.glob("frame_*.jpg")))
     if flat:
         return flat
-    for pattern in ("*/*/image.png", "*/image.png", "**/image.png"):
-        nested = sorted(d.glob(pattern))
-        if nested:
-            return nested
-    return sorted(list(d.glob("*.png")) + list(d.glob("*.jpg")))
+    recordings = _iter_recording_dirs(d)
+    if recordings:
+        images: list[Path] = []
+        for recording in recordings:
+            images.extend(_arc_recording_images(recording))
+        return images
+    images = [
+        path
+        for path in d.rglob("*")
+        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+    ]
+    return sorted(images, key=lambda path: _natural_path_key(path.relative_to(d)))
+
+
+def _resolve_set_dir(root: Path, base_rel: str) -> Path:
+    """Overlay-aware image-set dir election.
+
+    ``_safe_workspace_child`` returns the nearest EXISTING overlay hit — but a
+    workspace-local shadow dir holding only derived outputs (``stages/``,
+    ``sym/``, ``transforms/``) must not hide the deeper layer that actually
+    holds the input frames. Elect the first layer that yields images; fall
+    back to the nearest existing dir when no layer has any.
+    """
+    first = _safe_workspace_child(root, base_rel)
+    if _resolve_set_images(first):
+        return first
+    tail = base_rel[5:] if base_rel.startswith("data/") else base_rel
+    first_resolved = first.resolve()
+    for home in _data_homes(root):
+        candidate = (home / tail)
+        if not candidate.is_dir():
+            continue
+        resolved = candidate.resolve()
+        if resolved == first_resolved or home.resolve() not in (resolved, *resolved.parents):
+            continue
+        if _resolve_set_images(candidate):
+            return candidate
+    return first
 
 
 def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
@@ -2289,6 +2340,8 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
         }
         if status == "done":
             rp = out_dir / "result.pl"
+            if not rp.is_file():
+                rp = out_dir / "result.metta"  # adopted LLM reductions are metta
             if rp.is_file():
                 cell["resultPath"] = _data_rel_of(root, rp)
             di = out_dir / "debug_image.png"
@@ -2299,12 +2352,19 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                 try:
                     meta = json.loads(mp.read_text(encoding="utf-8"))
                     summary = {k: meta[k] for k in (
-                        "regionCount", "adjacencyCount", "blobCount", "groupCount",
-                        "objectCount", "programCount", "width", "height") if k in meta}
+                        "regionCount", "adjacencyCount", "blobCount", "componentCount",
+                        "contourCount", "watershedSegmentCount", "groupCount",
+                        "objectCount", "programCount", "width", "height",
+                        "relationCount", "model", "shots", "partsFacts") if k in meta}
                     parts = meta.get("parts")
                     if isinstance(parts, list) and parts:
                         summary["partCount"] = len(parts)
                         summary["partColors"] = [str(p.get("color") or "") for p in parts[:8]]
+                        # Full id->color list so the UI can colour grouping-tree
+                        # dots and turtle strokes per part.
+                        cell["parts"] = [
+                            {"id": str(p.get("id")), "color": str(p.get("color") or ""), "area": p.get("area")}
+                            for p in parts if isinstance(p, dict) and p.get("id")]
                     if summary:
                         cell["summary"] = summary
                 except (OSError, json.JSONDecodeError):
@@ -2339,10 +2399,16 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
 # mirror the Objects page's source combobox (describeFrameSource) so both
 # pages organise identically.
 _FRAME_SET_FAMILIES = (
-    ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),
-    ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),
-    ("vision_frames/curated_data", "Sequence Sets · Curated", "1-curated"),
-    ("vision_frames/video", "Sequence Sets · Movies", "3-video"),
+    ("recordings", "Sequence Sets · Games", "2-arc"),
+    ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
+    ("arc_recordings", "Sequence Sets · Games", "2-arc"),
+    ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
+    ("curated", "Sequence Sets · Curated", "1-curated"),
+    ("arc3_games/curated", "Sequence Sets · Curated", "1-curated"),  # legacy layout
+    ("curated_data", "Sequence Sets · Curated", "1-curated"),
+    ("vision_frames/curated_data", "Sequence Sets · Curated", "1-curated"),  # legacy layout
+    ("video", "Sequence Sets · Movies", "3-video"),
+    ("vision_frames/video", "Sequence Sets · Movies", "3-video"),  # legacy layout
 )
 
 
@@ -2363,11 +2429,12 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
     seen: set[str] = set()
 
     def add(set_id: str, rel_dir: str, label: str | None = None,
-            group: str = "Loaded sources", group_key: str = "4-loaded") -> None:
+            group: str = "Loaded sources", group_key: str = "4-loaded",
+            extras: dict[str, Any] | None = None) -> None:
         if not set_id or set_id in seen:
             return
         try:
-            d = _safe_workspace_child(root, rel_dir)
+            d = _resolve_set_dir(root, rel_dir)
         except ValueError:
             return
         image_count = len(_resolve_set_images(d))
@@ -2384,7 +2451,7 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
         if image_count == 0 and reduced_count == 0 and set_id != _CANONICAL_IMAGE_SET:
             return
         seen.add(set_id)
-        sets.append({
+        entry: dict[str, Any] = {
             "id": set_id,
             "label": label or _IMAGE_SET_LABELS.get(set_id, set_id.replace("_", " ")),
             "dir": rel_dir,
@@ -2393,7 +2460,10 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
             "canonical": set_id == _CANONICAL_IMAGE_SET,
             "group": group,
             "groupKey": group_key,
-        })
+        }
+        if extras:
+            entry.update(extras)
+        sets.append(entry)
 
     add(_CANONICAL_IMAGE_SET, "data/recognition_reduce", group="Recognition", group_key="0-recognition")
     for data_dir in homes:
@@ -2404,14 +2474,38 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
                 add(child.name, f"data/{child.name}", group="Image Sets", group_key="4-loaded")
     # Frame-based source families (organised like the Objects source combobox).
     for rec_base, group, group_key in _FRAME_SET_FAMILIES:
+        arc_family = rec_base in ("recordings", "arc3_games/recordings")
         for data_dir in homes:
             rec_dir = data_dir / rec_base
             if not rec_dir.is_dir():
                 continue
             for child in sorted(rec_dir.iterdir()):
-                if child.is_dir():
-                    leaf = child.name.replace("data-arc3_games-recordings-", "").replace("data-arc3_games-curated-", "").replace("-", " ")
-                    add(f"{rec_base}/{child.name}", f"data/{rec_base}/{child.name}", label=leaf, group=group, group_key=group_key)
+                if not child.is_dir():
+                    continue
+                leaf = child.name.replace("data-recordings-", "").replace("data-curated-", "").replace("data-arc3_games-recordings-", "").replace("data-arc3_games-curated-", "").replace("-", " ")
+                add(f"{rec_base}/{child.name}", f"data/{rec_base}/{child.name}", label=leaf, group=group, group_key=group_key)
+                if not arc_family:
+                    continue
+                # Each per-attempt Recording (recording.json + step frames) is
+                # its own selectable sequence set, mirroring the Objects
+                # page's ARC RECORDINGS source list (same level/frame tags).
+                for recording in _iter_recording_dirs(child):
+                    try:
+                        manifest = json.loads((recording / "recording.json").read_text(encoding="utf-8"))
+                    except (OSError, json.JSONDecodeError):
+                        manifest = {}
+                    add(
+                        f"{rec_base}/{child.name}/{recording.name}",
+                        f"data/{rec_base}/{child.name}/{recording.name}",
+                        label=f"{child.name} · {recording.name}",
+                        group=group,
+                        group_key=group_key,
+                        extras={
+                            "kind": "arc-recording",
+                            "gameId": str(manifest.get("game_id") or child.name),
+                            "level": manifest.get("level"),
+                        },
+                    )
     return sets
 
 
@@ -2428,7 +2522,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
         return {"tiers": [], "count": 0, "items": [], "set": set_id}
     base = f"data/{set_id}"
     try:
-        d = _safe_workspace_child(root, base)
+        d = _resolve_set_dir(root, base)
     except ValueError:
         return {"tiers": [], "count": 0, "items": [], "set": set_id}
     pool = d / "pool"
@@ -2450,18 +2544,46 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
         except (OSError, json.JSONDecodeError):
             pass
 
-    def normalize_rows(raw: Any) -> list[dict[str, Any]]:
+    def _row_doer(row: dict[str, Any]) -> str:
+        model = str(row.get("model") or "llm")
+        doer = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_") or "llm"
+        shots = str(row.get("shots") or "1")
+        return doer if shots == "1" else f"{doer}_{shots}shot"
+
+    _STEP_FILE = {"parts": "debug_image.png", "turtle": "turtle.png", "partmap": "partmap.png"}
+
+    def normalize_rows(raw: Any, unit_rel: str = "") -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
         for row in (raw or []):
             if not isinstance(row, dict):
                 continue
             nr = dict(row)
-            metta = base_name(row.get("metta"))
-            if metta:
-                nr["mettaPath"] = f"{base}/sym/{metta}"
+            # LLM tiers live canonically in the unit's transform-step dir
+            # (llm_reduction_0/<doer>/); sym/ + stages/ are the legacy layout.
+            step_rel = (f"{unit_rel}/llm_reduction_0/{_row_doer(row)}"
+                        if unit_rel and row.get("kind") != "prolog" else "")
+
+            def art(value: Any, legacy_sub: str, contract: str, step: str) -> str:
+                s = str(value or "").replace("\\", "/").lstrip("/")
+                if not s:
+                    return ""
+                leaf = s.split("/")[-1]
+                cands = []
+                if "/" in s:
+                    cands.append(s[len(base) + 1:] if s.startswith(base + "/") else s)
+                cands.append(f"{legacy_sub}/{leaf}")
+                if step and contract:
+                    cands.append(f"{step}/{contract}")
+                for rel in cands:
+                    if (d / rel).is_file():
+                        return f"{base}/{rel}"
+                return f"{base}/{cands[0]}"
+            if row.get("metta"):
+                nr["mettaPath"] = art(row.get("metta"), "sym", "result.metta", step_rel)
             stages = row.get("stages")
             if isinstance(stages, dict):
-                nr["stagePaths"] = {k: f"{base}/stages/{base_name(v)}" for k, v in stages.items() if v}
+                nr["stagePaths"] = {k: art(v, "stages", _STEP_FILE.get(k, ""), step_rel)
+                                    for k, v in stages.items() if v}
             out.append(nr)
         return out
 
@@ -2482,14 +2604,18 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                 "input": input_name, "inputPath": f"{base}/pool/{input_name}",
                 "source": m.get("source") or "set", "source_url": m.get("source_url") or "",
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
-                "rows": normalize_rows(m.get("rows")),
+                "rows": normalize_rows(m.get("rows"), f"transforms/{idv}"),
             })
     else:
         # Frame-based recording set: one item per frame, all grouped under the
         # set's leaf name so the Extractions list shows a single foldable group.
+        # Items are built in a thread pool — each one is a handful of small
+        # sidecar reads (provenance/state/todos/meta), which on Windows are
+        # latency-bound, so large recordings (1000+ frames) list in seconds.
         set_leaf = parts[-1] if parts else set_id
         set_leaf = set_leaf.replace("data-arc3_games-recordings-", "")
-        for img in _resolve_set_images(d):
+
+        def _build_frame_item(img: Path) -> dict[str, Any]:
             rel_to_d = img.relative_to(d).as_posix()
             stem = rel_to_d.rsplit(".", 1)[0]
             idv = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_") or img.stem
@@ -2540,16 +2666,22 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                             action = str(st.get("incoming_action") or "")
                     except (OSError, json.JSONDecodeError):
                         pass
-            items.append({
+            unit_dir = img.parent if img.parent != d else d / "transforms" / img.stem
+            return {
                 "id": idv, "slug": set_leaf, "cond": stem,
                 "label": set_leaf.replace("_", " ").replace("-", " "),
                 "input": img.name, "inputPath": _data_rel_of(root, img),
                 "source": "recording", "source_url": "", "action": action, "level": level, "provenance": prov,
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
-                "rows": normalize_rows(m.get("rows")),
+                "rows": normalize_rows(m.get("rows"), unit_dir.relative_to(d).as_posix()),
                 **({"transforms": tr["list"], "transformsDone": tr["done"], "transformsTotal": tr["total"]}
-                   if (tr := _unit_transforms(root, img.parent)) else {}),
-            })
+                   if (tr := _unit_transforms(root, unit_dir)) else {}),
+            }
+
+        images = _resolve_set_images(d)
+        if images:
+            with ThreadPoolExecutor(max_workers=min(16, max(4, len(images)))) as pool:
+                items = list(pool.map(_build_frame_item, images))
     sequence_parts: dict[str, Any] | None = None
     sp_path = d / "sequence_parts.json"
     if sp_path.is_file():
@@ -2633,7 +2765,7 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
         "c6_verybusy", "c7_withchars", "c8_typical", "c9_colorful", "c10_modality",
     ]
     transforms = {"c1_bw", "c2_flip", "c3_rot45"}
-    bases = ["data/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
+    bases = ["data/recognition_reduce", "data/curated/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
 
     def base_dir(rel: str) -> Path:
         """Chain-resolved directory for a base rel path (see _data_homes)."""
@@ -2648,9 +2780,16 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
         return str(value or "").replace("\\", "/").split("/")[-1]
 
     def resolve(sub: str, name: Any) -> str:
-        leaf = base_name(name)
-        if not leaf:
+        raw = str(name or "").replace("\\", "/").lstrip("/")
+        if not raw:
             return ""
+        leaf = raw.split("/")[-1]
+        if "/" in raw:
+            # explicit path (canonical step layout): root-relative or base-relative
+            for b in bases:
+                rel = raw[len(b) + 1:] if raw.startswith(b + "/") else raw
+                if base_dir(f"{b}/{rel}").is_file():
+                    return f"{b}/{rel}"
         for b in bases:
             rel = f"{b}/{sub}/{leaf}"
             if base_dir(rel).is_file():
@@ -2725,13 +2864,12 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
                 if not isinstance(row, dict):
                     continue
                 normalized = dict(row)
-                metta = base_name(row.get("metta"))
-                if metta:
-                    normalized["mettaPath"] = resolve("sym", metta)
+                if row.get("metta"):
+                    normalized["mettaPath"] = resolve("sym", row.get("metta"))
                 stages = row.get("stages")
                 if isinstance(stages, dict):
                     normalized["stagePaths"] = {
-                        key: resolve("stages", base_name(val))
+                        key: resolve("stages", val)
                         for key, val in stages.items() if val
                     }
                 rows.append(normalized)
@@ -4094,26 +4232,40 @@ def _resolve_stream_source(source_url: str) -> str:
     return resolved
 
 
+def _recording_step_dirs(recording_dir: Path) -> list[Path]:
+    """Direct child step dirs of one recording, each holding an input
+    image.png. Step names are free-form (0/ 1/ 2/ or foo/ bar/ baz/):
+    numeric names sort first in numeric order, then named steps sort
+    alphabetically. Deeper processing-output dirs (e.g.
+    <step>/detect_edges_0/scikit_python/) are never steps themselves."""
+    if not recording_dir.is_dir():
+        return []
+    steps = [
+        child
+        for child in recording_dir.iterdir()
+        if child.is_dir() and (child / "image.png").is_file()
+    ]
+    return sorted(
+        steps,
+        key=lambda p: (0, int(p.name), "") if p.name.isdigit() else (1, 0, p.name.lower()),
+    )
+
+
 def _arc_recording_images(recording_dir: Path) -> list[Path]:
-    images: list[tuple[int, Path]] = []
+    images: list[Path] = []
     root_image = recording_dir / "image.png"
     if root_image.is_file():
-        images.append((-1, root_image))
-    for child in recording_dir.iterdir() if recording_dir.is_dir() else []:
-        image = child / "image.png"
-        if not child.is_dir() or not image.is_file():
-            continue
-        try:
-            ordinal = int(child.name)
-        except ValueError:
-            continue
-        images.append((ordinal, image))
-    return [path for _, path in sorted(images, key=lambda item: item[0])]
+        images.append(root_image)
+    images.extend(step / "image.png" for step in _recording_step_dirs(recording_dir))
+    return images
 
 
 def _natural_path_key(path: Path) -> tuple[Any, ...]:
+    """Type-stable natural sort key: every part is a (kind, number, text)
+    triple so int and str parts never compare against each other directly
+    (numeric runs sort before words at the same position)."""
     return tuple(
-        int(part) if part.isdigit() else part.lower()
+        (0, int(part), "") if part.isdigit() else (1, 0, part.lower())
         for segment in path.parts
         for part in re.split(r"(\d+)", segment)
         if part
@@ -4121,15 +4273,18 @@ def _natural_path_key(path: Path) -> tuple[Any, ...]:
 
 
 def _curated_source_images(root: Path, source_dir: Path) -> list[Path]:
-    curated_root = _curated_games_container(root).resolve()
     resolved = source_dir.resolve()
-    try:
-        resolved.relative_to(curated_root)
-    except ValueError as error:
+    for container in _curated_games_containers(root):
+        try:
+            resolved.relative_to(container.resolve())
+            break
+        except ValueError:
+            continue
+    else:
         raise HTTPException(
             status_code=400,
-            detail="curated source must be under data/arc3_games/curated/",
-        ) from error
+            detail="curated source must be under data/curated/",
+        )
     images = [
         path
         for path in resolved.rglob("*")
@@ -6077,11 +6232,9 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
             if isinstance(move, dict) and move.get("index") is not None:
                 actions_by_index[int(move["index"])] = move
         limit = int((arc_spec or {}).get("limit") or 0) or None
-        for step_dir in sorted((p for p in arc_dir.iterdir() if p.is_dir() and p.name.isdigit()),
-                               key=lambda p: int(p.name)):
-            if not (step_dir / "image.png").is_file():
-                continue
-            source_move = actions_by_index.get(int(step_dir.name), {})
+        for ordinal, step_dir in enumerate(_recording_step_dirs(arc_dir)):
+            step_index = int(step_dir.name) if step_dir.name.isdigit() else ordinal
+            source_move = actions_by_index.get(step_index, {})
             arc_moves.append({
                 "image": step_dir / "image.png",
                 "action": str(source_move.get("action") or "ARC_MOVE"),
@@ -6236,13 +6389,13 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 # game sequence format as subfolders of the move itself:
 #
 #     <move_num>/<transformation>/<doer>/...results...
-#     e.g. 0/parts_extraction_0/python_scikit/result.pl + meta.json + debug_image.png
+#     e.g. 0/parts_extraction_0/python_opencv/result.pl + meta.json + debug_image.png
 #          0/parts_grouping_0/group_regions_prolog/result.pl + meta.json
 #          0/turtle_programs/turtle_programs_prolog/result.pl + meta.json
 #
 # so one move can carry many transformations, each attributed to the doer
-# that produced it (python_scikit does edge/parts extraction; prolog steps
-# are attributed to the .pl rules file that did them), and alternative
+# that produced it (OpenCV does the default edge/parts extraction; Prolog
+# steps are attributed to the .pl rules file that did them), and alternative
 # doers for the same transformation can coexist side by side. Every
 # transform output folder follows one contract: result.pl (the facts),
 # meta.json (attribution + stats; records the exact module behind the
@@ -6251,6 +6404,14 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 # takes a raw frame all the way to grouped parts with redraw programs.
 
 _TRANSFORM_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+_MANUAL_ONLY_PARTS_EXTRACTORS = frozenset({
+    "python_scikit",
+    "scikit_python",
+    "shape_finder_prolog",
+})
+_MANUAL_ONLY_PARTS_EXTRACTOR_STEPS = frozenset(
+    f"parts_extraction_0/{doer}" for doer in _MANUAL_ONLY_PARTS_EXTRACTORS
+)
 
 
 def _transform_parts_extraction(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
@@ -6278,6 +6439,78 @@ def _transform_parts_extraction(unit: dict[str, Any], out_dir: Path, options: di
     return facts
 
 
+def _transform_parts_extraction_cv(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """parts_extraction_0 by the python_opencv doer: same fact schema as the
+    scikit doer (outer edge polygon/2, inner edges hole/2, inner medials
+    midline/2, fill peaks fillpoint/3) computed with OpenCV primitives on
+    bbox-cropped masks — a fraction of the scikit runtime."""
+    from omega_vision.perception.pixels_to_regions_cv import extract_region_facts_cv  # noqa: PLC0415
+
+    image_path: Path | None = unit.get("image")
+    if image_path is None or not image_path.is_file():
+        raise RuntimeError("unit has no source image")
+    facts = extract_region_facts_cv(
+        image_path,
+        tolerance=int(options.get("tolerance", 24)),
+        filter_mode=str(options.get("filter", "auto")),
+        max_dim=int(options.get("maxDim", 960)),
+        minfrac=float(options.get("minfrac", 0.0008)),
+        geometry_out=out_dir / "geometry.json",
+    )
+    prolog = facts.pop("prolog")
+    (out_dir / "result.pl").write_text(prolog, encoding="utf-8", newline="\n")
+    facts["module"] = "omega_vision.perception.pixels_to_regions_cv"
+    return facts
+
+
+def _transform_parts_extraction_prolog(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """parts_extraction_0 by the shape_finder_prolog doer: quantize the image
+    to a small pixel grid, hand it to prolog/omega_vision/shape_finder.pl,
+    and let pure Prolog find every part's outer edge, inner edges, and inner
+    medials (same fact schema as the python doers, for comparison)."""
+    from PIL import Image  # noqa: PLC0415
+
+    from omega_vision.perception.pixels_to_regions import grid_to_prolog, quantize  # noqa: PLC0415
+
+    image_path: Path | None = unit.get("image")
+    if image_path is None or not image_path.is_file():
+        raise RuntimeError("unit has no source image")
+    max_dim = int(options.get("maxDim", 96))
+    img = Image.open(image_path)
+    if max_dim and max(img.size) > max_dim:
+        scale = max_dim / max(img.size)
+        img = img.resize((max(1, round(img.size[0] * scale)), max(1, round(img.size[1] * scale))), Image.LANCZOS)
+    idx, colors = quantize(img, int(options.get("colors", 12)), 0)
+    cells = grid_to_prolog(idx, colors, 1)
+    cells_file = out_dir / "cells.pl"
+    cells_file.write_text(
+        cells + f"\n:- dynamic grid_size/2.\ngrid_size({img.size[0]}, {img.size[1]}).\n",
+        encoding="utf-8", newline="\n")
+    rules = _REPO_ROOT / "prolog" / "omega_vision" / "shape_finder.pl"
+    out_file = out_dir / "result.pl"
+    goal = "consult('{}'), consult('{}'), write_parts('{}')".format(
+        rules.as_posix(), cells_file.as_posix(), out_file.as_posix())
+    try:
+        proc = subprocess.run(["swipl", "-q", "-g", goal, "-t", "halt"],
+                              capture_output=True, text=True,
+                              timeout=int(options.get("timeout", 300)))
+    except FileNotFoundError as error:
+        raise RuntimeError("swipl is not installed or not on PATH") from error
+    if proc.returncode != 0 or not out_file.is_file():
+        raise RuntimeError((proc.stderr or proc.stdout or "swipl failed").strip()[:400])
+    text = out_file.read_text(encoding="utf-8")
+    return {
+        "module": "prolog/omega_vision/shape_finder.pl",
+        "width": img.size[0],
+        "height": img.size[1],
+        "maxDim": max_dim,
+        "regionCount": text.count("region("),
+        "polygonCount": text.count("polygon("),
+        "holeCount": text.count("hole("),
+        "midlineCount": text.count("midline("),
+    }
+
+
 def _transform_parts_debug(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
     """parts_debug_0 by the python_pil doer (a ui-type task): renders the faded
     original with green outer edges, red cutouts, blue midlines, and orange
@@ -6288,11 +6521,20 @@ def _transform_parts_debug(unit: dict[str, Any], out_dir: Path, options: dict[st
     image_path: Path | None = unit.get("image")
     if image_path is None or not image_path.is_file():
         raise RuntimeError("unit has no source image")
-    extraction_dir = unit["dir"] / "parts_extraction_0" / "python_scikit"
-    geometry_file = extraction_dir / "geometry.json"
-    if not geometry_file.is_file():
-        legacy = extraction_dir / "debug_image.png"
-        if legacy.is_file():
+    parts_root = unit["dir"] / "parts_extraction_0"
+    preferred = str(options.get("partsDoer", "python_opencv"))
+    fallback_geometry = sorted(
+        path
+        for path in parts_root.glob("*/geometry.json")
+        if path.parent.name not in _MANUAL_ONLY_PARTS_EXTRACTORS
+    )
+    candidates = [parts_root / preferred / "geometry.json",
+                  parts_root / "python_opencv" / "geometry.json",
+                  *fallback_geometry]
+    geometry_file = next((path for path in candidates if path.is_file()), None)
+    if geometry_file is None:
+        legacy = parts_root / "python_scikit" / "debug_image.png"
+        if preferred in _MANUAL_ONLY_PARTS_EXTRACTORS and legacy.is_file():
             shutil.copyfile(legacy, out_dir / "debug_image.png")
             (out_dir / "result.pl").write_text(
                 "% parts_debug_0/python_pil: copied legacy overlay from parts_extraction_0\n"
@@ -6335,9 +6577,15 @@ def _run_prolog_over_parts(unit: dict[str, Any], out_dir: Path, options: dict[st
                            rules_rel: str, goal_name: str,
                            counted: dict[str, str]) -> dict[str, Any]:
     parts_root = unit["dir"] / "parts_extraction_0"
-    preferred = str(options.get("partsDoer", "python_scikit"))
+    preferred = str(options.get("partsDoer", "python_opencv"))
+    fallback_results = sorted(
+        path
+        for path in parts_root.glob("*/result.pl")
+        if path.parent.name not in _MANUAL_ONLY_PARTS_EXTRACTORS
+    )
     candidates = [parts_root / preferred / "result.pl",
-                  *sorted(parts_root.glob("*/result.pl"))]
+                  parts_root / "python_opencv" / "result.pl",
+                  *fallback_results]
     regions = next((path for path in candidates if path.is_file()), None)
     if regions is None:
         raise RuntimeError("no parts_extraction_0/*/result.pl for this unit (run parts_extraction_0 first)")
@@ -6364,6 +6612,8 @@ def _run_prolog_over_parts(unit: dict[str, Any], out_dir: Path, options: dict[st
 
 _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
     ("parts_extraction_0", "python_scikit"): _transform_parts_extraction,
+    ("parts_extraction_0", "python_opencv"): _transform_parts_extraction_cv,
+    ("parts_extraction_0", "shape_finder_prolog"): _transform_parts_extraction_prolog,
     ("parts_debug_0", "python_pil"): _transform_parts_debug,
     ("parts_grouping_0", "group_regions_prolog"): _transform_part_groups,
     ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
@@ -6522,19 +6772,21 @@ def write_unit_todos(unit: dict[str, Any],
 
 
 _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
-    {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {},
-     "priority": 10, "dependsOn": []},
+    {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {},
+     "priority": 10, "type": "py_pl", "dependsOn": []},
     {"transformation": "parts_debug_0", "doer": "python_pil", "options": {},
-     "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_scikit"]},
+     "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_opencv"]},
     {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {},
-     "priority": 30, "dependsOn": ["parts_extraction_0/python_scikit"]},
+     "priority": 30, "type": "py_pl", "dependsOn": ["parts_extraction_0/python_opencv"]},
     {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {},
-     "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+     "priority": 40, "type": "py_pl", "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
 ]
 _PIPELINE_TEMPLATE_REL = "data/transform_pipeline.json"
 _PIPELINE_TEMPLATE_COMMENT = ("Initial todo template: stamped onto every unit as todos.json. "
                               "priority: lower runs first; dependsOn gates on finished steps; "
-                              "type marks task kinds (e.g. ui for debug images).")
+                              "type marks task kinds: ui (debug/preview renders), llm (1-shot "
+                              "LLM reductions), p_shot (N-shot LLM passes), py_pl (the "
+                              "OpenCV + Prolog workflow).")
 
 
 def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
@@ -6582,6 +6834,46 @@ def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
             payload = json.loads(file.read_text(encoding="utf-8"))
             steps = payload.get("pipeline") if isinstance(payload, dict) else payload
             if isinstance(steps, list) and steps:
+                legacy_keys = {
+                    (str(step.get("transformation")), str(step.get("doer")))
+                    for step in steps if isinstance(step, dict)
+                }
+                former_defaults = (
+                    {
+                        ("parts_extraction_0", "python_scikit"),
+                        ("parts_debug_0", "python_pil"),
+                        ("parts_grouping_0", "group_regions_prolog"),
+                        ("turtle_programs", "turtle_programs_prolog"),
+                    },
+                    {
+                        ("parts_extraction_0", "python_opencv"),
+                        ("parts_extraction_0", "python_scikit"),
+                        ("parts_extraction_0", "shape_finder_prolog"),
+                        ("parts_debug_0", "python_pil"),
+                        ("parts_grouping_0", "group_regions_prolog"),
+                        ("turtle_programs", "turtle_programs_prolog"),
+                    },
+                    {
+                        ("parts_extraction_0", "python_opencv"),
+                        ("parts_extraction_0", "shape_finder_prolog"),
+                        ("parts_debug_0", "python_pil"),
+                        ("parts_grouping_0", "group_regions_prolog"),
+                        ("turtle_programs", "turtle_programs_prolog"),
+                    },
+                )
+                # Upgrade only exact former built-in templates. User-edited
+                # templates remain authoritative.
+                if any(
+                    legacy_keys == default_keys and len(steps) == len(default_keys)
+                    for default_keys in former_defaults
+                ):
+                    upgraded = [dict(step) for step in _DEFAULT_PIPELINE_TEMPLATE]
+                    file.write_text(json.dumps({
+                        "kind": "transform_pipeline_template",
+                        "comment": _PIPELINE_TEMPLATE_COMMENT,
+                        "pipeline": upgraded,
+                    }, indent=2), encoding="utf-8")
+                    return upgraded
                 return steps
         except (OSError, ValueError):
             pass
@@ -6625,6 +6917,263 @@ def save_pipeline_template(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     return {"file": _PIPELINE_TEMPLATE_REL, "pipeline": cleaned}
 
 
+# ---- external pooler control -------------------------------------------------
+# ONE external pooler serves the active todo set, directed by a control file it
+# keeps re-reading (including between tasks mid-pass). Stamping a set rewrites
+# root -> the pooler abandons its pass and moves over. The pooler heartbeats
+# pooler_status.json beside the control file.
+_POOLER_CONTROL_PATH = _REPO_ROOT / "data" / "omega_vision" / "pooler_control.json"
+_POOLER_DEFAULT_WORKERS = 10
+
+
+def _pooler_read(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            return payload
+    except (OSError, ValueError):
+        pass
+    return {}
+
+
+def _pooler_status_payload() -> dict[str, Any]:
+    return _pooler_read(_POOLER_CONTROL_PATH.with_name("pooler_status.json"))
+
+
+def _pooler_alive() -> int:
+    """Pid of a live pooler (fresh heartbeat, not exited), else 0."""
+    st = _pooler_status_payload()
+    try:
+        pid = int(st.get("pid") or 0)
+        if pid and st.get("state") != "exited":
+            beat = datetime.fromisoformat(str(st.get("heartbeatAt")))
+            if (datetime.now(timezone.utc) - beat).total_seconds() < 20:
+                return pid
+    except (TypeError, ValueError):
+        pass
+    return 0
+
+
+def _pooler_write_control(updates: dict[str, Any]) -> dict[str, Any]:
+    ctl = _pooler_read(_POOLER_CONTROL_PATH)
+    merged: dict[str, Any] = {
+        "kind": "pooler_control",
+        "command": ctl.get("command") or "pause",
+        "root": ctl.get("root") or "",
+        "workers": ctl.get("workers") or _POOLER_DEFAULT_WORKERS,
+        "interval": ctl.get("interval") or 5,
+        "onlyTypes": ctl.get("onlyTypes") if isinstance(ctl.get("onlyTypes"), list) else ["py_pl", "ui"],
+        "skipTypes": ctl.get("skipTypes") if isinstance(ctl.get("skipTypes"), list) else [],
+    }
+    merged.update({k: v for k, v in updates.items() if v is not None})
+    merged["updatedAt"] = _utc_now()
+    _POOLER_CONTROL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _POOLER_CONTROL_PATH.write_text(json.dumps(merged, indent=2), encoding="utf-8")
+    return merged
+
+
+def _pooler_spawn_if_dead() -> int:
+    pid = _pooler_alive()
+    if pid:
+        return pid
+    script = _REPO_ROOT / "python" / "omega_vision" / "services" / "transform_task_pooler.py"
+    flags = 0
+    if os.name == "nt":
+        flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                 | getattr(subprocess, "DETACHED_PROCESS", 0x00000008))
+    cmd = [sys.executable, str(script), "--control", str(_POOLER_CONTROL_PATH)]
+    log = open(_POOLER_CONTROL_PATH.with_name("pooler.log"), "ab")  # noqa: SIM115
+    try:
+        # first line of every run: WHAT is being started (echo of the command)
+        log.write(f"\n[spawn] {_utc_now()} $ {' '.join(cmd)}\n".encode("utf-8"))
+        log.flush()
+        proc = subprocess.Popen(
+            cmd, cwd=str(_REPO_ROOT), stdout=log, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, creationflags=flags)
+    finally:
+        log.close()
+    return proc.pid
+
+
+def _pooler_point_at(root_dir: Path, workers: Any = None) -> dict[str, Any]:
+    """Retarget the pooler at the active todo set and make sure one runs."""
+    try:
+        rel = root_dir.resolve().relative_to(_REPO_ROOT).as_posix()
+    except (OSError, ValueError):
+        rel = str(root_dir)
+    updates: dict[str, Any] = {"command": "run", "root": rel}
+    if workers is not None:
+        try:
+            updates["workers"] = max(1, min(32, int(workers)))
+        except (TypeError, ValueError):
+            pass
+    ctl = _pooler_write_control(updates)
+    return {"control": ctl, "pid": _pooler_spawn_if_dead()}
+
+
+@router.get("/pooler")
+def pooler_state() -> dict[str, Any]:
+    return {"control": _pooler_read(_POOLER_CONTROL_PATH),
+            "status": _pooler_status_payload(), "alivePid": _pooler_alive()}
+
+
+@router.post("/pooler")
+def pooler_command(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Drive the external pooler through its control file: ``command``
+    run|pause|exit, ``workers`` (1-32), ``root`` (repo-relative dir of the
+    active todo set). Running resurrects a dead pooler process."""
+    updates: dict[str, Any] = {}
+    command = str(body.get("command") or "").lower().strip()
+    if command:
+        if command not in ("run", "pause", "exit"):
+            raise HTTPException(status_code=400, detail="command must be run, pause or exit")
+        updates["command"] = command
+    if body.get("workers") is not None:
+        try:
+            updates["workers"] = max(1, min(32, int(body["workers"])))
+        except (TypeError, ValueError) as error:
+            raise HTTPException(status_code=400, detail="workers must be an integer") from error
+    if body.get("root") is not None:
+        updates["root"] = str(body["root"])
+    for key in ("onlyTypes", "skipTypes"):
+        if body.get(key) is not None:
+            if not isinstance(body[key], list):
+                raise HTTPException(status_code=400, detail=f"{key} must be a list of type tags")
+            updates[key] = [str(t) for t in body[key] if t]
+    ctl = _pooler_write_control(updates)
+    pid = _pooler_alive()
+    if ctl.get("command") == "run" and not pid:
+        pid = _pooler_spawn_if_dead()
+    return {"control": ctl, "status": _pooler_status_payload(), "alivePid": pid}
+
+
+def _llm_adoption_maker(set_base: Path):
+    """Adopt legacy LLM recognition reductions into unit transform dirs.
+
+    The canonical home of an LLM reduction is the unit's step dir
+    ``<unit>/llm_reduction_0/<doer>/`` (result.metta + meta.json + stage
+    images). Older reduces stored their outputs beside the set
+    (``sym/<id>__1shot.metta``, ``stages/<id>__t1__*.png``) — this MOVES those
+    into the step contract, deletes copy-era leftovers, and returns todo specs
+    for every step dir found, so todos.json, the Extractions cells, and the
+    pooler all account for the LLM line. Idempotent per step dir."""
+    sym_dir = set_base / "sym"
+    stages = set_base / "stages"
+    rows_by_id: dict[str, list[dict[str, Any]]] = {}
+    mp = set_base / "manifest.json"
+    if mp.is_file():
+        try:
+            mj = json.loads(mp.read_text(encoding="utf-8"))
+            for item in (mj.get("items") or []):
+                if isinstance(item, dict) and item.get("id"):
+                    rows_by_id[str(item["id"])] = [
+                        r for r in (item.get("rows") or []) if isinstance(r, dict)]
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    def adopt(unit: dict[str, Any]) -> list[dict[str, Any]]:
+        image = unit.get("image")
+        rel = ""
+        if image is not None:
+            try:
+                rel = image.relative_to(set_base).as_posix()
+            except ValueError:
+                rel = ""
+        stem = rel.rsplit(".", 1)[0] if rel else str(unit["id"])
+        idv = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_") or str(unit["id"])
+        specs: list[dict[str, Any]] = []
+        transformation = "llm_reduction_0"
+        for pos, metta_file in enumerate(sorted(sym_dir.glob(f"{idv}__*shot.metta")) if sym_dir.is_dir() else []):
+            m = re.fullmatch(rf"{re.escape(idv)}__(\d+)shot\.metta", metta_file.name)
+            if m is None:
+                continue
+            shots = m.group(1)
+            row = next((r for r in rows_by_id.get(idv, [])
+                        if str(r.get("metta") or "").split("/")[-1] == metta_file.name), None)
+            model = str((row or {}).get("model") or "llm")
+            doer = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_") or "llm"
+            if shots != "1":
+                doer = f"{doer}_{shots}shot"
+            out_dir = unit["dir"] / transformation / doer
+            meta_path = out_dir / "meta.json"
+            legacy_files = (
+                (metta_file, out_dir / "result.metta"),
+                (sym_dir / f"{idv}__{shots}shot.parts.json", out_dir / "result.parts.json"),
+                (stages / f"{idv}__t{shots}__parts.png", out_dir / "debug_image.png"),
+                (stages / f"{idv}__t{shots}__turtle.png", out_dir / "turtle.png"),
+                (stages / f"{idv}__t{shots}__partmap.png", out_dir / "partmap.png"),
+            )
+            if meta_path.is_file():
+                # already adopted: finish the move — align the copy-era sidecar
+                # name with the step contract and drop legacy duplicates.
+                old_sidecar = out_dir / "parts.json"
+                try:
+                    if old_sidecar.is_file() and not (out_dir / "result.parts.json").is_file():
+                        old_sidecar.rename(out_dir / "result.parts.json")
+                except OSError:
+                    pass
+                for src, dst in legacy_files:
+                    try:
+                        if src.is_file() and dst.is_file():
+                            src.unlink()
+                    except OSError:
+                        pass
+                specs.append({"transformation": transformation, "doer": doer, "options": {},
+                              "type": "p_shot" if doer.endswith("shot") else "llm",
+                              "dependsOn": [], "priority": 5 + pos})
+                continue
+            out_dir.mkdir(parents=True, exist_ok=True)
+            for src, dst in legacy_files:
+                try:
+                    if src.is_file():
+                        shutil.move(str(src), str(dst))
+                except OSError:
+                    pass
+            cache_src = set_base / "cache" / f"{idv}__pair1.json"
+            try:
+                if cache_src.is_file():
+                    shutil.copy2(cache_src, out_dir / "llm_objects.json")
+            except OSError:
+                pass
+            meta: dict[str, Any] = {
+                "kind": "sequence_set_transformation",
+                "transformation": transformation,
+                "doer": doer,
+                "options": {},
+                "createdAt": _utc_now(),
+                "adoptedFrom": f"sym/{metta_file.name}",
+                "model": model,
+                "shots": int(shots),
+            }
+            if row is not None:
+                if isinstance(row.get("elapsedMs"), (int, float)):
+                    meta["elapsedMs"] = row["elapsedMs"]
+                if isinstance(row.get("nparts"), int):
+                    meta["regionCount"] = row["nparts"]
+                if isinstance(row.get("ngroups"), int):
+                    meta["groupCount"] = row["ngroups"]
+                if isinstance(row.get("nrels"), int):
+                    meta["relationCount"] = row["nrels"]
+            meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False),
+                                 encoding="utf-8")
+            specs.append({"transformation": transformation, "doer": doer, "options": {},
+                          "type": "p_shot" if doer.endswith("shot") else "llm",
+                          "dependsOn": [], "priority": 5 + pos})
+        # canonical-layout steps written directly by the reduce pipeline
+        known = {s["doer"] for s in specs}
+        step_root = unit["dir"] / transformation
+        if step_root.is_dir():
+            for meta_f in sorted(step_root.glob("*/meta.json")):
+                doer = meta_f.parent.name
+                if doer not in known:
+                    specs.append({"transformation": transformation, "doer": doer, "options": {},
+                                  "type": "p_shot" if doer.endswith("shot") else "llm",
+                                  "dependsOn": [], "priority": 5 + len(specs)})
+        return specs
+
+    return adopt
+
+
 @router.post("/sequence-sets/transform")
 def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Apply transformations to the moves of a Sequence Set recording, or to
@@ -6634,12 +7183,11 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     meta.json (attribution + stats), and optionally debug_image.png. Outputs
     travel with the game sequence: ``<move>/<transformation>/<doer>/...`` for
     recordings, ``data/<set>/transforms/<image>/<transformation>/<doer>/...``
-    for image sets. By default the full pipeline runs: parts_extraction_0 by
-    python_scikit, then parts_grouping_0 and turtle_programs by the prolog
-    rules files that do them. Pass ``transformation``/``doer`` for a single
-    step or ``pipeline`` for an explicit list. Already-transformed units are
-    skipped unless ``force``; ``moves`` limits the run to specific
-    ordinals/stems.
+    for image sets. By default the full pipeline runs OpenCV parts extraction,
+    then parts_grouping_0 and turtle_programs by their Prolog rules. Pass
+    ``transformation``/``doer`` for a single step or ``pipeline`` for an
+    explicit list. Already-transformed units are skipped unless ``force``;
+    ``moves`` limits the run to specific ordinals/stems.
     """
     workspace_id = str(body.get("workspaceId") or "")
     if not workspace_id:
@@ -6652,7 +7200,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if raw_pipeline is None:
         if body.get("transformation") or body.get("doer") or body.get("tool"):
             raw_pipeline = [{"transformation": body.get("transformation") or "parts_extraction_0",
-                             "doer": body.get("doer") or body.get("tool") or "python_scikit",
+                             "doer": body.get("doer") or body.get("tool") or "python_opencv",
                              "options": body.get("options") or {}}]
         else:
             raw_pipeline = load_pipeline_template(_workspace_root(workspace_id))
@@ -6670,6 +7218,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
     root = _workspace_root(workspace_id)
     units: list[dict[str, Any]] = []
+    adopt = None  # set-branch: adopts pre-existing LLM reductions per unit
     if recording_rel:
         try:
             recording_dir = _safe_workspace_child(root, recording_rel)
@@ -6677,39 +7226,113 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=str(error)) from error
         if not (recording_dir / "recording.json").is_file():
             raise HTTPException(status_code=404, detail=f"not a recording (no recording.json): {recording_rel}")
-        for path in sorted((p for p in recording_dir.iterdir() if p.is_dir() and p.name.isdigit()),
-                           key=lambda p: int(p.name)):
+        for path in _recording_step_dirs(recording_dir):
             units.append({"id": path.name, "dir": path, "image": path / "image.png"})
         target = recording_rel
+        pooler_root = recording_dir
     else:
         try:
-            set_base = _safe_workspace_child(root, f"data/{set_id}")
+            set_base = _resolve_set_dir(root, f"data/{set_id}")
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
         pool = set_base / "pool"
-        if not pool.is_dir():
-            raise HTTPException(status_code=404, detail=f"image set has no pool: {set_id}")
-        for image in sorted(pool.iterdir()):
-            if image.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
-                continue
-            units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
+        if pool.is_dir():
+            for image in sorted(pool.iterdir()):
+                if image.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+                    continue
+                units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
+        else:
+            # No pool/: flat frame_*.png dumps put work in transforms/<stem>/;
+            # nested recording frames (<attempt>/<step>/image.png) keep the
+            # frame dir itself as the unit dir, matching the manifest reader.
+            for image in _resolve_set_images(set_base):
+                parent = image.parent
+                if parent == set_base:
+                    units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
+                else:
+                    unit_id = parent.name if parent.name.isdigit() else image.stem
+                    units.append({"id": unit_id, "dir": parent, "image": image})
+        if not units:
+            raise HTTPException(status_code=404, detail=f"image set has no images: {set_id}")
+        adopt = _llm_adoption_maker(set_base)
         target = f"data/{set_id}"
+        pooler_root = set_base
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
+    merge_todos = bool(body.get("mergeTodos"))
+    fresh_todos = bool(body.get("freshTodos"))
+    if merge_todos and fresh_todos:
+        raise HTTPException(status_code=400, detail="mergeTodos and freshTodos are mutually exclusive")
+    if fresh_todos:
+        live_claims = [
+            unit["dir"] / spec["transformation"] / spec["doer"] / "claim.json"
+            for unit in units
+            for spec in pipeline_specs
+            if _read_claim(unit["dir"] / spec["transformation"] / spec["doer"] / "claim.json") is not None
+        ]
+        if live_claims:
+            raise HTTPException(
+                status_code=409,
+                detail=f"cannot create fresh todos while {len(live_claims)} selected step(s) are actively claimed; pause and wait for them",
+            )
+
+    def _existing_unit_specs(unit: dict[str, Any]) -> list[dict[str, Any]]:
+        """The unit's already-stamped todos as pipeline specs, so a partial
+        run (mergeTodos) updates its own steps without dropping the rest."""
+        try:
+            payload = json.loads((unit["dir"] / "todos.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        specs: list[dict[str, Any]] = []
+        for entry in payload.get("todos", []) if isinstance(payload, dict) else []:
+            if not isinstance(entry, dict) or not entry.get("transformation") or not entry.get("doer"):
+                continue
+            transformation = str(entry["transformation"])
+            doer = str(entry["doer"])
+            if transformation == "parts_extraction_0" and doer in _MANUAL_ONLY_PARTS_EXTRACTORS:
+                continue
+            depends_on = [
+                "parts_extraction_0/python_opencv"
+                if str(dependency) in _MANUAL_ONLY_PARTS_EXTRACTOR_STEPS
+                else str(dependency)
+                for dependency in (entry.get("dependsOn") or [])
+            ]
+            spec = {"transformation": transformation, "doer": doer,
+                    "options": entry.get("options") or {},
+                    "dependsOn": list(dict.fromkeys(depends_on)),
+                    "priority": int(entry.get("priority", 100))}
+            if entry.get("type"):
+                spec["type"] = str(entry["type"])
+            specs.append(spec)
+        return specs
 
     def apply_one(unit: dict[str, Any]) -> dict[str, Any]:
+        extra_specs = adopt(unit) if adopt is not None else []
+        unit_specs = extra_specs + pipeline_specs
+        if fresh_todos:
+            for spec in pipeline_specs:
+                output_dir = unit["dir"] / spec["transformation"] / spec["doer"]
+                if output_dir.is_dir():
+                    shutil.rmtree(output_dir)
+        if merge_todos:
+            merged: dict[str, dict[str, Any]] = {
+                f"{s['transformation']}/{s['doer']}": s for s in _existing_unit_specs(unit)
+            }
+            for spec in unit_specs:
+                merged[f"{spec['transformation']}/{spec['doer']}"] = spec
+            unit_specs = sorted(merged.values(), key=lambda s: int(s.get("priority", 100)))
         steps: list[dict[str, Any]] = []
         if not plan_only:
             for spec in sorted(pipeline_specs, key=lambda s: s["priority"]):
                 steps.append(run_transform_step(unit, spec["transformation"], spec["doer"],
                                                 spec.get("options") or {}, force=force,
                                                 depends_on=spec.get("dependsOn") or []))
-        pending = write_unit_todos(unit, pipeline_specs, steps)
+        pending = write_unit_todos(unit, unit_specs, steps)
         if plan_only:
             steps = [{"step": f"{spec['transformation']}/{spec['doer']}",
                       "status": "done" if (unit["dir"] / spec["transformation"] / spec["doer"] / "meta.json").is_file() else "pending"}
-                     for spec in pipeline_specs]
+                     for spec in unit_specs]
         move_id: Any = int(unit["id"]) if str(unit["id"]).isdigit() else unit["id"]
         return {"move": move_id, "steps": steps, "pending": pending}
 
@@ -6724,6 +7347,9 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         for step in item["steps"]:
             bucket = counts.setdefault(step["step"], {})
             bucket[step["status"]] = bucket.get(step["status"], 0) + 1
+    # switching todo sets retargets the external pooler at this one (it stops
+    # what it was doing via its mid-pass control checks and moves over).
+    pooler = _pooler_point_at(pooler_root, body.get("poolerWorkers"))
     return {
         "recording": recording_rel or None,
         "set": set_id or None,
@@ -6734,4 +7360,5 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "pendingTotal": sum(item.get("pending", 0) for item in results),
         "counts": counts,
         "moves": results,
+        "pooler": pooler,
     }

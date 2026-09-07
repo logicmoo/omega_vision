@@ -26,9 +26,21 @@ _PY_DIR = _REPO_ROOT / "python"
 if str(_PY_DIR) not in sys.path:
     sys.path.insert(0, str(_PY_DIR))
 
-_LS20_DIR = (_REPO_ROOT / "data" / "omega_vision"
-             / "vision_frames" / "arc_recordings"
-             / "data-arc3_games-recordings-ls20-saved_001")
+_LS20_DIR = next(
+    (
+        candidate
+        for candidate in (
+            _REPO_ROOT / "data" / "omega_vision" / "arc_recordings"
+            / "data-arc3_games-recordings-ls20-saved_001",
+            # Legacy pre-flatten location, still readable.
+            _REPO_ROOT / "data" / "omega_vision" / "vision_frames" / "arc_recordings"
+            / "data-arc3_games-recordings-ls20-saved_001",
+        )
+        if candidate.is_dir()
+    ),
+    _REPO_ROOT / "data" / "omega_vision" / "arc_recordings"
+    / "data-arc3_games-recordings-ls20-saved_001",
+)
 
 
 def _now() -> str:

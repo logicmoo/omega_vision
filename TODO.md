@@ -4,15 +4,15 @@
 
 ## Document scope
 
-This is the concrete implementation list for the work we are actively doing together. It is intentionally shorter than the architecture and does not repeat the complete SOW.
+This is the concrete implementation list for the work we are actively doing together. It is intentionally shorter than the architecture and does not repeat the complete TODO.
 
 Related documents:
 
-- [SOW_PHASE_ARCHITECTURE.md](SOW_PHASE_ARCHITECTURE.md) — detailed classes, modules, contracts, boundaries, and design rationale.
-- [SOW_DELIVERABLES.md](SOW_DELIVERABLES.md) — delivered, partial, and open SOW outcomes with evidence links.
+- [TODO_PHASE_ARCHITECTURE.md](TODO_PHASE_ARCHITECTURE.md) — detailed classes, modules, contracts, boundaries, and design rationale.
+- [TODO_DELIVERABLES.md](TODO_DELIVERABLES.md) — delivered, partial, and open TODO outcomes with evidence links.
 - [FILE_TREE.md](FILE_TREE.md) — repository ownership map.
 
-When a operation here is completed, update the relevant checkbox in [SOW_DELIVERABLES.md](SOW_DELIVERABLES.md) and link the implementation or evidence.
+When a operation here is completed, update the relevant checkbox in [TODO_DELIVERABLES.md](TODO_DELIVERABLES.md) and link the implementation or evidence.
 
 ## Working rules
 
@@ -32,11 +32,11 @@ When a operation here is completed, update the relevant checkbox in [SOW_DELIVER
 
 # Phase 1 — Post-delivery debugger maintenance
 
-Architecture: [Phase 1 debugger architecture](SOW_PHASE_ARCHITECTURE.md#phase-1--arc3-debugger-and-extensible-inspection-foundation)
+Architecture: [Phase 1 debugger architecture](TODO_PHASE_ARCHITECTURE.md#phase-1--arc3-debugger-and-extensible-inspection-foundation)
 
-Deliverables: [Completed Phase 1 checklist](SOW_DELIVERABLES.md#phase-1--arc3-debugger-and-extensible-inspection-foundation)
+Deliverables: [Completed Phase 1 checklist](TODO_DELIVERABLES.md#phase-1--arc3-debugger-and-extensible-inspection-foundation)
 
-These are maintenance and extension operations, not missing Phase 1 SOW deliverables:
+These are maintenance and extension operations, not missing Phase 1 TODO deliverables:
 
 - [x] Keep command registration pluggable so new Phase 2 and Phase 3 services can be added without changing the debugger UI loop.
 - [x] Add explicit provider capability discovery and structured unsupported-command messages.
@@ -50,9 +50,9 @@ These are maintenance and extension operations, not missing Phase 1 SOW delivera
 
 # Phase 2 — Object Perception, Recognition, and Persistent Memory
 
-Architecture: [Phase 2 object architecture](SOW_PHASE_ARCHITECTURE.md#phase-2--object-perception-recognition-and-persistent-memory)
+Architecture: [Phase 2 object architecture](TODO_PHASE_ARCHITECTURE.md#phase-2--object-perception-recognition-and-persistent-memory)
 
-Deliverables: [Phase 2 checklist](SOW_DELIVERABLES.md#phase-2--object-perception-recognition-and-persistent-memory)
+Deliverables: [Phase 2 checklist](TODO_DELIVERABLES.md#phase-2--object-perception-recognition-and-persistent-memory)
 
 ## Freeze the Phase 2 records
 
@@ -172,9 +172,9 @@ Input image or game state
 
 # Phase 3 — Game Object Learner Integration and Predictive Rule Learning
 
-Architecture: [Phase 3 learner architecture](SOW_PHASE_ARCHITECTURE.md#phase-3--game-object-learner-integration-and-predictive-rule-learning)
+Architecture: [Phase 3 learner architecture](TODO_PHASE_ARCHITECTURE.md#phase-3--game-object-learner-integration-and-predictive-rule-learning)
 
-Deliverables: [Phase 3 checklist](SOW_DELIVERABLES.md#phase-3--game-object-learner-integration-and-predictive-rule-learning)
+Deliverables: [Phase 3 checklist](TODO_DELIVERABLES.md#phase-3--game-object-learner-integration-and-predictive-rule-learning)
 
 ## Freeze the learner boundary
 
@@ -262,7 +262,7 @@ Input game state
 
 # After exact-grid acceptance
 
-Architecture: [Environment progression](SOW_PHASE_ARCHITECTURE.md#environment-progression)
+Architecture: [Environment progression](TODO_PHASE_ARCHITECTURE.md#environment-progression)
 
 - [x] Rendered arcade fixtures.
 - [x] Fixed-camera physics fixtures.
@@ -281,7 +281,7 @@ For each finished operation:
 
 1. merge the implementation and tests;
 2. add or update demonstration evidence;
-3. link the relevant files, action-tree nodes, Turtle programs, transcripts, tests, predictions, or reports from [SOW_DELIVERABLES.md](SOW_DELIVERABLES.md);
+3. link the relevant files, action-tree nodes, Turtle programs, transcripts, tests, predictions, or reports from [TODO_DELIVERABLES.md](TODO_DELIVERABLES.md);
 4. check off the deliverable only when the evidence is reproducible.
 
 [← Back to top-level README](README.md)

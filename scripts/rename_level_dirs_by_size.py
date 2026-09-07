@@ -1,5 +1,5 @@
 """One-time housekeeping: rename data/<game>/level_<n>_<stamp>_<ns>/ (or
-data/arc3_games/recordings/<game>/level_<n>_<stamp>_<ns>/, whichever holds the
+data/recordings/<game>/level_<n>_<stamp>_<ns>/, whichever holds the
 game dirs) to level_<n>_<NNN>/, ranked by on-disk size within each
 (game, level) group -- the biggest gets _001.
 
@@ -38,11 +38,14 @@ def dir_size(path: Path) -> int:
 
 def _games_container(data_root: Path) -> Path:
     """Resolve canonical recordings first, then each legacy layout."""
-    canonical = data_root / "arc3_games" / "recordings"
-    legacy = data_root / "Recordings"
-    if canonical.is_dir():
-        return canonical
-    return legacy if legacy.is_dir() else data_root
+    for candidate in (
+        data_root / "recordings",
+        data_root / "arc3_games" / "recordings",
+        data_root / "Recordings",
+    ):
+        if candidate.is_dir():
+            return candidate
+    return data_root
 
 
 def build_plan(data_root: Path) -> dict[str, str]:

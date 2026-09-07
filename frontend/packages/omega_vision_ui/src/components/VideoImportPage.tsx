@@ -655,6 +655,41 @@ function turtleToSvg(prog: any, keyBase: string, fallbackColor: string, outlineO
 }
 const streamSlug = (value: string) =>
   value.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "workbench";
+// Parse an offline turtle_programs result.pl into drawable strokes. Facts look
+// like: turtle_program(r3, outer|hole(1)|midline(2), [start(X,Y,H), forward(D),
+// turn(A), ..., close]). Coordinates are in image pixels; heading 0 = +x and
+// 90 = +y (screen-down), positive turns clockwise. Cached by text identity —
+// results are immutable once written.
+type TurtleStroke = { id: string; kind: "outer" | "inner" | "medial"; points: Array<[number, number]>; closed: boolean };
+const turtleStrokeCache = new Map<string, TurtleStroke[]>();
+function parseTurtleStrokes(text: string): TurtleStroke[] {
+  if (!text) return [];
+  const hit = turtleStrokeCache.get(text);
+  if (hit) return hit;
+  const out: TurtleStroke[] = [];
+  const factRe = /turtle_program\(\s*(\w+)\s*,\s*(outer|hole\(\d+\)|midline\(\d+\))\s*,\s*\[([^\]]*)\]/g;
+  const cmdRe = /(start|forward|turn|close)(?:\(([^)]*)\))?/g;
+  let fm: RegExpExecArray | null;
+  while ((fm = factRe.exec(text))) {
+    const id = fm[1];
+    const kind: TurtleStroke["kind"] = fm[2] === "outer" ? "outer" : (fm[2].startsWith("hole") ? "inner" : "medial");
+    const pts: Array<[number, number]> = [];
+    let x = 0, y = 0, hdg = 0, closed = false;
+    let cm: RegExpExecArray | null;
+    cmdRe.lastIndex = 0;
+    while ((cm = cmdRe.exec(fm[3]))) {
+      const args = (cm[2] || "").split(",").map((s) => Number(s.trim()));
+      if (cm[1] === "start") { x = args[0] || 0; y = args[1] || 0; hdg = args[2] || 0; pts.push([x, y]); }
+      else if (cm[1] === "forward") { const d = args[0] || 0; const r = (hdg * Math.PI) / 180; x += d * Math.cos(r); y += d * Math.sin(r); pts.push([x, y]); }
+      else if (cm[1] === "turn") { hdg += args[0] || 0; }
+      else if (cm[1] === "close") { closed = true; }
+    }
+    if (pts.length > 1) out.push({ id, kind, points: pts, closed });
+  }
+  if (turtleStrokeCache.size > 400) turtleStrokeCache.clear();
+  turtleStrokeCache.set(text, out);
+  return out;
+}
 const MAX_RECURSIVE_OBJECT_DEPTH = 9;
 const LLM_RETRY_DELAY_MS = 1000;
 const PILOT_FIRST_IMAGE_COUNT = 2;
@@ -3083,6 +3118,35 @@ export function VideoImportPage({
   const [recognitionGallery, setRecognitionGallery] = useState<any[]>([]);
   // Reduction stress-test (shot-tier agreement) manifest + UI state.
   const [recognitionReduce, setRecognitionReduce] = useState<any | null>(null);
+  // "Add todos" — stamp todos.json onto every unit of the visible set (planOnly
+  // transform: writes the work queue, runs nothing). The offline task pooler
+  // scans data/omega_vision for todos.json and does the actual work.
+  const [seedTodosBusy, setSeedTodosBusy] = useState(false);
+  const [seedTodosNote, setSeedTodosNote] = useState("");
+  // External pooler (control-file driven): one pooler serves the ACTIVE todo
+  // set; stamping retargets it. UI shows liveness and drives workers/pause/exit.
+  const [poolerInfo, setPoolerInfo] = useState<any>(null);
+  const [poolerWorkers, setPoolerWorkers] = useState<number>(10);
+  const poolerWorkersTouched = useRef(false);
+  const refreshPooler = useCallback(async () => {
+    try {
+      const resp = await fetch(`${API}/pooler`, { cache: "no-store" });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      setPoolerInfo(data);
+      const w = Number(data?.control?.workers);
+      if (!poolerWorkersTouched.current && Number.isFinite(w) && w >= 1) setPoolerWorkers(w);
+    } catch { /* ignore */ }
+  }, []);
+  const poolerCmd = useCallback(async (patch: { command?: string; workers?: number }) => {
+    try {
+      const resp = await fetch(`${API}/pooler`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (resp.ok) setPoolerInfo(await resp.json());
+    } catch { /* ignore */ }
+  }, []);
   // Registry commit mode for the reduce: by default every reduced sequence is
   // COMMITTED to the canonical object registry (new objects stored, recognized
   // ones accumulate evidence). Flip this on for a recognize-only pass that
@@ -3097,9 +3161,10 @@ export function VideoImportPage({
   // never has to redo it. The Objects page additionally offers a "live pipeline"
   // choice (objectsShowLive) that shows its own in-progress object-graphs.
   const OBJECTS_LIVE_SET = "objects_live";
+  const DEFAULT_IMAGE_SET = "recordings/ls20";
   const [imageSetList, setImageSetList] = useState<any[]>([]);
   const [selectedImageSet, setSelectedImageSet] = useState<string>(() => {
-    try { return window.localStorage.getItem("videoImport.imageSet") || "recognition_reduce"; } catch { return "recognition_reduce"; }
+    try { return window.localStorage.getItem("videoImport.imageSet") || DEFAULT_IMAGE_SET; } catch { return DEFAULT_IMAGE_SET; }
   });
   const [objectsShowLive, setObjectsShowLive] = useState<boolean>(() => {
     try { return (window.localStorage.getItem("videoImport.objectsShowLive") ?? "1") !== "0"; } catch { return true; }
@@ -3121,6 +3186,31 @@ export function VideoImportPage({
   // Which group tree nodes are expanded to reveal their parts (keyed metta#group),
   // so the chevron expands independently of clicking the group to highlight it.
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  // Offline transform strip interactivity: per strip row (keyed by item id),
+  // which part/group ids are selected in the grouping tree (empty = render ALL),
+  // which stroke kinds the turtle cell draws, and which tree nodes are open.
+  const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
+  const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
+  // Which active parts_extraction_0 doer every transform strip displays.
+  // "__all__" expands every active path side by side for each input image.
+  const PARTS_EXTRACTOR_DOERS = ["python_opencv"];
+  const [partsExtractorSel, setPartsExtractorSel] = useState<string>(() => {
+    try {
+      const stored = window.localStorage.getItem("videoImport.partsExtractor") || "python_opencv";
+      return stored === "__all__" || PARTS_EXTRACTOR_DOERS.includes(stored) ? stored : "python_opencv";
+    } catch { return "python_opencv"; }
+  });
+  const showAllPartsExtractors = partsExtractorSel === "__all__";
+  useEffect(() => {
+    try { window.localStorage.setItem("videoImport.partsExtractor", partsExtractorSel); } catch { /* ignore */ }
+  }, [partsExtractorSel]);
+  const [todoPreviewCount, setTodoPreviewCount] = useState<number>(() => {
+    try { return Math.max(0, Number(window.localStorage.getItem("videoImport.todoPreviewCount")) || 0); } catch { return 0; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("videoImport.todoPreviewCount", String(todoPreviewCount)); } catch { /* ignore */ }
+  }, [todoPreviewCount]);
+  const [stripOpenGroups, setStripOpenGroups] = useState<Set<string>>(new Set());
   // Reduce section shows a collapsible char-grouped grid above a flat
   // one-row-per-image list (all 200); "reduceListQuery" filters the list.
   const [reduceListQuery, setReduceListQuery] = useState("");
@@ -4298,6 +4388,55 @@ export function VideoImportPage({
       if (resp.ok) { const mf = await resp.json(); if (mf && Array.isArray(mf.items)) setRecognitionReduce(mf); }
     } catch { /* ignore */ }
   }, [workspaceId, selectedImageSet]);
+  // Stamp todos.json across every unit of the visible image set (planOnly =
+  // write the queue, run nothing) so the offline transform_task_pooler picks
+  // the work up on its next scan pass.
+  const seedTodos = useCallback(async (mode: "merge" | "fresh") => {
+    if (!workspaceId || seedTodosBusy) return;
+    setSeedTodosBusy(true);
+    setSeedTodosNote("");
+    try {
+      const allItems = Array.isArray(recognitionReduce?.items) ? recognitionReduce.items : [];
+      const requested = Math.max(0, Math.trunc(todoPreviewCount));
+      const moves = requested > 0
+        ? allItems.slice(0, requested).map((item: any) => String(item.id))
+        : undefined;
+      const resp = await fetch(`${API}/sequence-sets/transform`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          set: selectedImageSet,
+          planOnly: true,
+          poolerWorkers,
+          mergeTodos: mode === "merge",
+          freshTodos: mode === "fresh",
+          ...(moves ? { moves } : {}),
+        }),
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        setSeedTodosNote(String(data?.detail || `HTTP ${resp.status}`));
+        return;
+      }
+      const verb = mode === "merge" ? "merged" : "freshly reset";
+      const scope = moves ? `first ${data.moveCount}` : `${data.moveCount}`;
+      setSeedTodosNote(`${verb} todos for ${scope} units · ${data.pendingTotal} pending — pooler moved to this set`);
+      await refreshReduceManifest();
+      await refreshPooler();
+    } catch (error: any) {
+      setSeedTodosNote(String(error?.message || error));
+    } finally {
+      setSeedTodosBusy(false);
+    }
+  }, [workspaceId, selectedImageSet, seedTodosBusy, recognitionReduce, todoPreviewCount,
+      refreshReduceManifest, refreshPooler, poolerWorkers]);
+  // Keep the pooler chip live while the Extractions list is on screen.
+  useEffect(() => {
+    if (!recognitionReduce) return;
+    void refreshPooler();
+    const id = window.setInterval(() => { void refreshPooler(); }, 8000);
+    return () => window.clearInterval(id);
+  }, [recognitionReduce != null, refreshPooler]);
   useEffect(() => {
     const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
     const pending = items.some((it: any) => Array.isArray(it.transforms) && it.transforms.some((t: any) => t.status !== "done"));
@@ -4305,6 +4444,17 @@ export function VideoImportPage({
     const id = window.setInterval(() => { void refreshReduceManifest(); }, 8000);
     return () => window.clearInterval(id);
   }, [recognitionReduce, refreshReduceManifest]);
+  // Preload done turtle_programs result.pl files so the strip's turtle cell can
+  // draw strokes without a click (loadReduceMetta is a no-op once cached; it
+  // must never be called during render — it sets state synchronously).
+  useEffect(() => {
+    const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
+    for (const it of items) {
+      for (const t of (it.transforms || [])) {
+        if (t && t.status === "done" && t.resultPath && /turtle/.test(String(t.name || ""))) loadReduceMetta(String(t.resultPath));
+      }
+    }
+  }, [recognitionReduce, loadReduceMetta]);
   // Discover the image sets available on disk for the shared selector. Purely
   // filesystem-derived, so it reflects real reusable work per set.
   useEffect(() => {
@@ -4318,9 +4468,13 @@ export function VideoImportPage({
         if (cancelled) return;
         const sets = Array.isArray(data?.sets) ? data.sets : [];
         setImageSetList(sets);
-        // If the persisted selection is no longer present, fall back to canonical.
+        // If the persisted selection is no longer present, fall back to the
+        // default set, then canonical, then whatever exists.
         if (sets.length && !sets.some((s: any) => s.id === selectedImageSet)) {
-          setSelectedImageSet(sets.some((s: any) => s.id === "recognition_reduce") ? "recognition_reduce" : sets[0].id);
+          const fallback = sets.some((s: any) => s.id === DEFAULT_IMAGE_SET)
+            ? DEFAULT_IMAGE_SET
+            : (sets.some((s: any) => s.id === "recognition_reduce") ? "recognition_reduce" : sets[0].id);
+          setSelectedImageSet(fallback);
         }
       } catch { if (!cancelled) setImageSetList([]); }
     })();
@@ -4735,7 +4889,7 @@ export function VideoImportPage({
         while (!cancelled && queue.length > 0) {
           const rel = queue.shift() as string;
           const base = partsTransformBase(rel) as string;
-          const dir = `${base}/parts_extraction_0/python_scikit`;
+          const dir = `${base}/parts_extraction_0/python_opencv`;
           try {
             let todos: any[] | undefined;
             const todosResp = await fetch(asset(`${base}/todos.json`), { cache: "no-store" });
@@ -4787,8 +4941,30 @@ export function VideoImportPage({
       setPartsRunBusy(false);
     }
   };
-  const togglePartsTemplate = async () => {
-    if (partsTpl.open) { setPartsTpl((c) => ({ ...c, open: false })); return; }
+  // Per-unit partial transform runs from the strip: re-derive grouping/turtle
+  // from the selected extractor (fast prolog steps, run synchronously with
+  // force) or stamp a missing extractor todo for the pooler (planOnly).
+  const [stripRefreshBusy, setStripRefreshBusy] = useState<Record<string, boolean>>({});
+  const runUnitTransformSteps = async (it: any, inputRel: string, pipeline: any[],
+                                       opts: { force?: boolean; planOnly?: boolean }) => {
+    const key = String(it.id || inputRel);
+    if (stripRefreshBusy[key]) return;
+    setStripRefreshBusy((c) => ({ ...c, [key]: true }));
+    try {
+      const payload: any = { workspaceId, moves: [String(it.id)], pipeline, mergeTodos: true,
+                             force: !!opts.force, planOnly: !!opts.planOnly };
+      const move = String(inputRel).match(/^(.*)\/([^/]+)\/image\.png$/);
+      if (move) payload.recording = move[1]; else payload.set = selectedImageSet;
+      await fetch(`${API}/sequence-sets/transform`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      });
+      setPartsPreviews({});
+      await refreshReduceManifest();
+    } finally {
+      setStripRefreshBusy((c) => ({ ...c, [key]: false }));
+    }
+  };
+  const togglePartsTemplate = async () => {    if (partsTpl.open) { setPartsTpl((c) => ({ ...c, open: false })); return; }
     setPartsTpl({ open: true, text: "loading…", busy: true, err: null });
     try {
       const resp = await fetch(`${API}/sequence-sets/pipeline-template?workspaceId=${encodeURIComponent(workspaceId)}`);
@@ -6881,17 +7057,180 @@ export function VideoImportPage({
             };
             const renderTransformStrip = (it: any, inputRel: string) => {
               const doneBy = new Set((it.transforms || []).filter((t: any) => t.status === "done").map((t: any) => String(t.output)));
+              // Shared per-row context for the interactive grouping/turtle cells:
+              // part colours from the extraction cell, group membership + nesting
+              // from the grouping cell, drawable strokes from the turtle result.
+              const rowKey = String(it.id || inputRel);
+              const cells: any[] = it.transforms || [];
+              // One global selector controls every row. "All" expands the
+              // three possible extraction paths side by side for comparison;
+              // missing paths remain visible as unstamped placeholders.
+              const extractionCells = cells.filter((c: any) => String(c.name) === "parts_extraction_0");
+              const selectedExtraction = extractionCells.find((c: any) => String(c.doer) === partsExtractorSel);
+              const primaryExtraction = showAllPartsExtractors
+                ? extractionCells.find((c: any) => String(c.doer) === "python_opencv" && c.status === "done")
+                  || extractionCells.find((c: any) => c.status === "done")
+                : selectedExtraction;
+              const shownExtractionCells = (showAllPartsExtractors ? PARTS_EXTRACTOR_DOERS : [partsExtractorSel])
+                .map((doer) => extractionCells.find((c: any) => String(c.doer) === doer) || ({
+                  name: "parts_extraction_0",
+                  doer,
+                  output: `parts_extraction_0/${doer}`,
+                  status: "missing",
+                  dependsOn: [],
+                }));
+              const displayCells = [
+                ...shownExtractionCells,
+                ...cells.filter((c: any) => String(c.name) !== "parts_extraction_0"),
+              ];
+              const partsCell = (primaryExtraction && Array.isArray(primaryExtraction.parts) && primaryExtraction.parts.length > 0)
+                ? primaryExtraction
+                : cells.find((t: any) => Array.isArray(t.parts) && t.parts.length > 0);
+              const partColor = new Map<string, string>();
+              ((partsCell && partsCell.parts) || []).forEach((p: any) => { if (p && p.id) partColor.set(String(p.id), String(p.color || "")); });
+              const groupingCell = cells.find((t: any) => Array.isArray(t.groups) && t.groups.length > 0);
+              const turtleCell = cells.find((t: any) => t.status === "done" && t.resultPath && /turtle/.test(String(t.name || "")));
+              const turtleText = turtleCell ? reduceMetta[String(turtleCell.resultPath)] : undefined;
+              const strokes = turtleText ? parseTurtleStrokes(turtleText) : [];
+              const selArr = stripSel[rowKey] || [];
+              const sel = selArr.length ? new Set(selArr) : null; // null = render ALL parts
+              const sk = stripStrokes[rowKey] || { outer: true, inner: true, medial: true };
+              let dims: [number, number] = [640, 640];
+              for (const c of cells) { const cs = c && c.summary; if (cs && cs.width && cs.height) { dims = [Number(cs.width), Number(cs.height)]; break; } }
+              const groupColorOf = new Map<string, string>();
+              const partGroup = new Map<string, string>();
+              ((groupingCell && groupingCell.groups) || []).forEach((g: any, gi: number) => {
+                groupColorOf.set(String(g.id), GROUP_COLORS[gi % GROUP_COLORS.length]);
+                (g.members || []).forEach((m: any) => partGroup.set(String(m), String(g.id)));
+              });
+              const childrenOf = new Map<string, string[]>();
+              const parentOf = new Map<string, string>();
+              ((groupingCell && groupingCell.partOf) || []).forEach((pair: any) => {
+                const a = String(pair[0]); const b = String(pair[1]);
+                const arr = childrenOf.get(b) || []; arr.push(a); childrenOf.set(b, arr);
+                parentOf.set(a, b);
+              });
+              const setSel = (ids: string[], additive: boolean) => setStripSel((prev) => {
+                const cur = new Set(prev[rowKey] || []);
+                if (additive) {
+                  const allIn = ids.every((i) => cur.has(i));
+                  if (allIn) ids.forEach((i) => cur.delete(i)); else ids.forEach((i) => cur.add(i));
+                  return { ...prev, [rowKey]: [...cur] };
+                }
+                const same = ids.length === cur.size && ids.every((i) => cur.has(i));
+                return { ...prev, [rowKey]: same ? [] : ids };
+              });
+              const strokeColor = (st: TurtleStroke, byGroup: boolean) =>
+                (byGroup ? groupColorOf.get(partGroup.get(st.id) || "") : undefined) || partColor.get(st.id) || "#8a8f98";
+              const strokeEl = (st: TurtleStroke, key: string, col: string) => {
+                const pts = st.points.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+                const w = st.kind === "outer" ? 2.5 : st.kind === "inner" ? 1.8 : 1.6;
+                const dash = st.kind === "medial" ? "5 4" : undefined;
+                const op = st.kind === "outer" ? 1 : 0.85;
+                return st.closed
+                  ? <polygon key={key} points={pts} fill="none" stroke={col} strokeWidth={w} strokeDasharray={dash} opacity={op} vectorEffect="non-scaling-stroke" />
+                  : <polyline key={key} points={pts} fill="none" stroke={col} strokeWidth={w} strokeDasharray={dash} opacity={op} vectorEffect="non-scaling-stroke" />;
+              };
+              const renderPartNode = (pid: string, depth: number): any => {
+                const isSel = !!sel && sel.has(pid);
+                const kids = (childrenOf.get(pid) || []).filter((k) => partGroup.get(k) === partGroup.get(pid));
+                return (
+                  <li key={pid}>
+                    <button type="button" className={isSel ? "is-sel" : ""} title={pid} onClick={(e) => setSel([pid], e.shiftKey)}>
+                      <span className="video-import-reduce-treedot" style={{ background: partColor.get(pid) || "#8a8f98" }} />{pid}
+                    </button>
+                    {depth < 3 && kids.length > 0 && <ul>{kids.map((k) => renderPartNode(k, depth + 1))}</ul>}
+                  </li>
+                );
+              };
               return (
                 <div className="video-import-transform-strip">
                   <figure className="video-import-reduce-stage is-submitted">
                     <img className="video-import-reduce-stageimg" src={asset(inputRel)} alt={it.id} loading="lazy" />
                     <figcaption>input</figcaption>
                   </figure>
-                  {(it.transforms || []).map((t: any, ti: number) => {
+                  {displayCells.map((t: any, ti: number) => {
+                    const isExtraction = String(t.name) === "parts_extraction_0";
+                    const renderCell = () => {
                     const secs = fmtMs(t.elapsedMs);
                     if (t.status === "done") {
                       const s = t.summary || {};
                       const hasStats = Object.keys(s).length > 0 || (Array.isArray(t.groups) && t.groups.length > 0);
+                      // Interactive grouping cell: partOf tree (click = select; empty
+                      // selection = everything) + outer strokes over the dimmed input.
+                      if (groupingCell && t === groupingCell) {
+                        const bg = Array.isArray(t.background) ? t.background.map(String) : [];
+                        const shown = strokes.filter((st) => st.kind === "outer" && (!sel || sel.has(st.id)));
+                        return (
+                          <div key={ti} className="video-import-transform-cell is-done is-grouping" title={t.resultPath || t.output}>
+                            <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""}</span></div>
+                            <div className="video-import-transform-duo">
+                              <div className="video-import-reduce-grouptree">
+                                {(t.groups || []).map((g: any, gi: number) => {
+                                  const gid = String(g.id);
+                                  const col = groupColorOf.get(gid) || "#8a8f98";
+                                  const members = (g.members || []).map(String);
+                                  const gkey = `${rowKey}#${gid}`;
+                                  const gopen = stripOpenGroups.has(gkey);
+                                  const groupSel = !!sel && members.length > 0 && members.every((m: string) => sel.has(m));
+                                  const toggleOpen = () => setStripOpenGroups((prev) => { const n = new Set(prev); if (n.has(gkey)) n.delete(gkey); else n.add(gkey); return n; });
+                                  const roots = members.filter((m: string) => { const p = parentOf.get(m); return !p || !members.includes(p); });
+                                  return (
+                                    <details key={gi} className="video-import-reduce-groupnode" open={gopen}>
+                                      <summary className={groupSel ? "is-sel" : ""} style={{ color: col }}
+                                        onClick={(e) => { e.preventDefault(); setSel(members, e.shiftKey); }}>
+                                        <span className="video-import-reduce-groupchev" role="button" tabIndex={0}
+                                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleOpen(); }}
+                                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); toggleOpen(); } }}>{gopen ? "▾" : "▸"}</span>
+                                        <span className="video-import-reduce-groupdot" style={{ background: col }} />{gid} · {members.length}
+                                      </summary>
+                                      <ul>{roots.map((m: string) => renderPartNode(m, 0))}</ul>
+                                    </details>
+                                  );
+                                })}
+                                {bg.length > 0 && (
+                                  <button type="button" className="video-import-transform-bgchip" title={`background: ${bg.join(", ")}`}
+                                    onClick={(e) => setSel(bg, e.shiftKey)}>bg {bg.join(",")}</button>
+                                )}
+                              </div>
+                              <svg viewBox={`0 0 ${dims[0]} ${dims[1]}`} className="video-import-reduce-svg is-strip" preserveAspectRatio="xMidYMid meet">
+                                <image href={asset(inputRel)} x="0" y="0" width={dims[0]} height={dims[1]} preserveAspectRatio="xMidYMid meet" opacity={sel ? 0.12 : 0.3} />
+                                {shown.map((st, si) => strokeEl(st, `g${si}`, strokeColor(st, true)))}
+                              </svg>
+                            </div>
+                            <div className="video-import-transform-note">
+                              {Array.isArray(t.partOf) && t.partOf.length > 0 ? `${t.partOf.length} part-of · ` : ""}
+                              {sel ? `sel ${sel.size} parts` : "all parts"}
+                              {turtleCell && turtleText === undefined ? " · loading strokes…" : ""}
+                            </div>
+                          </div>
+                        );
+                      }
+                      // Interactive turtle cell: stroke-kind checkboxes + the drawn
+                      // strokes for the selected parts (or all when none selected).
+                      if (turtleCell && t === turtleCell) {
+                        const shown = strokes.filter((st) => sk[st.kind] && (!sel || sel.has(st.id)));
+                        const setKind = (k: "outer" | "inner" | "medial", v: boolean) => setStripStrokes((prev) => ({ ...prev, [rowKey]: { ...(prev[rowKey] || { outer: true, inner: true, medial: true }), [k]: v } }));
+                        return (
+                          <div key={ti} className="video-import-transform-cell is-done is-turtle" title={t.resultPath || t.output}>
+                            <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""}{s.programCount != null ? ` · ${s.programCount} programs` : ""}</span></div>
+                            <div className="video-import-transform-duo">
+                              <div className="video-import-transform-kinds">
+                                <label><input type="checkbox" checked={sk.outer} onChange={(e) => setKind("outer", e.target.checked)} />OuterEdge</label>
+                                <label><input type="checkbox" checked={sk.inner} onChange={(e) => setKind("inner", e.target.checked)} />InnerEdges</label>
+                                <label><input type="checkbox" checked={sk.medial} onChange={(e) => setKind("medial", e.target.checked)} />Medials</label>
+                              </div>
+                              <svg viewBox={`0 0 ${dims[0]} ${dims[1]}`} className="video-import-reduce-svg is-strip" preserveAspectRatio="xMidYMid meet">
+                                <image href={asset(inputRel)} x="0" y="0" width={dims[0]} height={dims[1]} preserveAspectRatio="xMidYMid meet" opacity={0.08} />
+                                {shown.map((st, si) => strokeEl(st, `t${si}`, strokeColor(st, false)))}
+                              </svg>
+                            </div>
+                            <div className="video-import-transform-note">
+                              {turtleText === undefined ? "loading strokes…" : `${shown.length} of ${strokes.length} strokes`} · {sel ? `sel ${sel.size} parts` : "all parts"}
+                            </div>
+                          </div>
+                        );
+                      }
                       // Image-only transform (e.g. parts_debug overlay) renders as a plain figure.
                       if (t.debugImage && !hasStats) {
                         return (
@@ -6917,6 +7256,9 @@ export function VideoImportPage({
                               {s.regionCount != null && <span>{s.regionCount} regions</span>}
                               {s.adjacencyCount != null && <span>{s.adjacencyCount} adjacent</span>}
                               {s.blobCount != null && <span>{s.blobCount} blobs</span>}
+                              {s.componentCount != null && <span>{s.componentCount} cv components</span>}
+                              {s.contourCount != null && <span>{s.contourCount} contours</span>}
+                              {s.watershedSegmentCount != null && <span>{s.watershedSegmentCount} watershed segments</span>}
                               {s.groupCount != null && <span>{s.groupCount} groups</span>}
                               {s.objectCount != null && <span>{s.objectCount} objects</span>}
                               {s.programCount != null && <span>{s.programCount} programs</span>}
@@ -6931,7 +7273,7 @@ export function VideoImportPage({
                     if (t.status === "claimed") {
                       return (
                         <div key={ti} className="video-import-transform-cell is-started">
-                          <div className="video-import-transform-title">{t.name}</div>
+                          <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
                           <div className="video-import-transform-wait">⏳ started{t.claimedBy ? ` · ${t.claimedBy}` : ""}{t.claimedAt ? ` · ${agoOf(t.claimedAt)}` : ""}</div>
                         </div>
                       );
@@ -6939,10 +7281,40 @@ export function VideoImportPage({
                     const unmet = (t.dependsOn || []).filter((d: string) => !doneBy.has(String(d))).map((d: string) => String(d).split("/")[0]);
                     return (
                       <div key={ti} className="video-import-transform-cell is-waiting">
-                        <div className="video-import-transform-title">{t.name}</div>
-                        <div className="video-import-transform-wait">{unmet.length ? `waiting for ${unmet.join(", ")}…` : "queued…"}</div>
+                        <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
+                        <div className="video-import-transform-wait">
+                          {t.status === "missing" ? "not stamped — use Add/Merge todos" : unmet.length ? `waiting for ${unmet.join(", ")}…` : "queued…"}
+                        </div>
                       </div>
                     );
+                    };
+                    const cell = renderCell();
+                    let header: any = null;
+                    if (!isExtraction && !showAllPartsExtractors
+                        && (String(t.name) === "parts_grouping_0" || String(t.name) === "turtle_programs")
+                        && t.status === "done" && selectedExtraction) {
+                      const facts = String((t.summary || {}).partsFacts || "");
+                      const stale = !!facts && !facts.startsWith(`parts_extraction_0/${partsExtractorSel}/`);
+                      const selDone = extractionCells.some((c: any) => String(c.doer) === partsExtractorSel && c.status === "done");
+                      if (stale) {
+                        const from = facts.split("/")[1] || "?";
+                        header = (
+                          <span className="video-import-extractor-pick is-stale"
+                            title={`Derived from ${from}. Re-derive grouping + turtle from ${partsExtractorSel} (runs the prolog steps now).`}>
+                            <button type="button" disabled={!selDone || !!stripRefreshBusy[rowKey]}
+                              onClick={() => void runUnitTransformSteps(it, inputRel, [
+                                { transformation: "parts_grouping_0", doer: "group_regions_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`], priority: 30, type: "py_pl" },
+                                { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["parts_grouping_0/group_regions_prolog"], priority: 40, type: "py_pl" },
+                              ], { force: true })}>
+                              {stripRefreshBusy[rowKey] ? "…" : `⟳ stale · re-derive from ${partsExtractorSel.replace(/^python_/, "").replace(/^shape_finder_/, "")}`}
+                            </button>
+                          </span>
+                        );
+                      }
+                    }
+                    return header
+                      ? <div key={`wrap-${ti}`} className="video-import-transform-wrap">{header}{cell}</div>
+                      : cell;
                   })}
                 </div>
               );
@@ -7000,9 +7372,70 @@ export function VideoImportPage({
                   );
                 })()}
                 <div className="video-import-reduce-listctrls">
+                  <label className="video-import-global-extractor"
+                    title="One selection controls the parts_extraction_0 column for every input image. Choose All to compare every active extractor path per image.">
+                    <span>PARTS EXTRACTOR · ALL INPUTS</span>
+                    <select value={partsExtractorSel} onChange={(e) => setPartsExtractorSel(e.target.value)}>
+                      <option value="__all__">All extractors (compare)</option>
+                      {PARTS_EXTRACTOR_DOERS.map((doer) => <option key={doer} value={doer}>{doer}</option>)}
+                    </select>
+                    <small>parts_extraction_0</small>
+                  </label>
+                  <label className="video-import-todo-preview-count"
+                    title="Limit todo stamping to the first N input images for a quick preview. Use 0 for every image.">
+                    <span>FIRST N</span>
+                    <input type="number" min={0} max={recognitionReduce.items.length} value={todoPreviewCount}
+                      onChange={(e) => setTodoPreviewCount(Math.max(0, Math.trunc(Number(e.target.value) || 0)))} />
+                    <small>{todoPreviewCount > 0 ? "preview only" : "0 = all inputs"}</small>
+                  </label>
                   <LaneReduceButton primary label={`▶ Reduce all ${recognitionReduce.items.length} · all impls`}
                     title="Run ALL implementations (LLM 1-shot + 2-shot tiers AND the SWI-Prolog symbolic line + registry) for every pool image, server-side."
                     laneRun={laneRuns["reduce"]} onStart={() => startServerStage("reduce")} onStop={() => void stopServerPipeline("reduce")} />
+                  <button type="button" className="video-import-btn" disabled={seedTodosBusy} onClick={() => void seedTodos("merge")}
+                    title="Add/update the current template steps while preserving every existing todo and completed output. The pooler runs pending work.">
+                    {seedTodosBusy ? "stamping todos…" : "⊕ Add/Merge todos"}
+                  </button>
+                  <button type="button" className="video-import-btn video-import-fresh-todos" disabled={seedTodosBusy}
+                    onClick={() => void seedTodos("fresh")}
+                    title="Fresh start: replace todos with the current template and remove those steps' existing outputs so the pooler recomputes them. Respects First N.">
+                    {seedTodosBusy ? "stamping todos…" : "↻ Fresh todos"}
+                  </button>
+                  {seedTodosNote ? <span className="video-import-reduce-partsbar-note">{seedTodosNote}</span> : null}
+                  {(() => {
+                    const st = poolerInfo?.status || {};
+                    const ctl = poolerInfo?.control || {};
+                    const alive = Boolean(poolerInfo?.alivePid);
+                    const state = alive ? String(st.state || "idle") : "off";
+                    const rootLeaf = String(ctl.root || "").split("/").filter(Boolean).pop() || "—";
+                    const paused = String(ctl.command || "") !== "run";
+                    const total = Number(st.total || 0);
+                    const done = Number(st.done || 0);
+                    const activeTasks: string[] = Array.isArray(st.active) ? st.active : [];
+                    const progress = state === "working" && total ? ` · ${done}/${total}` : "";
+                    const nowDoing = state === "working" && activeTasks.length
+                      ? ` · ${activeTasks[0]}${activeTasks.length > 1 ? ` +${activeTasks.length - 1}` : ""}`
+                      : "";
+                    const recentLines: string[] = Array.isArray(st.recent) ? st.recent : [];
+                    return (
+                      <span className="video-import-pooler-ctl"
+                        title={`External pooler — ${alive ? `pid ${poolerInfo.alivePid}` : "not running"} · state ${state} · set ${String(ctl.root || "(none)")} · driven by pooler_control.json${recentLines.length ? `\nrecent:\n${recentLines.join("\n")}` : ""}`}>
+                        <span className={`video-import-pooler-dot ${alive ? (state === "working" ? "working" : "idle") : "off"}`} />
+                        <span className="video-import-pooler-state">{alive ? `pooler ${state} · ${rootLeaf}${progress}${nowDoing}` : "pooler off"}</span>
+                        <label className="video-import-imageset-selector" title="Concurrent pooler workers (written to the control file; takes effect immediately, even mid-pass).">
+                          <span>workers</span>
+                          <input className="video-import-pooler-workers" type="number" min={1} max={32} value={poolerWorkers}
+                            onChange={(e) => { poolerWorkersTouched.current = true; setPoolerWorkers(Math.max(1, Math.min(32, Number(e.target.value) || 10))); }}
+                            onBlur={() => void poolerCmd({ workers: poolerWorkers })} />
+                        </label>
+                        <button type="button" className="video-import-btn" onClick={() => void poolerCmd({ command: paused ? "run" : "pause" })}
+                          title={paused ? "Resume the pooler (spawns one if none is running)" : "Pause the pooler — it finishes in-flight tasks, then waits on the control file"}>
+                          {paused ? "▶ resume" : "⏸ pause"}
+                        </button>
+                        <button type="button" className="video-import-btn" onClick={() => void poolerCmd({ command: "exit" })}
+                          title="Tell the pooler process to exit. Stamping todos or Resume starts a fresh one.">✕ stop</button>
+                      </span>
+                    );
+                  })()}
                   <LaneReduceButton label={`⟳ (prolog)${recognizeOnly ? " recog" : ""}`}
                     title="Run ONLY the SWI-Prolog symbolic line + canonical registry pass for every frame — no LLM / no models. Runs simultaneously with the LLM lane."
                     laneRun={laneRuns["prolog"]} onStart={() => startServerStage("reduce", { prologOnly: true })} onStop={() => void stopServerPipeline("prolog")} />
@@ -7382,6 +7815,13 @@ export function VideoImportPage({
     const s = imageSetList.find((x: any) => x.id === id);
     if (!s) return { label: id, groupKey: "9-other", groupLabel: "Other", tags: [] };
     const tags: ColoredTag[] = [];
+    if (s.kind === "arc-recording") {
+      // Same colored chips as the Objects page's ARC RECORDINGS source list.
+      if (s.level !== undefined && s.level !== null) tags.push({ text: `L${s.level}`, color: "#9b8cff" });
+      tags.push({ text: `${s.imageCount} frames`, color: "#7bd88f" });
+      if (s.reducedCount) tags.push({ text: `${s.reducedCount} reduced`, color: "#27dcc2" });
+      return { label: s.label || id, groupKey: s.groupKey || "2-arc", groupLabel: s.group || "Sequence Sets · Games", tags };
+    }
     if (s.reducedCount) tags.push({ text: `${s.reducedCount} reduced`, color: "#7bd88f" });
     tags.push({ text: `${s.imageCount} images`, color: "#8aa0aa" });
     return { label: s.label || id, groupKey: s.groupKey || "4-loaded", groupLabel: s.group || "Sources", tags };
@@ -8875,7 +9315,7 @@ export function VideoImportPage({
                   {partsRunBusy ? "extracting parts…" : "▶ Parts extraction (edges + medians, all inputs)"}
                 </button>
                 <span className="video-import-reduce-partsbar-note">
-                  parts_extraction_0/python_scikit → debug_image.png (left) + result.pl · then parts_grouping_0 + turtle_programs by prolog
+                  parts_extraction_0/python_opencv → debug_image.png (left) + result.pl · then parts_grouping_0 + turtle_programs by prolog
                 </span>
                 <button type="button" className="video-import-btn" onClick={togglePartsTemplate}>
                   {partsTpl.open ? "close todo template" : "✎ todo template"}

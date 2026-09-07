@@ -1,0 +1,13 @@
+{
+  "kind": "pooler_control",
+  "command": "exit",
+  "root": "data/omega_vision/recordings/ls20/ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f",
+  "workers": 10,
+  "interval": 5,
+  "onlyTypes": [
+    "py_pl",
+    "ui"
+  ],
+  "skipTypes": [],
+  "updatedAt": "2026-09-07T20:09:24.935475Z"
+}
