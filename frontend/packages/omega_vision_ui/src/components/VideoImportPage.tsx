@@ -3192,8 +3192,8 @@ export function VideoImportPage({
   const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
   const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
   // Which active parts_extraction_0 doer every transform strip displays.
-  // "__all__" expands both active paths side by side for each input image.
-  const PARTS_EXTRACTOR_DOERS = ["python_opencv", "shape_finder_prolog"];
+  // "__all__" expands every active path side by side for each input image.
+  const PARTS_EXTRACTOR_DOERS = ["python_opencv"];
   const [partsExtractorSel, setPartsExtractorSel] = useState<string>(() => {
     try {
       const stored = window.localStorage.getItem("videoImport.partsExtractor") || "python_opencv";
@@ -7370,7 +7370,7 @@ export function VideoImportPage({
                 })()}
                 <div className="video-import-reduce-listctrls">
                   <label className="video-import-global-extractor"
-                    title="One selection controls the parts_extraction_0 column for every input image. Choose All to compare both active extractor paths per image.">
+                    title="One selection controls the parts_extraction_0 column for every input image. Choose All to compare every active extractor path per image.">
                     <span>PARTS EXTRACTOR · ALL INPUTS</span>
                     <select value={partsExtractorSel} onChange={(e) => setPartsExtractorSel(e.target.value)}>
                       <option value="__all__">All extractors (compare)</option>

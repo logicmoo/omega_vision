@@ -11,14 +11,6 @@
       "dependsOn": []
     },
     {
-      "transformation": "parts_extraction_0",
-      "doer": "shape_finder_prolog",
-      "options": {},
-      "priority": 14,
-      "type": "py_pl",
-      "dependsOn": []
-    },
-    {
       "transformation": "parts_debug_0",
       "doer": "python_pil",
       "options": {},

@@ -52,8 +52,9 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
 
     assert 'className="video-import-global-extractor"' in source
     assert '<option value="__all__">All extractors (compare)</option>' in source
-    assert 'const PARTS_EXTRACTOR_DOERS = ["python_opencv", "shape_finder_prolog"]' in source
+    assert 'const PARTS_EXTRACTOR_DOERS = ["python_opencv"]' in source
     assert "parts_extraction_0/python_scikit" not in source
+    assert "parts_extraction_0/shape_finder_prolog" not in source
     assert 'const showAllPartsExtractors = partsExtractorSel === "__all__"' in source
     assert "const displayCells = [" in source
     assert 'className="video-import-todo-preview-count"' in source

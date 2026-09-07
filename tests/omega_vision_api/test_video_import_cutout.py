@@ -52,10 +52,17 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
             {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_opencv"]},
             {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
         ],
+        [
+            {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {}, "priority": 10, "dependsOn": []},
+            {"transformation": "parts_extraction_0", "doer": "shape_finder_prolog", "options": {}, "priority": 14, "dependsOn": []},
+            {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+        ],
     ],
-    ids=["scikit-only-default", "three-extractor-default"],
+    ids=["scikit-only-default", "three-extractor-default", "two-extractor-default"],
 )
-def test_former_builtin_pipeline_templates_upgrade_without_scikit(
+def test_former_builtin_pipeline_templates_upgrade_to_opencv_only(
     tmp_path: Path,
     pipeline: list[dict],
 ) -> None:
@@ -71,12 +78,15 @@ def test_former_builtin_pipeline_templates_upgrade_without_scikit(
         step["doer"] for step in upgraded
         if step["transformation"] == "parts_extraction_0"
     }
-    assert extractor_doers == {"python_opencv", "shape_finder_prolog"}
-    assert all(step["doer"] not in {"python_scikit", "scikit_python"} for step in upgraded)
+    assert extractor_doers == {"python_opencv"}
+    assert all(
+        step["doer"] not in {"python_scikit", "scikit_python", "shape_finder_prolog"}
+        for step in upgraded
+    )
     assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == upgraded
 
 
-def test_merge_todos_removes_scikit_and_retargets_dependencies(
+def test_merge_todos_removes_manual_extractors_and_retargets_dependencies(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -93,6 +103,18 @@ def test_merge_todos_removes_scikit_and_retargets_dependencies(
                 "doer": "python_scikit",
                 "dependsOn": [],
                 "priority": 12,
+            },
+            {
+                "transformation": "parts_extraction_0",
+                "doer": "shape_finder_prolog",
+                "dependsOn": [],
+                "priority": 14,
+            },
+            {
+                "transformation": "parts_debug_0",
+                "doer": "python_pil",
+                "dependsOn": ["parts_extraction_0/shape_finder_prolog"],
+                "priority": 20,
             },
             {
                 "transformation": "parts_grouping_0",
@@ -123,16 +145,28 @@ def test_merge_todos_removes_scikit_and_retargets_dependencies(
     })
 
     todos = json.loads((unit_dir / "todos.json").read_text(encoding="utf-8"))["todos"]
-    assert [todo["doer"] for todo in todos] == ["python_opencv", "group_regions_prolog"]
+    assert [todo["doer"] for todo in todos] == [
+        "python_opencv",
+        "python_pil",
+        "group_regions_prolog",
+    ]
     assert todos[1]["dependsOn"] == ["parts_extraction_0/python_opencv"]
+    assert todos[2]["dependsOn"] == ["parts_extraction_0/python_opencv"]
 
 
-def test_grouping_reduction_does_not_fallback_to_scikit_output(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "doer",
+    ["python_scikit", "scikit_python", "shape_finder_prolog"],
+)
+def test_grouping_reduction_does_not_fallback_to_manual_output(
+    tmp_path: Path,
+    doer: str,
+) -> None:
     image_path = tmp_path / "image.png"
     Image.new("RGB", (2, 2), "white").save(image_path)
-    scikit_dir = tmp_path / "parts_extraction_0" / "python_scikit"
-    scikit_dir.mkdir(parents=True)
-    (scikit_dir / "result.pl").write_text(
+    manual_dir = tmp_path / "parts_extraction_0" / doer
+    manual_dir.mkdir(parents=True)
+    (manual_dir / "result.pl").write_text(
         "img_size(2, 2).\nregion(r1, white, 4, centroid(0, 0)).\n",
         encoding="utf-8",
     )

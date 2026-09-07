@@ -39,22 +39,22 @@ values here.
 
 - Parts-extractor comparison controls (updated 2026-09-08): the Recognition extraction
   view has one persisted global `parts_extraction_0` selector that applies to
-  every input row. It can show OpenCV or pure Prolog alone, or expand both
-  paths side by side per input, including unstamped placeholders. The slow
-  scikit implementation remains available only for explicit legacy/contract
-  use; it is absent from the reduction selector, default templates, automatic
-  downstream fallbacks, and newly stamped todos. Add/Merge also removes stale
-  `python_scikit`/`scikit_python` todo entries and retargets their downstream
-  dependencies to OpenCV.
+  every input row and now exposes only OpenCV. The slower scikit and pure-Prolog
+  shape implementations remain available only for explicit legacy/contract
+  use; both are absent from the reduction selector, default templates,
+  automatic downstream fallbacks, and newly stamped todos. Add/Merge also
+  removes stale `python_scikit`, `scikit_python`, and `shape_finder_prolog`
+  todo entries and retargets their downstream dependencies to OpenCV.
   Todo stamping is split into **Add/Merge todos** (preserves current steps and
   results) and **Fresh todos** (replaces the queue and removes only the current
   template's outputs before recomputation). A persisted First-N limit scopes
   either action for quick previews; zero means the complete set. The API rejects
   a fresh reset while any selected output is actively claimed. Exact legacy
-  four-step and three-extractor workspace templates migrate to the active
-  OpenCV-plus-Prolog default without changing user-customized templates.
-  Focused no-scikit Video Import tests (16) and the production frontend build
-  passed; existing runtime todo files were migrated in place.
+  four-step, three-extractor, and two-extractor workspace templates migrate to
+  the active OpenCV-only extraction default without changing user-customized
+  templates. Focused OpenCV-only Video Import tests (19) and the production
+  frontend build passed; all 87 existing runtime todo files were migrated and
+  stale Prolog-extractor claims were removed.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten

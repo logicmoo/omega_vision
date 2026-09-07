@@ -6403,7 +6403,11 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 # takes a raw frame all the way to grouped parts with redraw programs.
 
 _TRANSFORM_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
-_MANUAL_ONLY_PARTS_EXTRACTORS = frozenset({"python_scikit", "scikit_python"})
+_MANUAL_ONLY_PARTS_EXTRACTORS = frozenset({
+    "python_scikit",
+    "scikit_python",
+    "shape_finder_prolog",
+})
 _MANUAL_ONLY_PARTS_EXTRACTOR_STEPS = frozenset(
     f"parts_extraction_0/{doer}" for doer in _MANUAL_ONLY_PARTS_EXTRACTORS
 )
@@ -6769,8 +6773,6 @@ def write_unit_todos(unit: dict[str, Any],
 _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
     {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {},
      "priority": 10, "type": "py_pl", "dependsOn": []},
-    {"transformation": "parts_extraction_0", "doer": "shape_finder_prolog", "options": {},
-     "priority": 14, "type": "py_pl", "dependsOn": []},
     {"transformation": "parts_debug_0", "doer": "python_pil", "options": {},
      "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_opencv"]},
     {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {},
@@ -6845,6 +6847,13 @@ def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
                     {
                         ("parts_extraction_0", "python_opencv"),
                         ("parts_extraction_0", "python_scikit"),
+                        ("parts_extraction_0", "shape_finder_prolog"),
+                        ("parts_debug_0", "python_pil"),
+                        ("parts_grouping_0", "group_regions_prolog"),
+                        ("turtle_programs", "turtle_programs_prolog"),
+                    },
+                    {
+                        ("parts_extraction_0", "python_opencv"),
                         ("parts_extraction_0", "shape_finder_prolog"),
                         ("parts_debug_0", "python_pil"),
                         ("parts_grouping_0", "group_regions_prolog"),
@@ -7173,11 +7182,11 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     meta.json (attribution + stats), and optionally debug_image.png. Outputs
     travel with the game sequence: ``<move>/<transformation>/<doer>/...`` for
     recordings, ``data/<set>/transforms/<image>/<transformation>/<doer>/...``
-    for image sets. By default the full pipeline runs the active OpenCV and
-    Prolog parts extractors, then parts_grouping_0 and turtle_programs by their
-    Prolog rules. Pass ``transformation``/``doer`` for a single step or
-    ``pipeline`` for an explicit list. Already-transformed units are skipped
-    unless ``force``; ``moves`` limits the run to specific ordinals/stems.
+    for image sets. By default the full pipeline runs OpenCV parts extraction,
+    then parts_grouping_0 and turtle_programs by their Prolog rules. Pass
+    ``transformation``/``doer`` for a single step or ``pipeline`` for an
+    explicit list. Already-transformed units are skipped unless ``force``;
+    ``moves`` limits the run to specific ordinals/stems.
     """
     workspace_id = str(body.get("workspaceId") or "")
     if not workspace_id:
