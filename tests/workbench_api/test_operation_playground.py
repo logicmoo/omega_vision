@@ -705,7 +705,7 @@ def test_partial_prompt_implementations_resolve_to_concrete_text(tmp_path: Path)
 
 
 def test_operation_playground_preserves_provider_rate_limit(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    monkeypatch.setenv("ASI_API_KEY", "test-key")
 
     def rate_limited(*_args: object, **_kwargs: object) -> object:
         raise HTTPError("https://provider.invalid", 429, "Too Many Requests", {}, None)
@@ -835,7 +835,7 @@ def test_invoke_operation_runs_declared_only_operation_via_fallback(monkeypatch:
         sent.update(json.loads(getattr(request, "data").decode()))
         return Response()
 
-    monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter-test-key")
+    monkeypatch.setenv("ASI_API_KEY", "asicloud-test-key")
     monkeypatch.setattr("workflow_providers.urllib.request.urlopen", urlopen)
     result = invoke_operation("shared_library_system", "shared.extract_entities", {
         "inputs": {"observation": "a grid of colored cells"},
