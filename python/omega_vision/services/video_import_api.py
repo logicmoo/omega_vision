@@ -6430,6 +6430,78 @@ def _transform_parts_extraction(unit: dict[str, Any], out_dir: Path, options: di
     return facts
 
 
+def _transform_parts_extraction_cv(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """parts_extraction_0 by the python_opencv doer: same fact schema as the
+    scikit doer (outer edge polygon/2, inner edges hole/2, inner medials
+    midline/2, fill peaks fillpoint/3) computed with OpenCV primitives on
+    bbox-cropped masks — a fraction of the scikit runtime."""
+    from omega_vision.perception.pixels_to_regions_cv import extract_region_facts_cv  # noqa: PLC0415
+
+    image_path: Path | None = unit.get("image")
+    if image_path is None or not image_path.is_file():
+        raise RuntimeError("unit has no source image")
+    facts = extract_region_facts_cv(
+        image_path,
+        tolerance=int(options.get("tolerance", 24)),
+        filter_mode=str(options.get("filter", "auto")),
+        max_dim=int(options.get("maxDim", 960)),
+        minfrac=float(options.get("minfrac", 0.0008)),
+        geometry_out=out_dir / "geometry.json",
+    )
+    prolog = facts.pop("prolog")
+    (out_dir / "result.pl").write_text(prolog, encoding="utf-8", newline="\n")
+    facts["module"] = "omega_vision.perception.pixels_to_regions_cv"
+    return facts
+
+
+def _transform_parts_extraction_prolog(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
+    """parts_extraction_0 by the shape_finder_prolog doer: quantize the image
+    to a small pixel grid, hand it to prolog/omega_vision/shape_finder.pl,
+    and let pure Prolog find every part's outer edge, inner edges, and inner
+    medials (same fact schema as the python doers, for comparison)."""
+    from PIL import Image  # noqa: PLC0415
+
+    from omega_vision.perception.pixels_to_regions import grid_to_prolog, quantize  # noqa: PLC0415
+
+    image_path: Path | None = unit.get("image")
+    if image_path is None or not image_path.is_file():
+        raise RuntimeError("unit has no source image")
+    max_dim = int(options.get("maxDim", 96))
+    img = Image.open(image_path)
+    if max_dim and max(img.size) > max_dim:
+        scale = max_dim / max(img.size)
+        img = img.resize((max(1, round(img.size[0] * scale)), max(1, round(img.size[1] * scale))), Image.LANCZOS)
+    idx, colors = quantize(img, int(options.get("colors", 12)), 0)
+    cells = grid_to_prolog(idx, colors, 1)
+    cells_file = out_dir / "cells.pl"
+    cells_file.write_text(
+        cells + f"\n:- dynamic grid_size/2.\ngrid_size({img.size[0]}, {img.size[1]}).\n",
+        encoding="utf-8", newline="\n")
+    rules = _REPO_ROOT / "prolog" / "omega_vision" / "shape_finder.pl"
+    out_file = out_dir / "result.pl"
+    goal = "consult('{}'), consult('{}'), write_parts('{}')".format(
+        rules.as_posix(), cells_file.as_posix(), out_file.as_posix())
+    try:
+        proc = subprocess.run(["swipl", "-q", "-g", goal, "-t", "halt"],
+                              capture_output=True, text=True,
+                              timeout=int(options.get("timeout", 300)))
+    except FileNotFoundError as error:
+        raise RuntimeError("swipl is not installed or not on PATH") from error
+    if proc.returncode != 0 or not out_file.is_file():
+        raise RuntimeError((proc.stderr or proc.stdout or "swipl failed").strip()[:400])
+    text = out_file.read_text(encoding="utf-8")
+    return {
+        "module": "prolog/omega_vision/shape_finder.pl",
+        "width": img.size[0],
+        "height": img.size[1],
+        "maxDim": max_dim,
+        "regionCount": text.count("region("),
+        "polygonCount": text.count("polygon("),
+        "holeCount": text.count("hole("),
+        "midlineCount": text.count("midline("),
+    }
+
+
 def _transform_parts_debug(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
     """parts_debug_0 by the python_pil doer (a ui-type task): renders the faded
     original with green outer edges, red cutouts, blue midlines, and orange
@@ -6440,10 +6512,15 @@ def _transform_parts_debug(unit: dict[str, Any], out_dir: Path, options: dict[st
     image_path: Path | None = unit.get("image")
     if image_path is None or not image_path.is_file():
         raise RuntimeError("unit has no source image")
-    extraction_dir = unit["dir"] / "parts_extraction_0" / "python_scikit"
-    geometry_file = extraction_dir / "geometry.json"
-    if not geometry_file.is_file():
-        legacy = extraction_dir / "debug_image.png"
+    parts_root = unit["dir"] / "parts_extraction_0"
+    preferred = str(options.get("partsDoer", "python_opencv"))
+    candidates = [parts_root / preferred / "geometry.json",
+                  parts_root / "python_opencv" / "geometry.json",
+                  parts_root / "python_scikit" / "geometry.json",
+                  *sorted(parts_root.glob("*/geometry.json"))]
+    geometry_file = next((path for path in candidates if path.is_file()), None)
+    if geometry_file is None:
+        legacy = parts_root / "python_scikit" / "debug_image.png"
         if legacy.is_file():
             shutil.copyfile(legacy, out_dir / "debug_image.png")
             (out_dir / "result.pl").write_text(
@@ -6487,8 +6564,10 @@ def _run_prolog_over_parts(unit: dict[str, Any], out_dir: Path, options: dict[st
                            rules_rel: str, goal_name: str,
                            counted: dict[str, str]) -> dict[str, Any]:
     parts_root = unit["dir"] / "parts_extraction_0"
-    preferred = str(options.get("partsDoer", "python_scikit"))
+    preferred = str(options.get("partsDoer", "python_opencv"))
     candidates = [parts_root / preferred / "result.pl",
+                  parts_root / "python_opencv" / "result.pl",
+                  parts_root / "python_scikit" / "result.pl",
                   *sorted(parts_root.glob("*/result.pl"))]
     regions = next((path for path in candidates if path.is_file()), None)
     if regions is None:
@@ -6516,6 +6595,8 @@ def _run_prolog_over_parts(unit: dict[str, Any], out_dir: Path, options: dict[st
 
 _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
     ("parts_extraction_0", "python_scikit"): _transform_parts_extraction,
+    ("parts_extraction_0", "python_opencv"): _transform_parts_extraction_cv,
+    ("parts_extraction_0", "shape_finder_prolog"): _transform_parts_extraction_prolog,
     ("parts_debug_0", "python_pil"): _transform_parts_debug,
     ("parts_grouping_0", "group_regions_prolog"): _transform_part_groups,
     ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
@@ -6674,12 +6755,16 @@ def write_unit_todos(unit: dict[str, Any],
 
 
 _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
-    {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {},
+    {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {},
      "priority": 10, "type": "py_pl", "dependsOn": []},
+    {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {},
+     "priority": 12, "type": "py_pl", "dependsOn": []},
+    {"transformation": "parts_extraction_0", "doer": "shape_finder_prolog", "options": {},
+     "priority": 14, "type": "py_pl", "dependsOn": []},
     {"transformation": "parts_debug_0", "doer": "python_pil", "options": {},
-     "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_scikit"]},
+     "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_opencv"]},
     {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {},
-     "priority": 30, "type": "py_pl", "dependsOn": ["parts_extraction_0/python_scikit"]},
+     "priority": 30, "type": "py_pl", "dependsOn": ["parts_extraction_0/python_opencv"]},
     {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {},
      "priority": 40, "type": "py_pl", "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
 ]
