@@ -27,8 +27,8 @@ values here.
   all 115 direct workbench-server filesystem calls now pass through the shared
   provider without translating operational JSON into MeTTa. Local validation
   is clean: 1056 Python tests pass with 10 expected optional-plugin skips, and
-  the production frontend build passes. PR #3 GitHub Actions validation is
-  pending.
+  the production frontend build passes. PR #3 GitHub Actions also passes with
+  1052 tests and 14 expected platform/optional-plugin skips.
 
 - TODO terminology normalization (2026-09-08): planning, delivery, architecture,
   API documentation, runtime messages, UI labels, tests, and historical path
