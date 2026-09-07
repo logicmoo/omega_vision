@@ -190,7 +190,35 @@ scluster([X|Q], Acc, Out) :-
 
 part_groups(Groups) :-
     findall(Id, foreground(Id), Ids),
-    partition_part_groups(Ids, [], Groups).
+    partition_part_groups(Ids, [], Raw),
+    regroup_by_color(Raw, Groups).
+
+% ---- color regrouping: a merged group whose members span several colors,
+% with two or more of those colors contributing two or more parts each, is
+% really several color-keyed siblings glued together (tile grids, mosaics).
+% Split such a group into one group per color. Groups where at most one
+% color repeats (a face with two same-color eyes, an outline with one odd
+% accent) stay merged.
+regroup_by_color([], []).
+regroup_by_color([G|T], Out) :-
+    split_mixed_group(G, Parts),
+    regroup_by_color(T, Rest),
+    append(Parts, Rest, Out).
+
+split_mixed_group(Members, Split) :-
+    group_color_census(Members, Census),
+    include([_-Ids]>>(length(Ids, N), N >= 2), Census, Multi),
+    length(Multi, NM),
+    NM >= 2,
+    !,
+    findall(Ids, member(_-Ids, Census), Split).
+split_mixed_group(Members, [Members]).
+
+% Census: [Color-[MemberIds...]] for one group, colors sorted.
+group_color_census(Members, Census) :-
+    findall(C-Id, (member(Id, Members), region(Id, C, _, _)), Pairs),
+    keysort(Pairs, SortedPairs),
+    group_pairs_by_key(SortedPairs, Census).
 
 partition_part_groups([], _, []).
 partition_part_groups([Id|T], Seen, Out) :-
