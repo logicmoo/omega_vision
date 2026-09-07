@@ -1,0 +1,59 @@
+{
+  "kind": "transformation_todos",
+  "unit": "frame_000071",
+  "imagePath": "../../frame_000071.png",
+  "updatedAt": "2026-09-07T03:20:55.130914Z",
+  "todos": [
+    {
+      "transformation": "parts_extraction_0",
+      "doer": "python_scikit",
+      "options": {},
+      "output": "parts_extraction_0/python_scikit",
+      "dependsOn": [],
+      "priority": 10,
+      "status": "done",
+      "elapsedMs": 9884,
+      "completedAt": "2026-09-07T02:15:21.427039Z"
+    },
+    {
+      "transformation": "parts_debug_0",
+      "doer": "python_pil",
+      "options": {},
+      "output": "parts_debug_0/python_pil",
+      "dependsOn": [
+        "parts_extraction_0/python_scikit"
+      ],
+      "priority": 20,
+      "type": "ui",
+      "status": "done",
+      "elapsedMs": 68,
+      "completedAt": "2026-09-07T02:17:10.533006Z"
+    },
+    {
+      "transformation": "parts_grouping_0",
+      "doer": "group_regions_prolog",
+      "options": {},
+      "output": "parts_grouping_0/group_regions_prolog",
+      "dependsOn": [
+        "parts_extraction_0/python_scikit"
+      ],
+      "priority": 30,
+      "status": "done",
+      "elapsedMs": 246,
+      "completedAt": "2026-09-07T03:20:55.116409Z"
+    },
+    {
+      "transformation": "turtle_programs",
+      "doer": "turtle_programs_prolog",
+      "options": {},
+      "output": "turtle_programs/turtle_programs_prolog",
+      "dependsOn": [
+        "parts_grouping_0/group_regions_prolog"
+      ],
+      "priority": 40,
+      "status": "done",
+      "elapsedMs": 248,
+      "completedAt": "2026-09-07T02:17:23.794400Z"
+    }
+  ]
+}

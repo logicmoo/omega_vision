@@ -1,0 +1,6 @@
+{
+  "kind": "transformation_claim",
+  "step": "parts_extraction_0/python_scikit",
+  "claimedBy": "LIBRA:80592",
+  "claimedAt": "2026-09-07T02:32:21.925725Z"
+}

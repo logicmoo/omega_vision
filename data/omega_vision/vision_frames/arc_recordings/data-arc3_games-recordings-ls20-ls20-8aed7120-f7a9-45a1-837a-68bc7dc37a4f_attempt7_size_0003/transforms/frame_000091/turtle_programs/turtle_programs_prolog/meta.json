@@ -1,0 +1,11 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "turtle_programs",
+  "doer": "turtle_programs_prolog",
+  "options": {},
+  "createdAt": "2026-09-07T02:17:25.749342Z",
+  "elapsedMs": 233,
+  "module": "prolog/omega_vision/turtle_programs.pl",
+  "partsFacts": "parts_extraction_0/python_scikit/result.pl",
+  "programCount": 93
+}

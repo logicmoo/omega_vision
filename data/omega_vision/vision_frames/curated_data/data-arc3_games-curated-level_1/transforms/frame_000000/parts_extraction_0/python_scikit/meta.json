@@ -1,0 +1,991 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_scikit",
+  "options": {},
+  "createdAt": "2026-09-07T02:53:24.848227Z",
+  "elapsedMs": 37658,
+  "width": 640,
+  "height": 640,
+  "regionCount": 108,
+  "adjacencyCount": 178,
+  "blobCount": 6150,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 327,
+  "parts": [
+    {
+      "id": "r437",
+      "color": "#ffdc00",
+      "area": 97553,
+      "outer": 38,
+      "holes": 0,
+      "midlines": 8,
+      "fillpoints": 33
+    },
+    {
+      "id": "r2",
+      "color": "#ffdc00",
+      "area": 46304,
+      "outer": 13,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 9
+    },
+    {
+      "id": "r3162",
+      "color": "#2ecc40",
+      "area": 18885,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 10
+    },
+    {
+      "id": "r5562",
+      "color": "#ffdc00",
+      "area": 18188,
+      "outer": 17,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 9
+    },
+    {
+      "id": "r2447",
+      "color": "#2ecc40",
+      "area": 12806,
+      "outer": 15,
+      "holes": 0,
+      "midlines": 5,
+      "fillpoints": 15
+    },
+    {
+      "id": "r3540",
+      "color": "#2ecc40",
+      "area": 11652,
+      "outer": 13,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 10
+    },
+    {
+      "id": "r1",
+      "color": "#aaaaaa",
+      "area": 11280,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r6146",
+      "color": "#aaaaaa",
+      "area": 10759,
+      "outer": 5,
+      "holes": 4,
+      "midlines": 5,
+      "fillpoints": 20
+    },
+    {
+      "id": "r1159",
+      "color": "#ff4fd8",
+      "area": 9091,
+      "outer": 80,
+      "holes": 24,
+      "midlines": 29,
+      "fillpoints": 144
+    },
+    {
+      "id": "r3475",
+      "color": "#2ecc40",
+      "area": 9050,
+      "outer": 20,
+      "holes": 0,
+      "midlines": 4,
+      "fillpoints": 11
+    },
+    {
+      "id": "r6147",
+      "color": "#5a5a5a",
+      "area": 8400,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6138",
+      "color": "#ffdc00",
+      "area": 7533,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r436",
+      "color": "#ff4fd8",
+      "area": 7268,
+      "outer": 31,
+      "holes": 4,
+      "midlines": 6,
+      "fillpoints": 30
+    },
+    {
+      "id": "r1581",
+      "color": "#ffdc00",
+      "area": 5596,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 6
+    },
+    {
+      "id": "r1589",
+      "color": "#ffdc00",
+      "area": 4825,
+      "outer": 13,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r2445",
+      "color": "#ffdc00",
+      "area": 4789,
+      "outer": 16,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 6
+    },
+    {
+      "id": "r5237",
+      "color": "#2ecc40",
+      "area": 4350,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4548",
+      "color": "#ffdc00",
+      "area": 4120,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r2162",
+      "color": "#aaaaaa",
+      "area": 3961,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5602",
+      "color": "#aaaaaa",
+      "area": 3959,
+      "outer": 15,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 13
+    },
+    {
+      "id": "r5010",
+      "color": "#ffdc00",
+      "area": 3198,
+      "outer": 13,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 10
+    },
+    {
+      "id": "r3155",
+      "color": "#2ecc40",
+      "area": 2994,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3398",
+      "color": "#010101",
+      "area": 2912,
+      "outer": 14,
+      "holes": 21,
+      "midlines": 49,
+      "fillpoints": 104
+    },
+    {
+      "id": "r5559",
+      "color": "#ffdc00",
+      "area": 2690,
+      "outer": 9,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 7
+    },
+    {
+      "id": "r3156",
+      "color": "#2ecc40",
+      "area": 2412,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r687",
+      "color": "#010101",
+      "area": 2328,
+      "outer": 6,
+      "holes": 15,
+      "midlines": 35,
+      "fillpoints": 85
+    },
+    {
+      "id": "r1583",
+      "color": "#ffdc00",
+      "area": 2206,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4398",
+      "color": "#010101",
+      "area": 1938,
+      "outer": 10,
+      "holes": 16,
+      "midlines": 32,
+      "fillpoints": 60
+    },
+    {
+      "id": "r3",
+      "color": "#010101",
+      "area": 1899,
+      "outer": 5,
+      "holes": 13,
+      "midlines": 36,
+      "fillpoints": 111
+    },
+    {
+      "id": "r3160",
+      "color": "#2ecc40",
+      "area": 1888,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 4
+    },
+    {
+      "id": "r2933",
+      "color": "#ffdc00",
+      "area": 1824,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2932",
+      "color": "#ffdc00",
+      "area": 1776,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3650",
+      "color": "#2ecc40",
+      "area": 1762,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 8
+    },
+    {
+      "id": "r3159",
+      "color": "#2ecc40",
+      "area": 1759,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r5235",
+      "color": "#ffdc00",
+      "area": 1739,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6136",
+      "color": "#ff4fd8",
+      "area": 1702,
+      "outer": 5,
+      "holes": 4,
+      "midlines": 4,
+      "fillpoints": 10
+    },
+    {
+      "id": "r5605",
+      "color": "#aaaaaa",
+      "area": 1700,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 7
+    },
+    {
+      "id": "r5239",
+      "color": "#010101",
+      "area": 1646,
+      "outer": 5,
+      "holes": 13,
+      "midlines": 26,
+      "fillpoints": 64
+    },
+    {
+      "id": "r3960",
+      "color": "#2ecc40",
+      "area": 1584,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 5
+    },
+    {
+      "id": "r3783",
+      "color": "#2ecc40",
+      "area": 1566,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6139",
+      "color": "#ffdc00",
+      "area": 1539,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5069",
+      "color": "#aaaaaa",
+      "area": 1513,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5563",
+      "color": "#000000",
+      "area": 1495,
+      "outer": 5,
+      "holes": 12,
+      "midlines": 24,
+      "fillpoints": 55
+    },
+    {
+      "id": "r2930",
+      "color": "#ffdc00",
+      "area": 1464,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 2
+    },
+    {
+      "id": "r5564",
+      "color": "#000000",
+      "area": 1455,
+      "outer": 5,
+      "holes": 12,
+      "midlines": 26,
+      "fillpoints": 51
+    },
+    {
+      "id": "r1590",
+      "color": "#010101",
+      "area": 1451,
+      "outer": 5,
+      "holes": 9,
+      "midlines": 24,
+      "fillpoints": 54
+    },
+    {
+      "id": "r5238",
+      "color": "#870c25",
+      "area": 1450,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1166",
+      "color": "#010101",
+      "area": 1419,
+      "outer": 8,
+      "holes": 10,
+      "midlines": 20,
+      "fillpoints": 46
+    },
+    {
+      "id": "r3161",
+      "color": "#2ecc40",
+      "area": 1292,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1889",
+      "color": "#010101",
+      "area": 1266,
+      "outer": 5,
+      "holes": 10,
+      "midlines": 17,
+      "fillpoints": 41
+    },
+    {
+      "id": "r2449",
+      "color": "#010101",
+      "area": 1243,
+      "outer": 5,
+      "holes": 9,
+      "midlines": 25,
+      "fillpoints": 52
+    },
+    {
+      "id": "r1582",
+      "color": "#ffdc00",
+      "area": 1236,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2934",
+      "color": "#010101",
+      "area": 1218,
+      "outer": 5,
+      "holes": 11,
+      "midlines": 17,
+      "fillpoints": 50
+    },
+    {
+      "id": "r6142",
+      "color": "#870c25",
+      "area": 1140,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r439",
+      "color": "#010101",
+      "area": 1064,
+      "outer": 5,
+      "holes": 10,
+      "midlines": 15,
+      "fillpoints": 52
+    },
+    {
+      "id": "r1164",
+      "color": "#ffdc00",
+      "area": 1062,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r686",
+      "color": "#aaaaaa",
+      "area": 1054,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1880",
+      "color": "#aaaaaa",
+      "area": 1044,
+      "outer": 7,
+      "holes": 1,
+      "midlines": 2,
+      "fillpoints": 8
+    },
+    {
+      "id": "r6137",
+      "color": "#ffdc00",
+      "area": 999,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2450",
+      "color": "#010101",
+      "area": 988,
+      "outer": 13,
+      "holes": 6,
+      "midlines": 20,
+      "fillpoints": 42
+    },
+    {
+      "id": "r2161",
+      "color": "#2ecc40",
+      "area": 981,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r1165",
+      "color": "#010101",
+      "area": 970,
+      "outer": 13,
+      "holes": 4,
+      "midlines": 21,
+      "fillpoints": 42
+    },
+    {
+      "id": "r5236",
+      "color": "#bebebe",
+      "area": 950,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3964",
+      "color": "#010101",
+      "area": 867,
+      "outer": 8,
+      "holes": 5,
+      "midlines": 15,
+      "fillpoints": 27
+    },
+    {
+      "id": "r5603",
+      "color": "#aaaaaa",
+      "area": 812,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r5604",
+      "color": "#aaaaaa",
+      "area": 780,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6140",
+      "color": "#ffdc00",
+      "area": 756,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2446",
+      "color": "#ffdc00",
+      "area": 729,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5012",
+      "color": "#010101",
+      "area": 721,
+      "outer": 22,
+      "holes": 5,
+      "midlines": 17,
+      "fillpoints": 42
+    },
+    {
+      "id": "r3163",
+      "color": "#010101",
+      "area": 718,
+      "outer": 18,
+      "holes": 6,
+      "midlines": 14,
+      "fillpoints": 44
+    },
+    {
+      "id": "r4217",
+      "color": "#020202",
+      "area": 708,
+      "outer": 26,
+      "holes": 7,
+      "midlines": 18,
+      "fillpoints": 22
+    },
+    {
+      "id": "r3394",
+      "color": "#ffdc00",
+      "area": 700,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4657",
+      "color": "#010101",
+      "area": 647,
+      "outer": 22,
+      "holes": 3,
+      "midlines": 13,
+      "fillpoints": 29
+    },
+    {
+      "id": "r2166",
+      "color": "#010101",
+      "area": 632,
+      "outer": 12,
+      "holes": 3,
+      "midlines": 10,
+      "fillpoints": 22
+    },
+    {
+      "id": "r1884",
+      "color": "#2ecc40",
+      "area": 580,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r4182",
+      "color": "#ffdc00",
+      "area": 576,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3164",
+      "color": "#000000",
+      "area": 544,
+      "outer": 14,
+      "holes": 5,
+      "midlines": 9,
+      "fillpoints": 20
+    },
+    {
+      "id": "r5234",
+      "color": "#ffdc00",
+      "area": 532,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1882",
+      "color": "#aaaaaa",
+      "area": 531,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r6141",
+      "color": "#870c25",
+      "area": 531,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3812",
+      "color": "#2ecc40",
+      "area": 525,
+      "outer": 9,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3158",
+      "color": "#2ecc40",
+      "area": 513,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2165",
+      "color": "#010101",
+      "area": 489,
+      "outer": 18,
+      "holes": 1,
+      "midlines": 9,
+      "fillpoints": 31
+    },
+    {
+      "id": "r3154",
+      "color": "#ffdc00",
+      "area": 486,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1885",
+      "color": "#ffdc00",
+      "area": 486,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4598",
+      "color": "#ffdc00",
+      "area": 464,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2931",
+      "color": "#ffdc00",
+      "area": 444,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5013",
+      "color": "#010101",
+      "area": 420,
+      "outer": 10,
+      "holes": 3,
+      "midlines": 7,
+      "fillpoints": 16
+    },
+    {
+      "id": "r6148",
+      "color": "#7fdbff",
+      "area": 400,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6149",
+      "color": "#7fdbff",
+      "area": 400,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6150",
+      "color": "#7fdbff",
+      "area": 400,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1883",
+      "color": "#aaaaaa",
+      "area": 351,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5561",
+      "color": "#ffdc00",
+      "area": 351,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1162",
+      "color": "#2ecc40",
+      "area": 342,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r1292",
+      "color": "#aaaaaa",
+      "area": 340,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2451",
+      "color": "#010101",
+      "area": 331,
+      "outer": 10,
+      "holes": 3,
+      "midlines": 6,
+      "fillpoints": 20
+    },
+    {
+      "id": "r3539",
+      "color": "#2ecc40",
+      "area": 324,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3397",
+      "color": "#2ecc40",
+      "area": 306,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3538",
+      "color": "#2ecc40",
+      "area": 306,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2158",
+      "color": "#aaaaaa",
+      "area": 289,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4837",
+      "color": "#aaaaaa",
+      "area": 289,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3396",
+      "color": "#2ecc40",
+      "area": 289,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1887",
+      "color": "#aaaaaa",
+      "area": 216,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1964",
+      "color": "#870c25",
+      "area": 100,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4623",
+      "color": "#ffdc00",
+      "area": 49,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5244",
+      "color": "#d4d4d4",
+      "area": 9,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r694",
+      "color": "#d4d4d4",
+      "area": 9,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4298",
+      "color": "#d4d4d4",
+      "area": 9,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions"
+}

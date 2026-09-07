@@ -1,0 +1,41 @@
+{
+  "kind": "transform_pipeline_template",
+  "comment": "Initial todo template: stamped onto every unit as todos.json. priority: lower runs first; dependsOn gates on finished steps; type marks task kinds (e.g. ui for debug images).",
+  "pipeline": [
+    {
+      "transformation": "parts_extraction_0",
+      "doer": "python_scikit",
+      "options": {},
+      "priority": 10,
+      "dependsOn": []
+    },
+    {
+      "transformation": "parts_debug_0",
+      "doer": "python_pil",
+      "options": {},
+      "priority": 20,
+      "type": "ui",
+      "dependsOn": [
+        "parts_extraction_0/python_scikit"
+      ]
+    },
+    {
+      "transformation": "parts_grouping_0",
+      "doer": "group_regions_prolog",
+      "options": {},
+      "priority": 30,
+      "dependsOn": [
+        "parts_extraction_0/python_scikit"
+      ]
+    },
+    {
+      "transformation": "turtle_programs",
+      "doer": "turtle_programs_prolog",
+      "options": {},
+      "priority": 40,
+      "dependsOn": [
+        "parts_grouping_0/group_regions_prolog"
+      ]
+    }
+  ]
+}

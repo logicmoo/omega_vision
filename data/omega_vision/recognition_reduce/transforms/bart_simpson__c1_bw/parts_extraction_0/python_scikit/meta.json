@@ -1,0 +1,163 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_scikit",
+  "options": {},
+  "createdAt": "2026-09-06T21:40:29.475820Z",
+  "elapsedMs": 5106,
+  "width": 281,
+  "height": 420,
+  "regionCount": 16,
+  "adjacencyCount": 15,
+  "blobCount": 2238,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 94,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#f8f8f8",
+      "area": 99936,
+      "outer": 90,
+      "holes": 5,
+      "midlines": 34,
+      "fillpoints": 112
+    },
+    {
+      "id": "r1100",
+      "color": "#7d7d7d",
+      "area": 8341,
+      "outer": 46,
+      "holes": 19,
+      "midlines": 35,
+      "fillpoints": 28
+    },
+    {
+      "id": "r480",
+      "color": "#fbfbfb",
+      "area": 1175,
+      "outer": 12,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 17
+    },
+    {
+      "id": "r1859",
+      "color": "#727272",
+      "area": 817,
+      "outer": 15,
+      "holes": 1,
+      "midlines": 6,
+      "fillpoints": 3
+    },
+    {
+      "id": "r466",
+      "color": "#fcfcfc",
+      "area": 700,
+      "outer": 12,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 11
+    },
+    {
+      "id": "r1768",
+      "color": "#c1c1c1",
+      "area": 599,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1750",
+      "color": "#c1c1c1",
+      "area": 582,
+      "outer": 8,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1897",
+      "color": "#717171",
+      "area": 559,
+      "outer": 14,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1650",
+      "color": "#585858",
+      "area": 406,
+      "outer": 13,
+      "holes": 1,
+      "midlines": 5,
+      "fillpoints": 9
+    },
+    {
+      "id": "r2139",
+      "color": "#f4f4f4",
+      "area": 228,
+      "outer": 8,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 5
+    },
+    {
+      "id": "r1840",
+      "color": "#f6f6f6",
+      "area": 143,
+      "outer": 10,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 4
+    },
+    {
+      "id": "r1771",
+      "color": "#fdfdfd",
+      "area": 142,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r2082",
+      "color": "#f3f3f3",
+      "area": 129,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r1781",
+      "color": "#f2f2f2",
+      "area": 127,
+      "outer": 10,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 7
+    },
+    {
+      "id": "r2041",
+      "color": "#131313",
+      "area": 96,
+      "outer": 10,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1534",
+      "color": "#9d9d9d",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions"
+}

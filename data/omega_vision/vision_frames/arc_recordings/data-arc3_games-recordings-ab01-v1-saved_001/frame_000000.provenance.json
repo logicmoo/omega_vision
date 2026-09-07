@@ -3,7 +3,7 @@
   "version": 1,
   "image": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ab01-v1-saved_001/frame_000000.png",
   "provenance": "data/vision_frames/arc_recordings/data-arc3_games-recordings-ab01-v1-saved_001/frame_000000.provenance.json",
-  "createdAt": "2026-09-03T04:49:27.557997Z",
+  "createdAt": "2026-09-07T07:30:47.711829Z",
   "operation": "import_arc_playback_frame",
   "dimensions": {
     "width": 640,
@@ -76,7 +76,7 @@
         "height": 640
       },
       "transform": {},
-      "createdAt": "2026-09-03T04:49:27.557997Z"
+      "createdAt": "2026-09-07T07:30:47.711829Z"
     }
   ]
 }

@@ -1,0 +1,13 @@
+{
+  "kind": "pooler_control",
+  "command": "run",
+  "root": "data/omega_vision/vision_frames/arc_recordings/data-arc3_games-recordings-ls20-saved_004",
+  "workers": 10,
+  "interval": 5,
+  "onlyTypes": [
+    "py_pl",
+    "ui"
+  ],
+  "skipTypes": [],
+  "updatedAt": "2026-09-07T05:37:06.810012Z"
+}

@@ -1,0 +1,13 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "llm_reduction_0",
+  "doer": "gpt_5_6_sol",
+  "options": {},
+  "createdAt": "2026-09-07T05:37:04.464551Z",
+  "adoptedFrom": "sym/frame_move_000015__1shot.metta",
+  "model": "gpt-5.6-sol",
+  "shots": 1,
+  "regionCount": 43,
+  "groupCount": 10,
+  "relationCount": 75
+}
