@@ -2316,6 +2316,8 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
         }
         if status == "done":
             rp = out_dir / "result.pl"
+            if not rp.is_file():
+                rp = out_dir / "result.metta"  # adopted LLM reductions are metta
             if rp.is_file():
                 cell["resultPath"] = _data_rel_of(root, rp)
             di = out_dir / "debug_image.png"
@@ -2327,7 +2329,8 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                     meta = json.loads(mp.read_text(encoding="utf-8"))
                     summary = {k: meta[k] for k in (
                         "regionCount", "adjacencyCount", "blobCount", "groupCount",
-                        "objectCount", "programCount", "width", "height") if k in meta}
+                        "objectCount", "programCount", "width", "height",
+                        "relationCount", "model", "shots") if k in meta}
                     parts = meta.get("parts")
                     if isinstance(parts, list) and parts:
                         summary["partCount"] = len(parts)
@@ -6667,6 +6670,101 @@ def save_pipeline_template(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     return {"file": _PIPELINE_TEMPLATE_REL, "pipeline": cleaned}
 
 
+def _llm_adoption_maker(set_base: Path):
+    """Adopt pre-existing LLM recognition reductions into unit transform dirs.
+
+    The reduce pipeline stores its per-frame LLM outputs beside the set
+    (``sym/<id>__1shot.metta``, ``stages/<id>__t1__*.png``,
+    ``cache/<id>__pair1.json`` and manifest.json rows) — invisible to the
+    todos/pooler system. This copies each reduction into the unit's standard
+    ``<transformation>/<doer>/`` contract (result.metta + meta.json + stage
+    images) as an already-done ``llm_reduction_0`` step, so todos.json, the
+    Extractions cells, and the offline pooler all account for the LLM line.
+    Idempotent: once meta.json exists nothing is copied again. Returns a
+    per-unit function yielding the extra todo specs (possibly [])."""
+    sym_dir = set_base / "sym"
+    if not sym_dir.is_dir():
+        return lambda unit: []
+    rows_by_id: dict[str, list[dict[str, Any]]] = {}
+    mp = set_base / "manifest.json"
+    if mp.is_file():
+        try:
+            mj = json.loads(mp.read_text(encoding="utf-8"))
+            for item in (mj.get("items") or []):
+                if isinstance(item, dict) and item.get("id"):
+                    rows_by_id[str(item["id"])] = [
+                        r for r in (item.get("rows") or []) if isinstance(r, dict)]
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    def adopt(unit: dict[str, Any]) -> list[dict[str, Any]]:
+        image = unit.get("image")
+        rel = ""
+        if image is not None:
+            try:
+                rel = image.relative_to(set_base).as_posix()
+            except ValueError:
+                rel = ""
+        stem = rel.rsplit(".", 1)[0] if rel else str(unit["id"])
+        idv = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_") or str(unit["id"])
+        specs: list[dict[str, Any]] = []
+        for pos, metta_file in enumerate(sorted(sym_dir.glob(f"{idv}__*shot.metta"))):
+            m = re.fullmatch(rf"{re.escape(idv)}__(\d+)shot\.metta", metta_file.name)
+            if m is None:
+                continue
+            shots = m.group(1)
+            row = next((r for r in rows_by_id.get(idv, [])
+                        if str(r.get("metta") or "") == metta_file.name), None)
+            model = str((row or {}).get("model") or "llm")
+            doer = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_") or "llm"
+            if shots != "1":
+                doer = f"{doer}_{shots}shot"
+            transformation = "llm_reduction_0"
+            out_dir = unit["dir"] / transformation / doer
+            meta_path = out_dir / "meta.json"
+            if not meta_path.is_file():
+                out_dir.mkdir(parents=True, exist_ok=True)
+                stages = set_base / "stages"
+                for src, dst in (
+                        (metta_file, out_dir / "result.metta"),
+                        (sym_dir / f"{idv}__{shots}shot.parts.json", out_dir / "parts.json"),
+                        (set_base / "cache" / f"{idv}__pair1.json", out_dir / "llm_objects.json"),
+                        (stages / f"{idv}__t{shots}__parts.png", out_dir / "debug_image.png"),
+                        (stages / f"{idv}__t{shots}__turtle.png", out_dir / "turtle.png"),
+                        (stages / f"{idv}__t{shots}__partmap.png", out_dir / "partmap.png")):
+                    try:
+                        if src.is_file():
+                            shutil.copy2(src, dst)
+                    except OSError:
+                        pass
+                meta: dict[str, Any] = {
+                    "kind": "sequence_set_transformation",
+                    "transformation": transformation,
+                    "doer": doer,
+                    "options": {},
+                    "createdAt": _utc_now(),
+                    "adoptedFrom": f"sym/{metta_file.name}",
+                    "model": model,
+                    "shots": int(shots),
+                }
+                if row is not None:
+                    if isinstance(row.get("elapsedMs"), (int, float)):
+                        meta["elapsedMs"] = row["elapsedMs"]
+                    if isinstance(row.get("nparts"), int):
+                        meta["regionCount"] = row["nparts"]
+                    if isinstance(row.get("ngroups"), int):
+                        meta["groupCount"] = row["ngroups"]
+                    if isinstance(row.get("nrels"), int):
+                        meta["relationCount"] = row["nrels"]
+                meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False),
+                                     encoding="utf-8")
+            specs.append({"transformation": transformation, "doer": doer, "options": {},
+                          "dependsOn": [], "priority": 5 + pos})
+        return specs
+
+    return adopt
+
+
 @router.post("/sequence-sets/transform")
 def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Apply transformations to the moves of a Sequence Set recording, or to
@@ -6712,6 +6810,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
     root = _workspace_root(workspace_id)
     units: list[dict[str, Any]] = []
+    adopt = None  # set-branch: adopts pre-existing LLM reductions per unit
     if recording_rel:
         try:
             recording_dir = _safe_workspace_child(root, recording_rel)
@@ -6747,23 +6846,26 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                     units.append({"id": unit_id, "dir": parent, "image": image})
         if not units:
             raise HTTPException(status_code=404, detail=f"image set has no images: {set_id}")
+        adopt = _llm_adoption_maker(set_base)
         target = f"data/{set_id}"
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
 
     def apply_one(unit: dict[str, Any]) -> dict[str, Any]:
+        extra_specs = adopt(unit) if adopt is not None else []
+        unit_specs = extra_specs + pipeline_specs
         steps: list[dict[str, Any]] = []
         if not plan_only:
             for spec in sorted(pipeline_specs, key=lambda s: s["priority"]):
                 steps.append(run_transform_step(unit, spec["transformation"], spec["doer"],
                                                 spec.get("options") or {}, force=force,
                                                 depends_on=spec.get("dependsOn") or []))
-        pending = write_unit_todos(unit, pipeline_specs, steps)
+        pending = write_unit_todos(unit, unit_specs, steps)
         if plan_only:
             steps = [{"step": f"{spec['transformation']}/{spec['doer']}",
                       "status": "done" if (unit["dir"] / spec["transformation"] / spec["doer"] / "meta.json").is_file() else "pending"}
-                     for spec in pipeline_specs]
+                     for spec in unit_specs]
         move_id: Any = int(unit["id"]) if str(unit["id"]).isdigit() else unit["id"]
         return {"move": move_id, "steps": steps, "pending": pending}
 
