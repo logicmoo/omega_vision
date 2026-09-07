@@ -2220,13 +2220,12 @@ _IMAGE_SET_LABELS = {"recognition_reduce": "Recognition · 20×10 conditions"}
 def _resolve_set_images(d: Path) -> list[Path]:
     """Return the input images for an image-set directory, layout-aware.
 
-    Supports the reduction ``pool/`` layout, flat ``frame_*.png`` recording
-    dumps (``vision_frames/arc_recordings/*``), a single ARC recording dir
+    Supports the reduction ``pool/`` layout, a single ARC recording dir
     (``recording.json`` + free-form ``<step>/image.png``, counted exactly
-    like the Objects source list), and the nested whole-game layout
-    (``<attempt>/<step>/image.png`` under ``recordings/<game>``). Globs are
-    depth-bounded so listing many recordings stays fast.
-    """
+    like the Objects source list), flat ``frame_*.png`` sequence dumps,
+    whole-game dirs (every child Recording concatenated), and curated-style
+    trees (every image anywhere below, ordered naturally, exactly like the
+    curated source lister)."""
     if not d.is_dir():
         return []
     pool = d / "pool"
@@ -2237,11 +2236,18 @@ def _resolve_set_images(d: Path) -> list[Path]:
     flat = sorted(list(d.glob("frame_*.png")) + list(d.glob("frame_*.jpg")))
     if flat:
         return flat
-    for pattern in ("*/*/image.png", "*/image.png", "**/image.png"):
-        nested = sorted(d.glob(pattern))
-        if nested:
-            return nested
-    return sorted(list(d.glob("*.png")) + list(d.glob("*.jpg")))
+    recordings = _iter_recording_dirs(d)
+    if recordings:
+        images: list[Path] = []
+        for recording in recordings:
+            images.extend(_arc_recording_images(recording))
+        return images
+    images = [
+        path
+        for path in d.rglob("*")
+        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+    ]
+    return sorted(images, key=lambda path: _natural_path_key(path.relative_to(d)))
 
 
 def _resolve_set_dir(root: Path, base_rel: str) -> Path:
@@ -2396,6 +2402,8 @@ _FRAME_SET_FAMILIES = (
     ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
     ("arc_recordings", "Sequence Sets · Games", "2-arc"),
     ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
+    ("curated", "Sequence Sets · Curated", "1-curated"),
+    ("arc3_games/curated", "Sequence Sets · Curated", "1-curated"),  # legacy layout
     ("curated_data", "Sequence Sets · Curated", "1-curated"),
     ("vision_frames/curated_data", "Sequence Sets · Curated", "1-curated"),  # legacy layout
     ("video", "Sequence Sets · Movies", "3-video"),

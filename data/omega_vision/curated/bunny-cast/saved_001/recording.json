@@ -5,7 +5,7 @@
   "game_id": "bunny-cast",
   "game_directory": "bunny-cast",
   "level": "1",
-  "level_directory": "data/arc3_games/recordings/bunny-cast/saved_001",
+  "level_directory": "data/recordings/bunny-cast/saved_001",
   "started_at": "2026-08-28T02:57:11.327052Z",
   "updated_at": "2026-08-28T02:57:11.327055Z",
   "last_event": "video_import",
@@ -22,7 +22,7 @@
         "added": [],
         "removed": []
       },
-      "directory": "data/arc3_games/recordings/bunny-cast/saved_001/0",
+      "directory": "data/recordings/bunny-cast/saved_001/0",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T02:57:11.294952Z"
@@ -42,7 +42,7 @@
         ],
         "removed": []
       },
-      "directory": "data/arc3_games/recordings/bunny-cast/saved_001/1",
+      "directory": "data/recordings/bunny-cast/saved_001/1",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T02:57:11.304921Z"
@@ -61,7 +61,7 @@
           "Butterfly"
         ]
       },
-      "directory": "data/arc3_games/recordings/bunny-cast/saved_001/2",
+      "directory": "data/recordings/bunny-cast/saved_001/2",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T02:57:11.319205Z"
@@ -78,7 +78,7 @@
           "Big Buck Bunny"
         ]
       },
-      "directory": "data/arc3_games/recordings/bunny-cast/saved_001/3",
+      "directory": "data/recordings/bunny-cast/saved_001/3",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T02:57:11.327020Z"

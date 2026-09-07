@@ -5,7 +5,7 @@
   "game_id": "video-cast",
   "game_directory": "video-cast",
   "level": "1",
-  "level_directory": "data/arc3_games/recordings/video-cast/saved_001",
+  "level_directory": "data/recordings/video-cast/saved_001",
   "started_at": "2026-08-28T03:09:04.398166Z",
   "updated_at": "2026-08-28T03:09:04.398169Z",
   "last_event": "video_import",
@@ -22,7 +22,7 @@
         "added": [],
         "removed": []
       },
-      "directory": "data/arc3_games/recordings/video-cast/saved_001/0",
+      "directory": "data/recordings/video-cast/saved_001/0",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T03:09:04.381675Z"
@@ -39,7 +39,7 @@
         "added": [],
         "removed": []
       },
-      "directory": "data/arc3_games/recordings/video-cast/saved_001/1",
+      "directory": "data/recordings/video-cast/saved_001/1",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T03:09:04.386589Z"
@@ -56,7 +56,7 @@
         "added": [],
         "removed": []
       },
-      "directory": "data/arc3_games/recordings/video-cast/saved_001/2",
+      "directory": "data/recordings/video-cast/saved_001/2",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T03:09:04.395048Z"
@@ -73,7 +73,7 @@
         "added": [],
         "removed": []
       },
-      "directory": "data/arc3_games/recordings/video-cast/saved_001/3",
+      "directory": "data/recordings/video-cast/saved_001/3",
       "state": "NOT_FINISHED",
       "level": "1",
       "recorded_at": "2026-08-28T03:09:04.398133Z"
