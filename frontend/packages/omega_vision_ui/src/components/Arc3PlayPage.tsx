@@ -80,6 +80,7 @@ type PlaySavepoint = {
   game_directory: string;
   level?: string | null;
   level_directory?: string | null;
+  absolute_directory?: string | null;
   move_index?: number | null;
   state?: string | null;
   move_total?: number;
@@ -87,12 +88,32 @@ type PlaySavepoint = {
 
 type PlayRecording = {
   path: string;
+  absolutePath?: string | null;
   name: string;
   gameId?: string | null;
   sizeBytes?: number;
   kind?: "human-jsonl" | "release-run" | null;
   totalActions?: number | null;
 };
+
+type RecordingDirInfo = {
+  path: string;
+  absolutePath?: string | null;
+  name: string;
+  gameDirectory: string;
+  gameId?: string | null;
+  level?: string | null;
+  moveTotal?: number | null;
+  updatedAt?: string | null;
+  imported?: boolean;
+  hasManifest?: boolean;
+  sizeBytes?: number;
+  moveDirCount?: number;
+  avgMoveDirFiles?: number;
+};
+
+// Sort modes shared by the Recordings / Move-lists / Importables listboxes.
+type ListSortMode = "size" | "name" | "frames" | "framesAvgSubdirs";
 
 const FRAME_SCALE = 10;
 
@@ -148,6 +169,12 @@ export function Arc3PlayPage({
   const [recordingsPathDraft, setRecordingsPathDraft] = useState("");
   const [savepoints, setSavepoints] = useState<PlaySavepoint[]>([]);
   const [recordings, setRecordings] = useState<PlayRecording[]>([]);
+  const [recordingDirs, setRecordingDirs] = useState<RecordingDirInfo[]>([]);
+  const [recordingTab, setRecordingTab] = useState<"recordings" | "movelists" | "importables">("recordings");
+  const [dirSortMode, setDirSortMode] = useState<ListSortMode>("name");
+  const [savepointSortMode, setSavepointSortMode] = useState<ListSortMode>("name");
+  const [importableSortMode, setImportableSortMode] = useState<ListSortMode>("name");
+  const [listPathCopied, setListPathCopied] = useState("");
   const [importNote, setImportNote] = useState("");
   const [retainLargestCount, setRetainLargestCount] = useState("10");
   const [rewindOpen, setRewindOpen] = useState(false);
@@ -367,6 +394,23 @@ export function Arc3PlayPage({
     setRecordingsPathDraft(session && !session.recordingsPathIsDefault ? session.recordingsPath || "" : "");
   }, [session?.id, session?.recordingsPath, session?.recordingsPathIsDefault]);
 
+  // Single-flight: loadSavepoints piggybacks this after every mutation and the
+  // page mounts fire it twice; the walk is the expensive call, so concurrent
+  // requests just pile up server-side. Failures keep the previous listing.
+  const recordingDirsInFlight = useRef(false);
+  const loadRecordingDirs = useCallback(async () => {
+    if (recordingDirsInFlight.current) return;
+    recordingDirsInFlight.current = true;
+    try {
+      const payload = await request(`/workbench/arc3-play/recording-dirs?workspaceId=${encodeURIComponent(workspaceId)}`);
+      setRecordingDirs((payload.recordingDirs as RecordingDirInfo[]) || []);
+    } catch {
+      // keep whatever we had; a Rescan can retry explicitly
+    } finally {
+      recordingDirsInFlight.current = false;
+    }
+  }, [workspaceId]);
+
   const loadSavepoints = useCallback(async () => {
     try {
       const payload = await request(`/workbench/arc3-play/savepoints?workspaceId=${encodeURIComponent(workspaceId)}`);
@@ -374,7 +418,11 @@ export function Arc3PlayPage({
     } catch {
       setSavepoints([]);
     }
-  }, [workspaceId]);
+    // Every mutation path (imports, sorts, retains, clears, dedupes) already
+    // awaits loadSavepoints, so piggybacking the recording-dir listing here
+    // keeps the Recordings tab's listbox in sync with disk after each one.
+    void loadRecordingDirs();
+  }, [workspaceId, loadRecordingDirs]);
 
   useEffect(() => {
     void loadSavepoints();
@@ -935,6 +983,76 @@ export function Arc3PlayPage({
       return "move-list deleted";
     }, "Delete move-list");
 
+  // ---- Recording-dir (saved_<NNN> / imported attempt dir) actions: the
+  // Recordings tab exposes the same verbs as Move-lists by first ensuring a
+  // move-list exists for the dir (derived server-side from its own
+  // recording.json), then reusing the savepoint flows.
+  const ensureMovelistForDir = async (dir: RecordingDirInfo) => {
+    const payload = await request("/workbench/arc3-play/recording-dirs/movelist", {
+      method: "POST",
+      body: JSON.stringify({ workspaceId, path: dir.path }),
+    });
+    return payload.savepoint as PlaySavepoint & { replay_log?: ReplayOp[] };
+  };
+
+  const resumeRecordingDir = (dir: RecordingDirInfo) =>
+    perform(async () => {
+      const savepoint = await ensureMovelistForDir(dir);
+      if (session && !session.closed) {
+        await request(`/workbench/arc3-play/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" }).catch(() => undefined);
+      }
+      const payload = await request("/workbench/arc3-play/sessions", {
+        method: "POST",
+        body: JSON.stringify({ workspaceId, savepointId: savepoint.id }),
+      });
+      setArmedAction(null);
+      setReplayPlaying(false);
+      const resumed = payload.session as PlaySessionSnapshot;
+      applyResumedSession(resumed);
+      await loadSavepoints();
+      return `resumed ${dir.name} · ${resumed.moveCount} move(s)`;
+    }, `Resume ${dir.name}`);
+
+  const loadRecordingDirForStepping = (dir: RecordingDirInfo) =>
+    perform(async () => {
+      const full = await ensureMovelistForDir(dir);
+      const script = (full.replay_log || []).filter((op) => op.op === "step" || op.op === "reset");
+      if (session && !session.closed) {
+        await request(`/workbench/arc3-play/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" }).catch(() => undefined);
+      }
+      const payload = await request("/workbench/arc3-play/sessions", {
+        method: "POST",
+        body: JSON.stringify({ workspaceId, gameId: full.game_id || full.game_directory }),
+      });
+      setArmedAction(null);
+      setSession(payload.session as PlaySessionSnapshot);
+      setReplayScript(script);
+      setReplayPos(0);
+      await loadSavepoints();
+      return `loaded ${script.length} move(s) for step-through replay`;
+    }, `Load ${dir.name}`);
+
+  const duplicateRecordingDir = (dir: RecordingDirInfo) =>
+    perform(async () => {
+      const payload = await request("/workbench/arc3-play/recording-dirs/duplicate", {
+        method: "POST",
+        body: JSON.stringify({ workspaceId, path: dir.path }),
+      });
+      await loadSavepoints();
+      return `duplicated to ${payload.name ?? "copy"}`;
+    }, `Duplicate ${dir.name}`);
+
+  const deleteRecordingDir = (dir: RecordingDirInfo) =>
+    perform(async () => {
+      if (!window.confirm(`Delete recording directory ${dir.path}? This cannot be undone.`)) return "cancelled";
+      await request("/workbench/arc3-play/recording-dirs/delete", {
+        method: "POST",
+        body: JSON.stringify({ workspaceId, path: dir.path }),
+      });
+      await loadSavepoints();
+      return `deleted ${dir.path}`;
+    }, `Delete ${dir.name}`);
+
   const importRecording = (recording: PlayRecording) =>
     perform(async () => {
       setImportNote("");
@@ -1108,6 +1226,19 @@ export function Arc3PlayPage({
     }
   };
 
+  // Copy-path for listbox selections (Recordings / Move-lists / Importables
+  // tabs); remembers which path was copied so only that tab's button flips
+  // to "Copied".
+  const copyListPath = async (path: string) => {
+    try {
+      await navigator.clipboard.writeText(path);
+      setListPathCopied(path);
+      window.setTimeout(() => setListPathCopied((current) => (current === path ? "" : current)), 1500);
+    } catch {
+      setListPathCopied("");
+    }
+  };
+
   const loadMoveScan = useCallback(
     async (directory: string) => {
       setInspectLoading(true);
@@ -1166,11 +1297,64 @@ export function Arc3PlayPage({
   const newestFirst = [...movesNumeric].reverse();
   const filteredSavepoints = filterGameId ? savepoints.filter((point) => point.game_directory === filterGameId) : savepoints;
   const filteredRecordings = filterGameId ? recordings.filter((recording) => recording.gameId === filterGameId) : recordings;
-  const sortedRecordings = [...filteredRecordings].sort((a, b) => {
-    const gameCompare = (a.gameId || "").localeCompare(b.gameId || "", undefined, { numeric: true, sensitivity: "base" });
-    if (gameCompare !== 0) return gameCompare;
-    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+  const filteredRecordingDirs = filterGameId
+    ? recordingDirs.filter((dir) => dir.gameDirectory === filterGameId || dir.gameId === filterGameId)
+    : recordingDirs;
+  const savepointPathOf = (point: PlaySavepoint) =>
+    point.level_directory || `data/arc3_games/recordings/${point.game_directory}/savepoints.json`;
+  // Shared sort machinery for the three tab listboxes. "Frames; Average
+  // Subdirs Count" sorts by frame count first, tie-breaking on the average
+  // file count per move subdir (how rich each frame directory is).
+  const compareName = (a: string, b: string) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+  const dirInfoByPath = new Map(recordingDirs.map((dir) => [dir.path, dir] as const));
+  const sortedRecordingDirs = [...filteredRecordingDirs].sort((a, b) => {
+    const nameA = `${a.gameDirectory}/${a.name}`;
+    const nameB = `${b.gameDirectory}/${b.name}`;
+    const framesA = a.moveTotal ?? a.moveDirCount ?? 0;
+    const framesB = b.moveTotal ?? b.moveDirCount ?? 0;
+    if (dirSortMode === "size") return (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0) || compareName(nameA, nameB);
+    if (dirSortMode === "frames") return framesB - framesA || compareName(nameA, nameB);
+    if (dirSortMode === "framesAvgSubdirs")
+      return framesB - framesA || (b.avgMoveDirFiles ?? 0) - (a.avgMoveDirFiles ?? 0) || compareName(nameA, nameB);
+    return compareName(nameA, nameB);
   });
+  const sortedSavepoints = [...filteredSavepoints].sort((a, b) => {
+    const dirA = a.level_directory ? dirInfoByPath.get(a.level_directory) : undefined;
+    const dirB = b.level_directory ? dirInfoByPath.get(b.level_directory) : undefined;
+    const nameA = `${a.game_directory} ${a.label || ""} ${a.created_at}`;
+    const nameB = `${b.game_directory} ${b.label || ""} ${b.created_at}`;
+    const framesA = a.move_total ?? 0;
+    const framesB = b.move_total ?? 0;
+    if (savepointSortMode === "size") return (dirB?.sizeBytes ?? 0) - (dirA?.sizeBytes ?? 0) || compareName(nameA, nameB);
+    if (savepointSortMode === "frames") return framesB - framesA || compareName(nameA, nameB);
+    if (savepointSortMode === "framesAvgSubdirs")
+      return framesB - framesA || (dirB?.avgMoveDirFiles ?? 0) - (dirA?.avgMoveDirFiles ?? 0) || compareName(nameA, nameB);
+    return compareName(nameA, nameB);
+  });
+  const sortedRecordings = [...filteredRecordings].sort((a, b) => {
+    const nameA = `${a.gameId || ""} ${a.name}`;
+    const nameB = `${b.gameId || ""} ${b.name}`;
+    const framesA = a.totalActions ?? 0;
+    const framesB = b.totalActions ?? 0;
+    if (importableSortMode === "size") return (b.sizeBytes ?? 0) - (a.sizeBytes ?? 0) || compareName(nameA, nameB);
+    if (importableSortMode === "frames" || importableSortMode === "framesAvgSubdirs")
+      return framesB - framesA || compareName(nameA, nameB);
+    return compareName(nameA, nameB);
+  });
+  const sortSelect = (mode: ListSortMode, onChange: (mode: ListSortMode) => void) => (
+    <select
+      className="arc3-play-sort-select"
+      value={mode}
+      title="Sort this list"
+      onChange={(event) => onChange(event.target.value as ListSortMode)}
+    >
+      <option value="size">Sort By Disk Size</option>
+      <option value="name">Sort By Name</option>
+      <option value="frames">Sort By Frame Count</option>
+      <option value="framesAvgSubdirs">Sort By Frames; Average Subdirs Count</option>
+    </select>
+  );
   const levelMoves = session ? moves.filter((move) => move.directory.startsWith(`${session.levelDir}/`)) : [];
   const levelIndexByDir = new Map(levelMoves.map((move, idx) => [move.directory, idx] as const));
   const rewindUndoneDirs = new Set(
@@ -1635,9 +1819,42 @@ export function Arc3PlayPage({
         />
 
         <section className="arc3-play-recording">
+          <div className="arc3-play-section-title arc3-play-tabbar-row">
+            <span className="arc3-play-tabbar">
+              <button
+                className={`arc3-play-tab${recordingTab === "recordings" ? " active" : ""}`}
+                onClick={() => setRecordingTab("recordings")}
+              >
+                Recordings ({filteredRecordingDirs.length})
+              </button>
+              <button
+                className={`arc3-play-tab${recordingTab === "movelists" ? " active" : ""}`}
+                onClick={() => setRecordingTab("movelists")}
+              >
+                Move-lists ({filteredSavepoints.length})
+              </button>
+              <button
+                className={`arc3-play-tab${recordingTab === "importables" ? " active" : ""}`}
+                onClick={() => setRecordingTab("importables")}
+              >
+                Importables ({sortedRecordings.length})
+              </button>
+            </span>
+          </div>
+          {importNote && <div className="arc3-play-import-note">{importNote}</div>}
+          {recordingTab === "recordings" && (
+            <>
           <div className="arc3-play-section-title">
             <span>RECORDINGS</span>
             <span className="arc3-play-section-actions">
+              <button
+                className="arc3-play-rescan"
+                disabled={busy}
+                title="Rescan recording directories on disk"
+                onClick={() => void loadRecordingDirs()}
+              >
+                Rescan
+              </button>
               <button
                 className="arc3-play-rescan"
                 title="Reload the current session's recorded moves from disk"
@@ -1696,13 +1913,85 @@ export function Arc3PlayPage({
               >
                 Clear
               </button>
-              <button className="arc3-play-collapse-toggle" onClick={() => toggleSection("recordings")}>
-                {collapsedSections.recordings ? "▸ Expand" : "▾ Collapse"}
-              </button>
             </span>
           </div>
-          {!collapsedSections.recordings && (
-            <>
+              <div className="arc3-play-mini-header">
+                <small>{sortedRecordingDirs.length} recording dir(s) on disk (live saved_&lt;NNN&gt; + imported + legacy image sets)</small>
+                {sortSelect(dirSortMode, setDirSortMode)}
+              </div>
+              {sortedRecordingDirs.length > 0 ? (
+                <div className="arc3-play-chip-list">
+                  {sortedRecordingDirs.map((dir) => (
+                    <div key={dir.path} className="arc3-play-chip">
+                      <b>
+                        {dir.gameDirectory}/{dir.name}
+                        {dir.imported ? " · imported" : ""}
+                        {dir.hasManifest === false ? " · no manifest" : ""}
+                      </b>
+                      <small>
+                        L{dir.level || "?"} · {dir.moveTotal ?? dir.moveDirCount ?? "?"} frame(s) ·{" "}
+                        {Math.round((dir.sizeBytes || 0) / 1024)} KB · ø{dir.avgMoveDirFiles ?? 0} files/frame
+                        {dir.updatedAt ? ` · ${dir.updatedAt}` : ""}
+                      </small>
+                      <code>{dir.path}</code>
+                      <div className="arc3-play-chip-buttons">
+                        <button
+                          className="resume"
+                          disabled={busy || dir.hasManifest === false}
+                          title={
+                            dir.hasManifest === false
+                              ? "No recording.json manifest to replay"
+                              : "Replay this recording into a fresh session"
+                          }
+                          onClick={() => void resumeRecordingDir(dir)}
+                        >
+                          Resume
+                        </button>
+                        <button
+                          className="load"
+                          disabled={busy || dir.hasManifest === false}
+                          title={
+                            dir.hasManifest === false
+                              ? "No recording.json manifest to replay"
+                              : "Load at move 1 to step through it move by move"
+                          }
+                          onClick={() => void loadRecordingDirForStepping(dir)}
+                        >
+                          Load
+                        </button>
+                        <button
+                          className="dup"
+                          disabled={busy}
+                          title="Copy this recording directory"
+                          onClick={() => void duplicateRecordingDir(dir)}
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          className="del"
+                          disabled={busy}
+                          title="Delete this recording directory"
+                          onClick={() => void deleteRecordingDir(dir)}
+                        >
+                          Delete
+                        </button>
+                        <button title="Copy the workspace-relative path" onClick={() => void copyListPath(dir.path)}>
+                          {listPathCopied === dir.path ? "Copied" : "Copy path"}
+                        </button>
+                        <button
+                          disabled={!dir.absolutePath}
+                          title="Copy the absolute filesystem path"
+                          onClick={() => dir.absolutePath && void copyListPath(dir.absolutePath)}
+                        >
+                          {dir.absolutePath && listPathCopied === dir.absolutePath ? "Copied" : "Copy Full Path"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="arc3-play-empty">No recording directories on disk yet.</div>
+              )}
               {!session && <div className="arc3-play-empty">Recording paths sometimes only appear once a game starts.</div>}
               {session && (
                 <>
@@ -1902,12 +2191,10 @@ export function Arc3PlayPage({
               )}
             </>
           )}
+          {recordingTab === "movelists" && (
           <div className="arc3-play-savepoints">
             <small>
               MOVE-LISTS (fork a session to add one)
-              <button className="arc3-play-collapse-toggle" onClick={() => toggleSection("restartPoints")}>
-                {collapsedSections.restartPoints ? "▸ Expand" : "▾ Collapse"}
-              </button>
               <button
                 className="arc3-play-rescan"
                 disabled={busy || !sortedRecordings.length}
@@ -1941,73 +2228,87 @@ export function Arc3PlayPage({
                 Clear
               </button>
             </small>
-            {!collapsedSections.restartPoints && (
+            {(
               <>
                 <div className="arc3-play-mini-header">
-                  <small>{filteredSavepoints.length} move-list(s)</small>
-                  <button className="arc3-play-collapse-toggle" onClick={() => toggleSection("restartPointsList")}>
-                    {collapsedSections.restartPointsList ? "▸ Expand" : "▾ Collapse"}
-                  </button>
+                  <small>{sortedSavepoints.length} move-list(s)</small>
+                  {sortSelect(savepointSortMode, setSavepointSortMode)}
                 </div>
-                {!collapsedSections.restartPointsList && filteredSavepoints.map((point) => (
-              <div key={point.id} className="arc3-play-savepoint">
-                <div>
-                  <b>
-                    {point.game_directory} · level {point.level || "?"} · {point.move_total ?? 0} moves
-                  </b>
-                  <small>
-                    {point.label ? `${point.label} · ` : ""}
-                    {point.created_at} · {point.state || "?"}
-                  </small>
-                </div>
-                <div className="arc3-play-savepoint-buttons">
-                  <button
-                    className="resume"
-                    disabled={busy}
-                    title="Replay this save-point into a fresh session"
-                    onClick={() => void resumeSavepoint(point.id)}
-                  >
-                    Resume
-                  </button>
-                  <button
-                    className="load"
-                    disabled={busy}
-                    title="Load at move 1 to step through it move by move"
-                    onClick={() => void loadSavepoint(point)}
-                  >
-                    Load
-                  </button>
-                  <button
-                    className="dup"
-                    disabled={busy}
-                    title="Duplicate this save-point"
-                    onClick={() => void duplicateSavepoint(point.id)}
-                  >
-                    Duplicate
-                  </button>
-                  <button
-                    className="del"
-                    disabled={busy}
-                    title="Delete this save-point"
-                    onClick={() => void deleteSavepoint(point.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-                {!collapsedSections.restartPointsList && !filteredSavepoints.length && (
+                {sortedSavepoints.length > 0 ? (
+                  <div className="arc3-play-chip-list">
+                    {sortedSavepoints.map((point) => (
+                      <div key={point.id} className="arc3-play-chip">
+                        <b>
+                          {point.game_directory} · level {point.level || "?"} · {point.move_total ?? 0} moves
+                        </b>
+                        <small>
+                          {point.label ? `${point.label} · ` : ""}
+                          {point.created_at} · {point.state || "?"}
+                        </small>
+                        <code>{savepointPathOf(point)}</code>
+                        <div className="arc3-play-chip-buttons">
+                          <button
+                            className="resume"
+                            disabled={busy}
+                            title="Replay this save-point into a fresh session"
+                            onClick={() => void resumeSavepoint(point.id)}
+                          >
+                            Resume
+                          </button>
+                          <button
+                            className="load"
+                            disabled={busy}
+                            title="Load at move 1 to step through it move by move"
+                            onClick={() => void loadSavepoint(point)}
+                          >
+                            Load
+                          </button>
+                          <button
+                            className="dup"
+                            disabled={busy}
+                            title="Duplicate this save-point"
+                            onClick={() => void duplicateSavepoint(point.id)}
+                          >
+                            Duplicate
+                          </button>
+                          <button
+                            className="del"
+                            disabled={busy}
+                            title="Delete this save-point"
+                            onClick={() => void deleteSavepoint(point.id)}
+                          >
+                            Delete
+                          </button>
+                          <button
+                            title="Copy the move-list's recording directory path (or its savepoints.json when it has no directory yet)"
+                            onClick={() => void copyListPath(savepointPathOf(point))}
+                          >
+                            {listPathCopied === savepointPathOf(point) ? "Copied" : "Copy path"}
+                          </button>
+                          <button
+                            disabled={!point.absolute_directory}
+                            title="Copy the absolute filesystem path"
+                            onClick={() => point.absolute_directory && void copyListPath(point.absolute_directory)}
+                          >
+                            {point.absolute_directory && listPathCopied === point.absolute_directory
+                              ? "Copied"
+                              : "Copy Full Path"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
                   <div className="arc3-play-empty">No save-points yet.</div>
                 )}
               </>
             )}
           </div>
+          )}
+          {recordingTab === "importables" && (
           <div className="arc3-play-savepoints arc3-play-recordings">
             <small>
               IMPORTABLES (official ARC-AGI-3 JSONL play logs / release-run logs in data/arc3_games/importables/)
-              <button className="arc3-play-collapse-toggle" onClick={() => toggleSection("importables")}>
-                {collapsedSections.importables ? "▸ Expand" : "▾ Collapse"}
-              </button>
               <button
                 className="arc3-play-rescan"
                 disabled={busy}
@@ -2033,41 +2334,55 @@ export function Arc3PlayPage({
                 Import All Importables
               </button>
             </small>
-            {!collapsedSections.importables && (
+            {(
               <>
-                {importNote && <div className="arc3-play-import-note">{importNote}</div>}
                 <div className="arc3-play-mini-header">
                   <small>{sortedRecordings.length} importable recording(s)</small>
-                  <button className="arc3-play-collapse-toggle" onClick={() => toggleSection("importablesList")}>
-                    {collapsedSections.importablesList ? "▸ Expand" : "▾ Collapse"}
-                  </button>
+                  {sortSelect(importableSortMode, setImportableSortMode)}
                 </div>
-                {!collapsedSections.importablesList && sortedRecordings.map((recording) => (
-                  <div key={recording.path} className="arc3-play-savepoint">
-                    <div className="arc3-play-savepoint-info">
-                      <b>{recording.name}</b>
-                      <small>
-                        {recording.kind === "release-run" ? "release run" : "human recording"} ·{" "}
-                        {recording.gameId || "?"}
-                        {recording.kind === "release-run" && recording.totalActions
-                          ? ` · ${recording.totalActions} actions`
-                          : ` · ${Math.round((recording.sizeBytes || 0) / 1024)} KB`}{" "}
-                        · {recording.path}
-                      </small>
-                    </div>
-                    <div className="arc3-play-savepoint-buttons">
-                      <button
-                        className="dup"
-                        disabled={busy}
-                        title="Convert to level recordings + a resumable save-point"
-                        onClick={() => void importRecording(recording)}
-                      >
-                        Import
-                      </button>
-                    </div>
+                {sortedRecordings.length > 0 ? (
+                  <div className="arc3-play-chip-list">
+                    {sortedRecordings.map((recording) => (
+                      <div key={recording.path} className="arc3-play-chip">
+                        <b>{recording.name}</b>
+                        <small>
+                          {recording.kind === "release-run" ? "release run" : "human recording"} ·{" "}
+                          {recording.gameId || "?"}
+                          {recording.kind === "release-run" && recording.totalActions
+                            ? ` · ${recording.totalActions} actions`
+                            : ""}{" "}
+                          · {Math.round((recording.sizeBytes || 0) / 1024)} KB
+                        </small>
+                        <code>{recording.path}</code>
+                        <div className="arc3-play-chip-buttons">
+                          <button
+                            className="dup"
+                            disabled={busy}
+                            title="Convert to level recordings + a resumable save-point"
+                            onClick={() => void importRecording(recording)}
+                          >
+                            Import
+                          </button>
+                          <button
+                            title="Copy the workspace-relative path"
+                            onClick={() => void copyListPath(recording.path)}
+                          >
+                            {listPathCopied === recording.path ? "Copied" : "Copy path"}
+                          </button>
+                          <button
+                            disabled={!recording.absolutePath}
+                            title="Copy the absolute filesystem path"
+                            onClick={() => recording.absolutePath && void copyListPath(recording.absolutePath)}
+                          >
+                            {recording.absolutePath && listPathCopied === recording.absolutePath
+                              ? "Copied"
+                              : "Copy Full Path"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {!collapsedSections.importablesList && !sortedRecordings.length && (
+                ) : (
                   <div className="arc3-play-empty">
                     No importable recordings found.{" "}
                     <button className="arc3-play-rescan" disabled={busy} onClick={() => void loadRecordings()}>
@@ -2078,6 +2393,7 @@ export function Arc3PlayPage({
               </>
             )}
           </div>
+          )}
         </section>
       </div>
     </div>

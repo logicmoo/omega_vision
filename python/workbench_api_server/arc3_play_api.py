@@ -362,6 +362,42 @@ def _iter_recording_dirs(game_root: Path) -> list[Path]:
     return sorted(entries, key=lambda entry: entry.name)
 
 
+def _looks_like_image_set_dir(entry: Path) -> bool:
+    """True when a directory holds an image set in any accepted layout:
+    a recording.json manifest, numeric move subdirs (0/ 1/ 2/ ...) with an
+    image.png each, or a flat directory of frame *.png files."""
+    if (entry / "recording.json").is_file():
+        return True
+    try:
+        for child in entry.iterdir():
+            if child.is_dir() and child.name.isdigit() and (child / "image.png").is_file():
+                return True
+            if child.is_file() and child.suffix.lower() == ".png":
+                return True
+    except OSError:
+        return False
+    # Curated-style sets keep images in nested subdirs; accept any dir that
+    # holds at least one image anywhere below it (short-circuits on the first).
+    try:
+        for sub in entry.rglob("*"):
+            if sub.is_file() and sub.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}:
+                return True
+    except OSError:
+        return False
+    return False
+
+
+def _iter_image_set_dirs(game_root: Path) -> list[Path]:
+    """Superset of _iter_recording_dirs: every child directory holding an
+    image set, INCLUDING legacy/manual sets without a recording.json -- the
+    Recordings tab lists the full population, not only manifest-bearing
+    dirs."""
+    if not game_root.is_dir():
+        return []
+    entries = [entry for entry in game_root.iterdir() if entry.is_dir() and _looks_like_image_set_dir(entry)]
+    return sorted(entries, key=lambda entry: entry.name)
+
+
 def _workspace_root(workspace_id: str) -> Path:
     from workspace_api import _resolve_workspace_without_counts
 
@@ -1084,6 +1120,10 @@ def list_savepoints(workspaceId: str, gameId: str | None = None) -> dict[str, An
                 summary["move_total"] = sum(
                     1 for op in entry.get("replay_log") or [] if op.get("op") == "step"
                 )
+                level_directory = entry.get("level_directory")
+                summary["absolute_directory"] = (
+                    str(root / str(level_directory)) if level_directory else str(directory / "savepoints.json")
+                )
                 entries.append(summary)
     entries.sort(key=lambda entry: str(entry.get("created_at") or ""), reverse=True)
     return {"savepoints": entries}
@@ -1218,6 +1258,7 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
         found.append(
             {
                 "path": _data_rel_of(root, path),
+                "absolutePath": str(path),
                 "name": path.name,
                 "gameId": match.group(1) if match else None,
                 "sizeBytes": path.stat().st_size,
@@ -1244,6 +1285,7 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
                 found.append(
                     {
                         "path": _data_rel_of(root, run_dir),
+                        "absolutePath": str(run_dir),
                         "name": f"{game_dir.name}/{run_dir.name}",
                         "gameId": game_dir.name,
                         "sizeBytes": log_path.stat().st_size,
@@ -2071,6 +2113,289 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
 def list_recordings(workspaceId: str) -> dict[str, Any]:
     root = _workspace_root(workspaceId)
     return {"recordings": _list_recording_files(root)}
+
+
+# Per-directory stat memo for /recording-dirs: walking every image-set tree is
+# the expensive part, and the trees are effectively immutable once written
+# (live saved_<NNN> dirs only grow while a session records). Keyed by absolute
+# path; invalidated when the dir's own mtime or its recording.json mtime
+# changes, and always rewalked while a live session is still writing into it.
+_recording_dir_stats_cache: dict[str, tuple[tuple[float, float], dict[str, Any]]] = {}
+
+
+def _recording_dir_stats(entry: Path) -> dict[str, Any]:
+    try:
+        dir_mtime = entry.stat().st_mtime
+    except OSError:
+        dir_mtime = 0.0
+    manifest_path = entry / "recording.json"
+    try:
+        manifest_mtime = manifest_path.stat().st_mtime if manifest_path.is_file() else 0.0
+    except OSError:
+        manifest_mtime = 0.0
+    key = str(entry)
+    cached = _recording_dir_stats_cache.get(key)
+    if cached and cached[0] == (dir_mtime, manifest_mtime):
+        return cached[1]
+    size_bytes = 0
+    move_dir_count = 0
+    move_file_count = 0
+    try:
+        for child in entry.iterdir():
+            if child.is_dir():
+                files_here = 0
+                for sub in child.rglob("*"):
+                    if sub.is_file():
+                        files_here += 1
+                        try:
+                            size_bytes += sub.stat().st_size
+                        except OSError:
+                            pass
+                if child.name.isdigit():
+                    move_dir_count += 1
+                    move_file_count += files_here
+            elif child.is_file():
+                try:
+                    size_bytes += child.stat().st_size
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    stats = {
+        "sizeBytes": size_bytes,
+        "moveDirCount": move_dir_count,
+        "avgMoveDirFiles": round(move_file_count / move_dir_count, 2) if move_dir_count else 0,
+    }
+    _recording_dir_stats_cache[key] = ((dir_mtime, manifest_mtime), stats)
+    return stats
+
+
+def _image_set_dir_stats(entry: Path) -> dict[str, Any]:
+    """Same memo for curated / vision_frames sets: size, recursive image count
+    (as moveTotal), direct subdir count, and avg images per subdir."""
+    try:
+        dir_mtime = entry.stat().st_mtime
+    except OSError:
+        dir_mtime = 0.0
+    key = f"imageset::{entry}"
+    cached = _recording_dir_stats_cache.get(key)
+    if cached and cached[0] == (dir_mtime, 0.0):
+        return cached[1]
+    image_suffixes = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+    size_bytes = 0
+    image_count = 0
+    subdir_count = 0
+    try:
+        for sub in entry.rglob("*"):
+            if sub.is_dir():
+                if sub.parent == entry:
+                    subdir_count += 1
+                continue
+            if not sub.is_file():
+                continue
+            try:
+                size_bytes += sub.stat().st_size
+            except OSError:
+                pass
+            if sub.suffix.lower() in image_suffixes:
+                image_count += 1
+    except OSError:
+        pass
+    stats = {
+        "sizeBytes": size_bytes,
+        "imageCount": image_count,
+        "moveDirCount": subdir_count,
+        "avgMoveDirFiles": round(image_count / subdir_count, 2) if subdir_count else 0,
+    }
+    _recording_dir_stats_cache[key] = ((dir_mtime, 0.0), stats)
+    return stats
+
+
+@router.get("/recording-dirs")
+def list_recording_dirs(workspaceId: str, gameId: str | None = None) -> dict[str, Any]:
+    """Every image-set directory the Objects page's "Extracted Images source"
+    combobox offers: per-game recording dirs (live-play saved_<NNN>, imported,
+    and legacy manifest-less sets) plus the curated image sources under
+    data/arc3_games/curated/*. One walk per dir collects size, frame count,
+    and per-move-subdir stats for the listbox sort modes."""
+    root = _workspace_root(workspaceId)
+    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    entries: list[dict[str, Any]] = []
+    for game_root in directories:
+        if not game_root.is_dir():
+            continue
+        for entry in _iter_image_set_dirs(game_root):
+            has_manifest = (entry / "recording.json").is_file()
+            manifest: dict[str, Any] = {}
+            if has_manifest:
+                try:
+                    loaded = json.loads((entry / "recording.json").read_text(encoding="utf-8"))
+                    if isinstance(loaded, dict):
+                        manifest = loaded
+                except (OSError, json.JSONDecodeError):
+                    pass
+            moves = manifest.get("moves")
+            try:
+                rel_path = _data_rel_of(root, entry)
+            except ValueError:
+                rel_path = entry.as_posix()
+            stats = _recording_dir_stats(entry)
+            entries.append(
+                {
+                    "path": rel_path,
+                    "absolutePath": str(entry),
+                    "name": entry.name,
+                    "gameDirectory": game_root.name,
+                    "gameId": manifest.get("game_id"),
+                    "level": manifest.get("level"),
+                    "moveTotal": len(moves) if isinstance(moves, list) else None,
+                    "updatedAt": manifest.get("updated_at"),
+                    "imported": bool(manifest.get("imported_from")),
+                    "hasManifest": has_manifest,
+                    "family": "recording",
+                    "sizeBytes": stats["sizeBytes"],
+                    "moveDirCount": stats["moveDirCount"],
+                    "avgMoveDirFiles": stats["avgMoveDirFiles"],
+                }
+            )
+    # The other disk-backed families the Objects "Extracted Images source"
+    # combobox and the Recognition page's Sequence Sets selector list:
+    # curated sources plus the vision_frames sequence-set dumps (Games /
+    # Curated / Movies). Only when not filtering by game: these sets are not
+    # per-game. gameDirectory carries the family container so chips group
+    # and sort naturally.
+    if not gameId:
+        families = [
+            ("arc3_games/curated", "curated", "curated", {"videoimports", "recordings", "importables"}),
+            ("vision_frames/arc_recordings", "vision_frames/arc_recordings", "sequence-games", set()),
+            ("vision_frames/curated_data", "vision_frames/curated_data", "sequence-curated", set()),
+            ("vision_frames/video", "vision_frames/video", "sequence-movies", set()),
+        ]
+        for rel_base, group_name, family, excludes in families:
+            seen_names: set[str] = set()
+            for home in _data_homes(root):
+                base_dir = home
+                for part in rel_base.split("/"):
+                    base_dir = base_dir / part
+                if not base_dir.is_dir():
+                    continue
+                for entry in sorted((child for child in base_dir.iterdir() if child.is_dir()), key=lambda p: p.name.lower()):
+                    if entry.name.lower() in excludes or entry.name.lower() in seen_names:
+                        continue
+                    stats = _image_set_dir_stats(entry)
+                    if stats["imageCount"] == 0:
+                        continue
+                    seen_names.add(entry.name.lower())
+                    try:
+                        rel_path = _data_rel_of(root, entry)
+                    except ValueError:
+                        rel_path = entry.as_posix()
+                    entries.append(
+                        {
+                            "path": rel_path,
+                            "absolutePath": str(entry),
+                            "name": entry.name,
+                            "gameDirectory": group_name,
+                            "gameId": None,
+                            "level": None,
+                            "moveTotal": stats["imageCount"],
+                            "updatedAt": None,
+                            "imported": False,
+                            "hasManifest": (entry / "recording.json").is_file(),
+                            "family": family,
+                            "sizeBytes": stats["sizeBytes"],
+                            "moveDirCount": stats["moveDirCount"],
+                            "avgMoveDirFiles": stats["avgMoveDirFiles"],
+                        }
+                    )
+    entries.sort(key=lambda item: (str(item.get("gameDirectory") or ""), str(item.get("name") or "")))
+    return {"recordingDirs": entries, "count": len(entries)}
+
+
+def _recording_dir_of(root: Path, rel_path: str) -> Path:
+    try:
+        target = _safe_workspace_child(root, rel_path)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
+    if not target.is_dir() or not _looks_like_image_set_dir(target):
+        raise HTTPException(status_code=404, detail="not a recording/image-set directory")
+    return target
+
+
+@router.post("/recording-dirs/movelist")
+def ensure_recording_dir_movelist(body: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
+    """Return the MOVE-LIST (savepoint) referencing one Recording directory,
+    deriving and persisting it from the dir's own recording.json when none
+    exists yet -- the Recordings tab's per-dir Resume/Load buttons build on
+    this so a recording is replayable exactly like a move-list."""
+    workspace_id = str(body.get("workspaceId") or "").strip()
+    rel_path = str(body.get("path") or "").strip()
+    if not workspace_id or not rel_path:
+        raise HTTPException(status_code=400, detail="workspaceId and path are required")
+    root = _workspace_root(workspace_id)
+    target = _recording_dir_of(root, rel_path)
+    if not (target / "recording.json").is_file():
+        raise HTTPException(status_code=422, detail="this image-set directory has no recording.json manifest to replay")
+    game_root = target.parent
+    savepoints_path = game_root / "savepoints.json"
+    rel = _data_rel_of(root, target)
+    with _savepoints_lock:
+        entries = _load_savepoints(savepoints_path)
+        existing = next((entry for entry in entries if str(entry.get("level_directory")) == rel), None)
+        created = False
+        if existing is None:
+            existing = _savepoint_from_recording(root, game_root.name, target)
+            if existing is None:
+                raise HTTPException(status_code=422, detail="recording.json has no replayable moves")
+            entries.append(existing)
+            savepoints_path.parent.mkdir(parents=True, exist_ok=True)
+            savepoints_path.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
+            created = True
+    return {"savepoint": existing, "created": created}
+
+
+@router.post("/recording-dirs/duplicate", status_code=201)
+def duplicate_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
+    """Copy one Recording directory to <name>_copy[N] beside it, fixing the
+    copy's recording.json self-reference."""
+    workspace_id = str(body.get("workspaceId") or "").strip()
+    rel_path = str(body.get("path") or "").strip()
+    if not workspace_id or not rel_path:
+        raise HTTPException(status_code=400, detail="workspaceId and path are required")
+    root = _workspace_root(workspace_id)
+    target = _recording_dir_of(root, rel_path)
+    base = f"{target.name}_copy"
+    new_name = base
+    suffix = 2
+    while (target.parent / new_name).exists():
+        new_name = f"{base}{suffix}"
+        suffix += 1
+    new_path = target.parent / new_name
+    shutil.copytree(target, new_path)
+    manifest_path = new_path / "recording.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if isinstance(manifest, dict):
+            manifest["level_directory"] = _data_rel_of(root, new_path)
+            manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    except (OSError, json.JSONDecodeError):
+        pass
+    return {"path": _data_rel_of(root, new_path), "name": new_name}
+
+
+@router.post("/recording-dirs/delete")
+def delete_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
+    """Delete ONE Recording directory. Does not touch move-lists (savepoints);
+    a move-list referencing the deleted dir can rematerialize it later."""
+    workspace_id = str(body.get("workspaceId") or "").strip()
+    rel_path = str(body.get("path") or "").strip()
+    if not workspace_id or not rel_path:
+        raise HTTPException(status_code=400, detail="workspaceId and path are required")
+    root = _workspace_root(workspace_id)
+    target = _recording_dir_of(root, rel_path)
+    rel = _data_rel_of(root, target)
+    shutil.rmtree(target, ignore_errors=True)
+    return {"removed": rel}
 
 
 def _dedupe_recordings_in(root: Path, game_root: Path) -> list[str]:
