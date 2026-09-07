@@ -224,7 +224,7 @@ Failed or incomplete runs remain available as debug-only transcripts but cannot 
 6  recompute similarities.pl
 ```
 
-The shared contracts and provider interfaces are documented in [SOW_PHASE_ARCHITECTURE.md](SOW_PHASE_ARCHITECTURE.md) and [TODO.md](TODO.md).
+The shared contracts and provider interfaces are documented in [TODO_PHASE_ARCHITECTURE.md](TODO_PHASE_ARCHITECTURE.md) and [TODO.md](TODO.md).
 
 ## Friendly persistent object identities
 

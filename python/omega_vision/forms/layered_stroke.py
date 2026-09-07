@@ -1,6 +1,6 @@
-"""SoW Appendix A.2 ``forms/layered_stroke.py`` — future form (stub only).
+"""TODO Appendix A.2 ``forms/layered_stroke.py`` — future form (stub only).
 
-Layered-stroke generative form for anime-style 2D games (SoW §16). Stub only.
+Layered-stroke generative form for anime-style 2D games (TODO §16). Stub only.
 """
 
 from .._future import future_component

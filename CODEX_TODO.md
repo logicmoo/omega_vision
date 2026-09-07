@@ -14,6 +14,13 @@ values here.
 
 ## Current recovery state
 
+- TODO terminology normalization (2026-09-08): planning, delivery, architecture,
+  API documentation, runtime messages, UI labels, tests, and historical path
+  maps now use TODO terminology exclusively. Canonical documents are
+  `TODO_DELIVERABLES.md`, `TODO_PHASE_ARCHITECTURE.md`,
+  `docs/design/TODO_VISION_AND_WORKBENCH.md`, and `_todo.txt`; the matching
+  regression module is `tests/omega_vision/test_omega_vision_todo_forms.py`.
+
 - ARC data layout flattened (2026-09-07): recordings, importables, and curated
   moved out of `arc3_games/` to the data-home roots — canonical writes now
   target `data/recordings/<game>/`, `data/importables/`, and `data/curated/`

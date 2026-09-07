@@ -1,7 +1,7 @@
-"""SoW Appendix A.2 ``adapters/robot3d`` — future adapter (stub only, §16).
+"""TODO Appendix A.2 ``adapters/robot3d`` — future adapter (stub only, §16).
 
 A.8 task 9 names ``Robot3DAdapter``; A.6 names ``RGBDObjectProposer``. Both are
-tabletop 3D robotics future work (SoW §16) — importable stubs only.
+tabletop 3D robotics future work (TODO §16) — importable stubs only.
 """
 
 from .._future import future_component

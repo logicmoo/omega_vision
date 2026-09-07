@@ -1,1 +1,1 @@
-"""omega_vision.environments - Environment progression fixtures (SoW A.2 environments/)."""
+"""omega_vision.environments - Environment progression fixtures (TODO A.2 environments/)."""

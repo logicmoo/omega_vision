@@ -9,7 +9,7 @@ This is the large technical overview. It describes class and module ownership, r
 Related documents:
 
 - [TODO.md](TODO.md) — the concrete work we are actively implementing, in execution order.
-- [SOW_DELIVERABLES.md](SOW_DELIVERABLES.md) — the phase-by-phase deliverable checklist and evidence links.
+- [TODO_DELIVERABLES.md](TODO_DELIVERABLES.md) — the phase-by-phase deliverable checklist and evidence links.
 - [FILE_TREE.md](FILE_TREE.md) — the complete repository ownership map.
 
 The architecture document explains **how the system is organized**. The TODO explains **what we need to implement next**. The deliverables document explains **what has been delivered and what must still be checked off**.
@@ -401,7 +401,7 @@ Phase 1 delivers the ability to:
 
 Post-delivery debugger hardening may continue, but it is not reclassified as an undelivered Phase 1 semantic algorithm.
 
-Corresponding deliverables: [Phase 1 checklist](SOW_DELIVERABLES.md#phase-1--arc3-debugger-and-extensible-inspection-foundation).
+Corresponding deliverables: [Phase 1 checklist](TODO_DELIVERABLES.md#phase-1--arc3-debugger-and-extensible-inspection-foundation).
 
 ---
 
@@ -636,7 +636,7 @@ Input image or game state
 
 Corresponding work: [TODO — Phase 2 active work](TODO.md#phase-2--object-perception-recognition-and-persistent-memory).
 
-Corresponding deliverables: [Phase 2 checklist](SOW_DELIVERABLES.md#phase-2--object-perception-recognition-and-persistent-memory).
+Corresponding deliverables: [Phase 2 checklist](TODO_DELIVERABLES.md#phase-2--object-perception-recognition-and-persistent-memory).
 
 ---
 
@@ -825,7 +825,7 @@ Exact-grid identity, Turtle regeneration, memory replay, and prediction ordering
 
 Corresponding work: [TODO — Phase 3 active work](TODO.md#phase-3--game-object-learner-integration-and-predictive-rule-learning).
 
-Corresponding deliverables: [Phase 3 checklist](SOW_DELIVERABLES.md#phase-3--game-object-learner-integration-and-predictive-rule-learning).
+Corresponding deliverables: [Phase 3 checklist](TODO_DELIVERABLES.md#phase-3--game-object-learner-integration-and-predictive-rule-learning).
 
 ---
 
@@ -874,6 +874,6 @@ Game Object Learner recommendations may be connected through a stable seam, but 
 12. Add raster, physics, degradation, and occlusion providers after the exact-grid path is stable.
 13. Produce reproducible acceptance evidence for Phase 2 and Phase 3.
 
-See [TODO.md](TODO.md) for active implementation work and [SOW_DELIVERABLES.md](SOW_DELIVERABLES.md) for delivery status.
+See [TODO.md](TODO.md) for active implementation work and [TODO_DELIVERABLES.md](TODO_DELIVERABLES.md) for delivery status.
 
 [← Back to top-level README](README.md)

@@ -1,4 +1,4 @@
-"""SoW A.2/A.3 regression tests: raster form, SoW name aliases, §16 future stubs,
+"""TODO A.2/A.3 regression tests: raster form, TODO name aliases, §16 future stubs,
 and the delegating GenerativeForm holder."""
 
 from __future__ import annotations
@@ -19,24 +19,24 @@ def test_contour_fill_form_is_translation_invariant_and_faithful():
     t_here = ContourFillForm({"red": [(0, 0), (1, 0), (2, 0), (1, 1)]})
     t_moved = ContourFillForm({"red": [(10, 10), (11, 10), (12, 10), (11, 11)]})
 
-    # Determinism + affine (translation) identity (SoW §13)
+    # Determinism + affine (translation) identity (TODO §13)
     assert t_here.canonicalize() == t_moved.canonicalize()
     assert t_here.distance(t_moved) == 0.0
-    # Description length = cells + layers (SoW §5)
+    # Description length = cells + layers (TODO §5)
     assert t_here.code_length() == 5.0
-    # fit_instance recovers the offset with zero residual (SoW A.3)
+    # fit_instance recovers the offset with zero residual (TODO A.3)
     fit = t_here.fit_instance(t_moved)
     assert fit.residual == 0.0
     assert fit.parameters["offset"] == (10, 10)
     # render honours the fitted offset
     assert t_here.render({"offset": fit.parameters["offset"]})[(10, 10)] == "red"
-    # completion returns a form (SoW §8)
+    # completion returns a form (TODO §8)
     completed = t_here.complete()
     assert completed and isinstance(completed[0], ContourFillForm)
     assert t_here.domain == "raster"
 
 
-def test_cell_logo_form_is_the_sow_alias_for_the_grid_form():
+def test_cell_logo_form_is_the_todo_alias_for_the_grid_form():
     assert CellLogoForm is GenerativeForm
     form = CellLogoForm("fd 3")
     assert isinstance(form, AbstractGenerativeForm)
@@ -89,12 +89,12 @@ def test_future_components_are_importable_but_raise():
         SketchformerEmbedding,
     )
     for future in futures:
-        assert future.sow_section == "§16"
+        assert future.todo_section == "§16"
         with pytest.raises(FutureComponentError):
             future()
 
 
-def test_top_level_package_exports_the_sow_names():
+def test_top_level_package_exports_the_todo_names():
     import omega_vision
 
     for name in (

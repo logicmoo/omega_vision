@@ -506,7 +506,7 @@ def test_architecture_and_todo_documents_are_present() -> None:
     for relative in (
         "DEBUGGER.md",
         "KAGGLE.md",
-        "SOW_PHASE_ARCHITECTURE.md",
+        "TODO_PHASE_ARCHITECTURE.md",
         "TODO.md",
         "FILE_TREE.md",
     ):

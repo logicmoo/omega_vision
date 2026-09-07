@@ -1,4 +1,4 @@
-"""Occlusion-completion demonstration (SOW section 8).
+"""Occlusion-completion demonstration (TODO section 8).
 
 Run:  python scripts/occlusion_completion_demo.py
 

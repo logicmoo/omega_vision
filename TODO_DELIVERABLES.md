@@ -1,14 +1,14 @@
 [← Back to top-level README](README.md)
 
-# SOW Deliverables Checklist — Image Perception to Recognizable Memory
+# TODO Deliverables Checklist — Image Perception to Recognizable Memory
 
 ## Document scope
 
-This is the delivery checklist. It follows the revised three-phase SOW language and links each outcome to implementation evidence or remaining work.
+This is the delivery checklist. It follows the revised three-phase TODO language and links each outcome to implementation evidence or remaining work.
 
 Related documents:
 
-- [SOW_PHASE_ARCHITECTURE.md](SOW_PHASE_ARCHITECTURE.md) — detailed technical design, classes, modules, boundaries, and architecture work.
+- [TODO_PHASE_ARCHITECTURE.md](TODO_PHASE_ARCHITECTURE.md) — detailed technical design, classes, modules, boundaries, and architecture work.
 - [TODO.md](TODO.md) — the concrete work we are actively implementing.
 - [FILE_TREE.md](FILE_TREE.md) — repository ownership map.
 
@@ -33,7 +33,7 @@ A Phase 1 provider artifact can be delivered as a visible debugger output even w
 
 # Phase 1 — ARC3 Debugger and Extensible Inspection Foundation
 
-Architecture: [Phase 1 debugger architecture](SOW_PHASE_ARCHITECTURE.md#phase-1--arc3-debugger-and-extensible-inspection-foundation)
+Architecture: [Phase 1 debugger architecture](TODO_PHASE_ARCHITECTURE.md#phase-1--arc3-debugger-and-extensible-inspection-foundation)
 
 Post-delivery maintenance: [TODO — Phase 1 maintenance](TODO.md#phase-1--post-delivery-debugger-maintenance)
 
@@ -127,7 +127,7 @@ The checked items above claim the delivered ability to **show and preserve** the
   Evidence: shared providers, object-memory contracts, learner plugin contracts, Prolog bridge, and action-tree artifact slots.
 
 - [x] Document debugger architecture, action trees, hooks, artifacts, evidence, provenance, and replay controls.  
-  Evidence: [`README.md`](README.md), [`DEBUGGER.md`](DEBUGGER.md), [`python/arc_cli_debugger/config/README.md`](python/arc_cli_debugger/config/README.md), [`SOW_PHASE_ARCHITECTURE.md`](SOW_PHASE_ARCHITECTURE.md), and [`FILE_TREE.md`](FILE_TREE.md).
+  Evidence: [`README.md`](README.md), [`DEBUGGER.md`](DEBUGGER.md), [`python/arc_cli_debugger/config/README.md`](python/arc_cli_debugger/config/README.md), [`TODO_PHASE_ARCHITECTURE.md`](TODO_PHASE_ARCHITECTURE.md), and [`FILE_TREE.md`](FILE_TREE.md).
 
 ## Phase 1 status
 
@@ -137,7 +137,7 @@ The checked items above claim the delivered ability to **show and preserve** the
 
 # Phase 2 — Object Perception, Recognition, and Persistent Memory
 
-Architecture: [Phase 2 object architecture](SOW_PHASE_ARCHITECTURE.md#phase-2--object-perception-recognition-and-persistent-memory)
+Architecture: [Phase 2 object architecture](TODO_PHASE_ARCHITECTURE.md#phase-2--object-perception-recognition-and-persistent-memory)
 
 Active work: [TODO — Phase 2](TODO.md#phase-2--object-perception-recognition-and-persistent-memory)
 
@@ -252,7 +252,7 @@ Input image or game state
 
 # Phase 3 — Game Object Learner Integration and Predictive Rule Learning
 
-Architecture: [Phase 3 learner architecture](SOW_PHASE_ARCHITECTURE.md#phase-3--game-object-learner-integration-and-predictive-rule-learning)
+Architecture: [Phase 3 learner architecture](TODO_PHASE_ARCHITECTURE.md#phase-3--game-object-learner-integration-and-predictive-rule-learning)
 
 Active work: [TODO — Phase 3](TODO.md#phase-3--game-object-learner-integration-and-predictive-rule-learning)
 

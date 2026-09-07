@@ -1,10 +1,10 @@
-# Statement of Work: Debugger (Phase 1) and Vision System (Phase 2)
+# TODO: Debugger (Phase 1) and Vision System (Phase 2)
 
 [Back to repository README](../../README.md)
 
 This document divides the delivered work along the repository's canonical
-three-phase SoW (see [SOW_PHASE_ARCHITECTURE.md](../../../SOW_PHASE_ARCHITECTURE.md)
-and [SOW_DELIVERABLES.md](../../../SOW_DELIVERABLES.md)):
+three-phase TODO (see [TODO_PHASE_ARCHITECTURE.md](../../../TODO_PHASE_ARCHITECTURE.md)
+and [TODO_DELIVERABLES.md](../../../TODO_DELIVERABLES.md)):
 
 - **Phase 1 — the Debugger**: the workbench itself, i.e. the grid-game debugger
   and extensible inspection foundation. It records, displays, compares, restores,
@@ -17,10 +17,10 @@ and [SOW_DELIVERABLES.md](../../../SOW_DELIVERABLES.md)):
   pipeline lives.
 
 So "the workbench" and "the debugger" and "Phase 1" name the same thing here; the
-"vision system" is Phase 2. This is a descriptive SoW of work already delivered,
+"vision system" is Phase 2. This is a descriptive TODO of work already delivered,
 suitable for reuse in proposals and RFP responses that require statistical
 reporting. (Phase 3 — predictive rule learning — is out of scope for this
-document; see the canonical SoW.)
+document; see the canonical TODO.)
 
 ---
 

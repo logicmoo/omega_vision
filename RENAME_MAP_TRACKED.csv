@@ -148,7 +148,7 @@ tests/test_model_workspace_save_ui.py,tests/workbench_api/test_model_workspace_s
 tests/test_navigation_v2_ui.py,tests/workbench_api/test_navigation_v2_ui.py
 tests/test_object_memory_contracts.py,tests/omega_vision/test_object_memory_contracts.py
 tests/test_object_memory_rest_roundtrip.py,tests/omega_vision/test_object_memory_rest_roundtrip.py
-tests/test_omega_vision_sow_forms.py,tests/omega_vision/test_omega_vision_sow_forms.py
+tests/test_omega_vision_todo_forms.py,tests/omega_vision/test_omega_vision_todo_forms.py
 tests/test_operation_categories.py,tests/workbench_api/test_operation_categories.py
 tests/test_operation_playground.py,tests/workbench_api/test_operation_playground.py
 tests/test_page_ui_tools.py,tests/workbench_api/test_page_ui_tools.py
@@ -264,7 +264,7 @@ workbench/docs/design/PHASE2_OBJECT_MEMORY_DEMONSTRATION.md,docs/design/PHASE2_O
 workbench/docs/design/RESOURCE_RELATIONSHIP_MODEL.md,docs/design/RESOURCE_RELATIONSHIP_MODEL.md
 workbench/docs/design/RUNTIME_PERSISTENCE_ARCHITECTURE.md,docs/design/RUNTIME_PERSISTENCE_ARCHITECTURE.md
 workbench/docs/design/SEMANTIC_WORKFLOW_TO_RUNTIME_IMPLEMENTATION.md,docs/design/SEMANTIC_WORKFLOW_TO_RUNTIME_IMPLEMENTATION.md
-workbench/docs/design/SOW_VISION_AND_WORKBENCH.md,docs/design/SOW_VISION_AND_WORKBENCH.md
+workbench/docs/design/TODO_VISION_AND_WORKBENCH.md,docs/design/TODO_VISION_AND_WORKBENCH.md
 workbench/docs/design/SYMBOLIC_ARC_RECOGNITION.md,docs/design/SYMBOLIC_ARC_RECOGNITION.md
 workbench/docs/design/UNIVERSAL_ARTIFACT_EDITOR.md,docs/design/UNIVERSAL_ARTIFACT_EDITOR.md
 workbench/docs/design/WORKBENCH_NAVIGATION_V2.md,docs/design/WORKBENCH_NAVIGATION_V2.md

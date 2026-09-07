@@ -8,7 +8,7 @@ Effective Date July 1, 2026
 Anticipated Completion Date September 30, 2026, subject to the delivery schedule in Exhibit A 
 This Master Services Agreement (“Agreement”) is made between Logicmoo, Co. ("Company") and SingularityNET ("Customer") 
 as of the Effective Date specified above and governs the purchase and provision of professional services (the “Services”) as 
-more fully described in a Statement of Work referencing this Agreement (“SOW”). If Customer purchases the Services for use by 
+more fully described in a TODO referencing this Agreement (“TODO”). If Customer purchases the Services for use by
 its Affiliate(s), Customer will ensure that such Affiliate(s) complies with the terms and conditions of this Agreement. The term 
 “Affiliate” means an entity that controls (i.e., parent), is controlled by (i.e., subsidiary), or is under common control with (i.e., 
 sister) a party to this Agreement. Customer’s standard terms and conditions of purchase, purchase order, or other documents 
@@ -16,34 +16,34 @@ are for Customer’s convenience only and any terms set forth therein that are i
 conditions set forth in this Agreement shall not be binding on Company unless otherwise agreed by the parties in writing, and are 
 hereby rejected. 
 1. PRICE AND PAYMENT 
-1.1 SOW Pricing and Payment 
-The Services shall be performed through independently agreed and executed SOWs. Each SOW shall establish the total price, 
+1.1 TODO Pricing and Payment
+The Services shall be performed through independently agreed and executed TODOs. Each TODO shall establish the total price,
 fixed fees, milestone payments, licensing fees, reimbursable charges, or other compensation applicable to that engagement. 
 No hourly rate, minimum headcount allocation, minimum purchase commitment, or minimum volume of Services shall apply 
-under this Agreement unless expressly stated in an applicable SOW. 
-Company shall invoice Customer according to the invoicing schedule specified in the applicable SOW. Unless an SOW provides 
+under this Agreement unless expressly stated in an applicable TODO.
+Company shall invoice Customer according to the invoicing schedule specified in the applicable TODO. Unless a TODO provides
 otherwise, all undisputed invoiced amounts shall be paid by Customer within thirty (30) days after the invoice date. 
 If Customer disputes an invoiced amount, Customer shall notify Company in writing within ten (10) business days after receiving 
 the invoice and shall provide a reasonable explanation of the disputed amount. Customer shall timely pay all undisputed 
 portions of the invoice. 
 If an undisputed amount remains unpaid for more than thirty (30) days after its applicable due date, Company may, in its sole 
 discretion and upon written notice to Customer: 
-1. suspend performance under the affected SOW until payment is received; or 
-2. terminate the affected SOW. 
-A payment dispute or default relating to one SOW shall not automatically affect any other SOW unless the parties agree 
-otherwise in writing or the default materially affects Company’s ability to perform the other SOW. 
+1. suspend performance under the affected TODO until payment is received; or
+2. terminate the affected TODO.
+A payment dispute or default relating to one TODO shall not automatically affect any other TODO unless the parties agree
+otherwise in writing or the default materially affects Company’s ability to perform the other TODO.
 1.2 Expenses 
-Company may invoice Customer for expenses that have been authorized in advance in accordance with the applicable SOW. 
+Company may invoice Customer for expenses that have been authorized in advance in accordance with the applicable TODO.
 Customer shall reimburse Company for actual expenses reasonably and properly incurred in performing the Services, provided 
 that: 
-1. the expense was approved as required by the applicable SOW; and 
+1. the expense was approved as required by the applicable TODO; and
 2. Company submits copies of valid receipts or other reasonable supporting documentation. 
-Each SOW may establish expense limits, categories of permitted expenses, travel policies, or alternative reimbursement 
+Each TODO may establish expense limits, categories of permitted expenses, travel policies, or alternative reimbursement
 procedures. 
 1.3 Services Term 
-The parties may enter into one or more SOWs during the term of this Agreement. Each SOW shall be separately negotiated and 
-shall specify its applicable terms.  Unless otherwise expressly stated, completion, expiration, or termination of one SOW shall 
-not terminate or otherwise affect any other SOW. 
+The parties may enter into one or more TODOs during the term of this Agreement. Each TODO shall be separately negotiated and
+shall specify its applicable terms.  Unless otherwise expressly stated, completion, expiration, or termination of one TODO shall
+not terminate or otherwise affect any other TODO.
 Master Services Agreement — Logicmoo, Co. and SingularityNET 
 2. CUSTOMER RESPONSIBILITIES 
 Customer acknowledges that Company will require information, documents, data, records, and cooperation by Customer in 
@@ -53,31 +53,31 @@ provide Company and its personnel with such access to Customer’s hosting provi
 Company to provide the Services. For clarity, Customer shall at all times be solely responsible for granting, controlling, and 
 administering any permissions with respect to such account(s) and for monitoring and paying all costs related to such 
 account(s). Customer acknowledges and agrees to provide Company with prompt and adequate responses to Company’s 
-requests for information and other requests related to the Services to be performed under the applicable SOW. Company shall 
+requests for information and other requests related to the Services to be performed under the applicable TODO. Company shall
 not be held liable for any delays or failures in performance arising from Customer’s failure to provide such information, 
 documents, data, records, or cooperation in a timely and appropriate manner. 
 3. INTELLECTUAL PROPERTY OWNERSHIP 
 3.1 Customer Materials 
 Customer shall retain all rights, title, and interest in any and all Customer products, data, plans, specifications, reports, designs, 
 network architecture, documentation, and other similar information, or any derivatives thereof, developed, used, or disclosed by 
-Customer in its receipt of Services under this Agreement and any applicable Statement of Work (SOW) (collectively “Customer 
+Customer in its receipt of Services under this Agreement and any applicable TODO (collectively “Customer
 Materials”). Except as explicitly set forth herein, no rights, title, or interest in any Customer Materials are transferred to 
 Company. 
 3.2 Company Materials 
 Company shall retain all rights, title, and interest in all data, plans, processes, methods, specifications, reports, designs, 
 templates, scripts, code, technological “know-how,” technology, documentation, and other similar information, and any 
 derivatives thereof, developed, used, or disclosed by Company (or a third-party service provider acting on Company’s behalf) in 
-the provision of Services under this Agreement and any applicable SOW (collectively “Company Materials”). Except as explicitly 
+the provision of Services under this Agreement and any applicable TODO (collectively “Company Materials”). Except as explicitly
 set forth herein, no rights, title, or interest in any Company Materials is transferred to Customer under this Agreement. 
 3.3 Software Licensing 
-All software and related documentation created or developed by Company under this Agreement and any applicable SOW will be 
+All software and related documentation created or developed by Company under this Agreement and any applicable TODO will be
 licensed to Customer and any designated Affiliates under the terms of the Lesser General Public License (LGPL). This includes, 
 but is not limited to, all source code, executables, and configurations. Company shall ensure that all such software and 
 documentation are compatible with the LGPL terms to maintain the integrity and distribution rights as prescribed by the LGPL. 
 4. WARRANTIES 
 4.1 Acceptance 
-Each phase or milestone submitted under an SOW shall be reviewed against the SOW within ten (10) workdays after submission 
-(the “Acceptance Period”). If Customer finds that the submitted work is incomplete or not in accordance with the SOW, 
+Each phase or milestone submitted under a TODO shall be reviewed against the TODO within ten (10) workdays after submission
+(the “Acceptance Period”). If Customer finds that the submitted work is incomplete or not in accordance with the TODO,
 Customer shall provide written notification describing the deficiencies by the end of the Acceptance Period, in which case 
 Company will promptly correct the stated deficiencies. If Customer does not provide such written notification by the end of the 
 Acceptance Period, the submitted phase or milestone shall be deemed accepted. 
@@ -126,7 +126,7 @@ OF REPLACEMENT GOODS, HOWEVER INCURRED BY THE OTHER PARTY OR ANY THIRD PARTY, WH
 CONTRACT OR TORT, EVEN IF SUCH PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. 
 6.2 Aggregate Liability Cap 
 IN NO EVENT SHALL EITHER PARTY’S AGGREGATE LIABILITY FOR DIRECT DAMAGES ARISING OUT OF OR RELATED TO THIS 
-AGREEMENT EXCEED THE TOTAL FEES PAID OR PAYABLE UNDER THE SOW FOR THE SPECIFIC SERVICES AT ISSUE. This 
+AGREEMENT EXCEED THE TOTAL FEES PAID OR PAYABLE UNDER THE TODO FOR THE SPECIFIC SERVICES AT ISSUE. This
 limitation of liability is cumulative and not per incident (i.e., the existence of two or more claims will not enlarge this limit). 
 7. CONFIDENTIALITY 
 7.1 Confidential Information 
@@ -162,7 +162,7 @@ use thereof.
 9.1 Term 
 This Agreement is effective as of the Effective Date set forth above. The anticipated delivery period for all phases is 
 approximately three (3) months from the Effective Date, with an anticipated completion date of September 30, 2026. Customer 
-is purchasing the deliverables specified in the applicable SOW rather than a fixed number of hours or days. Accordingly, the 
+is purchasing the deliverables specified in the applicable TODO rather than a fixed number of hours or days. Accordingly, the
 deliverables may be completed earlier or may require additional time. Company shall notify Customer in writing of any material 
 change to the anticipated delivery schedule. This Agreement will not automatically renew, and any continuation or additional 
 work shall be agreed upon in writing by the parties. 
@@ -232,9 +232,9 @@ electronic record (electronic mail, electronic data interchange), once duly sign
 party, shall constitute a binding agreement and shall have the same force and effect as a document bearing original signatures. 
   
 Master Services Agreement — Logicmoo, Co. and SingularityNET 
-Exhibit A — Statement of Work  
+Exhibit A — TODO
 Image Perception to Recognizable Memory 
-This Statement of Work (“SOW”) is entered into under the Master Services Agreement above. It defines three deliverable-based 
+This TODO is entered into under the Master Services Agreement above. It defines three deliverable-based
 phases. The total fixed price for all phases is $20,000 USD. 
 Total Fixed Price $20,000 USD 
 Anticipated Overall Period Approximately three (3) months from the Effective Date 
@@ -318,7 +318,7 @@ Total Fixed Price: $20,000 USD
   
 Master Services Agreement — Logicmoo, Co. and SingularityNET 
 Signatures 
-The parties have executed this Master Services Agreement and the attached Statement of Work as of the dates written below. 
+The parties have executed this Master Services Agreement and the attached TODO as of the dates written below.
 Logicmoo, Co. 
 Signature: ____________________________ 
 Name: Douglas Miles 

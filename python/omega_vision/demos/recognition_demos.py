@@ -1,5 +1,5 @@
 """recognition_demos.py -- runnable, visual demonstrations of the symbolic_arc
-Phase-2 acceptance behaviours (SOW Exhibit A Phase 2), for the workbench
+Phase-2 acceptance behaviours (TODO Exhibit A Phase 2), for the workbench
 "Recognition Demos" page. Each demo runs the REAL recognizer functions and
 returns grid panels (cells with a role: visible / hidden / filled / object /
 regen) plus a result and a pass/fail, so the page can render and re-run them.
@@ -1644,12 +1644,12 @@ def demo_catalog() -> list:
     return out
 
 
-# Full Phase 2 & Phase 3 SoW deliverable coverage, so the Sanity Tests page can
+# Full Phase 2 & Phase 3 TODO deliverable coverage, so the Sanity Tests page can
 # show an entry for EVERY deliverable -- done or not -- and mark the gaps.
 # Tuple: (phase, id, title, implemented, llm_free, demo)
 #   implemented / llm_free: "full" | "partial" | "none"
 #   demo: a runnable recognition-demo id, "phase3" (the live Phase 3 run), or None
-_SOW_COVERAGE = [
+_TODO_COVERAGE = [
     ("P2", "1a", "Extract objects from grid", "full", "full", "live-ls20"),
     ("P2", "1b", "Extract objects from image (raster)", "full", "full", "input-gradient"),
     ("P2", "1c", "Extract objects from video", "full", "full", "input-video"),
@@ -1721,12 +1721,12 @@ _SOW_COVERAGE = [
 ]
 
 
-def sow_coverage() -> list:
-    """Every Phase 2 & 3 SoW deliverable with implemented/LLM-free/demo status, so
+def todo_coverage() -> list:
+    """Every Phase 2 & 3 TODO deliverable with implemented/LLM-free/demo status, so
     the page can list an entry for each. Every row maps to a real, runnable demo
     card (no stubs); rows still short of full implementation are marked partial."""
     out = []
-    for phase, did, title, impl, llm, demo in _SOW_COVERAGE:
+    for phase, did, title, impl, llm, demo in _TODO_COVERAGE:
         if demo:
             demo_status = "demo"
         elif impl == "none":
@@ -1855,7 +1855,7 @@ def get_demo_state() -> dict:
         store = root / _re.sub(r"[^A-Za-z0-9_.-]", "_", r.get("key", ""))
         recs.append({**r, "hasMemory": store.is_dir(), "computed": _recording_computed(r.get("key"))})
     return {"demos": demos, "total": res.get("total", 0), "passed": res.get("passed", 0),
-            "catalog": demo_catalog(), "coverage": sow_coverage(), "running": st["running"],
+            "catalog": demo_catalog(), "coverage": todo_coverage(), "running": st["running"],
             "anyPlaying": any_playing, "playEpoch": epoch,
             "ls20Recordings": recs, "ls20Source": _current_ls20_key(),
             "ls20StoreMode": _ls20_store_mode,

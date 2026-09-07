@@ -119,7 +119,7 @@ post-replay refactor commits; record divergence point in the commit map.
   python/workbench_api_server/scripts/** -> workbench_api_server/scripts/
   workbench/config (historical) -> workbench_api_server/config/
 ### Tests -> six+1 buckets (TEST_MOVE at replay)
-  tests/omega_vision/: test_phase2_*, test_omega_vision_sow_forms, test_object_memory_contracts,
+  tests/omega_vision/: test_phase2_*, test_omega_vision_todo_forms, test_object_memory_contracts,
     test_object_memory_rest_roundtrip?, test_symbolic_arc_*, test_turtle_normalize, test_arc3_capture_observers, ...
   tests/omega_vision_api/: test_video_import_*, test_arc3_play_* , registry/phase3/recognition API tests
   tests/workbench_api/: workspace/resource/operation/prompt/model/policy/plugin/service/system/
@@ -134,10 +134,10 @@ post-replay refactor commits; record divergence point in the commit map.
   EXCEPT files matching a mapped family (e.g. historical workbench/** files follow the family mapping).
 ### KEEP at root (Phase-4 path repairs only)
   README.md, AGENTS.md, CODEX_TODO.md, DEBUGGER.md, FILE_TREE.md, KAGGLE.md, LICENSE, Makefile,
-  README_WINDOWS.md, README_WEB_TERMINAL_FIX.md, SOW_*.md, TODO.md, pyproject.toml, requirements.txt,
+  README_WINDOWS.md, README_WEB_TERMINAL_FIX.md, TODO_*.md, TODO.md, pyproject.toml, requirements.txt,
   run_workbench.bat, workbench.workspace.json, .github/**, .idea/, .run/, .codex/, config/, scripts/(rest),
   python/notebooks/, agent/, data/{object_memory,object_memory_demo,recognition_demo_parts}, docs/(existing),
-  _sow.txt, _ingest_reduce_seed.py -> scripts/ (tentative), .gitignore/.gitattributes/.env.example
+  _todo.txt, _ingest_reduce_seed.py -> scripts/ (tentative), .gitignore/.gitattributes/.env.example
   webui gone (moved to debugger). tools/ does not exist (hint checked; nothing found).
 
 ## Replay mechanics (Phase 2/3, pending final go)

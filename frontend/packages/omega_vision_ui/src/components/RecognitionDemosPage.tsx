@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Recognition Demos — runs the symbolic_arc Phase-2 acceptance behaviours
- * (SOW Exhibit A Phase 2) as visual, re-runnable cards: occlusion completion,
+ * (TODO Exhibit A Phase 2) as visual, re-runnable cards: occlusion completion,
  * recolour / resize identity, store-then-recognize, regeneration, replay, and
  * input breadth (raster / simple video). Data comes from the real recognizer via
  * GET /workbench/recognition/demos — no mocks.
@@ -226,7 +226,7 @@ function CoverageSection({ rows, onRun }: { rows: CoverageRow[]; onRun: (id: str
     <section style={{ marginBottom: 20, border: "1px solid #1c2333", borderRadius: 8, background: "#0b0f18" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", cursor: "pointer" }}
         onClick={() => setOpen((v) => !v)}>
-        <b style={{ fontSize: 13 }}>{open ? "▾" : "▸"} SoW coverage — Phase 2 &amp; 3 deliverables</b>
+        <b style={{ fontSize: 13 }}>{open ? "▾" : "▸"} TODO coverage — Phase 2 &amp; 3 deliverables</b>
         <span style={{ fontSize: 11, opacity: 0.7 }}>{done}/{rows.length} with a demo</span>
         <span style={{ marginLeft: "auto", fontSize: 11, opacity: 0.6 }}>
           <CovBadge level="full" /> done · <CovBadge level="partial" /> partial · <CovBadge level="none" /> not done
@@ -540,7 +540,7 @@ export function RecognitionDemosPage() {
         </button>
       </div>
       <p style={{ fontSize: 12, opacity: 0.7, marginTop: 0 }}>
-        The server runs each real symbolic_arc Phase-2 acceptance behaviour (SOW Exhibit A Phase 2); this page only
+        The server runs each real symbolic_arc Phase-2 acceptance behaviour (TODO Exhibit A Phase 2); this page only
         observes and animates the results. Legend: solid = visible/object,{" "}
         <span style={{ color: "#8bd450" }}>green outline / +</span> = generatively filled or regenerated, dashed <b>?</b> = behind the occluder.
       </p>

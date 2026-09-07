@@ -9,9 +9,9 @@ MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 ROOT_DOCUMENTS = (
     "DEBUGGER.md",
     "KAGGLE.md",
-    "SOW_PHASE_ARCHITECTURE.md",
+    "TODO_PHASE_ARCHITECTURE.md",
     "TODO.md",
-    "SOW_DELIVERABLES.md",
+    "TODO_DELIVERABLES.md",
     "FILE_TREE.md",
 )
 GENERATED_IGNORED_PATHS = {
@@ -75,9 +75,9 @@ def test_top_level_readme_links_every_root_document() -> None:
 
 def test_planning_documents_link_to_each_other() -> None:
     planning = {
-        "SOW_PHASE_ARCHITECTURE.md",
+        "TODO_PHASE_ARCHITECTURE.md",
         "TODO.md",
-        "SOW_DELIVERABLES.md",
+        "TODO_DELIVERABLES.md",
     }
     for name in planning:
         links = set(_local_links(ROOT / name))
@@ -126,9 +126,9 @@ def test_file_tree_links_all_connected_architecture_files() -> None:
         "README.md",
         "DEBUGGER.md",
         "KAGGLE.md",
-        "SOW_PHASE_ARCHITECTURE.md",
+        "TODO_PHASE_ARCHITECTURE.md",
         "TODO.md",
-        "SOW_DELIVERABLES.md",
+        "TODO_DELIVERABLES.md",
         "FILE_TREE.md",
         "docs/WORLD_ANALYSIS_WORKBENCH.md",
         "pyproject.toml",

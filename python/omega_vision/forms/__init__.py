@@ -1,4 +1,4 @@
-"""omega_vision.forms - Generative form languages (SoW A.3 forms/)."""
+"""omega_vision.forms - Generative form languages (TODO A.3 forms/)."""
 
 from .contour_fill import ContourFillForm
 from .forms import AbstractGenerativeForm, CellLogoForm, FitResult, GenerativeForm

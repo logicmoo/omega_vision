@@ -5,7 +5,7 @@
 [BUTTERED_TOAST_NORMALIZATION](BUTTERED_TOAST_NORMALIZATION.md) ·
 [PHASE2_OBJECT_MEMORY_DEMONSTRATION](PHASE2_OBJECT_MEMORY_DEMONSTRATION.md)
 
-This is the LLM‑free symbolic object‑recognition line that satisfies SOW Phase 2
+This is the LLM‑free symbolic object‑recognition line that satisfies TODO Phase 2
 (*Object Perception, Recognition, and Persistent Memory*). It runs perception in
 Python and grouping/memory in SWI‑Prolog. Everything below is real filesystem /
 backend behaviour — no mocks.
@@ -75,7 +75,7 @@ Test: `test_symbolic_arc_regeneration_replay.py::test_stored_form_regenerates_it
 ## Occlusion completion (generative)
 
 `complete_occluded(fragment, occluded, candidates=None, scales=…)` implements
-SOW §8: given the VISIBLE cells of an object and the cells hidden behind an
+TODO §8: given the VISIBLE cells of an object and the cells hidden behind an
 occluder, it hypothesizes which held form the object is (from the visible
 fragment), runs that form forward to fill the hidden parts, and accepts a
 completion **only when every filled cell lies under the occluder** (relational

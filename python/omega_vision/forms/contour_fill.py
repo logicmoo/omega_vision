@@ -1,6 +1,6 @@
-"""SoW Appendix A.2 ``forms/contour_fill.py`` / A.8 task 8 — the raster form.
+"""TODO Appendix A.2 ``forms/contour_fill.py`` / A.8 task 8 — the raster form.
 
-Raster -> a contour/fill program (SoW §5). This is one of the SoW-laid-out
+Raster -> a contour/fill program (TODO §5). This is one of the TODO-laid-out
 classes that had no prior home, so a compact, deterministic implementation lives
 here. It is intentionally small: it fulfils the :class:`AbstractGenerativeForm`
 contract (A.3) over a normalized set of filled cells per colour, so the same
@@ -9,7 +9,7 @@ kernel serves raster sprites by swapping the form language, not the core.
 A ``ContourFillForm`` holds a *fill program*: one layer per colour, each layer a
 set of integer ``(x, y)`` cells. Canonicalization translates to the origin and
 orders layers and cells deterministically, so identical shapes hash identically
-across machines (SoW §13 Determinism).
+across machines (TODO §13 Determinism).
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ class ContourFillForm(AbstractGenerativeForm):
     def __init__(self, program: Any) -> None:
         self._layers = _as_layers(program)
 
-    # -- SoW A.3: canonicalize / render / fit_instance / distance ----------
+    # -- TODO A.3: canonicalize / render / fit_instance / distance ----------
     def canonicalize(self) -> str:
         """Translate to the origin and order layers/cells deterministically."""
         cells = [c for _, layer in self._layers for c in layer]
@@ -87,7 +87,7 @@ class ContourFillForm(AbstractGenerativeForm):
         theirs = other._occupied()
         if not mine or not theirs:
             return FitResult(parameters={"offset": (0, 0)}, residual=float(len(mine ^ theirs)))
-        # centroid alignment is the cheapest good offset (SoW §7 cheapest account)
+        # centroid alignment is the cheapest good offset (TODO §7 cheapest account)
         cx = round(sum(x for x, _ in theirs) / len(theirs) - sum(x for x, _ in mine) / len(mine))
         cy = round(sum(y for _, y in theirs) / len(theirs) - sum(y for _, y in mine) / len(mine))
         shifted = {(x + cx, y + cy) for x, y in mine}
@@ -109,9 +109,9 @@ class ContourFillForm(AbstractGenerativeForm):
         union = len(a | b)
         return 1.0 - (inter / union if union else 0.0)
 
-    # -- SoW A.3 extensions: code_length / residual / complete -------------
+    # -- TODO A.3 extensions: code_length / residual / complete -------------
     def code_length(self) -> float:
-        """Description length = cells + per-layer parameter bits (SoW §5)."""
+        """Description length = cells + per-layer parameter bits (TODO §5)."""
         return float(sum(len(layer) for _, layer in self._layers) + len(self._layers))
 
     def residual(self, candidate: Any, params: dict[str, Any] | None = None) -> float:
@@ -119,7 +119,7 @@ class ContourFillForm(AbstractGenerativeForm):
         return self.fit_instance(candidate).residual
 
     def complete(self, partial_evidence: Any = None) -> tuple["ContourFillForm", ...]:
-        """Generative completion (SoW §8): mirror across the bbox vertical axis."""
+        """Generative completion (TODO §8): mirror across the bbox vertical axis."""
         cells = self._occupied()
         if not cells:
             return (ContourFillForm(()),)
