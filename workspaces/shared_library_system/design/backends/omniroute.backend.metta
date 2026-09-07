@@ -37,6 +37,9 @@
   (implementedBy (
     (omniroute-free-router ())
   ))
+  (dependedOnBy (
+    (omniroute-free-router ())
+  ))
   (inheritedBy (
     (omniroute-free-router (
       (lend ([]

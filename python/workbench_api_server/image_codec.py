@@ -8,6 +8,10 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
+from resource_store import get_filesystem_provider
+
+resources = get_filesystem_provider()
+
 ARC_PALETTE = np.array(
     [
         [0, 0, 0],
@@ -124,6 +128,6 @@ def frame_to_png_bytes(frame: np.ndarray, scale: int = 10) -> bytes:
 
 def save_frame(frame: np.ndarray, path: str | Path, scale: int = 10) -> Path:
     output = Path(path)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(frame_to_png_bytes(frame, scale=scale))
+    resources.make_directory(output.parent)
+    resources.write_bytes(output, frame_to_png_bytes(frame, scale=scale))
     return output

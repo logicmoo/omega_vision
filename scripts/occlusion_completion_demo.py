@@ -13,6 +13,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from _runtime import configure_runtime_home
+
+ROOT = configure_runtime_home(__file__)
+
 from omega_vision.perception import symbolic_arc as sa  # noqa: E402
 
 

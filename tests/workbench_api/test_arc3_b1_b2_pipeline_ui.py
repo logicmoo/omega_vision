@@ -13,15 +13,15 @@ HELP_TABS = ROOT / "frontend/apps/workbench/src/components/HelpDocumentTabs.tsx"
 def test_markdown_document_is_shared_help_renderer() -> None:
     source = MARKDOWN_DOCUMENT.read_text(encoding="utf-8")
     # The shared renderer carries the help-file link rewrites.
-    assert 'import ReactMarkdown from "react-markdown";' in source
+    assert 'import ReactMarkdown, { type Components } from "react-markdown";' in source
     assert 'import remarkGfm from "remark-gfm";' in source
     assert 'const docsSearch = href.startsWith("?docs=");' in source
     assert '.toLowerCase().endsWith(".md")' in source
     assert 'window.dispatchEvent(new CustomEvent("workbench:open-docs"' in source
-    assert 'target={docsSearch || localMarkdown ? undefined : "_blank"}' in source
+    assert 'target={editable || docsSearch || localDoc ? undefined : "_blank"}' in source
     # The help tabs now consume the shared renderer rather than an inline ReactMarkdown.
     help_source = HELP_TABS.read_text(encoding="utf-8")
-    assert 'import {MarkdownDocument} from "@app/components/MarkdownDocument";' in help_source
+    assert 'import {MarkdownDocument} from "./MarkdownDocument";' in help_source
     assert "<MarkdownDocument content={document.content}" in help_source
     assert "import ReactMarkdown" not in help_source
 

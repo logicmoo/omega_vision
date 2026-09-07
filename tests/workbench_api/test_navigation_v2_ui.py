@@ -225,8 +225,9 @@ def test_acceptance_debug_outlines_cover_all_control_types() -> None:
     assert "opening.loc?.start.line" in vite
     page = ACTIVE_PAGE.read_text(encoding="utf-8")
     assert "workbench.debugUiEnabled" in page
-    assert "Debug UI On" in page
-    assert "Debug UI Off" in page
+    assert "Hide UI Debug" in page
+    assert "Show UI Debug" in page
+    assert 'debugUiEnabled ? "Hide UI Debug" : "Show UI Debug"' in page
     assert 'debugUiEnabled && <TsxSourceLocationPopup />' in page
 
 
@@ -366,7 +367,7 @@ def test_source_code_language_tabs_are_deep_linkable() -> None:
 def test_workflow_authoring_pages_are_first_class_left_navigation_items() -> None:
     source = ACTIVE_PAGE.read_text(encoding="utf-8")
     compact = "".join(source.split())
-    assert 'group:"WORKFLOWS",items:[{label:"WorkflowCanvas",view:"canvas",glyph:"⌘"},{label:"CurrentWorkflow",view:"currentWorkflow",glyph:"⌘"},{label:"PageBuilder",view:"workflowPageBuilder",glyph:"▦"}' in compact
+    assert 'group:"WORKFLOWS",items:[{label:"WorkflowCanvas",view:"canvas",glyph:"⛓"},{label:"CurrentWorkflow",view:"currentWorkflow",glyph:"⇢"},{label:"PageBuilder",view:"workflowPageBuilder",glyph:"▦"}' in compact
     assert 'snapshot?.workflowPages' in source
     assert 'workflowNavigationEntries.map' in source
     assert 'data-workflow-page-resource={entry.id}' in source
@@ -665,7 +666,7 @@ def test_atomspace_editor_uses_atomspace_language_for_new_resources() -> None:
     component = (ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "GoalPlanLibraryEditor.tsx").read_text(encoding="utf-8")
     assert 'family === "context" ? "AtomSpace" : family' in component
     assert "`Abstract ${familyNoun} specification.`" in component
-    assert "`Concrete ${familyNoun} alternative.`" in component
+    assert "`Concrete ${familyNoun} implementation.`" in component
 
 
 def test_topbar_offers_persistent_workbench_themes() -> None:

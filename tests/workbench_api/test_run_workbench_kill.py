@@ -102,7 +102,7 @@ def test_api_startup_reconciles_enabled_missing_daemons(monkeypatch) -> None:
 
 def test_startup_reconciliation_log_is_raw_json_not_a_resource_document() -> None:
     monitor = (ROOT / "python" / "workbench_api_server" / "service_monitor_api.py").read_text(encoding="utf-8")
-    assert 'provider.write_bytes(LOG_ROOT / "startup-reconciliation.json"' in monitor
+    assert 'resources.write_config_json(\n            LOG_ROOT / "startup-reconciliation.json"' in monitor
     assert 'write_text(\n            LOG_ROOT / "startup-reconciliation.json"' not in monitor
 
 

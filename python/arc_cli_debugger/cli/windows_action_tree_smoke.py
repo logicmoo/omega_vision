@@ -14,7 +14,7 @@ PYTHON_ROOT = REPOSITORY_ROOT / "python"
 if str(PYTHON_ROOT) not in sys.path:
     sys.path.insert(0, str(PYTHON_ROOT))
 
-from action_tree import ActionTreeStore  # noqa: E402
+from arc_cli_debugger.action_tree import ActionTreeStore  # noqa: E402
 
 
 def run_smoke(output_root: Path) -> dict[str, str]:

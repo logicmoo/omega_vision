@@ -25,7 +25,6 @@ import importlib.util
 import json
 import os
 import re
-import shutil
 import sys
 import threading
 import time
@@ -37,7 +36,10 @@ from typing import Any
 from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import FileResponse
 
+from resource_store import get_filesystem_provider
+
 router = APIRouter(prefix="/arc3-play", tags=["arc3-play"])
+resources = get_filesystem_provider()
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _PYTHON_ROOT = _REPO_ROOT / "python"
@@ -66,7 +68,7 @@ _savepoints_lock = threading.Lock()
 
 def _load_savepoints(path: Path) -> list[dict[str, Any]]:
     try:
-        loaded = json.loads(path.read_text(encoding="utf-8"))
+        loaded = resources.read_config_json(path)
         return list(loaded) if isinstance(loaded, list) else []
     except (OSError, ValueError):
         return []
@@ -139,20 +141,20 @@ def _file_digest(path: Path) -> bytes:
 
 
 def _merge_legacy_tree(source: Path, destination: Path) -> None:
-    destination.mkdir(parents=True, exist_ok=True)
-    for entry in list(source.iterdir()):
+    resources.make_directory(destination)
+    for entry in resources.iterdir(source):
         target = destination / entry.name
         if entry.is_dir():
             _merge_legacy_tree(entry, target)
             continue
         if not target.exists():
-            entry.rename(target)
+            resources.move(entry, target)
             continue
         if (
             entry.stat().st_size == target.stat().st_size
             and _file_digest(entry) == _file_digest(target)
         ):
-            entry.unlink()
+            resources.delete_file(entry)
             continue
         raise RuntimeError(
             f"cannot merge legacy ARC3 data; conflicting files: {entry} and {target}"
@@ -202,28 +204,28 @@ def _migrate_arc3_games_root(root: Path) -> Path:
                 # Case-insensitive filesystems: the legacy spelling (e.g.
                 # Recordings) IS the canonical dir -- fix the case in place.
                 if source.resolve().name != destination.name:
-                    source.rename(destination)
+                    resources.move(source, destination)
                 continue
             if destination.exists():
                 _merge_legacy_tree(source, destination)
             else:
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                source.rename(destination)
+                resources.make_directory(destination.parent)
+                resources.move(source, destination)
         for container in (data_root / "arc3_games", data_root / "vision_frames"):
-            if container.is_dir() and not any(container.iterdir()):
+            if container.is_dir() and not resources.iterdir(container):
                 container.rmdir()
-        recordings.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(recordings)
         for pattern in ("recording.json", "savepoints.json", "state.json"):
             for base in (recordings, data_root / "importables", data_root / "curated"):
                 if not base.is_dir():
                     continue
-                for path in base.rglob(pattern):
-                    source = path.read_text(encoding="utf-8")
+                for path in resources.rglob(base, pattern):
+                    source = resources.read_bytes(path).decode("utf-8")
                     migrated = source
                     for old, new in _LEGACY_PATH_REWRITES:
                         migrated = migrated.replace(old, new)
                     if migrated != source:
-                        path.write_text(migrated, encoding="utf-8")
+                        resources.write_bytes(path, migrated.encode("utf-8"))
         _migrated_arc3_roots.add(resolved_root)
     return recordings
 
@@ -310,7 +312,7 @@ def _all_game_dirs(root: Path) -> list[Path]:
     for container in containers:
         if not container.is_dir():
             continue
-        for path in container.iterdir():
+        for path in resources.iterdir(container):
             if path.is_dir() and path.resolve() not in seen:
                 seen.add(path.resolve())
                 result.append(path)
@@ -328,7 +330,7 @@ def _next_ranked_saved_dir_name(container: Path) -> str:
     are ignored -- they don't participate in or block this numbering."""
     highest = 0
     if container.is_dir():
-        for entry in container.iterdir():
+        for entry in resources.iterdir(container):
             if not entry.is_dir():
                 continue
             match = _RANKED_SAVED_DIR_RE.fullmatch(entry.name) or _RANKED_LEVEL_DIR_RE.fullmatch(entry.name)
@@ -379,7 +381,11 @@ def _iter_recording_dirs(game_root: Path) -> list[Path]:
     level_<n>_<rank> naming)."""
     if not game_root.is_dir():
         return []
-    entries = [entry for entry in game_root.iterdir() if entry.is_dir() and (entry / "recording.json").is_file()]
+    entries = [
+        entry
+        for entry in resources.iterdir(game_root)
+        if entry.is_dir() and (entry / "recording.json").is_file()
+    ]
     return sorted(entries, key=lambda entry: entry.name)
 
 
@@ -391,7 +397,7 @@ def _looks_like_image_set_dir(entry: Path) -> bool:
     if (entry / "recording.json").is_file():
         return True
     try:
-        for child in entry.iterdir():
+        for child in resources.iterdir(entry):
             if child.is_dir() and (child / "image.png").is_file():
                 return True
             if child.is_file() and child.suffix.lower() == ".png":
@@ -401,7 +407,7 @@ def _looks_like_image_set_dir(entry: Path) -> bool:
     # Curated-style sets keep images in nested subdirs; accept any dir that
     # holds at least one image anywhere below it (short-circuits on the first).
     try:
-        for sub in entry.rglob("*"):
+        for sub in resources.rglob(entry, "*"):
             if sub.is_file() and sub.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}:
                 return True
     except OSError:
@@ -416,7 +422,11 @@ def _iter_image_set_dirs(game_root: Path) -> list[Path]:
     dirs."""
     if not game_root.is_dir():
         return []
-    entries = [entry for entry in game_root.iterdir() if entry.is_dir() and _looks_like_image_set_dir(entry)]
+    entries = [
+        entry
+        for entry in resources.iterdir(game_root)
+        if entry.is_dir() and _looks_like_image_set_dir(entry)
+    ]
     return sorted(entries, key=lambda entry: entry.name)
 
 
@@ -455,7 +465,7 @@ def _scan_setup_dir(directory: Path, root: Path) -> dict[str, Any]:
         "unknown_files": [],
     }
     if directory.is_dir():
-        for entry in directory.iterdir():
+        for entry in resources.iterdir(directory):
             if not entry.is_file():
                 continue
             suffix = entry.suffix.lower()
@@ -563,7 +573,7 @@ class PlaySession:
             self.recordings_root = None
             return
         resolved = _safe_workspace_child(self.workspace_root, relative_path.strip())
-        resolved.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(resolved)
         self.recordings_root = resolved
 
     def set_recording(self, enabled: bool) -> None:
@@ -591,7 +601,7 @@ class PlaySession:
         container = self._recordings_container()
         name = _next_ranked_saved_dir_name(container)
         directory = container / name
-        directory.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(directory)
         self.level_dir = directory
         self.level_dirs.append(directory)
         self._level_moves = []
@@ -607,13 +617,13 @@ class PlaySession:
         action_data: dict[str, Any],
         ordinal: int | None,
     ) -> dict[str, Any]:
-        directory.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(directory)
         try:
             png = self._frame_png()
         except Exception:
             png = b""
         if png:
-            (directory / "image.png").write_bytes(png)
+            resources.write_bytes(directory / "image.png", png)
         payload = {
             **self.runner._state_payload(),
             "game_id": self.game_id,
@@ -627,9 +637,11 @@ class PlaySession:
             "recorded_at": _utc_now(),
             "scan": _scan_setup_dir(directory, self.workspace_root),
         }
-        (directory / "state.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            directory / "state.json",
+            payload,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
         return payload
 
@@ -648,9 +660,11 @@ class PlaySession:
             "last_event": reason,
             "moves": self._level_moves,
         }
-        (self.level_dir / "recording.json").write_text(
-            json.dumps(manifest, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            self.level_dir / "recording.json",
+            manifest,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
 
     def _relative(self, path: Path) -> str:
@@ -788,8 +802,8 @@ class PlaySession:
                     if branched
                     else self.level_dir
                 )
-                expected = json.loads(
-                    (expected_dir / "state.json").read_text(encoding="utf-8")
+                expected = resources.read_config_json(
+                    expected_dir / "state.json"
                 ).get("image_hash")
                 verified = bool(digest and expected and digest == expected)
             except Exception:
@@ -855,10 +869,11 @@ class PlaySession:
             if replace_id:
                 entries = [entry for entry in entries if str(entry.get("id")) != replace_id]
             entries.append(savepoint)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                json.dumps(entries, indent=2, ensure_ascii=False),
-                encoding="utf-8",
+            resources.write_config_json(
+                path,
+                entries,
+                ensure_ascii=False,
+                trailing_newline=False,
             )
 
     def _autosave(self) -> None:
@@ -1070,7 +1085,7 @@ def game_preview(game_id: str, refresh: bool = False) -> FileResponse:
     full_id = str(game.get("game_id") or game_id)
     cache_path = _thumbnail_path(short_id)
     if refresh and cache_path.is_file():
-        cache_path.unlink(missing_ok=True)
+        resources.delete_file(cache_path)
     if not cache_path.is_file():
         try:
             png_bytes = _render_game_preview_png(full_id)
@@ -1078,8 +1093,8 @@ def game_preview(game_id: str, refresh: bool = False) -> FileResponse:
             raise
         except Exception as error:
             raise HTTPException(status_code=502, detail=f"could not render preview for {full_id}: {error}") from error
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_bytes(png_bytes)
+        resources.make_directory(cache_path.parent)
+        resources.write_bytes(cache_path, png_bytes)
     return FileResponse(cache_path, media_type="image/png")
 
 
@@ -1175,7 +1190,12 @@ def _dedupe_savepoints_in(path: Path) -> int:
         kept.append(group[-1])
         removed += len(group) - 1
     if removed:
-        path.write_text(json.dumps(kept, indent=2, ensure_ascii=False), encoding="utf-8")
+        resources.write_config_json(
+            path,
+            kept,
+            ensure_ascii=False,
+            trailing_newline=False,
+        )
     return removed
 
 
@@ -1211,9 +1231,11 @@ def delete_savepoint(savepoint_id: str, workspaceId: str, gameId: str | None = N
             entries = _load_savepoints(path)
             kept = [entry for entry in entries if str(entry.get("id")) != savepoint_id]
             if len(kept) != len(entries):
-                path.write_text(
-                    json.dumps(kept, indent=2, ensure_ascii=False),
-                    encoding="utf-8",
+                resources.write_config_json(
+                    path,
+                    kept,
+                    ensure_ascii=False,
+                    trailing_newline=False,
                 )
                 return {"deleted": savepoint_id}
     raise HTTPException(status_code=404, detail=f"savepoint not found: {savepoint_id}")
@@ -1235,9 +1257,11 @@ def duplicate_savepoint(savepoint_id: str, workspaceId: str, gameId: str | None 
                     label = str(entry.get("label") or "").strip()
                     copy["label"] = f"{label} (copy)" if label else f"copy of {savepoint_id}"
                     entries.append(copy)
-                    path.write_text(
-                        json.dumps(entries, indent=2, ensure_ascii=False),
-                        encoding="utf-8",
+                    resources.write_config_json(
+                        path,
+                        entries,
+                        ensure_ascii=False,
+                        trailing_newline=False,
                     )
                     return {"savepoint": {key: value for key, value in copy.items() if key != "replay_log"}}
     raise HTTPException(status_code=404, detail=f"savepoint not found: {savepoint_id}")
@@ -1270,7 +1294,7 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
     if not data_root.is_dir():
         return []
     found: list[dict[str, Any]] = []
-    for path in sorted(data_root.rglob("*.json")):
+    for path in sorted(resources.rglob(data_root, "*.json")):
         if path.name in _RECORDING_SKIP_NAMES:
             continue
         head = _sniff_recording_head(path)
@@ -1291,8 +1315,8 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
     # own bundled arclog.py parser), below data/importables/release-runs/.
     release_root = data_root / "release-runs"
     if release_root.is_dir():
-        for game_dir in sorted(p for p in release_root.iterdir() if p.is_dir()):
-            for run_dir in sorted(p for p in game_dir.iterdir() if p.is_dir()):
+        for game_dir in sorted(p for p in resources.iterdir(release_root) if p.is_dir()):
+            for run_dir in sorted(p for p in resources.iterdir(game_dir) if p.is_dir()):
                 log_path = run_dir / "workspace" / "log.txt"
                 arclog_path = run_dir / "workspace" / "arclog.py"
                 if not (log_path.is_file() and arclog_path.is_file()):
@@ -1301,7 +1325,7 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
                 scorecard_path = run_dir / "scorecard.json"
                 if scorecard_path.is_file():
                     try:
-                        score = json.loads(scorecard_path.read_text(encoding="utf-8")).get("total_actions")
+                        score = resources.read_config_json(scorecard_path).get("total_actions")
                     except (OSError, json.JSONDecodeError):
                         score = None
                 found.append(
@@ -1333,20 +1357,22 @@ def _purge_prior_import(root: Path, game_dir: str, rel_path: str) -> int:
             if not manifest_path.is_file():
                 continue
             try:
-                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest = resources.read_config_json(manifest_path)
             except (OSError, json.JSONDecodeError):
                 continue
             if manifest.get("imported_from") == rel_path:
-                shutil.rmtree(level_dir, ignore_errors=True)
+                resources.delete_tree(level_dir)
                 removed += 1
         savepoints_path = game_root / "savepoints.json"
         with _savepoints_lock:
             entries = _load_savepoints(savepoints_path)
             kept = [entry for entry in entries if entry.get("imported_from") != rel_path]
             if len(kept) != len(entries):
-                savepoints_path.write_text(
-                    json.dumps(kept, indent=2, ensure_ascii=False),
-                    encoding="utf-8",
+                resources.write_config_json(
+                    savepoints_path,
+                    kept,
+                    ensure_ascii=False,
+                    trailing_newline=False,
                 )
     return removed
 
@@ -1363,9 +1389,11 @@ def _purge_prior_movelist_import(root: Path, game_dir: str, rel_path: str) -> in
             kept = [entry for entry in entries if entry.get("imported_from") != rel_path]
             removed += len(entries) - len(kept)
             if len(kept) != len(entries):
-                savepoints_path.write_text(
-                    json.dumps(kept, indent=2, ensure_ascii=False),
-                    encoding="utf-8",
+                resources.write_config_json(
+                    savepoints_path,
+                    kept,
+                    ensure_ascii=False,
+                    trailing_newline=False,
                 )
     return removed
 
@@ -1386,7 +1414,7 @@ def _import_recording_as_movelist(root: Path, rel_path: str, label: str | None) 
         raise HTTPException(status_code=404, detail=f"recording not found: {rel_path}")
 
     events: list[dict[str, Any]] = []
-    for line in source.read_text(encoding="utf-8").splitlines():
+    for line in resources.read_text(source, encoding="utf-8").splitlines():
         line = line.strip()
         if not line:
             continue
@@ -1453,10 +1481,11 @@ def _import_recording_as_movelist(root: Path, rel_path: str, label: str | None) 
     with _savepoints_lock:
         entries = _load_savepoints(savepoints_path)
         entries.append(savepoint)
-        savepoints_path.parent.mkdir(parents=True, exist_ok=True)
-        savepoints_path.write_text(
-            json.dumps(entries, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            savepoints_path,
+            entries,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
     return {
         "imported": {
@@ -1483,7 +1512,7 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
         raise HTTPException(status_code=404, detail=f"recording not found: {rel_path}")
 
     events: list[dict[str, Any]] = []
-    for line in source.read_text(encoding="utf-8").splitlines():
+    for line in resources.read_text(source, encoding="utf-8").splitlines():
         line = line.strip()
         if not line:
             continue
@@ -1529,13 +1558,13 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
         ordinal: int | None,
         step_count: int,
     ) -> dict[str, Any]:
-        directory.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(directory)
         try:
             png = frame_to_png_bytes(grid_of(event))
         except Exception:
             png = b""
         if png:
-            (directory / "image.png").write_bytes(png)
+            resources.write_bytes(directory / "image.png", png)
         data = event["data"]
         observation = {key: value for key, value in data.items() if key != "frame"}
         observation["frame_count"] = len(data.get("frame") or [])
@@ -1557,9 +1586,11 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
             "recorded_at": str(event.get("timestamp") or _utc_now()),
             "scan": _scan_setup_dir(directory, root),
         }
-        (directory / "state.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            directory / "state.json",
+            payload,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
         return payload
 
@@ -1579,9 +1610,11 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
             "imported_from": rel_path,
             "moves": level_moves,
         }
-        (current_dir / "recording.json").write_text(
-            json.dumps(manifest, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            current_dir / "recording.json",
+            manifest,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
 
     def begin_level(event: dict[str, Any], reason: str, step_count: int) -> None:
@@ -1590,7 +1623,7 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
         container = _game_write_dir(root, game_dir)
         attempt_index += 1
         directory = container / _import_instance_dir_name(container, import_base_name, attempt_index)
-        directory.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(directory)
         current_dir = directory
         level_dirs.append(directory)
         level_moves = []
@@ -1657,10 +1690,11 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
     with _savepoints_lock:
         entries = _load_savepoints(savepoints_path)
         entries.append(savepoint)
-        savepoints_path.parent.mkdir(parents=True, exist_ok=True)
-        savepoints_path.write_text(
-            json.dumps(entries, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            savepoints_path,
+            entries,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
     return {
         "imported": {
@@ -1686,7 +1720,7 @@ def _parse_transcript_actions(run_dir: Path) -> list[dict[str, Any]]:
     if not transcript_path.is_file():
         return []
     flattened: list[dict[str, Any]] = []
-    for line in transcript_path.read_text(encoding="utf-8").splitlines():
+    for line in resources.read_text(transcript_path, encoding="utf-8").splitlines():
         line = line.strip()
         if not line:
             continue
@@ -1732,14 +1766,14 @@ def _load_trace_playbook_snapshots(run_dir: Path, filename: str = "playbook.md")
     if not traces_root.is_dir():
         return {}
     trace_files: list[Path] = []
-    for workspace_dir in traces_root.iterdir():
+    for workspace_dir in resources.iterdir(traces_root):
         if workspace_dir.is_dir():
-            trace_files.extend(workspace_dir.glob("*.jsonl"))
+            trace_files.extend(resources.glob(workspace_dir, (".",), "*.jsonl"))
 
     def min_started_at(path: Path) -> float:
         best = float("inf")
         try:
-            for line in path.read_text(encoding="utf-8").splitlines():
+            for line in resources.read_text(path, encoding="utf-8").splitlines():
                 if not line.strip():
                     continue
                 try:
@@ -1759,7 +1793,7 @@ def _load_trace_playbook_snapshots(run_dir: Path, filename: str = "playbook.md")
     for invocation_number, trace_path in enumerate(trace_files, start=1):
         changed = False
         try:
-            lines = trace_path.read_text(encoding="utf-8").splitlines()
+            lines = resources.read_text(trace_path, encoding="utf-8").splitlines()
         except OSError:
             lines = []
         for line in lines:
@@ -1823,7 +1857,7 @@ def _import_release_run_as_movelist(root: Path, rel_dir: str, label: str | None)
     scorecard_path = run_dir / "scorecard.json"
     if scorecard_path.is_file():
         try:
-            scorecard = json.loads(scorecard_path.read_text(encoding="utf-8"))
+            scorecard = resources.read_config_json(scorecard_path)
         except (OSError, json.JSONDecodeError):
             scorecard = {}
     envs = scorecard.get("environments") if isinstance(scorecard, dict) else None
@@ -1875,10 +1909,11 @@ def _import_release_run_as_movelist(root: Path, rel_dir: str, label: str | None)
     with _savepoints_lock:
         entries = _load_savepoints(savepoints_path)
         entries.append(savepoint)
-        savepoints_path.parent.mkdir(parents=True, exist_ok=True)
-        savepoints_path.write_text(
-            json.dumps(entries, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            savepoints_path,
+            entries,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
     return {
         "imported": {
@@ -1929,7 +1964,7 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
     scorecard_path = run_dir / "scorecard.json"
     if scorecard_path.is_file():
         try:
-            scorecard = json.loads(scorecard_path.read_text(encoding="utf-8"))
+            scorecard = resources.read_config_json(scorecard_path)
         except (OSError, json.JSONDecodeError):
             scorecard = {}
     envs = scorecard.get("environments") if isinstance(scorecard, dict) else None
@@ -1953,13 +1988,13 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
     attempt_index = 0
 
     def write_node(directory: Path, step: Any, incoming_action: str | None, action_data: dict[str, Any], ordinal: int | None) -> dict[str, Any]:
-        directory.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(directory)
         try:
             png = frame_to_png_bytes(step.settled)
         except Exception:
             png = b""
         if png:
-            (directory / "image.png").write_bytes(png)
+            resources.write_bytes(directory / "image.png", png)
         payload = {
             "state": step.state,
             "level": current_level,
@@ -1983,7 +2018,12 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
             "recorded_at": _utc_now(),
             "scan": _scan_setup_dir(directory, root),
         }
-        (directory / "state.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        resources.write_config_json(
+            directory / "state.json",
+            payload,
+            ensure_ascii=False,
+            trailing_newline=False,
+        )
         return payload
 
     def write_recording(reason: str) -> None:
@@ -2002,7 +2042,12 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
             "imported_from": rel_dir,
             "moves": level_moves,
         }
-        (current_dir / "recording.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+        resources.write_config_json(
+            current_dir / "recording.json",
+            manifest,
+            ensure_ascii=False,
+            trailing_newline=False,
+        )
 
     def begin_level(step: Any, reason: str) -> None:
         nonlocal current_dir, level_moves, current_level, attempt_index
@@ -2011,7 +2056,7 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
         container = _game_write_dir(root, game_dir)
         attempt_index += 1
         directory = container / _import_instance_dir_name(container, import_base_name, attempt_index)
-        directory.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(directory)
         current_dir = directory
         level_dirs.append(directory)
         level_moves = []
@@ -2020,13 +2065,14 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
             prime_path = run_dir / "prime.json"
             if prime_path.is_file():
                 try:
-                    prime = json.loads(prime_path.read_text(encoding="utf-8"))
+                    prime = resources.read_config_json(prime_path)
                 except (OSError, json.JSONDecodeError):
                     prime = {}
                 description = prime.get("description") if isinstance(prime, dict) else None
                 if isinstance(description, str) and description.strip():
                     vision_model = prime.get("vision_model") or "vision model"
-                    (directory / "vision_prime.md").write_text(
+                    resources.write_text(
+                        directory / "vision_prime.md",
                         f"# Opening-frame read ({vision_model})\n\n{description}\n",
                         encoding="utf-8",
                     )
@@ -2064,14 +2110,22 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
                 commentary_lines += ["", "## Reasoning for this action", "", str(entry["reasoning"])]
             if entry.get("expect"):
                 commentary_lines += ["", "## Predicted cells (x, y, old, new)", "", json.dumps(entry["expect"])]
-            (directory / "commentary.md").write_text("\n".join(commentary_lines).strip() + "\n", encoding="utf-8")
+            resources.write_text(
+                directory / "commentary.md",
+                "\n".join(commentary_lines).strip() + "\n",
+                encoding="utf-8",
+            )
             invocation_number = entry.get("invocation")
             is_last_of_invocation = (
                 flat_index + 1 >= len(flattened_actions)
                 or flattened_actions[flat_index + 1].get("invocation") != invocation_number
             )
             if is_last_of_invocation and invocation_number in playbook_snapshots:
-                (directory / "playbook.md").write_text(playbook_snapshots[invocation_number], encoding="utf-8")
+                resources.write_text(
+                    directory / "playbook.md",
+                    playbook_snapshots[invocation_number],
+                    encoding="utf-8",
+                )
         move = {
             "index": ordinal,
             "action": action,
@@ -2113,10 +2167,11 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
     with _savepoints_lock:
         entries = _load_savepoints(savepoints_path)
         entries.append(savepoint)
-        savepoints_path.parent.mkdir(parents=True, exist_ok=True)
-        savepoints_path.write_text(
-            json.dumps(entries, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        resources.write_config_json(
+            savepoints_path,
+            entries,
+            ensure_ascii=False,
+            trailing_newline=False,
         )
     return {
         "imported": {
@@ -2163,10 +2218,10 @@ def _recording_dir_stats(entry: Path) -> dict[str, Any]:
     move_dir_count = 0
     move_file_count = 0
     try:
-        for child in entry.iterdir():
+        for child in resources.iterdir(entry):
             if child.is_dir():
                 files_here = 0
-                for sub in child.rglob("*"):
+                for sub in resources.rglob(child, "*"):
                     if sub.is_file():
                         files_here += 1
                         try:
@@ -2208,7 +2263,7 @@ def _image_set_dir_stats(entry: Path) -> dict[str, Any]:
     image_count = 0
     subdir_count = 0
     try:
-        for sub in entry.rglob("*"):
+        for sub in resources.rglob(entry, "*"):
             if sub.is_dir():
                 if sub.parent == entry:
                     subdir_count += 1
@@ -2251,7 +2306,7 @@ def list_recording_dirs(workspaceId: str, gameId: str | None = None) -> dict[str
             manifest: dict[str, Any] = {}
             if has_manifest:
                 try:
-                    loaded = json.loads((entry / "recording.json").read_text(encoding="utf-8"))
+                    loaded = resources.read_config_json(entry / "recording.json")
                     if isinstance(loaded, dict):
                         manifest = loaded
                 except (OSError, json.JSONDecodeError):
@@ -2306,7 +2361,10 @@ def list_recording_dirs(workspaceId: str, gameId: str | None = None) -> dict[str
                     base_dir = base_dir / part
                 if not base_dir.is_dir():
                     continue
-                for entry in sorted((child for child in base_dir.iterdir() if child.is_dir()), key=lambda p: p.name.lower()):
+                for entry in sorted(
+                    (child for child in resources.iterdir(base_dir) if child.is_dir()),
+                    key=lambda p: p.name.lower(),
+                ):
                     if entry.name.lower() in excludes or entry.name.lower() in seen_names:
                         continue
                     stats = _image_set_dir_stats(entry)
@@ -2375,8 +2433,12 @@ def ensure_recording_dir_movelist(body: dict[str, Any] = Body(default_factory=di
             if existing is None:
                 raise HTTPException(status_code=422, detail="recording.json has no replayable moves")
             entries.append(existing)
-            savepoints_path.parent.mkdir(parents=True, exist_ok=True)
-            savepoints_path.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
+            resources.write_config_json(
+                savepoints_path,
+                entries,
+                ensure_ascii=False,
+                trailing_newline=False,
+            )
             created = True
     return {"savepoint": existing, "created": created}
 
@@ -2398,13 +2460,18 @@ def duplicate_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -
         new_name = f"{base}{suffix}"
         suffix += 1
     new_path = target.parent / new_name
-    shutil.copytree(target, new_path)
+    resources.copy_tree(target, new_path)
     manifest_path = new_path / "recording.json"
     try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest = resources.read_config_json(manifest_path)
         if isinstance(manifest, dict):
             manifest["level_directory"] = _data_rel_of(root, new_path)
-            manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+            resources.write_config_json(
+                manifest_path,
+                manifest,
+                ensure_ascii=False,
+                trailing_newline=False,
+            )
     except (OSError, json.JSONDecodeError):
         pass
     return {"path": _data_rel_of(root, new_path), "name": new_name}
@@ -2421,7 +2488,7 @@ def delete_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -> d
     root = _workspace_root(workspace_id)
     target = _recording_dir_of(root, rel_path)
     rel = _data_rel_of(root, target)
-    shutil.rmtree(target, ignore_errors=True)
+    resources.delete_tree(target)
     return {"removed": rel}
 
 
@@ -2432,7 +2499,7 @@ def _dedupe_recordings_in(root: Path, game_root: Path) -> list[str]:
         if not manifest_path.is_file():
             continue
         try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest = resources.read_config_json(manifest_path)
         except (OSError, json.JSONDecodeError):
             continue
         imported_from = manifest.get("imported_from")
@@ -2456,7 +2523,7 @@ def _dedupe_recordings_in(root: Path, game_root: Path) -> list[str]:
         clusters.sort(key=lambda cluster: cluster[-1][0])
         for cluster in clusters[:-1]:  # keep only the most recent run
             for _, path in cluster:
-                shutil.rmtree(path, ignore_errors=True)
+                resources.delete_tree(path)
                 removed.append(_data_rel_of(root, path))
     return removed
 
@@ -2474,7 +2541,7 @@ def dedupe_recordings(workspaceId: str, gameId: str | None = None) -> dict[str, 
 
 def _dir_size(path: Path) -> int:
     total = 0
-    for entry in path.rglob("*"):
+    for entry in resources.rglob(path, "*"):
         if entry.is_file():
             try:
                 total += entry.stat().st_size
@@ -2491,7 +2558,7 @@ def _ranked_recordings_by_size_in(root: Path, game_root: Path) -> list[tuple[int
     for entry in _iter_recording_dirs(game_root):
         manifest_path = entry / "recording.json"
         try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest = resources.read_config_json(manifest_path)
         except (OSError, json.JSONDecodeError):
             continue
         if not manifest.get("imported_from"):
@@ -2511,18 +2578,23 @@ def _rewrite_recording_references(root: Path, game_root: Path, rename_map: dict[
         if not manifest_path.is_file():
             continue
         try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest = resources.read_config_json(manifest_path)
         except (OSError, json.JSONDecodeError):
             continue
         if isinstance(manifest, dict) and manifest.get("level_directory") in rename_map:
             manifest["level_directory"] = rename_map[manifest["level_directory"]]
-            manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+            resources.write_config_json(
+                manifest_path,
+                manifest,
+                ensure_ascii=False,
+                trailing_newline=False,
+            )
 
     savepoints_path = game_root / "savepoints.json"
     if not savepoints_path.is_file():
         return
     try:
-        entries = json.loads(savepoints_path.read_text(encoding="utf-8"))
+        entries = resources.read_config_json(savepoints_path)
     except (OSError, json.JSONDecodeError):
         return
     if not isinstance(entries, list):
@@ -2547,7 +2619,12 @@ def _rewrite_recording_references(root: Path, game_root: Path, rename_map: dict[
                     changed = True
                     break
     if changed:
-        savepoints_path.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
+        resources.write_config_json(
+            savepoints_path,
+            entries,
+            ensure_ascii=False,
+            trailing_newline=False,
+        )
 
 
 def _sort_recordings_by_size_in(root: Path, game_root: Path) -> list[tuple[str, str]]:
@@ -2576,11 +2653,11 @@ def _sort_recordings_by_size_in(root: Path, game_root: Path) -> list[tuple[str, 
     staged: list[tuple[Path, Path]] = []
     for rank, (_old_rel, _new_rel, entry, new_path) in enumerate(pairs, start=1):
         temp_path = entry.parent / f"{entry.name}.rename_staging_{rank}"
-        entry.rename(temp_path)
+        resources.move(entry, temp_path)
         staged.append((temp_path, new_path))
     for temp_path, new_path in staged:
-        new_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path.rename(new_path)
+        resources.make_directory(new_path.parent)
+        resources.move(temp_path, new_path)
 
     rename_map = {old_rel: new_rel for old_rel, new_rel, _entry, _new_path in pairs}
     if rename_map:
@@ -2617,7 +2694,7 @@ def retain_largest_recordings(workspaceId: str, keep: int, gameId: str | None = 
         ranked = _ranked_recordings_by_size_in(root, game_root)
         for _size, entry in ranked[keep:]:
             removed.append(_data_rel_of(root, entry))
-            shutil.rmtree(entry, ignore_errors=True)
+            resources.delete_tree(entry)
     return {"removed": removed, "count": len(removed)}
 
 
@@ -2638,7 +2715,7 @@ def clear_recordings(workspaceId: str, gameId: str | None = None) -> dict[str, A
             continue
         for entry in _iter_recording_dirs(game_root):
             removed.append(_data_rel_of(root, entry))
-            shutil.rmtree(entry, ignore_errors=True)
+            resources.delete_tree(entry)
     with _sessions_lock:
         sessions = list(_sessions.values())
     detached: list[str] = []
@@ -2667,7 +2744,12 @@ def clear_savepoints(workspaceId: str, gameId: str | None = None) -> dict[str, A
         with _savepoints_lock:
             entries = _load_savepoints(savepoints_path)
             removed += len(entries)
-            savepoints_path.write_text("[]", encoding="utf-8")
+            resources.write_config_json(
+                savepoints_path,
+                [],
+                indent=None,
+                trailing_newline=False,
+            )
     return {"count": removed}
 
 
@@ -2678,7 +2760,7 @@ def _savepoint_from_recording(root: Path, game_dir: str, entry: Path) -> dict[st
     so there is nothing to reset between)."""
     manifest_path = entry / "recording.json"
     try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest = resources.read_config_json(manifest_path)
     except (OSError, json.JSONDecodeError):
         return None
     moves = manifest.get("moves")
@@ -2733,8 +2815,12 @@ def _import_movelists_from_recordings_in(root: Path, game_root: Path) -> int:
             entries.append(savepoint)
             created += 1
         if created:
-            savepoints_path.parent.mkdir(parents=True, exist_ok=True)
-            savepoints_path.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
+            resources.write_config_json(
+                savepoints_path,
+                entries,
+                ensure_ascii=False,
+                trailing_newline=False,
+            )
     return created
 
 
@@ -2803,7 +2889,12 @@ def materialize_movelists(workspaceId: str, gameId: str | None = None, maxMoves:
                     if item.get("id") == entry.get("id"):
                         item["level_directory"] = new_level_dir
                         item["move_index"] = len(replay_log) - 1
-                savepoints_path.write_text(json.dumps(current, indent=2, ensure_ascii=False), encoding="utf-8")
+                resources.write_config_json(
+                    savepoints_path,
+                    current,
+                    ensure_ascii=False,
+                    trailing_newline=False,
+                )
             materialized.append({"savepointId": str(entry.get("id")), "levelDirectory": new_level_dir})
     return {"materialized": materialized, "count": len(materialized), "remaining": remaining}
 
@@ -2904,7 +2995,7 @@ def silo_files(workspaceId: str, dir: str) -> dict[str, Any]:
             "bytes": entry.stat().st_size,
             "path": _data_rel_of(root, entry),
         }
-        for entry in sorted(directory.iterdir())
+        for entry in sorted(resources.iterdir(directory))
         if entry.is_file()
     ]
     return {"dir": dir, "files": files}
@@ -2932,9 +3023,12 @@ def silo_write(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         directory = _safe_workspace_child(root, directory_rel)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    directory.mkdir(parents=True, exist_ok=True)
+    resources.make_directory(directory)
     target = directory / name
-    target.write_text(content, encoding="utf-8")
+    if target.suffix.lower() == ".json":
+        resources.write_bytes(target, content.encode("utf-8"))
+    else:
+        resources.write_text(target, content, encoding="utf-8")
     return {"path": _data_rel_of(root, target), "bytes": len(content.encode("utf-8"))}
 
 

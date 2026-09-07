@@ -281,11 +281,11 @@ def test_operation_materialization_resolves_requested_prompt_variant() -> None:
         }
     ]
     assert "Convert" in executable["parameters"]["promptPrefix"]
-    assert executable["modelSelection"] == {"models": ["openrouter/free"], "strategy": "single"}
-    assert executable["parameters"]["model"] == "openrouter/free"
-    assert executable["parameters"]["backendId"] == "openrouter"
-    assert executable["parameters"]["apiKeyEnv"] == "OPENROUTER_API_KEY"
-    assert executable["parameters"]["baseUrl"] == "https://openrouter.ai/api/v1"
+    assert executable["modelSelection"] == {"models": ["asicloud-asi1-mini"], "strategy": "single"}
+    assert executable["parameters"]["model"] == "asi1-mini"
+    assert executable["parameters"]["backendId"] == "https.inference.asicloud.cudos.org.v1"
+    assert executable["parameters"]["apiKeyEnv"] == "ASI_API_KEY"
+    assert executable["parameters"]["baseUrl"] == "https://inference.asicloud.cudos.org/v1"
 
 
 def test_populate_workflow_from_english_resolves_its_bound_prompt_variant() -> None:
@@ -385,7 +385,7 @@ def test_direct_llm_operation_materializes_bound_prompt_profile() -> None:
     assert "coordinates of the source image" in executable["parameters"]["promptPrefix"].lower()
 
 
-def test_abstract_only_operation_uses_contract_derived_openrouter_fallback() -> None:
+def test_abstract_only_operation_uses_contract_derived_asicloud_fallback() -> None:
     resolved = resolve_operation_implementation(
         DEFAULT_WORKSPACES_ROOT / "shared_library_system", "text_to_scene_graph"
     )
@@ -394,7 +394,7 @@ def test_abstract_only_operation_uses_contract_derived_openrouter_fallback() -> 
     assert implementation["id"] == "text_to_scene_graph.automatic_llm_fallback"
     assert implementation["virtual"] is True
     assert implementation["modelSelection"] == {
-        "models": ["openrouter/free"],
+        "models": ["asicloud-asi1-mini"],
         "strategy": "single",
     }
 
@@ -409,8 +409,8 @@ def test_abstract_only_operation_uses_contract_derived_openrouter_fallback() -> 
 
     assert executable["implementation"] == "llm.complete"
     assert executable["inputs"] == {"image": "A blue ball above a red box."}
-    assert executable["parameters"]["backendId"] == "openrouter"
-    assert executable["parameters"]["model"] == "openrouter/free"
+    assert executable["parameters"]["backendId"] == "https.inference.asicloud.cudos.org.v1"
+    assert executable["parameters"]["model"] == "asi1-mini"
     prompt = executable["parameters"]["promptPrefix"]
     assert "automatic LLM fallback" in prompt
     assert "Do the best you can" in prompt
@@ -423,7 +423,7 @@ def test_abstract_only_operation_uses_contract_derived_openrouter_fallback() -> 
     assert "(representation scene_graph)" in prompt
 
 
-def test_operation_playground_routes_selected_model_through_openrouter(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_operation_playground_routes_selected_model_through_asicloud(monkeypatch: pytest.MonkeyPatch) -> None:
     sent: dict[str, object] = {}
 
     class Response:
@@ -438,7 +438,7 @@ def test_operation_playground_routes_selected_model_through_openrouter(monkeypat
         sent["body"] = json.loads(getattr(request, "data").decode())
         return Response()
 
-    monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter-test-key")
+    monkeypatch.setenv("ASI_API_KEY", "openrouter-test-key")
     monkeypatch.setattr("workflow_providers.urllib.request.urlopen", urlopen)
 
     result = invoke_operation("shared_library_system", "echo_into_titlecased", {
@@ -446,13 +446,13 @@ def test_operation_playground_routes_selected_model_through_openrouter(monkeypat
         "inputs": {"text": "hello world"},
     })
 
-    assert sent["url"] == "https://openrouter.ai/api/v1/chat/completions"
+    assert sent["url"] == "https://inference.asicloud.cudos.org/v1/chat/completions"
     assert sent["authorization"] == "Bearer openrouter-test-key"
-    assert sent["body"]["model"] == "openrouter/free"  # type: ignore[index]
+    assert sent["body"]["model"] == "asi1-mini"  # type: ignore[index]
     assert result["outputs"]["text"] == "Hello World"
     trace_text = read_operation_debug_log("shared_library_system", result["debugLogPath"])["content"]
     trace = json.loads(trace_text)
-    assert "openrouter-test-key" not in trace_text
+    assert "asicloud-test-key" not in trace_text
     assert trace["providerExecution"]["request"]["headers"]["Authorization"] == "[REDACTED]"
     assert trace["providerExecution"]["request"]["body"] == sent["body"]
     assert trace["providerExecution"]["response"]["bodyJson"]["choices"][0]["message"]["content"] == "Hello World"
@@ -471,7 +471,7 @@ def test_automatic_fallback_marks_live_inputs_authoritative(monkeypatch: pytest.
         sent["body"] = json.loads(getattr(request, "data").decode())
         return Response()
 
-    monkeypatch.setenv("OPENROUTER_API_KEY", "openrouter-test-key")
+    monkeypatch.setenv("ASI_API_KEY", "asicloud-test-key")
     monkeypatch.setattr("workflow_providers.urllib.request.urlopen", urlopen)
     result = invoke_operation("shared_library_system", "echo_into_titlecased", {
         "implementationVariant": "echo_into_titlecased.automatic_llm_fallback",
@@ -572,7 +572,7 @@ def test_automatic_llm_fallback_can_override_an_available_implementation() -> No
     )
     assert with_children["fallback"] is True
     assert with_children["implementation"]["modelSelection"] == {
-        "models": ["openrouter/free"],
+        "models": ["asicloud-asi1-mini"],
         "strategy": "single",
     }
 

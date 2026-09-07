@@ -34,7 +34,9 @@ import time
 from pathlib import Path
 from typing import Any, Sequence
 
-ROOT = Path(__file__).resolve().parents[1]
+from _runtime import configure_runtime_home
+
+ROOT = configure_runtime_home(__file__)
 DEFAULT_MODEL_CACHE = Path.home() / ".cache" / "ws_collab_models" / "vosk-model-small-en-us-0.15"
 DEFAULT_MODEL_URL = "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip"
 # The chat UI's default-displayed channel (see docs/AGENT_MAILBOX.md /

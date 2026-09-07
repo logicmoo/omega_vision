@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -203,9 +204,10 @@ def test_chat_page_queries_every_declared_mailbox_server() -> None:
     assert "serverProtocol: endpoint.protocol" in source
     assert "mailboxApiBase(option)" in source
     for manifest_name in ("ws_collab", "mailbox_chat", "emullm"):
-        manifest = json.loads(
-            (ROOT / "plugins" / manifest_name / "plugin.json").read_text(encoding="utf-8"),
-        )
+        manifest_path = ROOT / "plugins" / manifest_name / "plugin.json"
+        if not manifest_path.is_file():
+            continue
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         endpoint = manifest["mailboxEndpoint"]
         assert endpoint["path"].startswith("/"), manifest_name
         assert endpoint["protocol"] in ("ws_collab", "registry"), manifest_name
@@ -255,6 +257,8 @@ def test_every_plugin_publishes_an_admin_link_the_scanner_reads_from_disk() -> N
         "ws_collab": "WS_COLLAB Admin",
     }
     for plugin in payload["plugins"]:
+        if not plugin.get("checkedOut"):
+            continue
         assert plugin["adminPath"].startswith("/")
         assert plugin["adminApiPath"] == f"/workbench{plugin['adminPath']}"
         assert len(plugin["uiPages"]) == 1
@@ -278,6 +282,8 @@ def test_plugin_directory_never_overwrites_the_declared_admin_path() -> None:
 
 
 def test_ws_collab_resolves_its_own_pages_to_the_page_it_serves() -> None:
+    if not (ROOT / "plugins" / "ws_collab" / "plugin.json").is_file():
+        pytest.skip("ws_collab plugin checkout is not installed")
     app_module = importlib.import_module("app")
     with TestClient(app_module.app) as client:
         plugins = {item["id"]: item for item in client.get("/workbench/plugins").json()["plugins"]}
@@ -291,6 +297,8 @@ def test_ws_collab_resolves_its_own_pages_to_the_page_it_serves() -> None:
 def test_plugin_init_mounts_the_requested_path_through_web_proxy() -> None:
     """ws_collab asks web_proxy to serve /ws_collab; the loader runs that command."""
 
+    if not (ROOT / "plugins" / "ws_collab" / "plugin.json").is_file():
+        pytest.skip("ws_collab plugin checkout is not installed")
     app_module = importlib.import_module("app")
     with TestClient(app_module.app) as client:
         plugins = {item["id"]: item for item in client.get("/workbench/plugins").json()["plugins"]}

@@ -123,7 +123,7 @@ def test_play_api_supports_undo_and_restart() -> None:
     # moves except the last, rewinding into the previous move dir.
     assert '"/sessions/{session_id}/undo"' in source
     assert "replay_verified" in source
-    assert "shutil.rmtree" in source
+    assert "resources.delete_tree" in source
     # Full game restart back to level 1.
     assert '"/sessions/{session_id}/restart"' in source
     assert "restart_game" in source
@@ -401,4 +401,3 @@ def test_materialize_movelists_is_bounded_per_call() -> None:
     assert '"remaining": remaining' in source
     assert "/recordings/clear" in source
     assert "/savepoints/clear" in source
-

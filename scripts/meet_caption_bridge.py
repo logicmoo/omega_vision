@@ -78,7 +78,9 @@ from typing import Any
 import requests
 from websocket import create_connection  # websocket-client
 
-ROOT = Path(__file__).resolve().parents[1]
+from _runtime import configure_runtime_home
+
+ROOT = configure_runtime_home(__file__)
 DEFAULT_CDP = "http://127.0.0.1:9222"
 DEFAULT_RECIPIENTS = ["symbolic-workbench-user"]
 DEFAULT_SENDER_PREFIX = "meet-"

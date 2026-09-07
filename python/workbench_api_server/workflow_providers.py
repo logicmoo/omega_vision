@@ -437,25 +437,8 @@ def _llm_complete(inputs: dict[str, Any], parameters: dict[str, Any]) -> dict[st
                 response_body = response.read().decode("utf-8", errors="replace")
                 response_headers = dict(getattr(response, "headers", {}) or {})
                 response_status = int(getattr(response, "status", 200))
-        except HTTPError as error:
-            response_body = error.read().decode("utf-8", errors="replace")
-            response_headers = dict(getattr(error, "headers", {}) or {})
-            debug["response"] = {
-                "status": int(error.code),
-                "headers": response_headers,
-                "bodyText": response_body,
-            }
-            try:
-                error_payload = json.loads(response_body)
-                debug["response"]["bodyJson"] = error_payload
-                detail = error_payload.get("detail") if isinstance(error_payload, dict) else error_payload
-            except json.JSONDecodeError:
-                detail = response_body
-            if isinstance(detail, (dict, list)):
-                detail = json.dumps(detail, ensure_ascii=False)
-            raise RuntimeError(
-                f"LLM provider HTTP {error.code}: {detail or error.reason}"
-            ) from error
+        except HTTPError:
+            raise
         debug["response"] = {
             "status": response_status,
             "headers": response_headers,

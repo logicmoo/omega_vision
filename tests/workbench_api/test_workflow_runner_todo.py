@@ -164,7 +164,7 @@ def test_runtime_records_link_back_to_executable_resources() -> None:
     assert 'kind==="operation"?"operations":kind==="model"?"llms":kind==="goal"?"goals"' in shell
     assert 'kind==="context"?"contexts":"data"' in shell
     assert 'new URLSearchParams(window.location.search).get("resource")' in operations
-    assert 'new URLSearchParams(window.location.search).get("resource")' in models
+    assert 'parameters.get("edit")||parameters.get("resource")' in models
 
 
 def test_human_input_submission_has_a_durable_link_event() -> None:

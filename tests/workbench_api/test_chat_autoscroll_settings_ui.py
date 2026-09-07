@@ -54,8 +54,8 @@ def test_chat_controls_follow_requested_visible_line_order() -> None:
 def test_mailbox_config_is_a_tab_beside_file_not_a_bottom_panel() -> None:
     source = SOURCE.read_text(encoding="utf-8")
 
-    assert 'useState<"chat" | "file" | "config">("chat")' in source
-    assert source.count('setPaneTab("config")}>Config</button>') == 2
+    assert "useState<string>(() =>" in source
+    assert source.count('setPaneTab("config")}>Source Properties</button>') == 2
     assert 'paneTab === "config"' in source
-    assert 'role="tabpanel" aria-label="Mailbox configuration"' in source
+    assert 'role="tabpanel" aria-label="Source properties and mailbox configuration"' in source
     assert source.index('paneTab === "config"') < source.index('className="chat-composer"')

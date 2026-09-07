@@ -29,6 +29,7 @@ INSTANCE_ID = uuid4().hex
 SERVER_DIR = Path(__file__).resolve().parent
 API_RESTART_MARKER = SERVER_DIR.parent / "runtime" / "api_restart.request"
 RESTART_PENDING_PATH = SERVER_DIR.parent / "runtime" / "restart_pending.json"
+resources = get_filesystem_provider()
 _api_restart_request_lock = Lock()
 _API_RESTART_DEBOUNCE_SECONDS = 10.0
 _workbench_presence: dict[str, dict[str, object]] = {}
@@ -38,7 +39,7 @@ _PRESENCE_TTL_SECONDS = 60.0
 
 def _load_restart_pending() -> dict[str, object] | None:
     try:
-        value = json.loads(RESTART_PENDING_PATH.read_text(encoding="utf-8-sig"))
+        value = resources.read_config_json(RESTART_PENDING_PATH)
     except (OSError, json.JSONDecodeError):
         return None
     return value if isinstance(value, dict) else None
@@ -50,12 +51,11 @@ def restart_pending_active() -> bool:
 
 def _persist_restart_pending(value: dict[str, object] | None) -> None:
     if value is None:
-        RESTART_PENDING_PATH.unlink(missing_ok=True)
+        resources.delete_file(RESTART_PENDING_PATH)
         return
-    RESTART_PENDING_PATH.parent.mkdir(parents=True, exist_ok=True)
     temporary = RESTART_PENDING_PATH.with_suffix(".tmp")
-    temporary.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, RESTART_PENDING_PATH)
+    resources.write_config_json(temporary, value)
+    resources.replace_file(temporary, RESTART_PENDING_PATH)
 
 
 _restart_pending: dict[str, object] | None = _load_restart_pending()
@@ -258,7 +258,7 @@ def trigger_api_restart(api_marker: Path = API_RESTART_MARKER) -> None:
 
 def _claim_api_restart(api_marker: Path = API_RESTART_MARKER) -> bool:
     with _api_restart_request_lock:
-        api_marker.parent.mkdir(parents=True, exist_ok=True)
+        resources.make_directory(api_marker.parent)
         if api_marker.is_file():
             age = time.time() - api_marker.stat().st_mtime
             if 0 <= age < _API_RESTART_DEBOUNCE_SECONDS:

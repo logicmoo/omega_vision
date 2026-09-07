@@ -30,12 +30,14 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+from _runtime import configure_runtime_home
+
 try:
     from mailbox_channels import agent_mailbox as _mailbox
 except Exception:  # pragma: no cover - only when the client package is absent
     _mailbox = None
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = configure_runtime_home(__file__)
 DEFAULT_AGENT = "github-copilot-facilitator-agent"
 DEFAULT_PRESENCE = "github-copilot-facilitator-agent-app"
 DEFAULT_PEER = "symbolic-workbench-user"

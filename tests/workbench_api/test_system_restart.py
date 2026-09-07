@@ -103,10 +103,12 @@ def test_restart_pending_registry_is_shared_with_presence(
     }))
     assert pending["restartPending"]["reason"] == "workers active"
     assert json.loads(path.read_text(encoding="utf-8"))["reason"] == "workers active"
+    path.with_suffix(".metta").write_text("((id unrelated-resource))\n", encoding="utf-8")
     assert asyncio.run(system_control_api.list_workbench_presence())["restartPending"]["changes"] == ["scheduler update"]
     cleared = asyncio.run(system_control_api.report_restart_pending({"active": False}))
     assert cleared["restartPending"] is None
     assert not path.exists()
+    assert path.with_suffix(".metta").is_file()
 
 
 def test_resource_provider_status_exposes_migration_metrics() -> None:

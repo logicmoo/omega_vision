@@ -75,6 +75,7 @@ def test_explicit_runtime_home_has_priority(
     assert os.environ["ARC3_RUNTIME_HOME"] == str(configured)
     assert Path(os.environ["ARC3_LLM_CONFIG"]) == working / "config" / "llm_providers.json"
     assert Path(os.environ["ARC3_TREE_ROOT"]) == working / "action_trees"
+    assert str(configured / "python" / "workbench_api_server") in sys.path
 
 
 def test_working_directory_is_checked_before_script_location(

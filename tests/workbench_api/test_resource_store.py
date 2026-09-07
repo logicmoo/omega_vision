@@ -154,6 +154,37 @@ def test_provider_handles_text_binary_discovery_and_atomic_replacement(tmp_path:
     assert provider.stat(markdown).st_size >= len("# Guide\n")
 
 
+def test_provider_replaces_plain_config_and_moves_directory_without_resource_translation(
+    tmp_path: Path,
+) -> None:
+    provider = FilesystemProvider()
+    temporary = tmp_path / "settings.json.tmp"
+    target = tmp_path / "settings.json"
+    provider.write_config_json(
+        temporary,
+        {"label": "café"},
+        ensure_ascii=False,
+        trailing_newline=False,
+    )
+
+    provider.replace_file(temporary, target)
+
+    assert target.read_text(encoding="utf-8") == '{\n  "label": "café"\n}'
+    assert not target.with_suffix(".metta").exists()
+
+    target.with_suffix(".metta").write_text("((id resource-sibling))\n", encoding="utf-8")
+    provider.delete_file(target)
+    assert not target.exists()
+    assert target.with_suffix(".metta").is_file()
+
+    source = tmp_path / "old"
+    destination = tmp_path / "new"
+    provider.make_directory(source)
+    provider.move(source, destination)
+    assert destination.is_dir()
+    assert not source.exists()
+
+
 def test_running_server_resource_io_stays_behind_filesystem_provider() -> None:
     """Prevent application resource code from quietly bypassing the provider boundary."""
     forbidden = re.compile(

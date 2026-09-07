@@ -60,7 +60,11 @@ def test_resource_atomspace_contains_all_canonical_relationships(
     )
     monkeypatch.setattr(workspace_api, "layer_source", lambda _layer, _root: "workspace")
 
-    payload = workspace_api.workspace_resource_atomspace("test")
+    payload = workspace_api._build_resource_atomspace_payload(
+        {"id": "test", "root": str(tmp_path)},
+        tmp_path,
+        resources,
+    )
     relationships = {link["relationship"] for link in payload["links"]}
     assert {atom["id"] for atom in payload["atoms"]} == {"parent", "child"}
     assert {

@@ -111,7 +111,8 @@ def test_goal_plan_and_context_pages_load_their_shared_right_panel_docs() -> Non
     assert "MarkdownDocument" in help_source
     assert "remarkGfm" in markdown_source
     assert '<pre className="mini-code relationship-markdown">' not in help_source
-    assert 'view==="goals"?"goals":view==="plans"?"plans"' in page_compact
+    assert 'view==="goals"?"goals"' in page_compact
+    assert 'view==="plans"?"plans"' in page_compact
     assert 'view==="goals"||view==="plans"' in page_compact
     assert (ROOT / "workspaces" / "shared_library_system" / "docs" / "goals.md").is_file()
     assert (ROOT / "workspaces" / "shared_library_system" / "docs" / "plans.md").is_file()
@@ -125,7 +126,7 @@ def test_pddl_vocabulary_maps_plans_to_workflows() -> None:
     assert "| Plan | Workflow |" in docs
     assert "| Ground action | Workflow step |" in docs
     assert 'label:"Planning"' in compact
-    assert 'group:"WORKFLOWS",items:[{label:"WorkflowCanvas",view:"canvas",glyph:"⌘"},{label:"CurrentWorkflow",view:"currentWorkflow",glyph:"⌘"},{label:"PageBuilder",view:"workflowPageBuilder",glyph:"▦"}' in compact
+    assert 'group:"WORKFLOWS",items:[{label:"WorkflowCanvas",view:"canvas",glyph:"⛓"},{label:"CurrentWorkflow",view:"currentWorkflow",glyph:"⇢"},{label:"PageBuilder",view:"workflowPageBuilder",glyph:"▦"}' in compact
     assert 'data-workflow-page-resource={entry.id}' in compact
     assert 'data-workflow-page-placement={entry.menuPlacement}' in compact
     assert "planProvenance" in page

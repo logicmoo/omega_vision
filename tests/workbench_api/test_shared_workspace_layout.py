@@ -42,7 +42,11 @@ def assert_resource_file_layout(path: Path, root: Path) -> None:
 
 
 def test_shared_uses_lifecycle_first_top_level_directories() -> None:
-    assert {path.name for path in SHARED.iterdir() if path.is_dir()} == {
+    assert {
+        path.name
+        for path in SHARED.iterdir()
+        if path.is_dir() and not path.name.startswith(".")
+    } == {
         "design",
         "knowledge",
         "runtime",
@@ -68,6 +72,14 @@ def test_every_workspace_uses_lifecycle_first_resource_directories() -> None:
     for workspace in WORKSPACES.iterdir():
         if not workspace.is_dir() or workspace.name.startswith("."):
             continue
-        assert {path.name for path in workspace.iterdir() if path.is_dir()} <= allowed, workspace.name
+        assert {
+            path.name
+            for path in workspace.iterdir()
+            if (
+                path.is_dir()
+                and not path.name.startswith(".")
+                and path.name != "__pycache__"
+            )
+        } <= allowed, workspace.name
         for path in (workspace / "design").rglob("*.metta") if (workspace / "design").is_dir() else []:
             assert_resource_file_layout(path, WORKSPACES)

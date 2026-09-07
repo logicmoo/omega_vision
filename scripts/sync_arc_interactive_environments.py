@@ -19,10 +19,9 @@ import argparse
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-_PYTHON_ROOT = REPO_ROOT / "python"
-if str(_PYTHON_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PYTHON_ROOT))
+from _runtime import configure_runtime_home
+
+REPO_ROOT = configure_runtime_home(__file__)
 
 from arc_interactive_sync import DEFAULT_DEST, DEFAULT_SOURCE, apply_sync, plan_sync  # noqa: E402
 

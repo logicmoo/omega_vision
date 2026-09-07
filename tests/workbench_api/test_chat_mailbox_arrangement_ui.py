@@ -10,7 +10,7 @@ def test_chat_has_collapsible_schema_driven_mailbox_arranger() -> None:
     source = SOURCE.read_text(encoding="utf-8")
     styles = STYLES.read_text(encoding="utf-8")
 
-    assert 'useState("server")' in source
+    assert 'useState("kind")' in source
     assert "showMailboxListSettings" in source
     assert 'aria-label="Mailbox list arrangement"' in source
     assert "Object.entries(option)" in source

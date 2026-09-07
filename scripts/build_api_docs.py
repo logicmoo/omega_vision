@@ -22,7 +22,9 @@ import tempfile
 import tomllib
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
+from _runtime import configure_runtime_home
+
+REPO = configure_runtime_home(__file__)
 OUT_DIR = REPO / "docs" / "api"
 BACKLINK = "> [\u2190 Project README](../../README.md)"
 
