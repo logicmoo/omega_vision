@@ -102,6 +102,21 @@
   .video-import-human-nav { grid-template-columns: 1fr; }
 }
 .video-import-note { margin: 0 18px; color: var(--accent, #4dd); }
+/* Parts-extractor picker rendered above the parts_extraction_0 cell label,
+   plus stale re-derive chips on grouping/turtle cells. */
+.video-import-transform-wrap { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.video-import-extractor-pick { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.video-import-extractor-pick select {
+  font-size: 11px; padding: 1px 4px; max-width: 200px;
+  background: var(--panel, #10161d); color: inherit;
+  border: 1px solid var(--line, #2a3742); border-radius: 4px;
+}
+.video-import-extractor-pick button {
+  font-size: 11px; padding: 1px 6px; border-radius: 4px; cursor: pointer;
+  background: transparent; color: inherit; border: 1px solid var(--accent, #4dd);
+}
+.video-import-extractor-pick button:disabled { opacity: 0.45; cursor: default; }
+.video-import-extractor-pick.is-stale button { border-color: var(--amber, #e6ad45); color: var(--amber, #e6ad45); }
 /* Embedded ARC3 player: bound the embed's height so the play grid never
    stretches to fit its tallest column — the middle board column keeps its
    size while each column scrolls internally. Newest move chips render at

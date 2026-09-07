@@ -2354,7 +2354,7 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                     summary = {k: meta[k] for k in (
                         "regionCount", "adjacencyCount", "blobCount", "groupCount",
                         "objectCount", "programCount", "width", "height",
-                        "relationCount", "model", "shots") if k in meta}
+                        "relationCount", "model", "shots", "partsFacts") if k in meta}
                     parts = meta.get("parts")
                     if isinstance(parts, list) and parts:
                         summary["partCount"] = len(parts)
@@ -7148,7 +7148,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if raw_pipeline is None:
         if body.get("transformation") or body.get("doer") or body.get("tool"):
             raw_pipeline = [{"transformation": body.get("transformation") or "parts_extraction_0",
-                             "doer": body.get("doer") or body.get("tool") or "python_scikit",
+                             "doer": body.get("doer") or body.get("tool") or "python_opencv",
                              "options": body.get("options") or {}}]
         else:
             raw_pipeline = load_pipeline_template(_workspace_root(workspace_id))
@@ -7208,10 +7208,38 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
+    merge_todos = bool(body.get("mergeTodos"))
+
+    def _existing_unit_specs(unit: dict[str, Any]) -> list[dict[str, Any]]:
+        """The unit's already-stamped todos as pipeline specs, so a partial
+        run (mergeTodos) updates its own steps without dropping the rest."""
+        try:
+            payload = json.loads((unit["dir"] / "todos.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        specs: list[dict[str, Any]] = []
+        for entry in payload.get("todos", []) if isinstance(payload, dict) else []:
+            if not isinstance(entry, dict) or not entry.get("transformation") or not entry.get("doer"):
+                continue
+            spec = {"transformation": str(entry["transformation"]), "doer": str(entry["doer"]),
+                    "options": entry.get("options") or {},
+                    "dependsOn": [str(d) for d in (entry.get("dependsOn") or [])],
+                    "priority": int(entry.get("priority", 100))}
+            if entry.get("type"):
+                spec["type"] = str(entry["type"])
+            specs.append(spec)
+        return specs
 
     def apply_one(unit: dict[str, Any]) -> dict[str, Any]:
         extra_specs = adopt(unit) if adopt is not None else []
         unit_specs = extra_specs + pipeline_specs
+        if merge_todos:
+            merged: dict[str, dict[str, Any]] = {
+                f"{s['transformation']}/{s['doer']}": s for s in _existing_unit_specs(unit)
+            }
+            for spec in unit_specs:
+                merged[f"{spec['transformation']}/{spec['doer']}"] = spec
+            unit_specs = sorted(merged.values(), key=lambda s: int(s.get("priority", 100)))
         steps: list[dict[str, Any]] = []
         if not plan_only:
             for spec in sorted(pipeline_specs, key=lambda s: s["priority"]):

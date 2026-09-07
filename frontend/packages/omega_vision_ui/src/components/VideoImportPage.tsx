@@ -3191,6 +3191,15 @@ export function VideoImportPage({
   // which stroke kinds the turtle cell draws, and which tree nodes are open.
   const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
   const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
+  // Which parts_extraction_0 doer the transform strips display (all doers keep
+  // running side by side on disk; this only selects the shown cell).
+  const PARTS_EXTRACTOR_DOERS = ["python_opencv", "python_scikit", "shape_finder_prolog"];
+  const [partsExtractorSel, setPartsExtractorSel] = useState<string>(() => {
+    try { return window.localStorage.getItem("videoImport.partsExtractor") || "python_opencv"; } catch { return "python_opencv"; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("videoImport.partsExtractor", partsExtractorSel); } catch { /* ignore */ }
+  }, [partsExtractorSel]);
   const [stripOpenGroups, setStripOpenGroups] = useState<Set<string>>(new Set());
   // Reduce section shows a collapsible char-grouped grid above a flat
   // one-row-per-image list (all 200); "reduceListQuery" filters the list.
@@ -4906,8 +4915,30 @@ export function VideoImportPage({
       setPartsRunBusy(false);
     }
   };
-  const togglePartsTemplate = async () => {
-    if (partsTpl.open) { setPartsTpl((c) => ({ ...c, open: false })); return; }
+  // Per-unit partial transform runs from the strip: re-derive grouping/turtle
+  // from the selected extractor (fast prolog steps, run synchronously with
+  // force) or stamp a missing extractor todo for the pooler (planOnly).
+  const [stripRefreshBusy, setStripRefreshBusy] = useState<Record<string, boolean>>({});
+  const runUnitTransformSteps = async (it: any, inputRel: string, pipeline: any[],
+                                       opts: { force?: boolean; planOnly?: boolean }) => {
+    const key = String(it.id || inputRel);
+    if (stripRefreshBusy[key]) return;
+    setStripRefreshBusy((c) => ({ ...c, [key]: true }));
+    try {
+      const payload: any = { workspaceId, moves: [String(it.id)], pipeline, mergeTodos: true,
+                             force: !!opts.force, planOnly: !!opts.planOnly };
+      const move = String(inputRel).match(/^(.*)\/([^/]+)\/image\.png$/);
+      if (move) payload.recording = move[1]; else payload.set = selectedImageSet;
+      await fetch(`${API}/sequence-sets/transform`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      });
+      setPartsPreviews({});
+      await refreshReduceManifest();
+    } finally {
+      setStripRefreshBusy((c) => ({ ...c, [key]: false }));
+    }
+  };
+  const togglePartsTemplate = async () => {    if (partsTpl.open) { setPartsTpl((c) => ({ ...c, open: false })); return; }
     setPartsTpl({ open: true, text: "loading…", busy: true, err: null });
     try {
       const resp = await fetch(`${API}/sequence-sets/pipeline-template?workspaceId=${encodeURIComponent(workspaceId)}`);
@@ -7005,7 +7036,20 @@ export function VideoImportPage({
               // from the grouping cell, drawable strokes from the turtle result.
               const rowKey = String(it.id || inputRel);
               const cells: any[] = it.transforms || [];
-              const partsCell = cells.find((t: any) => Array.isArray(t.parts) && t.parts.length > 0);
+              // All extraction doers run side by side; the strip shows ONE
+              // extraction cell, chosen by the combobox rendered above its
+              // parts_extraction_0 label.
+              const extractionCells = cells.filter((c: any) => String(c.name) === "parts_extraction_0");
+              const shownExtraction = extractionCells.find((c: any) => String(c.doer) === partsExtractorSel)
+                || extractionCells.find((c: any) => c.status === "done")
+                || extractionCells[0];
+              const extractorOptions = Array.from(new Set([
+                ...extractionCells.map((c: any) => String(c.doer)),
+                ...PARTS_EXTRACTOR_DOERS,
+              ]));
+              const partsCell = (shownExtraction && Array.isArray(shownExtraction.parts) && shownExtraction.parts.length > 0)
+                ? shownExtraction
+                : cells.find((t: any) => Array.isArray(t.parts) && t.parts.length > 0);
               const partColor = new Map<string, string>();
               ((partsCell && partsCell.parts) || []).forEach((p: any) => { if (p && p.id) partColor.set(String(p.id), String(p.color || "")); });
               const groupingCell = cells.find((t: any) => Array.isArray(t.groups) && t.groups.length > 0);
@@ -7070,6 +7114,9 @@ export function VideoImportPage({
                     <figcaption>input</figcaption>
                   </figure>
                   {(it.transforms || []).map((t: any, ti: number) => {
+                    const isExtraction = String(t.name) === "parts_extraction_0";
+                    if (isExtraction && shownExtraction && t !== shownExtraction) return null;
+                    const renderCell = () => {
                     const secs = fmtMs(t.elapsedMs);
                     if (t.status === "done") {
                       const s = t.summary || {};
@@ -7200,6 +7247,55 @@ export function VideoImportPage({
                         <div className="video-import-transform-wait">{unmet.length ? `waiting for ${unmet.join(", ")}…` : "queued…"}</div>
                       </div>
                     );
+                    };
+                    const cell = renderCell();
+                    let header: any = null;
+                    if (isExtraction) {
+                      const selCell = extractionCells.find((c: any) => String(c.doer) === partsExtractorSel);
+                      header = (
+                        <span className="video-import-extractor-pick">
+                          <select value={partsExtractorSel} onChange={(e) => setPartsExtractorSel(e.target.value)}
+                            title="Which parts extractor this strip shows — every doer keeps its outputs side by side on disk">
+                            {extractorOptions.map((d) => {
+                              const c = extractionCells.find((x: any) => String(x.doer) === d);
+                              const mark = c ? (c.status === "done" ? "✓" : c.status === "claimed" ? "⏳" : "·") : "∅";
+                              return <option key={d} value={d}>{mark} {d}</option>;
+                            })}
+                          </select>
+                          {(!selCell || selCell.status !== "done") && (
+                            <button type="button" disabled={!!stripRefreshBusy[rowKey]}
+                              title={`Stamp a parts_extraction_0/${partsExtractorSel} todo for this unit — the pooler runs it in the background`}
+                              onClick={() => void runUnitTransformSteps(it, inputRel, [
+                                { transformation: "parts_extraction_0", doer: partsExtractorSel, options: {}, dependsOn: [], priority: 10, type: "py_pl" },
+                              ], { planOnly: true })}>
+                              {stripRefreshBusy[rowKey] ? "…" : "▶ run"}
+                            </button>
+                          )}
+                        </span>
+                      );
+                    } else if ((String(t.name) === "parts_grouping_0" || String(t.name) === "turtle_programs") && t.status === "done" && shownExtraction) {
+                      const facts = String((t.summary || {}).partsFacts || "");
+                      const stale = !!facts && !facts.startsWith(`parts_extraction_0/${partsExtractorSel}/`);
+                      const selDone = extractionCells.some((c: any) => String(c.doer) === partsExtractorSel && c.status === "done");
+                      if (stale) {
+                        const from = facts.split("/")[1] || "?";
+                        header = (
+                          <span className="video-import-extractor-pick is-stale"
+                            title={`Derived from ${from}. Re-derive grouping + turtle from ${partsExtractorSel} (runs the prolog steps now).`}>
+                            <button type="button" disabled={!selDone || !!stripRefreshBusy[rowKey]}
+                              onClick={() => void runUnitTransformSteps(it, inputRel, [
+                                { transformation: "parts_grouping_0", doer: "group_regions_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`], priority: 30, type: "py_pl" },
+                                { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["parts_grouping_0/group_regions_prolog"], priority: 40, type: "py_pl" },
+                              ], { force: true })}>
+                              {stripRefreshBusy[rowKey] ? "…" : `⟳ stale · re-derive from ${partsExtractorSel.replace(/^python_/, "").replace(/^shape_finder_/, "")}`}
+                            </button>
+                          </span>
+                        );
+                      }
+                    }
+                    return header
+                      ? <div key={`wrap-${ti}`} className="video-import-transform-wrap">{header}{cell}</div>
+                      : cell;
                   })}
                 </div>
               );
