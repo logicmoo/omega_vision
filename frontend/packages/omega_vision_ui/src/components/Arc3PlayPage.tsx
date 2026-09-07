@@ -388,7 +388,7 @@ export function Arc3PlayPage({
 
   // Keep the editable recordings-path field synced with the current
   // session's effective path (server-authoritative; blank when it's on
-  // the default data/arc3_games/recordings/<game>/ location, so "Set" only submits
+  // the default data/recordings/<game>/ location, so "Set" only submits
   // an explicit override).
   useEffect(() => {
     setRecordingsPathDraft(session && !session.recordingsPathIsDefault ? session.recordingsPath || "" : "");
@@ -1301,7 +1301,7 @@ export function Arc3PlayPage({
     ? recordingDirs.filter((dir) => dir.gameDirectory === filterGameId || dir.gameId === filterGameId)
     : recordingDirs;
   const savepointPathOf = (point: PlaySavepoint) =>
-    point.level_directory || `data/arc3_games/recordings/${point.game_directory}/savepoints.json`;
+    point.level_directory || `data/recordings/${point.game_directory}/savepoints.json`;
   // Shared sort machinery for the three tab listboxes. "Frames; Average
   // Subdirs Count" sorts by frame count first, tie-breaking on the average
   // file count per move subdir (how rich each frame directory is).
@@ -1378,7 +1378,7 @@ export function Arc3PlayPage({
         <div>
           <h2>{pageDefinition.label || "Play & Record"}</h2>
           <small>
-            {workspaceLabel} · every move is recorded to data/arc3_games/recordings/&lt;game&gt;/saved_&lt;NNN&gt;/0..k for B1 -&gt; B2 setups
+            {workspaceLabel} · every move is recorded to data/recordings/&lt;game&gt;/saved_&lt;NNN&gt;/0..k for B1 -&gt; B2 setups
           </small>
         </div>
         <div className="arc3-play-game-picker">
@@ -2002,13 +2002,13 @@ export function Arc3PlayPage({
                     {session.forkedFrom && <small>resumed from save-point {session.forkedFrom}</small>}
                   </div>
                   <div className="arc3-play-target arc3-play-recordings-path">
-                    <small title="Where future level dirs + savepoints.json for this session are written. Blank = default data/arc3_games/recordings/<game>/. Applies to the next attempt/level, not files already on disk.">
+                    <small title="Where future level dirs + savepoints.json for this session are written. Blank = default data/recordings/<game>/. Applies to the next attempt/level, not files already on disk.">
                       RECORDINGS PATH (workspace-relative)
                     </small>
                     <input
                       type="text"
                       value={recordingsPathDraft}
-                      placeholder={`data/arc3_games/recordings/${session.gameDirectory} (default)`}
+                      placeholder={`data/recordings/${session.gameDirectory} (default)`}
                       disabled={busy}
                       onChange={(event) => setRecordingsPathDraft(event.target.value)}
                     />
@@ -2308,11 +2308,11 @@ export function Arc3PlayPage({
           {recordingTab === "importables" && (
           <div className="arc3-play-savepoints arc3-play-recordings">
             <small>
-              IMPORTABLES (official ARC-AGI-3 JSONL play logs / release-run logs in data/arc3_games/importables/)
+              IMPORTABLES (official ARC-AGI-3 JSONL play logs / release-run logs in data/importables/)
               <button
                 className="arc3-play-rescan"
                 disabled={busy}
-                title="Rescan data/arc3_games/importables/ for recordings"
+                title="Rescan data/importables/ for recordings"
                 onClick={() => void perform(async () => { await loadRecordings(); return "importables list rescanned"; }, "Rescan importables")}
               >
                 Rescan
@@ -2386,7 +2386,7 @@ export function Arc3PlayPage({
                   <div className="arc3-play-empty">
                     No importable recordings found.{" "}
                     <button className="arc3-play-rescan" disabled={busy} onClick={() => void loadRecordings()}>
-                      Scan data/arc3_games/importables/
+                      Scan data/importables/
                     </button>
                   </div>
                 )}

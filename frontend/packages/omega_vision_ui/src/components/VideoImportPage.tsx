@@ -3161,7 +3161,7 @@ export function VideoImportPage({
   // never has to redo it. The Objects page additionally offers a "live pipeline"
   // choice (objectsShowLive) that shows its own in-progress object-graphs.
   const OBJECTS_LIVE_SET = "objects_live";
-  const DEFAULT_IMAGE_SET = "arc3_games/recordings/ls20";
+  const DEFAULT_IMAGE_SET = "recordings/ls20";
   const [imageSetList, setImageSetList] = useState<any[]>([]);
   const [selectedImageSet, setSelectedImageSet] = useState<string>(() => {
     try { return window.localStorage.getItem("videoImport.imageSet") || DEFAULT_IMAGE_SET; } catch { return DEFAULT_IMAGE_SET; }
@@ -7671,6 +7671,13 @@ export function VideoImportPage({
     const s = imageSetList.find((x: any) => x.id === id);
     if (!s) return { label: id, groupKey: "9-other", groupLabel: "Other", tags: [] };
     const tags: ColoredTag[] = [];
+    if (s.kind === "arc-recording") {
+      // Same colored chips as the Objects page's ARC RECORDINGS source list.
+      if (s.level !== undefined && s.level !== null) tags.push({ text: `L${s.level}`, color: "#9b8cff" });
+      tags.push({ text: `${s.imageCount} frames`, color: "#7bd88f" });
+      if (s.reducedCount) tags.push({ text: `${s.reducedCount} reduced`, color: "#27dcc2" });
+      return { label: s.label || id, groupKey: s.groupKey || "2-arc", groupLabel: s.group || "Sequence Sets · Games", tags };
+    }
     if (s.reducedCount) tags.push({ text: `${s.reducedCount} reduced`, color: "#7bd88f" });
     tags.push({ text: `${s.imageCount} images`, color: "#8aa0aa" });
     return { label: s.label || id, groupKey: s.groupKey || "4-loaded", groupLabel: s.group || "Sources", tags };

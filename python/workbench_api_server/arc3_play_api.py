@@ -160,6 +160,15 @@ def _merge_legacy_tree(source: Path, destination: Path) -> None:
     source.rmdir()
 
 
+def _is_same_dir(a: Path, b: Path) -> bool:
+    """True when both paths refer to one existing directory (guards the
+    Recordings -> recordings migration on case-insensitive filesystems)."""
+    try:
+        return a.samefile(b)
+    except OSError:
+        return False
+
+
 def _migrate_arc3_games_root(root: Path) -> Path:
     """Merge every legacy container up into the flat data layout.
 
@@ -188,6 +197,12 @@ def _migrate_arc3_games_root(root: Path) -> Path:
         )
         for source, destination in moves:
             if not source.is_dir():
+                continue
+            if _is_same_dir(source, destination):
+                # Case-insensitive filesystems: the legacy spelling (e.g.
+                # Recordings) IS the canonical dir -- fix the case in place.
+                if source.resolve().name != destination.name:
+                    source.rename(destination)
                 continue
             if destination.exists():
                 _merge_legacy_tree(source, destination)
@@ -370,13 +385,14 @@ def _iter_recording_dirs(game_root: Path) -> list[Path]:
 
 def _looks_like_image_set_dir(entry: Path) -> bool:
     """True when a directory holds an image set in any accepted layout:
-    a recording.json manifest, numeric move subdirs (0/ 1/ 2/ ...) with an
-    image.png each, or a flat directory of frame *.png files."""
+    a recording.json manifest, move subdirs (0/ 1/ 2/ ... or free-form
+    foo/ bar/) with an image.png each, or a flat directory of frame *.png
+    files."""
     if (entry / "recording.json").is_file():
         return True
     try:
         for child in entry.iterdir():
-            if child.is_dir() and child.name.isdigit() and (child / "image.png").is_file():
+            if child.is_dir() and (child / "image.png").is_file():
                 return True
             if child.is_file() and child.suffix.lower() == ".png":
                 return True
@@ -2157,7 +2173,7 @@ def _recording_dir_stats(entry: Path) -> dict[str, Any]:
                             size_bytes += sub.stat().st_size
                         except OSError:
                             pass
-                if child.name.isdigit():
+                if (child / "image.png").is_file():
                     move_dir_count += 1
                     move_file_count += files_here
             elif child.is_file():
@@ -2273,12 +2289,17 @@ def list_recording_dirs(workspaceId: str, gameId: str | None = None) -> dict[str
     if not gameId:
         families = [
             ("curated", "curated", "curated", {"videoimports", "recordings", "importables"}),
+            ("arc3_games/curated", "curated", "curated", {"videoimports", "recordings", "importables"}),  # legacy layout
             ("arc_recordings", "arc_recordings", "sequence-games", set()),
+            ("vision_frames/arc_recordings", "arc_recordings", "sequence-games", set()),  # legacy layout
             ("curated_data", "curated_data", "sequence-curated", set()),
+            ("vision_frames/curated_data", "curated_data", "sequence-curated", set()),  # legacy layout
             ("video", "video", "sequence-movies", set()),
+            ("vision_frames/video", "video", "sequence-movies", set()),  # legacy layout
         ]
+        family_seen: dict[str, set[str]] = {}
         for rel_base, group_name, family, excludes in families:
-            seen_names: set[str] = set()
+            seen_names = family_seen.setdefault(family, set())
             for home in _data_homes(root):
                 base_dir = home
                 for part in rel_base.split("/"):

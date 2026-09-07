@@ -102,6 +102,24 @@
   .video-import-human-nav { grid-template-columns: 1fr; }
 }
 .video-import-note { margin: 0 18px; color: var(--accent, #4dd); }
+/* Embedded ARC3 player: bound the embed's height so the play grid never
+   stretches to fit its tallest column — the middle board column keeps its
+   size while each column scrolls internally. Newest move chips render at
+   the top of the RECORDINGS column and push older chips down past its
+   bottom edge (scroll to reach them). */
+.video-import-embedded-arc3-player {
+  height: min(78vh, 900px);
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.video-import-embedded-arc3-player .arc3-play-page {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
 .video-import-max-proc-combo { min-width: 0; }
 .video-import-max-proc-combo .colored-combobox-button { width: 100%; min-width: 0; }
 .video-import-games-todo {

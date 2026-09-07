@@ -318,7 +318,7 @@ function DemoCard({ demo, onRun, onStep, onClear, onToggle, onSeek, running, fla
               </option>
             ))}
           </select>
-          <span style={{ opacity: 0.5 }}>choose which ls20 playthrough to learn from</span>
+          <span style={{ opacity: 0.5 }}>choose which game playthrough to learn from</span>
           <label style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, opacity: 0.85 }}
             title="Where recognized object memory is saved. none = ephemeral (nothing on disk); recording = this recording's own isolated store; base = a shared long-term demo brain that accumulates across ALL ls20 recordings; canonical = the real production registry (explicit).">
             <span style={{ opacity: 0.7 }}>store:</span>

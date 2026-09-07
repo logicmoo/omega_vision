@@ -1720,7 +1720,8 @@ def workspace_data_listing(workspace_id: str, directory: str = Query("", descrip
     inheritance chain.
 
     Every data home follows the same exact layout under ``<root>/data/``
-    (``arc3_games/recordings``, ``arc3_games/curated``, ``vision_frames/...``,
+    (``recordings``, ``importables``, ``curated``,
+    ``vision_frames/...``,
     ``recognition_reduce``, ``video_import``, ``object_memory``, ...). The
     listing walks the chain in precedence order — the workspace's own
     ``data/``, each included workspace's ``data/`` (workspace.json includes,

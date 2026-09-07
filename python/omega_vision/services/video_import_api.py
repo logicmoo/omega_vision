@@ -40,7 +40,6 @@ from fastapi.responses import Response, StreamingResponse
 
 from arc3_play_api import (
     _all_game_dirs,
-    _curated_games_container,
     _curated_games_containers,
     _data_homes,
     _data_rel_of,
@@ -221,14 +220,21 @@ def _imports_root(root: Path) -> Path:
     data_home = _vision_data_root(root)
     canonical = data_home / "video_import"
     legacy = data_home / "VideoImports"
-    vision_root = data_home / "vision_frames"
     with _data_layout_lock:
         if resolved_root in _migrated_data_roots:
             return canonical
         replacements = [
             ("data/VideoImports/", "data/video_import/"),
-            ("data/Recordings/", "data/arc3_games/recordings/"),
-            ("data/importables/", "data/arc3_games/importables/"),
+            ("data/Recordings/", "data/recordings/"),
+            ("data/arc3_games/recordings/", "data/recordings/"),
+            ("data/arc3_games/importables/", "data/importables/"),
+            ("data/arc3_games/curated/", "data/curated/"),
+            ("data/vision_frames/video/", "data/video/"),
+            ("data/vision_frames/arc_recordings/", "data/arc_recordings/"),
+            ("data/vision_frames/curated_data/", "data/curated_data/"),
+            ("data/vision_frames/image_archives/", "data/image_archives/"),
+            ("data/vision_frames/recognition_inputs/", "data/recognition_inputs/"),
+            ("data/vision_frames/live_streams/", "data/live_streams/"),
         ]
         if legacy.is_dir() and not canonical.exists():
             legacy.rename(canonical)
@@ -245,35 +251,42 @@ def _imports_root(root: Path) -> Path:
             ) if child.is_dir() else None
             if video_path is None or not frames_dir.is_dir():
                 continue
-            destination = vision_root / "video" / _video_frame_source_id(root, video_path)
+            destination = data_home / "video" / _video_frame_source_id(root, video_path)
             if not destination.exists():
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 frames_dir.rename(destination)
                 replacements.append(
                     (
                         f"data/video_import/{child.name}/frames/",
-                        f"data/vision_frames/video/{destination.name}/",
+                        f"data/video/{destination.name}/",
                     )
                 )
-        curated_root = _vision_data_root(root) / "arc3_games" / "curated"
+        curated_root = _vision_data_root(root) / "curated"
         if curated_root.is_dir():
             replacements.extend(
                 (
                     f"data/{child.name}/",
-                    f"data/arc3_games/curated/{child.name}/",
+                    f"data/curated/{child.name}/",
                 )
                 for child in curated_root.iterdir()
                 if child.is_dir()
             )
-        _rewrite_data_paths([canonical, vision_root], replacements)
+        rewrite_roots = [canonical, data_home / "vision_frames"]
+        rewrite_roots.extend(
+            data_home / family
+            for family in ("video", "arc_recordings", "curated_data", "image_archives", "recognition_inputs", "live_streams")
+        )
+        _rewrite_data_paths(rewrite_roots, replacements)
         _migrated_data_roots.add(resolved_root)
     return canonical
 
 
 def _vision_frames_root(root: Path) -> Path:
-    path = _vision_data_root(root) / "vision_frames"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    """The write home for frame-sequence families. The flat layout keeps each
+    family (video/, arc_recordings/, curated_data/, image_archives/,
+    recognition_inputs/, live_streams/) directly under the data root, so this
+    IS the data root; callers append their family segment."""
+    return _vision_data_root(root)
 
 
 def _video_frames_dir(root: Path, video_path: Path) -> Path:
@@ -2208,16 +2221,19 @@ def _resolve_set_images(d: Path) -> list[Path]:
     """Return the input images for an image-set directory, layout-aware.
 
     Supports the reduction ``pool/`` layout, flat ``frame_*.png`` recording
-    dumps (``vision_frames/arc_recordings/*``), and the nested ARC game
-    recording layout (``<attempt>/<step>/image.png`` under
-    ``arc3_games/recordings/*``). Globs are depth-bounded so listing many
-    recordings stays fast.
+    dumps (``vision_frames/arc_recordings/*``), a single ARC recording dir
+    (``recording.json`` + free-form ``<step>/image.png``, counted exactly
+    like the Objects source list), and the nested whole-game layout
+    (``<attempt>/<step>/image.png`` under ``recordings/<game>``). Globs are
+    depth-bounded so listing many recordings stays fast.
     """
     if not d.is_dir():
         return []
     pool = d / "pool"
     if pool.is_dir():
         return sorted(p for p in pool.iterdir() if p.suffix.lower() in {".jpg", ".jpeg", ".png"})
+    if (d / "recording.json").is_file():
+        return _arc_recording_images(d)
     flat = sorted(list(d.glob("frame_*.png")) + list(d.glob("frame_*.jpg")))
     if flat:
         return flat
@@ -2376,10 +2392,14 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
 # mirror the Objects page's source combobox (describeFrameSource) so both
 # pages organise identically.
 _FRAME_SET_FAMILIES = (
-    ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),
-    ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),
-    ("vision_frames/curated_data", "Sequence Sets · Curated", "1-curated"),
-    ("vision_frames/video", "Sequence Sets · Movies", "3-video"),
+    ("recordings", "Sequence Sets · Games", "2-arc"),
+    ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
+    ("arc_recordings", "Sequence Sets · Games", "2-arc"),
+    ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
+    ("curated_data", "Sequence Sets · Curated", "1-curated"),
+    ("vision_frames/curated_data", "Sequence Sets · Curated", "1-curated"),  # legacy layout
+    ("video", "Sequence Sets · Movies", "3-video"),
+    ("vision_frames/video", "Sequence Sets · Movies", "3-video"),  # legacy layout
 )
 
 
@@ -2400,7 +2420,8 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
     seen: set[str] = set()
 
     def add(set_id: str, rel_dir: str, label: str | None = None,
-            group: str = "Loaded sources", group_key: str = "4-loaded") -> None:
+            group: str = "Loaded sources", group_key: str = "4-loaded",
+            extras: dict[str, Any] | None = None) -> None:
         if not set_id or set_id in seen:
             return
         try:
@@ -2421,7 +2442,7 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
         if image_count == 0 and reduced_count == 0 and set_id != _CANONICAL_IMAGE_SET:
             return
         seen.add(set_id)
-        sets.append({
+        entry: dict[str, Any] = {
             "id": set_id,
             "label": label or _IMAGE_SET_LABELS.get(set_id, set_id.replace("_", " ")),
             "dir": rel_dir,
@@ -2430,7 +2451,10 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
             "canonical": set_id == _CANONICAL_IMAGE_SET,
             "group": group,
             "groupKey": group_key,
-        })
+        }
+        if extras:
+            entry.update(extras)
+        sets.append(entry)
 
     add(_CANONICAL_IMAGE_SET, "data/recognition_reduce", group="Recognition", group_key="0-recognition")
     for data_dir in homes:
@@ -2441,14 +2465,38 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
                 add(child.name, f"data/{child.name}", group="Image Sets", group_key="4-loaded")
     # Frame-based source families (organised like the Objects source combobox).
     for rec_base, group, group_key in _FRAME_SET_FAMILIES:
+        arc_family = rec_base in ("recordings", "arc3_games/recordings")
         for data_dir in homes:
             rec_dir = data_dir / rec_base
             if not rec_dir.is_dir():
                 continue
             for child in sorted(rec_dir.iterdir()):
-                if child.is_dir():
-                    leaf = child.name.replace("data-arc3_games-recordings-", "").replace("data-arc3_games-curated-", "").replace("-", " ")
-                    add(f"{rec_base}/{child.name}", f"data/{rec_base}/{child.name}", label=leaf, group=group, group_key=group_key)
+                if not child.is_dir():
+                    continue
+                leaf = child.name.replace("data-recordings-", "").replace("data-curated-", "").replace("data-arc3_games-recordings-", "").replace("data-arc3_games-curated-", "").replace("-", " ")
+                add(f"{rec_base}/{child.name}", f"data/{rec_base}/{child.name}", label=leaf, group=group, group_key=group_key)
+                if not arc_family:
+                    continue
+                # Each per-attempt Recording (recording.json + step frames) is
+                # its own selectable sequence set, mirroring the Objects
+                # page's ARC RECORDINGS source list (same level/frame tags).
+                for recording in _iter_recording_dirs(child):
+                    try:
+                        manifest = json.loads((recording / "recording.json").read_text(encoding="utf-8"))
+                    except (OSError, json.JSONDecodeError):
+                        manifest = {}
+                    add(
+                        f"{rec_base}/{child.name}/{recording.name}",
+                        f"data/{rec_base}/{child.name}/{recording.name}",
+                        label=f"{child.name} · {recording.name}",
+                        group=group,
+                        group_key=group_key,
+                        extras={
+                            "kind": "arc-recording",
+                            "gameId": str(manifest.get("game_id") or child.name),
+                            "level": manifest.get("level"),
+                        },
+                    )
     return sets
 
 
@@ -2708,7 +2756,7 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
         "c6_verybusy", "c7_withchars", "c8_typical", "c9_colorful", "c10_modality",
     ]
     transforms = {"c1_bw", "c2_flip", "c3_rot45"}
-    bases = ["data/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
+    bases = ["data/recognition_reduce", "data/curated/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
 
     def base_dir(rel: str) -> Path:
         """Chain-resolved directory for a base rel path (see _data_homes)."""
@@ -4175,21 +4223,32 @@ def _resolve_stream_source(source_url: str) -> str:
     return resolved
 
 
+def _recording_step_dirs(recording_dir: Path) -> list[Path]:
+    """Direct child step dirs of one recording, each holding an input
+    image.png. Step names are free-form (0/ 1/ 2/ or foo/ bar/ baz/):
+    numeric names sort first in numeric order, then named steps sort
+    alphabetically. Deeper processing-output dirs (e.g.
+    <step>/detect_edges_0/scikit_python/) are never steps themselves."""
+    if not recording_dir.is_dir():
+        return []
+    steps = [
+        child
+        for child in recording_dir.iterdir()
+        if child.is_dir() and (child / "image.png").is_file()
+    ]
+    return sorted(
+        steps,
+        key=lambda p: (0, int(p.name), "") if p.name.isdigit() else (1, 0, p.name.lower()),
+    )
+
+
 def _arc_recording_images(recording_dir: Path) -> list[Path]:
-    images: list[tuple[int, Path]] = []
+    images: list[Path] = []
     root_image = recording_dir / "image.png"
     if root_image.is_file():
-        images.append((-1, root_image))
-    for child in recording_dir.iterdir() if recording_dir.is_dir() else []:
-        image = child / "image.png"
-        if not child.is_dir() or not image.is_file():
-            continue
-        try:
-            ordinal = int(child.name)
-        except ValueError:
-            continue
-        images.append((ordinal, image))
-    return [path for _, path in sorted(images, key=lambda item: item[0])]
+        images.append(root_image)
+    images.extend(step / "image.png" for step in _recording_step_dirs(recording_dir))
+    return images
 
 
 def _natural_path_key(path: Path) -> tuple[Any, ...]:
@@ -4202,15 +4261,18 @@ def _natural_path_key(path: Path) -> tuple[Any, ...]:
 
 
 def _curated_source_images(root: Path, source_dir: Path) -> list[Path]:
-    curated_root = _curated_games_container(root).resolve()
     resolved = source_dir.resolve()
-    try:
-        resolved.relative_to(curated_root)
-    except ValueError as error:
+    for container in _curated_games_containers(root):
+        try:
+            resolved.relative_to(container.resolve())
+            break
+        except ValueError:
+            continue
+    else:
         raise HTTPException(
             status_code=400,
-            detail="curated source must be under data/arc3_games/curated/",
-        ) from error
+            detail="curated source must be under data/curated/",
+        )
     images = [
         path
         for path in resolved.rglob("*")
@@ -6158,11 +6220,9 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
             if isinstance(move, dict) and move.get("index") is not None:
                 actions_by_index[int(move["index"])] = move
         limit = int((arc_spec or {}).get("limit") or 0) or None
-        for step_dir in sorted((p for p in arc_dir.iterdir() if p.is_dir() and p.name.isdigit()),
-                               key=lambda p: int(p.name)):
-            if not (step_dir / "image.png").is_file():
-                continue
-            source_move = actions_by_index.get(int(step_dir.name), {})
+        for ordinal, step_dir in enumerate(_recording_step_dirs(arc_dir)):
+            step_index = int(step_dir.name) if step_dir.name.isdigit() else ordinal
+            source_move = actions_by_index.get(step_index, {})
             arc_moves.append({
                 "image": step_dir / "image.png",
                 "action": str(source_move.get("action") or "ARC_MOVE"),
@@ -7018,8 +7078,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=str(error)) from error
         if not (recording_dir / "recording.json").is_file():
             raise HTTPException(status_code=404, detail=f"not a recording (no recording.json): {recording_rel}")
-        for path in sorted((p for p in recording_dir.iterdir() if p.is_dir() and p.name.isdigit()),
-                           key=lambda p: int(p.name)):
+        for path in _recording_step_dirs(recording_dir):
             units.append({"id": path.name, "dir": path, "image": path / "image.png"})
         target = recording_rel
         pooler_root = recording_dir

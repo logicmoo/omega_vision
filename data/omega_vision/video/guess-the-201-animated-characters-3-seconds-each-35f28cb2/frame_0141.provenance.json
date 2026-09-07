@@ -1,8 +1,8 @@
 {
   "kind": "video_import_image_provenance",
   "version": 1,
-  "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.png",
-  "provenance": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.provenance.json",
+  "image": "data/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.png",
+  "provenance": "data/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.provenance.json",
   "createdAt": "2026-09-03T10:41:11.549441Z",
   "operation": "extract_video_frame",
   "dimensions": {
@@ -14,7 +14,7 @@
     "height": 480
   },
   "root": {
-    "firstSeenImage": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.png",
+    "firstSeenImage": "data/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.png",
     "dimensions": {
       "width": 854,
       "height": 480
@@ -36,7 +36,7 @@
   },
   "lineage": [
     {
-      "image": "data/vision_frames/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.png",
+      "image": "data/video/guess-the-201-animated-characters-3-seconds-each-35f28cb2/frame_0141.png",
       "operation": "extract_video_frame",
       "dimensions": {
         "width": 854,

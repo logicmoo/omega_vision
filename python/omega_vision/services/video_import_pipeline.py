@@ -2888,7 +2888,7 @@ def run_reduce(
 
     canonical = (set_id or "recognition_reduce") == "recognition_reduce"
     if canonical:
-        bases = ["data/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
+        bases = ["data/recognition_reduce", "data/curated/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
         base_rel = next((b for b in bases if (root / b / "pool").is_dir()), bases[0])
     else:
         parts = [p for p in str(set_id).replace("\\", "/").split("/") if p not in ("", ".")]

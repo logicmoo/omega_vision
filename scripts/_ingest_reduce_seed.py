@@ -20,7 +20,7 @@ from omega_vision.services.video_import_pipeline import load_state  # noqa: E402
 WS = "guess201_reid"
 root = Path(vip._workspace_root(WS))
 rr_dir = root / "data" / "recognition_reduce"
-cur_dir = root / "data" / "arc3_games" / "curated" / "recognition_reduce"
+cur_dir = root / "data" / "curated" / "recognition_reduce"
 
 SLUG_ORDER = [
     "bart_simpson", "lisa_simpson", "homer_simpson", "marge_simpson",
@@ -69,6 +69,7 @@ def resolve_rel(sub, name):
     if not name:
         return ""
     for b in (f"data/recognition_reduce/{sub}",
+              f"data/curated/recognition_reduce/{sub}",
               f"data/arc3_games/curated/recognition_reduce/{sub}"):
         if (root / b / name).exists():
             return f"{b}/{name}"

@@ -14,6 +14,28 @@ values here.
 
 ## Current recovery state
 
+- ARC data layout flattened (2026-09-07): recordings, importables, and curated
+  moved out of `arc3_games/` to the data-home roots — canonical writes now
+  target `data/recordings/<game>/`, `data/importables/`, and `data/curated/`
+  (repo store: `data/omega_vision/{recordings,importables,curated}`); the
+  `arc3_games/` directory is gone. `_migrate_arc3_games_root` migrates
+  legacy `Recordings/`, `arc3_games/recordings`, `arc3_games/importables`,
+  and `arc3_games/curated`
+  (case-only renames handled on Windows) and rewrites persisted
+  `data/arc3_games/...` path strings; readers keep legacy fallbacks.
+  Committed repo data was git-mv'd and its JSON references rewritten.
+  Recording step subdirs are now free-form: any direct child dir holding an
+  input `image.png` is a step (`0/ 1/ 2/` or `foo/ bar/`; numeric first, then
+  named alphabetically), and nested processing output such as
+  `<step>/detect_edges_0/scikit_python/` is never treated as a step
+  (`_recording_step_dirs` in video_import_api, `_raw_base_frames` in
+  recognition_demos). Twin modules `omega_vision/services/arc3_play.py` and
+  `workbench_api_server/arc3_play_api.py` stay byte-identical except the
+  `_REPO_ROOT parents[...]` line. Known pre-existing failures unrelated to
+  this change: 3 `test_video_import_ui.py` layout tests, the
+  `VisualImageDiffPage.tsx` TS7006 build errors, and full-suite collection
+  errors from a leaked `ARC3_RUNTIME_HOME` (all reproduce on the base tree).
+
 - Video Import now resolves the workspace's inherited effective model through
   `model-selection?include_models=false` before the full Model Policy registry
   finishes enumerating. The inherited model stays first and selected in Member

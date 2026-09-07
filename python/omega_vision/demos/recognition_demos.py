@@ -909,13 +909,17 @@ def _demo_input_video():
                            "committed object, not re-minted per frame."}
 
 
-_LS20_DIR = (_REPO_ROOT / "data" / "omega_vision"
-             / "vision_frames" / "arc_recordings" / "data-arc3_games-recordings-ls20-saved_001")
+_ARC_SEQ_ROOTS = (
+    _REPO_ROOT / "data" / "omega_vision" / "arc_recordings",
+    # Legacy pre-flatten location, still readable.
+    _REPO_ROOT / "data" / "omega_vision" / "vision_frames" / "arc_recordings",
+)
+_LS20_DIR = _ARC_SEQ_ROOTS[0] / "data-arc3_games-recordings-ls20-saved_001"
 # Raw per-frame recordings (each frame is a numbered subfolder holding image.png).
 # The long "release run" ls20 playthroughs (hundreds of moves) live here, split
 # across attempt segments; we concatenate a base id's attempts into one sequence.
 _RAW_LS20_DIR = (_REPO_ROOT / "data" / "omega_vision"
-                 / "arc3_games" / "recordings" / "ls20")
+                 / "recordings" / "ls20")
 
 _ls20_selected: str | None = None   # user-chosen recording key (else default = longest)
 _ls20_recs_cache: list | None = None
@@ -978,9 +982,10 @@ def _recording_computed(key: str | None) -> bool:
     if dc.is_dir() and next(dc.glob("*__prolog.parts.json"), None) is not None:
         return True
     if key.startswith("vf:"):
-        sub = _LS20_DIR.parent / key[3:]
-        if (sub / "sym").is_dir() and next((sub / "sym").glob("*__prolog.parts.json"), None) is not None:
-            return True
+        for root in _ARC_SEQ_ROOTS:
+            sub = root / key[3:]
+            if (sub / "sym").is_dir() and next((sub / "sym").glob("*__prolog.parts.json"), None) is not None:
+                return True
     return False
 
 
@@ -999,17 +1004,16 @@ def _ls20_attempt_key(name: str) -> tuple:
 
 def _raw_base_frames(dirs: list, with_action: bool = False) -> list:
     """Ordered (displayId, image.png, action) for a raw recording base: attempts in
-    order, then each attempt's numbered frame subfolders in numeric order. `action`
+    order, then each attempt's frame subfolders -- numeric names first in numeric
+    order, then free-form named steps (foo/, bar/) alphabetically. `action`
     is the move (incoming_action) that produced the frame — read only when asked, so
     listing recordings stays cheap."""
     import json as _json
     out: list = []
     for d in sorted(dirs, key=lambda p: _ls20_attempt_key(p.name)):
-        subs = [c for c in d.iterdir() if c.is_dir() and c.name.isdigit()]
-        for c in sorted(subs, key=lambda p: int(p.name)):
+        subs = [c for c in d.iterdir() if c.is_dir() and (c / "image.png").is_file()]
+        for c in sorted(subs, key=lambda p: (0, int(p.name), "") if p.name.isdigit() else (1, 0, p.name.lower())):
             img = c / "image.png"
-            if not img.is_file():
-                continue
             action = None
             if with_action:
                 sj = c / "state.json"
@@ -1023,37 +1027,47 @@ def _raw_base_frames(dirs: list, with_action: bool = False) -> list:
 
 
 def _ls20_recordings() -> list:
-    """Every selectable ls20 recording: the reduced vision-frame dirs (fast, may have
-    committed part-graphs) plus the raw release-run playthroughs (concatenated across
-    attempt segments). Cached for the session."""
+    """Every selectable game recording: the reduced sequence-set dirs (fast, may
+    have committed part-graphs) plus every game's raw playthroughs under
+    data/recordings/<game>/ (concatenated across attempt segments). Cached for
+    the session."""
     global _ls20_recs_cache
     if _ls20_recs_cache is not None:
         return _ls20_recs_cache
     recs: list = []
-    root = _LS20_DIR.parent
-    if root.is_dir():
-        for sub in sorted(root.glob("*ls20*")):
-            if sub.is_dir():
+    seen_vf: set = set()
+    for root in _ARC_SEQ_ROOTS:
+        if not root.is_dir():
+            continue
+        for sub in sorted(root.iterdir()):
+            if sub.is_dir() and sub.name not in seen_vf:
                 n = len(list(sub.glob("*.png")))
                 if n >= 2:
-                    short = sub.name.replace("data-arc3_games-recordings-ls20-", "")
+                    seen_vf.add(sub.name)
+                    short = (sub.name
+                             .replace("data-recordings-", "")
+                             .replace("data-arc3_games-recordings-", ""))
                     # 'computed' = extracted per-frame part-graphs are cached on disk
                     # (native or demo-saved), so a run skips extraction. Induction
                     # still runs at runtime regardless.
                     recs.append({"key": "vf:" + sub.name, "label": f"reduced · {short} · {n} frames",
                                  "count": n, "computed": _recording_computed("vf:" + sub.name)})
-    if _RAW_LS20_DIR.is_dir():
-        groups: dict = {}
-        for sub in _RAW_LS20_DIR.iterdir():
-            if sub.is_dir():
-                groups.setdefault(_ls20_base(sub.name), []).append(sub)
-        for base, dirs in sorted(groups.items()):
-            frames = _raw_base_frames(dirs)
-            if len(frames) >= 2:
-                # raw runs ship no committed graphs, but the demo can SAVE the parts it
-                # extracts (recognition_demo_parts) so a re-run skips extraction.
-                recs.append({"key": "raw:" + base, "label": f"raw run · {base} · {len(frames)} frames",
-                             "count": len(frames), "computed": _recording_computed("raw:" + base)})
+    games_root = _RAW_LS20_DIR.parent
+    if games_root.is_dir():
+        for game_dir in sorted(p for p in games_root.iterdir() if p.is_dir()):
+            groups: dict = {}
+            for sub in game_dir.iterdir():
+                if sub.is_dir():
+                    groups.setdefault(_ls20_base(sub.name), []).append(sub)
+            for base, dirs in sorted(groups.items()):
+                frames = _raw_base_frames(dirs)
+                if len(frames) >= 2:
+                    # raw runs ship no committed graphs, but the demo can SAVE the parts it
+                    # extracts (recognition_demo_parts) so a re-run skips extraction.
+                    key = f"raw:{game_dir.name}/{base}"
+                    recs.append({"key": key,
+                                 "label": f"raw run · {game_dir.name} · {base} · {len(frames)} frames",
+                                 "count": len(frames), "computed": _recording_computed(key)})
     recs.sort(key=lambda r: r["count"], reverse=True)
     _ls20_recs_cache = recs
     return recs
@@ -1062,8 +1076,10 @@ def _ls20_recordings() -> list:
 def _resolve_ls20(key: str | None) -> tuple:
     """(ordered [(displayId, pngPath)], committedDir | None, label) for a recording key."""
     if key and key.startswith("vf:"):
-        sub = _LS20_DIR.parent / key[3:]
-        if sub.is_dir():
+        for root in _ARC_SEQ_ROOTS:
+            sub = root / key[3:]
+            if not sub.is_dir():
+                continue
             import json as _json
             order: list = []
             mf = sub / "manifest.json"
@@ -1079,11 +1095,20 @@ def _resolve_ls20(key: str | None) -> tuple:
                 p = next(iter(sub.glob(f"{idv}.png")), None)
                 if p:
                     entries.append((idv, str(p), None))
-            return entries, sub, sub.name.replace("data-arc3_games-recordings-ls20-", "")
-    if key and key.startswith("raw:") and _RAW_LS20_DIR.is_dir():
-        base = key[4:]
-        dirs = [d for d in _RAW_LS20_DIR.iterdir() if d.is_dir() and _ls20_base(d.name) == base]
-        return _raw_base_frames(dirs, with_action=True), None, base
+            label = (sub.name
+                     .replace("data-recordings-", "")
+                     .replace("data-arc3_games-recordings-", ""))
+            return entries, sub, label
+    if key and key.startswith("raw:"):
+        spec = key[4:]
+        game, _, base = spec.partition("/")
+        if not base:
+            # Legacy ls20-only keys had no game segment.
+            game, base = "ls20", spec
+        game_root = _RAW_LS20_DIR.parent / game
+        if game_root.is_dir():
+            dirs = [d for d in game_root.iterdir() if d.is_dir() and _ls20_base(d.name) == base]
+            return _raw_base_frames(dirs, with_action=True), None, f"{game} · {base}"
     return [], None, ""
 
 

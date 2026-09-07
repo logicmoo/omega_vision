@@ -323,14 +323,14 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
             ),
             encoding="utf-8",
         )
-    curated = tmp_path / "data" / "curated_game"
-    curated.mkdir()
+    curated = tmp_path / "data" / "curated" / "curated_game"
+    curated.mkdir(parents=True)
     Image.new("RGB", (10, 10), "green").save(curated / "frame_10.png")
     Image.new("RGB", (10, 10), "yellow").save(curated / "frame_2.png")
 
     listing = video_import_api.list_arc_recordings("test")["recordings"]
     assert listing[0]["frames"] == 3
-    assert listing[0]["path"].startswith("data/arc3_games/recordings/")
+    assert listing[0]["path"].startswith("data/recordings/")
     imported = video_import_api.import_arc_recording(
         {
             "workspaceId": "test",
@@ -338,7 +338,7 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
         }
     )
     assert len(imported["frames"]) == 3
-    assert imported["frames"][0]["path"].startswith("data/vision_frames/")
+    assert imported["frames"][0]["path"].startswith("data/arc_recordings/")
     root_provenance = json.loads(
         (tmp_path / imported["frames"][0]["provenance"]).read_text(encoding="utf-8")
     )
@@ -355,17 +355,17 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
     curated_sources = video_import_api.list_curated_image_sources("test")["sources"]
     assert curated_sources == [
         {
-            "path": "data/arc3_games/curated/curated_game",
+            "path": "data/curated/curated_game",
             "label": "curated_game",
             "frames": 2,
-            "preview": "data/arc3_games/curated/curated_game/frame_2.png",
+            "preview": "data/curated/curated_game/frame_2.png",
         }
     ]
     curated_import = video_import_api.import_curated_image_source(
         {"workspaceId": "test", "source": curated_sources[0]["path"]}
     )
     assert len(curated_import["frames"]) == 2
-    assert curated_import["frames"][0]["path"].startswith("data/vision_frames/")
+    assert curated_import["frames"][0]["path"].startswith("data/curated_data/")
 
     archive_buffer = io.BytesIO()
     with zipfile.ZipFile(archive_buffer, "w") as archive:
@@ -380,7 +380,7 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
         archive_buffer,
     )
     assert len(archive_import["frames"]) == 2
-    assert archive_import["frames"][0]["path"].startswith("data/vision_frames/")
+    assert archive_import["frames"][0]["path"].startswith("data/image_archives/")
     archive_provenance = json.loads(
         (tmp_path / archive_import["frames"][0]["provenance"]).read_text(encoding="utf-8")
     )

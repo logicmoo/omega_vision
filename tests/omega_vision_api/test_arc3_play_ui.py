@@ -69,7 +69,7 @@ def test_play_component_has_recorder_contract() -> None:
     assert "MOVE AS SETUP" in source
     assert "loadMoveScan" in source
     assert "Rescan" in source
-    assert "data/arc3_games/importables" in source
+    assert "data/importables" in source
     api_source = API.read_text(encoding="utf-8")
     assert "delete_savepoint" in api_source
     assert "duplicate_savepoint" in api_source

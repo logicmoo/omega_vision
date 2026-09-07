@@ -441,16 +441,16 @@ at the very bottom of the page.
 
 Workspace media uses snake_case family roots:
 
-- `data/arc3_games/recordings/`, `importables/`, and `curated/` hold ARC game
+- `data/recordings/`, `data/importables/`, and `data/curated/` hold ARC game
   playback/runtime, incoming official logs, and curated game image trees.
 - `data/video_import/` holds imported videos, page state, filters, and source
   metadata.
 - `data/vision_frames/` holds extracted video frames plus stream, ARC, curated,
   and ZIP image sequences consumed by the vision pipeline.
 
-Legacy `data/Recordings`, `data/importables`, loose curated image trees, and
-`data/VideoImports` are migrated with persisted path rewriting; readers retain
-legacy fallbacks during the transition.
+Legacy `data/Recordings`, `data/arc3_games/{recordings,importables,curated}`,
+loose curated image trees, and `data/VideoImports` are migrated with persisted
+path rewriting; readers retain legacy fallbacks during the transition.
 
 All workbench pages can report active work and restart-relevant changes through
 the global title-frame process channel. Requesting Restart while work is active
