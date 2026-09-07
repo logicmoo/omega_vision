@@ -61,6 +61,7 @@ TEXT_SUFFIXES = {".json", ".md", ".txt", ".py", ".pl", ".metta", ".yaml", ".yml"
 DATA_FILE_SUFFIXES = TEXT_SUFFIXES | {".eng", ".prompt"}
 IGNORED_DIRECTORIES = {".git", ".venv", "node_modules", "__pycache__"}
 WORKSPACE_DISCOVERY_CACHE_SECONDS = 60.0
+resources = get_filesystem_provider()
 _workspace_cache_lock = RLock()
 _workspace_cache: tuple[tuple[str, ...], float, list[dict[str, Any]]] | None = None
 
@@ -1428,31 +1429,26 @@ def _resource_atomspace_signature(workspace_root: Path) -> str:
 
 def _read_resource_atomspace_cache(cache_path: Path) -> Optional[dict[str, Any]]:
     try:
-        raw = cache_path.read_text(encoding="utf-8")
-    except OSError:
-        return None
-    try:
-        data = json.loads(raw)
-    except (ValueError, json.JSONDecodeError):
+        data = resources.read_config_json(cache_path)
+    except (OSError, ValueError, json.JSONDecodeError):
         return None
     return data if isinstance(data, dict) else None
 
 
 def _write_resource_atomspace_cache(cache_path: Path, signature: str, payload: dict[str, Any]) -> None:
     try:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
         temp_path = cache_path.with_suffix(".json.tmp")
-        temp_path.write_text(
-            json.dumps(
-                {
-                    "version": _RESOURCE_ATOMSPACE_CACHE_VERSION,
-                    "signature": signature,
-                    "payload": payload,
-                }
-            ),
-            encoding="utf-8",
+        resources.write_config_json(
+            temp_path,
+            {
+                "version": _RESOURCE_ATOMSPACE_CACHE_VERSION,
+                "signature": signature,
+                "payload": payload,
+            },
+            indent=None,
+            trailing_newline=False,
         )
-        temp_path.replace(cache_path)
+        resources.replace_file(temp_path, cache_path)
     except OSError:
         # A cache-write failure must never break the endpoint.
         pass
@@ -1752,7 +1748,7 @@ def workspace_data_listing(workspace_id: str, directory: str = Query("", descrip
                 raise ValueError("directory escapes the data home")
             entries: list[dict[str, Any]] = []
             if target.is_dir():
-                for child in sorted(target.iterdir(), key=lambda p: p.name.lower()):
+                for child in sorted(resources.iterdir(target), key=lambda p: p.name.lower()):
                     try:
                         stat = child.stat()
                     except OSError:

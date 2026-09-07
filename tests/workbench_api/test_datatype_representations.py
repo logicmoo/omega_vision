@@ -8,7 +8,7 @@ SERVER = ROOT / "python" / "workbench_api_server"
 if str(SERVER) not in sys.path:
     sys.path.insert(0, str(SERVER))
 
-from datatype_library import interface_type_inventory, load_workspace_concrete_datatype_records, load_workspace_datatype_records, load_workspace_representation_records, resolve_datatype_representation
+from datatype_library import _index_type_records, interface_type_inventory, load_workspace_concrete_datatype_records, load_workspace_datatype_records, load_workspace_representation_records, resolve_datatype_representation
 from representation_planner import plan_representation_conversion
 from resource_relationships import relationship_ids
 
@@ -91,6 +91,18 @@ def test_datatype_resolution_accepts_interface_case() -> None:
     resolved = resolve_datatype_representation(ARC3, "Object", "JSON_OBJECT")
     assert resolved["datatype"]["id"] == "object"
     assert resolved["representation"]["id"] == "json_object"
+
+    json_value = resolve_datatype_representation(ARC3, "Json", "JSON_OBJECT")
+    assert json_value["datatype"]["id"] == "json_value"
+
+
+def test_datatype_labels_cannot_shadow_canonical_ids() -> None:
+    canonical = {"document": {"id": "json", "label": "Canonical Json"}}
+    alias = {"document": {"id": "wrapper", "label": "JSON"}}
+
+    indexed = _index_type_records([canonical, alias])
+
+    assert indexed["json"] is canonical
 
 
 def test_interface_inventory_scans_canonical_workflows_and_matches_case() -> None:

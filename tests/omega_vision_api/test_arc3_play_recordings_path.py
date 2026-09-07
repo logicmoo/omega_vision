@@ -77,6 +77,30 @@ def test_arc3_data_migration_flattens_the_legacy_arc3_games_layout(tmp_path: Pat
     assert manifest["imported_from"] == "data/importables/fake.json"
 
 
+def test_arc3_data_migration_rewrites_partial_recording_json_without_parsing(
+    tmp_path: Path,
+) -> None:
+    manifest = (
+        tmp_path
+        / "data"
+        / "recordings"
+        / "ar25"
+        / "saved_001"
+        / "recording.json"
+    )
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(
+        '{"level_directory":"data/arc3_games/recordings/ar25/saved_001"',
+        encoding="utf-8",
+    )
+
+    arc3_play_api._migrate_arc3_games_root(tmp_path)
+
+    assert manifest.read_text(encoding="utf-8") == (
+        '{"level_directory":"data/recordings/ar25/saved_001"'
+    )
+
+
 def test_next_ranked_saved_dir_name_starts_at_001_when_none_exist(tmp_path: Path) -> None:
     container = tmp_path / "ar25"
     assert arc3_play_api._next_ranked_saved_dir_name(container) == "saved_001"

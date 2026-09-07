@@ -21,6 +21,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from _runtime import configure_runtime_home
+
+_REPO = configure_runtime_home(__file__)
+
 LEVEL_RE = re.compile(r"^level_(?P<level>[^_]+)_(?P<stamp>\d{8}-\d{6})_(?P<ns>\d+)$")
 RANKED_RE = re.compile(r"^level_(?P<level>[^_]+)_(?P<rank>\d{3})$")
 

@@ -121,8 +121,7 @@ def test_status_controls_have_their_own_top_row() -> None:
     assert source[controls:logs].count('type="checkbox"') == 4
     assert "copyStateJson" in source[controls:logs]
     assert "forgetState" in source[controls:logs]
-    assert "stopEverything" not in source[controls:lower]
-    assert "stopEverything" in source[lower:]
+    assert "stopEverything" in source[controls:lower]
     assert ".video-import-activity-controls" in styles
     assert ".video-import-activity-lower" in styles
     assert "flex-wrap: wrap" in styles
@@ -159,7 +158,7 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     styles = (ROOT / "frontend" / "packages" / "omega_vision_ui" / "src" / "styles" / "video_import.css").read_text(encoding="utf-8")
 
     assert "SCENE OBJECTS TEXTUAL DESCRIPTION." in source
-    assert "Describe this image, then list only its direct visually separable child objects." in source
+    assert "list only its direct visually separable child objects" in source
     assert "{{subjectContext}}" in source
     assert "Do not return polygons or coordinates in this stage." in source
     assert "OBJECT EXTRACTION PLANNER." in source
@@ -183,8 +182,6 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert 'section("memberDescription", "SCENE OBJECTS TEXTUAL DESCRIPTION"' not in source
     assert extraction_section > 0
     assert "video-import-member-tabs" not in source
-    assert 'role="tablist"' not in source
-    assert 'role="tabpanel"' not in source
     assert "PROMPTS + IMAGE OUTPUTS" in source
     assert "Exact Describer prompt" in source
     assert "Exact Describer output" in source
@@ -232,11 +229,9 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "One shared reconstruction template." in source
     planner_prompt = source[source.index("const DEFAULT_MEMBER_ORDER_PROMPT"):source.index("const DEFAULT_MEMBER_OUTLINER_PROMPT")]
     assert "cutoutInstructions" not in planner_prompt
-    assert '\\"order\\":[\\"exact object name\\"' in planner_prompt
-    assert '\\"touching\\":[{\\"objects\\"' in planner_prompt
-    assert '\\"occlusions\\":[{\\"occluder\\"' in planner_prompt
-    assert '\\"containments\\":[{\\"container\\"' in planner_prompt
-    assert "every contained object before its container" in planner_prompt
+    assert '\\"groups\\":[[\\"exact object name\\"' in planner_prompt
+    assert "Group the listed objects into ordered waves for extraction." in planner_prompt
+    assert "Use every object's exact name exactly once" in planner_prompt
     assert "parsePlannerRelationships" in source
     assert "migratePlannerPrompt" in source
     assert "setMemberOrderPrompt(migratePlannerPrompt(s.memberOrderPrompt))" in source
@@ -281,7 +276,7 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "(described && inventory.things.length === 0)" in source
     assert ".sort((left, right) => left.frameIndex - right.frameIndex" in source
     assert "orderedMemberInventories" in source
-    assert "retrying after error" in source
+    assert "Describer retrying" in source
     assert "waiting for Describer" in source
     assert "video-import-planner-jump-status" in source
     assert 'id={`recursive-output-${responseCacheHash(inventory.id)}`}' in source
@@ -354,7 +349,8 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "CC Generate captions" in source
     assert "× Clear captions" in source
     assert "video-import-active-caption" in source
-    assert "MEDIA JOB QUEUE" in source
+    assert "visibleJobs.map" in source
+    assert "video-import-status-progress" in source
     assert "effectiveCaptionModel" in source
     assert "clearTurtleTerminations" in source
     assert "onClear={clearTurtleTerminations}" in source
@@ -487,7 +483,7 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "performance.now() - startedAt" in source
     assert "llmCallMetrics" in source
     assert "llmStageProgress" in source
-    assert "ready, but still waiting for a worker" in source
+    assert "ready to run (awaiting a free worker)" in source
     assert ".video-import-llm-call-metrics" in styles
     assert '" has-workers"' in source
     assert ".video-import-llm-call-row > button.has-workers" in styles
@@ -511,7 +507,7 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "total max processes" in source
     assert "DEFAULT_LLM_CALL_CONCURRENCY" in source
     assert "effectiveCallConcurrency" in source
-    assert ".slice(0, 6)" not in source
+    assert "descriptionTasks.slice(0, 6)" not in source
     assert "descriptionTasks" in source
     assert "LLM_RETRY_DELAY_MS = 1000" in source
     assert "scheduleRetry" in source
@@ -526,8 +522,8 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "bestUtilization" in source
     assert "downstreamWaiting" not in source
     assert "reserve cross-stage capacity" in source
-    assert "LLM_STAGE_RESERVE_FRACTION = 0.30" in source
-    assert "LLM_STAGE_RESERVE_MIN = 5" in source
+    assert "LLM_STAGE_MIN_PER_STAGE = 5" in source
+    assert "LLM_STAGE_RESERVE_MAX = 6" in source
     assert "LLM_STAGE_ORDER" in source
     assert "bestRoundRobinDistance" in source
     assert "scheduler.lastGrantedIndex" in source
@@ -601,8 +597,9 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     assert 'aria-label="Video Import steps"' in source
     assert "1 · Sources" in source
     assert "2 · Frames & Filters" in source
-    assert "3 · Objects" in source
-    assert "4 · Finish" in source
+    assert "3 · Games" in source
+    assert "4 · Objects" in source
+    assert "5 · Finish" in source
     assert '.video-import-page[data-subview="sources"]' in styles
     assert '.video-import-page[data-subview="advanced"] > [data-section="config"]' in styles
     assert "runnableInventoryIds" in source
@@ -630,7 +627,7 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     assert 'accept="video/*,.zip,application/zip"' in source
     assert '"image-archive/upload"' in source
     assert "Extracted Images source" in source
-    assert "frameSources.filter" in source
+    assert '.filter((source) => source.id !== "video-extraction"' in source
     assert "Current video above" in source
     assert "Curated data ·" in source
     assert "curated-image-sources/import" in source

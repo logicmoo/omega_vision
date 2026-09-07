@@ -31,6 +31,7 @@ STARTUP_POLICY_PATH = (
 LEGACY_STARTUP_POLICY_PATH = ROOT / "config" / "workbench_startup.json"
 MANAGED_SERVICE_DIRECTORY = ROOT / "workspaces" / "shared_library_system" / "design" / "services"
 PROCESS_LEDGER = ROOT / "runtime" / "run_workbench_processes.json"
+resources = get_filesystem_provider()
 _LAUNCH_LOCK = RLock()
 _PENDING_LAUNCHES: dict[str, tuple[int, float]] = {}
 
@@ -492,9 +493,8 @@ def _validated_environment(service_id: str, value: Any) -> dict[str, str]:
 
 
 def _record_api_launch(service_id: str, process: subprocess.Popen, cwd: Path, command: list[str]) -> None:
-    resources = get_filesystem_provider()
     try:
-        entries = json.loads(resources.read_text(PROCESS_LEDGER, encoding="utf-8"))
+        entries = resources.read_config_json(PROCESS_LEDGER)
     except (OSError, json.JSONDecodeError):
         entries = []
     if not isinstance(entries, list):
@@ -505,8 +505,8 @@ def _record_api_launch(service_id: str, process: subprocess.Popen, cwd: Path, co
     temporary = PROCESS_LEDGER.with_name(
         f".{PROCESS_LEDGER.name}.{os.getpid()}.{get_ident()}.tmp"
     )
-    resources.write_text(temporary, json.dumps(entries, indent=2) + "\n", encoding="utf-8")
-    resources.replace(temporary, PROCESS_LEDGER)
+    resources.write_config_json(temporary, entries)
+    resources.replace_file(temporary, PROCESS_LEDGER)
 
 
 @router.post("/system/services/{service_id}/launch-command")
@@ -599,13 +599,15 @@ def schedule_startup_reconciliation(api_port: int = 8000, delay_seconds: float =
     def run() -> None:
         time.sleep(delay_seconds)
         results = reconcile_startup_services(api_port)
-        provider = get_filesystem_provider()
-        provider.make_directory(LOG_ROOT)
-        payload = json.dumps(
-            {"reconciledAtEpoch": time.time(), "results": results},
-            indent=2,
-        ) + "\n"
-        provider.write_bytes(LOG_ROOT / "startup-reconciliation.json", payload.encode("utf-8"))
+        resources.make_directory(LOG_ROOT)
+        payload = {
+            "reconciledAtEpoch": time.time(),
+            "results": results,
+        }
+        resources.write_config_json(
+            LOG_ROOT / "startup-reconciliation.json",
+            payload,
+        )
     Thread(target=run, name="workbench-startup-reconciler", daemon=True).start()
 
 

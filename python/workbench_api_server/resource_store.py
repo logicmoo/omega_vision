@@ -92,14 +92,25 @@ class FilesystemProvider:
         self._record("read", path)
         return json.loads(path.read_text(encoding="utf-8-sig"))
 
-    def write_config_json(self, path: Path, document: Any) -> None:
+    def write_config_json(
+        self,
+        path: Path,
+        document: Any,
+        *,
+        indent: int | None = 2,
+        ensure_ascii: bool = True,
+        trailing_newline: bool = True,
+    ) -> None:
         """Write a plain JSON configuration file with no MeTTa mirroring."""
         with self._cache_lock:
             self._revision += 1
         self._record("write", path)
         path.parent.mkdir(parents=True, exist_ok=True)
+        content = json.dumps(document, indent=indent, ensure_ascii=ensure_ascii)
+        if trailing_newline:
+            content += "\n"
         # Repository text files use LF, including on Windows.
-        path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="\n")
+        path.write_text(content, encoding="utf-8", newline="\n")
 
     def config_file_exists(self, path: Path) -> bool:
         """Report whether a plain configuration file exists, ignoring MeTTa mirrors."""
@@ -311,6 +322,12 @@ class FilesystemProvider:
         self._record("delete", path)
         self._physical_path(path).unlink(missing_ok=True)
 
+    def delete_file(self, path: Path) -> None:
+        """Delete an exact physical file without JSON resource translation."""
+        self._invalidate(path)
+        self._record("delete", path)
+        path.unlink(missing_ok=True)
+
     def replace(self, source: Path, target: Path) -> None:
         self._invalidate(target)
         self._record("replace", target)
@@ -327,6 +344,20 @@ class FilesystemProvider:
             source.unlink(missing_ok=True)
             return
         source.replace(target)
+
+    def replace_file(self, source: Path, target: Path) -> None:
+        """Atomically replace a physical file without JSON resource translation."""
+        self._invalidate(target)
+        self._record("replace", target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        source.replace(target)
+
+    def move(self, source: Path, target: Path) -> None:
+        """Rename a physical file or directory without JSON resource translation."""
+        self._invalidate(target)
+        self._record("move", target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        source.rename(target)
 
     def copy_tree(self, source: Path, target: Path, *, ignored_names: Iterable[str] = ()) -> None:
         self._record("copy", target)

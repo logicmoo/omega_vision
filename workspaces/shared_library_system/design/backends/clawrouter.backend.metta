@@ -20,6 +20,9 @@
   (implementedBy (
     (clawrouter-free-router ())
   ))
+  (dependedOnBy (
+    (clawrouter-free-router ())
+  ))
   (inheritedBy (
     (clawrouter-free-router (
       (lend ([]

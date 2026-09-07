@@ -30,6 +30,10 @@ from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException, Query
 
+from resource_store import get_filesystem_provider
+
+resources = get_filesystem_provider()
+
 try:  # The client ships as an installed package (mailbox_channel/src/mailbox_channels).
     from mailbox_channels import agent_mailbox as _mailbox_client
     from mailbox_channels import channel_store
@@ -308,7 +312,7 @@ def mailbox_delete(id: str = Query(...)) -> dict[str, Any]:  # noqa: A002 - matc
     path = channel_store.channel_path(root, mailbox_id)
     existed = path.exists()
     if existed:
-        path.unlink()
+        resources.delete_file(path)
     return {"id": mailbox_id, "deleted": existed}
 
 

@@ -31,6 +31,19 @@ def _type_key(value: Any) -> str:
     return "".join(character for character in str(value).casefold() if character.isalnum())
 
 
+def _index_type_records(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    indexed = {
+        _type_key(document["id"]): record
+        for record in records
+        if (document := record.get("document") or {}).get("id")
+    }
+    for record in records:
+        label = (record.get("document") or {}).get("label")
+        if label:
+            indexed.setdefault(_type_key(label), record)
+    return indexed
+
+
 def _implemented_datatypes(document: dict[str, Any]) -> list[str]:
     return relationship_ids(document.get("implements"))
 
@@ -101,7 +114,11 @@ def load_workspace_concrete_datatype_records(workspace_root: Path, *, workspaces
 
 
 def resolve_datatype_representation(workspace_root: Path, datatype_id: str, requested: str | None = None, *, workspaces_root: Path = DEFAULT_WORKSPACES_ROOT) -> dict[str, Any]:
-    datatypes = {_type_key((record.get("document") or {}).get("id")): record for record in load_workspace_datatype_records(workspace_root, workspaces_root=workspaces_root)}
+    datatype_records = load_workspace_datatype_records(
+        workspace_root,
+        workspaces_root=workspaces_root,
+    )
+    datatypes = _index_type_records(datatype_records)
     representations = {_type_key((record.get("document") or {}).get("id")): record for record in load_workspace_representation_records(workspace_root, workspaces_root=workspaces_root)}
     datatype_record = datatypes.get(_type_key(datatype_id))
     if not datatype_record:
@@ -269,10 +286,18 @@ def interface_type_inventory(
                     contracts = step.get(f"{direction}Contract") or step.get(f"{direction}Types")
                     _collect_contract("workflow_step", step_id, contracts, direction[:-1], refs)
 
+    datatype_documents = [
+        record.get("document") or {}
+        for record in load_workspace_datatype_records(
+            workspace_root,
+            workspaces_root=workspaces_root,
+        )
+    ]
     declared_datatypes = {
-        str((record.get("document") or {}).get("id"))
-        for record in load_workspace_datatype_records(workspace_root, workspaces_root=workspaces_root)
-        if (record.get("document") or {}).get("id")
+        str(value)
+        for document in datatype_documents
+        for value in (document.get("id"), document.get("label"))
+        if value
     }
     declared_representations = {
         str((record.get("document") or {}).get("id"))

@@ -465,7 +465,11 @@ def configure_runtime_home(script_file: str | Path) -> Path:
     # Preserve historical script behavior for relative imports, while resource
     # paths remain pinned to the launch workspace discovered above.
     os.chdir(code_root)
-    for import_root in (code_root, code_root / "python"):
+    for import_root in (
+        code_root,
+        code_root / "python",
+        code_root / "python" / "workbench_api_server",
+    ):
         value = str(import_root)
         if value not in sys.path:
             sys.path.insert(0, value)

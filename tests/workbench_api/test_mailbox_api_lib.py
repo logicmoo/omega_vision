@@ -19,6 +19,8 @@ import mailbox_api_lib
 
 @pytest.fixture()
 def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> TestClient:
+    if mailbox_api_lib._mailbox_client is None:
+        pytest.skip("mailbox_chat plugin checkout is not installed")
     monkeypatch.setenv("AGENT_MAILBOX_DIR", str(tmp_path))
     app = FastAPI()
     app.include_router(mailbox_api_lib.router, prefix="/workbench")

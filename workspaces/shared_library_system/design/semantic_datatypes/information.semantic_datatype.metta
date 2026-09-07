@@ -44,6 +44,7 @@
     (observation_collection ())
     (boolean ())
     (number ())
+    (json_value ())
     (program ())
     (provenance_record ())
     (planning_strategy ())
@@ -590,6 +591,19 @@
       ))
     ))
     (number (
+      (lend ([]
+        *
+      ))
+      (withhold ([]
+        id
+        label
+        description
+        implements
+        implementedBy
+        preferredImplementation
+      ))
+    ))
+    (json_value (
       (lend ([]
         *
       ))

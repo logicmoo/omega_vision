@@ -457,13 +457,14 @@ def test_llm_complete_surfaces_provider_error_detail(monkeypatch, tmp_path: Path
         "workspaceRoot": str(tmp_path),
     }
 
-    with pytest.raises(
-        RuntimeError,
-        match="worker-6 not ready; worker-7 rejected",
-    ):
+    with pytest.raises(HTTPError) as captured:
         workflow_providers._llm_complete({"prompt": "hello"}, parameters)
 
+    assert captured.value.code == 503
     assert parameters["_debugExecution"]["response"]["status"] == 503
+    assert parameters["_debugExecution"]["response"]["bodyJson"]["detail"] == (
+        "worker-6 not ready; worker-7 rejected"
+    )
     assert parameters["_debugExecution"]["response"]["bodyJson"]["detail"].startswith("worker-6")
 
 

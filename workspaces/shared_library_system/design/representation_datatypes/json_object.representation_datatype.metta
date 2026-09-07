@@ -4,6 +4,7 @@
   (label "JSON Object")
   (implements (
     (information ())
+    (json_value ())
     (object ())
   ))
   (implementedBy (

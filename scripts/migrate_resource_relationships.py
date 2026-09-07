@@ -5,11 +5,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from _runtime import configure_runtime_home
 
-ROOT = Path(__file__).resolve().parents[1]
-SERVER = ROOT / "workbench" / "server"
-if str(SERVER) not in sys.path:
-    sys.path.insert(0, str(SERVER))
+ROOT = configure_runtime_home(__file__)
 
 from metta_resource_codec import metta_documents_to_json  # noqa: E402
 from resource_relationships import (  # noqa: E402

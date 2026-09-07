@@ -25,12 +25,14 @@ which the ``Arcade`` toolkit already tolerates.
 """
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
+
+from resource_store import get_filesystem_provider
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SOURCE = REPO_ROOT.parent / "arc-interactive" / "environment_files"
 DEFAULT_DEST = REPO_ROOT / "python" / "workbench_api_server" / "environment_files"
+resources = get_filesystem_provider()
 
 
 def is_well_formed_version_dir(path: Path) -> bool:
@@ -39,7 +41,7 @@ def is_well_formed_version_dir(path: Path) -> bool:
         return False
     if not (path / "metadata.json").is_file():
         return False
-    return any(child.suffix == ".py" for child in path.iterdir() if child.is_file())
+    return any(child.suffix == ".py" for child in resources.iterdir(path) if child.is_file())
 
 
 def plan_sync(source: Path, dest: Path, *, only: set[str] | None = None, exclude: set[str] = frozenset()) -> tuple[
@@ -53,7 +55,7 @@ def plan_sync(source: Path, dest: Path, *, only: set[str] | None = None, exclude
     if not source.is_dir():
         raise FileNotFoundError(f"source environments dir not found: {source}")
 
-    for stem_dir in sorted(source.iterdir(), key=lambda path: path.name.lower()):
+    for stem_dir in sorted(resources.iterdir(source), key=lambda path: path.name.lower()):
         if not stem_dir.is_dir():
             continue
         stem = stem_dir.name
@@ -61,7 +63,7 @@ def plan_sync(source: Path, dest: Path, *, only: set[str] | None = None, exclude
             continue
         if stem in exclude:
             continue
-        for version_dir in sorted(stem_dir.iterdir(), key=lambda path: path.name.lower()):
+        for version_dir in sorted(resources.iterdir(stem_dir), key=lambda path: path.name.lower()):
             if not version_dir.is_dir():
                 continue
             if not is_well_formed_version_dir(version_dir):
@@ -78,8 +80,8 @@ def plan_sync(source: Path, dest: Path, *, only: set[str] | None = None, exclude
 
 def apply_sync(to_copy: list[tuple[str, Path, Path]]) -> None:
     for _stem, source_version_dir, dest_version_dir in to_copy:
-        dest_version_dir.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source_version_dir, dest_version_dir)
+        resources.make_directory(dest_version_dir.parent)
+        resources.copy_tree(source_version_dir, dest_version_dir)
 
 
 def sync_summary(source: Path, dest: Path, *, only: set[str] | None = None, exclude: set[str] = frozenset()) -> dict:

@@ -9,10 +9,9 @@ import sys
 import json
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parents[1]
-for _p in (_REPO / "python", _REPO / "python" / "workbench_api_server"):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+from _runtime import configure_runtime_home
+
+_REPO = configure_runtime_home(__file__)
 
 from omega_vision.services import video_import_api as vip  # noqa: E402
 from omega_vision.services.video_import_pipeline import load_state  # noqa: E402

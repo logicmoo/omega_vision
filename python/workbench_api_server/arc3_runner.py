@@ -12,6 +12,9 @@ from typing import Any, Iterable, Mapping, Sequence
 import arc_agi
 
 from image_codec import extract_latest_frame, frame_to_png_bytes
+from resource_store import get_filesystem_provider
+
+resources = get_filesystem_provider()
 
 # Action trees are retired from the play engine. The store is only used when
 # the optional module is importable (debugger/test environments); the server
@@ -351,11 +354,16 @@ class Arc3Runner:
 
     def save_history(self, path: str | Path) -> Path:
         output = Path(path)
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(
-            json.dumps(self.history(), indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        history = self.history()
+        if output.suffix.lower() == ".json":
+            resources.write_config_json(
+                output,
+                history,
+                ensure_ascii=False,
+                trailing_newline=False,
+            )
+        else:
+            resources.write_text(output, json.dumps(history, indent=2, ensure_ascii=False))
         return output
 
     def replay(
@@ -570,7 +578,15 @@ class Arc3Runner:
             "image": str(self.current_node.image_path) if self.current_node else None,
             "observation": _jsonable(self.current_observation),
         }
-        output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        if output.suffix.lower() == ".json":
+            resources.write_config_json(
+                output,
+                payload,
+                ensure_ascii=False,
+                trailing_newline=False,
+            )
+        else:
+            resources.write_text(output, json.dumps(payload, indent=2, ensure_ascii=False))
         return output
 
     def _state_payload(self) -> dict[str, Any]:

@@ -14,15 +14,21 @@ values here.
 
 ## Current recovery state
 
-- Python CI dependency repair (2026-09-08): the `test` extra now includes
-  `arc-agi`, `python-multipart`, `requests`, and `websocket-client`, so the
-  workflow's documented `.[test]` install covers every package imported during
-  collection. Suite startup pins ARC resource selectors to the current checkout
-  before `arc_agi` can load package-local development paths. The
-  mailbox integration test skips when its independently cloned
-  `mailbox_chat`/`ws_collab` plugin repositories are absent. The eight modules
-  that previously failed collection now pass locally (49 passed, 1 optional
-  plugin skip); clean GitHub Actions validation is pending.
+- Python CI repair (2026-09-08): the workflow installs SWI-Prolog and the
+  documented `.[test]` extra covers every package imported during collection.
+  Suite startup pins ARC resource selectors to the current checkout before
+  `arc_agi` can load package-local development paths. Optional mailbox and web
+  collaboration tests skip when their independent plugin checkouts are absent.
+  The ARC CLI model catalog again contains the OpenRouter models/profiles used
+  by workflow extensions, and provider HTTP failures retain their upstream
+  status and diagnostic body. Stale active-UI contracts were reconciled;
+  missing JSON datatype, router dependency backlinks, and visual-diff fixtures
+  were restored; every runnable script uses the shared runtime resolver; and
+  all 115 direct workbench-server filesystem calls now pass through the shared
+  provider without translating operational JSON into MeTTa. Local validation
+  is clean: 1056 Python tests pass with 10 expected optional-plugin skips, and
+  the production frontend build passes. PR #3 GitHub Actions validation is
+  pending.
 
 - TODO terminology normalization (2026-09-08): planning, delivery, architecture,
   API documentation, runtime messages, UI labels, tests, and historical path
