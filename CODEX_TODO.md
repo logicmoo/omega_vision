@@ -15,8 +15,10 @@ values here.
 ## Current recovery state
 
 - Python CI dependency repair (2026-09-08): the `test` extra now includes
-  `arc-agi`, `python-multipart`, and `requests`, so the workflow's documented
-  `.[test]` install covers every package imported during collection. The
+  `arc-agi`, `python-multipart`, `requests`, and `websocket-client`, so the
+  workflow's documented `.[test]` install covers every package imported during
+  collection. Suite startup pins ARC resource selectors to the current checkout
+  before `arc_agi` can load package-local development paths. The
   mailbox integration test skips when its independently cloned
   `mailbox_chat`/`ws_collab` plugin repositories are absent. The eight modules
   that previously failed collection now pass locally (49 passed, 1 optional
