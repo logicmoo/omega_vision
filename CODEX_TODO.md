@@ -14,6 +14,14 @@ values here.
 
 ## Current recovery state
 
+- Python CI dependency repair (2026-09-08): the `test` extra now includes
+  `arc-agi`, `python-multipart`, and `requests`, so the workflow's documented
+  `.[test]` install covers every package imported during collection. The
+  mailbox integration test skips when its independently cloned
+  `mailbox_chat`/`ws_collab` plugin repositories are absent. The eight modules
+  that previously failed collection now pass locally (49 passed, 1 optional
+  plugin skip); clean GitHub Actions validation is pending.
+
 - TODO terminology normalization (2026-09-08): planning, delivery, architecture,
   API documentation, runtime messages, UI labels, tests, and historical path
   maps now use TODO terminology exclusively. Canonical documents are
@@ -40,9 +48,8 @@ values here.
   `workbench_api_server/arc3_play_api.py` stay byte-identical except the
   `_REPO_ROOT parents[...]` line. Known pre-existing failures unrelated to
   this change: 3 `test_video_import_ui.py` layout tests, the
-  `VisualImageDiffPage.tsx` TS7006 build errors, and full-suite collection
-  errors from a leaked `ARC3_RUNTIME_HOME` plus an unavailable `mailbox_chat`
-  plugin import (all reproduce on the base tree).
+  `VisualImageDiffPage.tsx` TS7006 build errors and local full-suite collection
+  errors from a leaked `ARC3_RUNTIME_HOME` (both reproduce on the base tree).
 
 - Parts-extractor comparison controls (updated 2026-09-08): the Recognition extraction
   view has one persisted global `parts_extraction_0` selector that applies to
@@ -86,9 +93,9 @@ values here.
   a large solid region from bridging unrelated details into one group. Two
   focused SWI-Prolog regression tests pass, the production frontend build
   passes, and grouping outputs were regenerated for the active image plus steps
-  0-20. Full-suite collection remains blocked by the existing stale
-  `ARC3_RUNTIME_HOME` configuration and unavailable `scikit-image`/`mailbox_chat`
-  dependencies in the system Python environment.
+  0-20. Local full-suite collection remains affected by the existing stale
+  `ARC3_RUNTIME_HOME` configuration and unavailable `scikit-image` in the
+  system Python environment.
 
 - Video Import now resolves the workspace's inherited effective model through
   `model-selection?include_models=false` before the full Model Policy registry
