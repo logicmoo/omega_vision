@@ -3191,9 +3191,9 @@ export function VideoImportPage({
   // which stroke kinds the turtle cell draws, and which tree nodes are open.
   const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
   const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
-  // Which parts_extraction_0 doer every transform strip displays. "__all__"
-  // expands all extractor paths side by side for each input image.
-  const PARTS_EXTRACTOR_DOERS = ["python_opencv", "python_scikit", "shape_finder_prolog"];
+  // Which active parts_extraction_0 doer every transform strip displays.
+  // "__all__" expands both active paths side by side for each input image.
+  const PARTS_EXTRACTOR_DOERS = ["python_opencv", "shape_finder_prolog"];
   const [partsExtractorSel, setPartsExtractorSel] = useState<string>(() => {
     try {
       const stored = window.localStorage.getItem("videoImport.partsExtractor") || "python_opencv";
@@ -4889,7 +4889,7 @@ export function VideoImportPage({
         while (!cancelled && queue.length > 0) {
           const rel = queue.shift() as string;
           const base = partsTransformBase(rel) as string;
-          const dir = `${base}/parts_extraction_0/python_scikit`;
+          const dir = `${base}/parts_extraction_0/python_opencv`;
           try {
             let todos: any[] | undefined;
             const todosResp = await fetch(asset(`${base}/todos.json`), { cache: "no-store" });
@@ -7370,7 +7370,7 @@ export function VideoImportPage({
                 })()}
                 <div className="video-import-reduce-listctrls">
                   <label className="video-import-global-extractor"
-                    title="One selection controls the parts_extraction_0 column for every input image. Choose All to compare every extractor path per image.">
+                    title="One selection controls the parts_extraction_0 column for every input image. Choose All to compare both active extractor paths per image.">
                     <span>PARTS EXTRACTOR · ALL INPUTS</span>
                     <select value={partsExtractorSel} onChange={(e) => setPartsExtractorSel(e.target.value)}>
                       <option value="__all__">All extractors (compare)</option>
@@ -9312,7 +9312,7 @@ export function VideoImportPage({
                   {partsRunBusy ? "extracting parts…" : "▶ Parts extraction (edges + medians, all inputs)"}
                 </button>
                 <span className="video-import-reduce-partsbar-note">
-                  parts_extraction_0/python_scikit → debug_image.png (left) + result.pl · then parts_grouping_0 + turtle_programs by prolog
+                  parts_extraction_0/python_opencv → debug_image.png (left) + result.pl · then parts_grouping_0 + turtle_programs by prolog
                 </span>
                 <button type="button" className="video-import-btn" onClick={togglePartsTemplate}>
                   {partsTpl.open ? "close todo template" : "✎ todo template"}

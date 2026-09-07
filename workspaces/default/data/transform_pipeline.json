@@ -1,12 +1,21 @@
 {
   "kind": "transform_pipeline_template",
-  "comment": "Initial todo template: stamped onto every unit as todos.json. priority: lower runs first; dependsOn gates on finished steps; type marks task kinds (e.g. ui for debug images).",
+  "comment": "Initial todo template: stamped onto every unit as todos.json. priority: lower runs first; dependsOn gates on finished steps; type marks task kinds: ui (debug/preview renders), llm (1-shot LLM reductions), p_shot (N-shot LLM passes), py_pl (the OpenCV + Prolog workflow).",
   "pipeline": [
     {
       "transformation": "parts_extraction_0",
-      "doer": "python_scikit",
+      "doer": "python_opencv",
       "options": {},
       "priority": 10,
+      "type": "py_pl",
+      "dependsOn": []
+    },
+    {
+      "transformation": "parts_extraction_0",
+      "doer": "shape_finder_prolog",
+      "options": {},
+      "priority": 14,
+      "type": "py_pl",
       "dependsOn": []
     },
     {
@@ -16,7 +25,7 @@
       "priority": 20,
       "type": "ui",
       "dependsOn": [
-        "parts_extraction_0/python_scikit"
+        "parts_extraction_0/python_opencv"
       ]
     },
     {
@@ -24,8 +33,9 @@
       "doer": "group_regions_prolog",
       "options": {},
       "priority": 30,
+      "type": "py_pl",
       "dependsOn": [
-        "parts_extraction_0/python_scikit"
+        "parts_extraction_0/python_opencv"
       ]
     },
     {
@@ -33,6 +43,7 @@
       "doer": "turtle_programs_prolog",
       "options": {},
       "priority": 40,
+      "type": "py_pl",
       "dependsOn": [
         "parts_grouping_0/group_regions_prolog"
       ]

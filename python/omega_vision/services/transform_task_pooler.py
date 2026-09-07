@@ -4,7 +4,7 @@ Every unit (a Sequence Set move dir or an Image Set transforms/<stem> dir)
 carries a little ``todos.json`` describing what still needs to get done:
 
     {"kind": "transformation_todos", "unit": "17", "imagePath": "image.png",
-     "todos": [{"transformation": "parts_extraction_0", "doer": "python_scikit",
+     "todos": [{"transformation": "parts_extraction_0", "doer": "python_opencv",
                 "options": {}, "status": "pending"}, ...]}
 
 This pooler scans one or more roots for those files, claims pending todos,
@@ -180,7 +180,7 @@ def one_pass(roots: list[Path], *, workers: int, limit: int, retry_errors: bool,
             continue
         unit, entries, workable = loaded
         for todo in workable:
-            # untyped legacy todos are the scikit/prolog workflow -> py_pl
+            # Untyped legacy extraction/Prolog todos belong to the py_pl lane.
             ttype = str(todo.get("type") or "py_pl")
             if only_types and ttype not in only_types:
                 continue

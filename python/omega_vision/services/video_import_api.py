@@ -6388,13 +6388,13 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 # game sequence format as subfolders of the move itself:
 #
 #     <move_num>/<transformation>/<doer>/...results...
-#     e.g. 0/parts_extraction_0/python_scikit/result.pl + meta.json + debug_image.png
+#     e.g. 0/parts_extraction_0/python_opencv/result.pl + meta.json + debug_image.png
 #          0/parts_grouping_0/group_regions_prolog/result.pl + meta.json
 #          0/turtle_programs/turtle_programs_prolog/result.pl + meta.json
 #
 # so one move can carry many transformations, each attributed to the doer
-# that produced it (python_scikit does edge/parts extraction; prolog steps
-# are attributed to the .pl rules file that did them), and alternative
+# that produced it (OpenCV does the default edge/parts extraction; Prolog
+# steps are attributed to the .pl rules file that did them), and alternative
 # doers for the same transformation can coexist side by side. Every
 # transform output folder follows one contract: result.pl (the facts),
 # meta.json (attribution + stats; records the exact module behind the
@@ -6403,6 +6403,10 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 # takes a raw frame all the way to grouped parts with redraw programs.
 
 _TRANSFORM_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+_MANUAL_ONLY_PARTS_EXTRACTORS = frozenset({"python_scikit", "scikit_python"})
+_MANUAL_ONLY_PARTS_EXTRACTOR_STEPS = frozenset(
+    f"parts_extraction_0/{doer}" for doer in _MANUAL_ONLY_PARTS_EXTRACTORS
+)
 
 
 def _transform_parts_extraction(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
@@ -6514,14 +6518,18 @@ def _transform_parts_debug(unit: dict[str, Any], out_dir: Path, options: dict[st
         raise RuntimeError("unit has no source image")
     parts_root = unit["dir"] / "parts_extraction_0"
     preferred = str(options.get("partsDoer", "python_opencv"))
+    fallback_geometry = sorted(
+        path
+        for path in parts_root.glob("*/geometry.json")
+        if path.parent.name not in _MANUAL_ONLY_PARTS_EXTRACTORS
+    )
     candidates = [parts_root / preferred / "geometry.json",
                   parts_root / "python_opencv" / "geometry.json",
-                  parts_root / "python_scikit" / "geometry.json",
-                  *sorted(parts_root.glob("*/geometry.json"))]
+                  *fallback_geometry]
     geometry_file = next((path for path in candidates if path.is_file()), None)
     if geometry_file is None:
         legacy = parts_root / "python_scikit" / "debug_image.png"
-        if legacy.is_file():
+        if preferred in _MANUAL_ONLY_PARTS_EXTRACTORS and legacy.is_file():
             shutil.copyfile(legacy, out_dir / "debug_image.png")
             (out_dir / "result.pl").write_text(
                 "% parts_debug_0/python_pil: copied legacy overlay from parts_extraction_0\n"
@@ -6565,10 +6573,14 @@ def _run_prolog_over_parts(unit: dict[str, Any], out_dir: Path, options: dict[st
                            counted: dict[str, str]) -> dict[str, Any]:
     parts_root = unit["dir"] / "parts_extraction_0"
     preferred = str(options.get("partsDoer", "python_opencv"))
+    fallback_results = sorted(
+        path
+        for path in parts_root.glob("*/result.pl")
+        if path.parent.name not in _MANUAL_ONLY_PARTS_EXTRACTORS
+    )
     candidates = [parts_root / preferred / "result.pl",
                   parts_root / "python_opencv" / "result.pl",
-                  parts_root / "python_scikit" / "result.pl",
-                  *sorted(parts_root.glob("*/result.pl"))]
+                  *fallback_results]
     regions = next((path for path in candidates if path.is_file()), None)
     if regions is None:
         raise RuntimeError("no parts_extraction_0/*/result.pl for this unit (run parts_extraction_0 first)")
@@ -6757,8 +6769,6 @@ def write_unit_todos(unit: dict[str, Any],
 _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
     {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {},
      "priority": 10, "type": "py_pl", "dependsOn": []},
-    {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {},
-     "priority": 12, "type": "py_pl", "dependsOn": []},
     {"transformation": "parts_extraction_0", "doer": "shape_finder_prolog", "options": {},
      "priority": 14, "type": "py_pl", "dependsOn": []},
     {"transformation": "parts_debug_0", "doer": "python_pil", "options": {},
@@ -6773,7 +6783,7 @@ _PIPELINE_TEMPLATE_COMMENT = ("Initial todo template: stamped onto every unit as
                               "priority: lower runs first; dependsOn gates on finished steps; "
                               "type marks task kinds: ui (debug/preview renders), llm (1-shot "
                               "LLM reductions), p_shot (N-shot LLM passes), py_pl (the "
-                              "python-scikit + prolog workflow).")
+                              "OpenCV + Prolog workflow).")
 
 
 def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
@@ -6825,15 +6835,28 @@ def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
                     (str(step.get("transformation")), str(step.get("doer")))
                     for step in steps if isinstance(step, dict)
                 }
-                legacy_default = {
-                    ("parts_extraction_0", "python_scikit"),
-                    ("parts_debug_0", "python_pil"),
-                    ("parts_grouping_0", "group_regions_prolog"),
-                    ("turtle_programs", "turtle_programs_prolog"),
-                }
-                # Upgrade only the exact former built-in template. User-edited
+                former_defaults = (
+                    {
+                        ("parts_extraction_0", "python_scikit"),
+                        ("parts_debug_0", "python_pil"),
+                        ("parts_grouping_0", "group_regions_prolog"),
+                        ("turtle_programs", "turtle_programs_prolog"),
+                    },
+                    {
+                        ("parts_extraction_0", "python_opencv"),
+                        ("parts_extraction_0", "python_scikit"),
+                        ("parts_extraction_0", "shape_finder_prolog"),
+                        ("parts_debug_0", "python_pil"),
+                        ("parts_grouping_0", "group_regions_prolog"),
+                        ("turtle_programs", "turtle_programs_prolog"),
+                    },
+                )
+                # Upgrade only exact former built-in templates. User-edited
                 # templates remain authoritative.
-                if legacy_keys == legacy_default and len(steps) == len(legacy_default):
+                if any(
+                    legacy_keys == default_keys and len(steps) == len(default_keys)
+                    for default_keys in former_defaults
+                ):
                     upgraded = [dict(step) for step in _DEFAULT_PIPELINE_TEMPLATE]
                     file.write_text(json.dumps({
                         "kind": "transform_pipeline_template",
@@ -7150,11 +7173,11 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     meta.json (attribution + stats), and optionally debug_image.png. Outputs
     travel with the game sequence: ``<move>/<transformation>/<doer>/...`` for
     recordings, ``data/<set>/transforms/<image>/<transformation>/<doer>/...``
-    for image sets. By default the full pipeline runs all registered parts
-    extractors, then parts_grouping_0 and turtle_programs by their Prolog
-    rules. Pass ``transformation``/``doer`` for a single step or ``pipeline``
-    for an explicit list. Already-transformed units are skipped unless
-    ``force``; ``moves`` limits the run to specific ordinals/stems.
+    for image sets. By default the full pipeline runs the active OpenCV and
+    Prolog parts extractors, then parts_grouping_0 and turtle_programs by their
+    Prolog rules. Pass ``transformation``/``doer`` for a single step or
+    ``pipeline`` for an explicit list. Already-transformed units are skipped
+    unless ``force``; ``moves`` limits the run to specific ordinals/stems.
     """
     workspace_id = str(body.get("workspaceId") or "")
     if not workspace_id:
@@ -7255,9 +7278,19 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         for entry in payload.get("todos", []) if isinstance(payload, dict) else []:
             if not isinstance(entry, dict) or not entry.get("transformation") or not entry.get("doer"):
                 continue
-            spec = {"transformation": str(entry["transformation"]), "doer": str(entry["doer"]),
+            transformation = str(entry["transformation"])
+            doer = str(entry["doer"])
+            if transformation == "parts_extraction_0" and doer in _MANUAL_ONLY_PARTS_EXTRACTORS:
+                continue
+            depends_on = [
+                "parts_extraction_0/python_opencv"
+                if str(dependency) in _MANUAL_ONLY_PARTS_EXTRACTOR_STEPS
+                else str(dependency)
+                for dependency in (entry.get("dependsOn") or [])
+            ]
+            spec = {"transformation": transformation, "doer": doer,
                     "options": entry.get("options") or {},
-                    "dependsOn": [str(d) for d in (entry.get("dependsOn") or [])],
+                    "dependsOn": list(dict.fromkeys(depends_on)),
                     "priority": int(entry.get("priority", 100))}
             if entry.get("type"):
                 spec["type"] = str(entry["type"])

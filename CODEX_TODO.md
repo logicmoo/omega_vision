@@ -37,20 +37,24 @@ values here.
   errors from a leaked `ARC3_RUNTIME_HOME` plus an unavailable `mailbox_chat`
   plugin import (all reproduce on the base tree).
 
-- Parts-extractor comparison controls (2026-09-07): the Recognition extraction
+- Parts-extractor comparison controls (updated 2026-09-08): the Recognition extraction
   view has one persisted global `parts_extraction_0` selector that applies to
-  every input row. It can show OpenCV, scikit, or pure Prolog alone, or expand
-  all three paths side by side per input, including unstamped placeholders.
+  every input row. It can show OpenCV or pure Prolog alone, or expand both
+  paths side by side per input, including unstamped placeholders. The slow
+  scikit implementation remains available only for explicit legacy/contract
+  use; it is absent from the reduction selector, default templates, automatic
+  downstream fallbacks, and newly stamped todos. Add/Merge also removes stale
+  `python_scikit`/`scikit_python` todo entries and retargets their downstream
+  dependencies to OpenCV.
   Todo stamping is split into **Add/Merge todos** (preserves current steps and
   results) and **Fresh todos** (replaces the queue and removes only the current
   template's outputs before recomputation). A persisted First-N limit scopes
   either action for quick previews; zero means the complete set. The API rejects
   a fresh reset while any selected output is actively claimed. Exact legacy
-  four-step workspace templates migrate to the three-extractor default without
-  changing user-customized templates. Focused Video Import tests (20) and the
-  production frontend build passed; live DOM inspection confirmed one global
-  selector, the two todo actions, and three extraction cells for one input in
-  compare mode.
+  four-step and three-extractor workspace templates migrate to the active
+  OpenCV-plus-Prolog default without changing user-customized templates.
+  Focused no-scikit Video Import tests (16) and the production frontend build
+  passed; existing runtime todo files were migrated in place.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten

@@ -35,16 +35,34 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
     assert saved["lastExtract"] == {"count": 4}
 
 
-def test_legacy_default_pipeline_template_upgrades_to_all_extractors(tmp_path: Path) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
-    template.parent.mkdir(parents=True)
-    template.write_text(json.dumps({
-        "pipeline": [
+@pytest.mark.parametrize(
+    "pipeline",
+    [
+        [
             {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {}, "priority": 10, "dependsOn": []},
             {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_scikit"]},
             {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_scikit"]},
             {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
         ],
+        [
+            {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {}, "priority": 10, "dependsOn": []},
+            {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {}, "priority": 12, "dependsOn": []},
+            {"transformation": "parts_extraction_0", "doer": "shape_finder_prolog", "options": {}, "priority": 14, "dependsOn": []},
+            {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+        ],
+    ],
+    ids=["scikit-only-default", "three-extractor-default"],
+)
+def test_former_builtin_pipeline_templates_upgrade_without_scikit(
+    tmp_path: Path,
+    pipeline: list[dict],
+) -> None:
+    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template.parent.mkdir(parents=True)
+    template.write_text(json.dumps({
+        "pipeline": pipeline,
     }), encoding="utf-8")
 
     upgraded = video_import_api.load_pipeline_template(tmp_path)
@@ -53,8 +71,75 @@ def test_legacy_default_pipeline_template_upgrades_to_all_extractors(tmp_path: P
         step["doer"] for step in upgraded
         if step["transformation"] == "parts_extraction_0"
     }
-    assert extractor_doers == {"python_opencv", "python_scikit", "shape_finder_prolog"}
+    assert extractor_doers == {"python_opencv", "shape_finder_prolog"}
+    assert all(step["doer"] not in {"python_scikit", "scikit_python"} for step in upgraded)
     assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == upgraded
+
+
+def test_merge_todos_removes_scikit_and_retargets_dependencies(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    set_dir = tmp_path / "image_set"
+    pool = set_dir / "pool"
+    pool.mkdir(parents=True)
+    Image.new("RGB", (2, 2), "white").save(pool / "a.png")
+    unit_dir = set_dir / "transforms" / "a"
+    unit_dir.mkdir(parents=True)
+    (unit_dir / "todos.json").write_text(json.dumps({
+        "todos": [
+            {
+                "transformation": "parts_extraction_0",
+                "doer": "python_scikit",
+                "dependsOn": [],
+                "priority": 12,
+            },
+            {
+                "transformation": "parts_grouping_0",
+                "doer": "group_regions_prolog",
+                "dependsOn": ["parts_extraction_0/python_scikit"],
+                "priority": 30,
+            },
+        ],
+    }), encoding="utf-8")
+
+    monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
+    monkeypatch.setattr(video_import_api, "_resolve_set_dir", lambda _root, _rel: set_dir)
+    monkeypatch.setattr(video_import_api, "_pooler_point_at", lambda _root, _workers: {"ok": True})
+
+    video_import_api.sequence_set_transform({
+        "workspaceId": "test",
+        "set": "curated/test",
+        "pipeline": [{
+            "transformation": "parts_extraction_0",
+            "doer": "python_opencv",
+            "options": {},
+            "priority": 10,
+            "dependsOn": [],
+        }],
+        "planOnly": True,
+        "mergeTodos": True,
+        "workers": 1,
+    })
+
+    todos = json.loads((unit_dir / "todos.json").read_text(encoding="utf-8"))["todos"]
+    assert [todo["doer"] for todo in todos] == ["python_opencv", "group_regions_prolog"]
+    assert todos[1]["dependsOn"] == ["parts_extraction_0/python_opencv"]
+
+
+def test_grouping_reduction_does_not_fallback_to_scikit_output(tmp_path: Path) -> None:
+    image_path = tmp_path / "image.png"
+    Image.new("RGB", (2, 2), "white").save(image_path)
+    scikit_dir = tmp_path / "parts_extraction_0" / "python_scikit"
+    scikit_dir.mkdir(parents=True)
+    (scikit_dir / "result.pl").write_text(
+        "img_size(2, 2).\nregion(r1, white, 4, centroid(0, 0)).\n",
+        encoding="utf-8",
+    )
+    unit = {"id": "image", "dir": tmp_path, "image": image_path}
+
+    with pytest.raises(RuntimeError, match="no parts_extraction_0/.*/result.pl"):
+        video_import_api._transform_part_groups(unit, tmp_path / "groups", {})
 
 
 def test_fresh_todos_reset_only_requested_preview_units(
