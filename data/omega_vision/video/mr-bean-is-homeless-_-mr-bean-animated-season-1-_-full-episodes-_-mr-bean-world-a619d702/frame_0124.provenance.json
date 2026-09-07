@@ -1,0 +1,51 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/vision_frames/video/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-a619d702/frame_0124.png",
+  "provenance": "data/vision_frames/video/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-a619d702/frame_0124.provenance.json",
+  "createdAt": "2026-09-03T10:43:31.807413Z",
+  "operation": "extract_video_frame",
+  "dimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 360
+  },
+  "root": {
+    "firstSeenImage": "data/vision_frames/video/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-a619d702/frame_0124.png",
+    "dimensions": {
+      "width": 640,
+      "height": 360
+    },
+    "sourceVideo": "data/video_import/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world/video.mp4",
+    "atSeconds": 9.92,
+    "sceneIndex": null,
+    "videoFrameIndex": 248
+  },
+  "parent": null,
+  "source": {
+    "sourceVideo": "data/video_import/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world/video.mp4",
+    "atSeconds": 9.92,
+    "sceneIndex": null,
+    "videoFrameIndex": 248
+  },
+  "transform": {
+    "mode": "interval"
+  },
+  "lineage": [
+    {
+      "image": "data/vision_frames/video/mr-bean-is-homeless-_-mr-bean-animated-season-1-_-full-episodes-_-mr-bean-world-a619d702/frame_0124.png",
+      "operation": "extract_video_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 360
+      },
+      "transform": {
+        "mode": "interval"
+      },
+      "createdAt": "2026-09-03T10:43:31.807413Z"
+    }
+  ]
+}
