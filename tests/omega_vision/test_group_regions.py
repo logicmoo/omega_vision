@@ -71,3 +71,61 @@ shared_edge(mass, detail, 20).
 
     assert "part_group(g1, [detail,mass])." in grouped
     assert "part_group(g2," not in grouped
+
+
+@pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
+def test_matching_color_region_in_exposed_cutout_belongs_to_background(
+    tmp_path: Path,
+) -> None:
+    grouped = _group_facts(
+        tmp_path,
+        """
+:- dynamic region/4, adjacent/2, encloses/2, border/1, img_size/2, hole/2.
+img_size(100, 100).
+region(exterior, blue, 5000, centroid(50, 50)).
+region(shell, red, 1000, centroid(30, 30)).
+region(cutout, blue, 100, centroid(30, 30)).
+border(exterior).
+adjacent(exterior, shell).
+encloses(shell, cutout).
+hole(shell, [xy(20,20),xy(40,20),xy(40,40),xy(20,40),xy(20,20)]).
+""",
+    )
+
+    assert "background(exterior)." in grouped
+    assert "background(cutout)." in grouped
+    assert "part_group(g1, [shell])." in grouped
+    assert "detachable(cutout)." not in grouped
+
+
+@pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
+@pytest.mark.parametrize(
+    ("touches_background", "cutout_color"),
+    [(False, "blue"), (True, "green")],
+)
+def test_cutout_region_requires_background_touch_and_matching_color(
+    tmp_path: Path,
+    touches_background: bool,
+    cutout_color: str,
+) -> None:
+    adjacency = "adjacent(exterior, shell)." if touches_background else ""
+    grouped = _group_facts(
+        tmp_path,
+        f"""
+:- dynamic region/4, adjacent/2, encloses/2, border/1, img_size/2, hole/2.
+img_size(100, 100).
+region(exterior, blue, 5000, centroid(50, 50)).
+region(shell, red, 1000, centroid(30, 30)).
+region(cutout, {cutout_color}, 100, centroid(30, 30)).
+border(exterior).
+{adjacency}
+encloses(shell, cutout).
+hole(shell, [xy(20,20),xy(40,20),xy(40,40),xy(20,40),xy(20,20)]).
+""",
+    )
+
+    assert "background(exterior)." in grouped
+    assert "background(cutout)." not in grouped
+    assert "part_group(g1, [shell])." in grouped
+    assert "part_group(g2, [cutout])." in grouped
+    assert "detachable(cutout)." in grouped

@@ -56,6 +56,22 @@ values here.
   frontend build passed; all 87 existing runtime todo files were migrated and
   stale Prolog-extractor claims were removed.
 
+- OpenCV grouping evidence and background cutouts (2026-09-08): the sole
+  automatic extractor now appends advisory connected-component, contour
+  hierarchy, morphology, shape-metric, and watershed facts to every
+  `parts_extraction_0/python_opencv/result.pl`. Extraction metadata and the
+  Recognition UI expose component, contour, and watershed counts. All 87
+  existing OpenCV outputs were regenerated with the extended fact contract.
+  Authoritative grouping remains in `group_regions.pl`: in addition to the
+  large border-connected exterior, a region is now background when it has the
+  exterior's color, fills another region's cutout, and that cutout owner
+  touches the exterior. Such regions are excluded from foreground groups,
+  object instances, and detachable parts without altering geometric
+  `part_of/2` containment. The rule identifies the intended enclosed
+  background in 16 active recording steps and the root image; all 69 existing
+  grouping outputs were regenerated. Five focused grouping tests, two OpenCV
+  fact-contract/SWI-Prolog tests, and the production frontend build pass.
+
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
   percent of the input image. It then recomputes attachment components among
@@ -64,7 +80,7 @@ values here.
   focused SWI-Prolog regression tests pass, the production frontend build
   passes, and grouping outputs were regenerated for the active image plus steps
   0-20. Full-suite collection remains blocked by the existing stale
-  `ARC3_RUNTIME_HOME` configuration and unavailable `scipy`/`mailbox_chat`
+  `ARC3_RUNTIME_HOME` configuration and unavailable `scikit-image`/`mailbox_chat`
   dependencies in the system Python environment.
 
 - Video Import now resolves the workspace's inherited effective model through

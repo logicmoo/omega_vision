@@ -15,6 +15,8 @@ masks with OpenCV primitives instead of full-frame scikit passes:
                      else ``skimage.morphology.medial_axis`` on the crop;
                      both feed the same crest pruning + path walking
 - fill peaks:        ``cv2.distanceTransform`` local maxima
+- grouping evidence: connected components, contour hierarchy, morphology
+                     stability, shape metrics, and watershed segments
 
 Segmentation reuses the shared gradient-blob labeller so parts stay
 comparable across doers.
@@ -102,6 +104,38 @@ def region_polygons_cv(labels: np.ndarray, big: set,
         outer = _ring(simplify(contours[outer_index]))
         if len(outer) < 3:
             continue
+        outer_contour = contours[outer_index]
+        contour_area = abs(float(cv2.contourArea(outer_contour)))
+        contour_perimeter = float(cv2.arcLength(outer_contour, True))
+        hull_area = abs(float(cv2.contourArea(cv2.convexHull(outer_contour))))
+        _bx, _by, box_width, box_height = cv2.boundingRect(outer_contour)
+        padded = np.pad(mask, 1)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        opening = cv2.morphologyEx(padded, cv2.MORPH_OPEN, kernel)
+        closing = cv2.morphologyEx(padded, cv2.MORPH_CLOSE, kernel)
+        gradient = cv2.morphologyEx(padded, cv2.MORPH_GRADIENT, kernel)
+        morphology = {
+            "openingArea": int(np.count_nonzero(opening)),
+            "closingArea": int(np.count_nonzero(closing)),
+            "gradientArea": int(np.count_nonzero(gradient)),
+        }
+        shape_metrics = {
+            "contourArea": round(contour_area, 4),
+            "hullArea": round(hull_area, 4),
+            "solidity": round(contour_area / hull_area, 6) if hull_area else 0.0,
+            "circularity": round(
+                4.0 * np.pi * contour_area / (contour_perimeter * contour_perimeter),
+                6,
+            ) if contour_perimeter else 0.0,
+            "extent": round(
+                contour_area / float(box_width * box_height),
+                6,
+            ) if box_width and box_height else 0.0,
+            "aspectRatio": round(
+                float(box_width) / float(box_height),
+                6,
+            ) if box_height else 0.0,
+        }
         holes: list[list[tuple[int, int]]] = []
         for i, h in enumerate(hierarchy):
             ring = None
@@ -111,7 +145,25 @@ def region_polygons_cv(labels: np.ndarray, big: set,
                 ring = _ring(simplify(contours[i]))  # disjoint island, kept like scikit
             if ring and len(ring) >= 3:
                 holes.append(ring)
-        polygons[gid] = {"outer": outer, "holes": holes}
+        contour_hierarchy = [
+            {
+                "index": i,
+                "kind": "hole" if int(h[3]) >= 0 else "outer",
+                "next": int(h[0]),
+                "previous": int(h[1]),
+                "child": int(h[2]),
+                "parent": int(h[3]),
+                "area": round(abs(float(cv2.contourArea(contours[i]))), 4),
+            }
+            for i, h in enumerate(hierarchy)
+        ]
+        polygons[gid] = {
+            "outer": outer,
+            "holes": holes,
+            "contours": contour_hierarchy,
+            "morphology": morphology,
+            "shapeMetrics": shape_metrics,
+        }
     return polygons
 
 
@@ -229,6 +281,216 @@ def region_fillpoints_cv(labels: np.ndarray, big: set,
     return fillpoints
 
 
+def _background_candidate(info: dict, big: set, width: int, height: int) -> int | None:
+    min_area = 0.06 * width * height
+    candidates = [
+        gid for gid in big
+        if info[gid].get("border") and info[gid]["area"] >= min_area
+    ]
+    return max(candidates, key=lambda gid: info[gid]["area"], default=None)
+
+
+def foreground_components_cv(
+    labels: np.ndarray,
+    info: dict,
+    big: set,
+    width: int,
+    height: int,
+) -> tuple[int | None, list[dict]]:
+    """Eight-connected components after removing the largest plausible
+    border-background candidate. These remain advisory rather than duplicating
+    the richer authoritative Prolog background rules."""
+    cv2 = _require_cv2()
+    background = _background_candidate(info, big, width, height)
+    foreground = set(big)
+    if background is not None:
+        foreground.discard(background)
+    if not foreground:
+        return background, []
+    mask = np.isin(labels, list(foreground)).astype(np.uint8)
+    count, component_labels, stats, centroids = cv2.connectedComponentsWithStats(
+        mask,
+        connectivity=8,
+    )
+    components: list[dict] = []
+    for component_id in range(1, count):
+        component_mask = component_labels == component_id
+        members = sorted(
+            int(gid)
+            for gid in np.unique(labels[component_mask])
+            if int(gid) in foreground
+        )
+        if not members:
+            continue
+        components.append({
+            "id": len(components) + 1,
+            "members": members,
+            "area": int(stats[component_id, cv2.CC_STAT_AREA]),
+            "centroid": (
+                int(round(float(centroids[component_id][0]))),
+                int(round(float(centroids[component_id][1]))),
+            ),
+        })
+    return background, components
+
+
+def watershed_segments_cv(
+    image_rgb: np.ndarray,
+    labels: np.ndarray,
+    regions: set,
+    boxes: dict[int, tuple[int, int, int, int]],
+) -> dict[int, list[dict]]:
+    """Conventional distance-marker watershed segments within each region."""
+    cv2 = _require_cv2()
+    segments: dict[int, list[dict]] = {}
+    for gid in sorted(regions):
+        box = boxes.get(gid)
+        if box is None:
+            continue
+        y0, y1, x0, x1 = box
+        mask = (labels[y0:y1 + 1, x0:x1 + 1] == gid).astype(np.uint8)
+        if min(mask.shape) < 3:
+            ys, xs = np.nonzero(mask)
+            if len(xs):
+                segments[gid] = [{
+                    "id": 1,
+                    "area": int(len(xs)),
+                    "centroid": (
+                        int(round(float(xs.mean()))) + x0,
+                        int(round(float(ys.mean()))) + y0,
+                    ),
+                }]
+            continue
+        distance = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
+        peak = float(distance.max())
+        if peak <= 0:
+            continue
+        sure_foreground = (distance >= 0.45 * peak).astype(np.uint8)
+        marker_count, markers = cv2.connectedComponents(sure_foreground)
+        markers = markers.astype(np.int32) + 1
+        unknown = cv2.subtract(mask, sure_foreground)
+        markers[unknown > 0] = 0
+        markers[mask == 0] = 1
+        crop = cv2.cvtColor(
+            image_rgb[y0:y1 + 1, x0:x1 + 1],
+            cv2.COLOR_RGB2BGR,
+        )
+        cv2.watershed(crop, markers)
+        region_segments: list[dict] = []
+        for marker in range(2, marker_count + 1):
+            ys, xs = np.nonzero((markers == marker) & (mask > 0))
+            if len(xs) == 0:
+                continue
+            region_segments.append({
+                "id": len(region_segments) + 1,
+                "area": int(len(xs)),
+                "centroid": (
+                    int(round(float(xs.mean()))) + x0,
+                    int(round(float(ys.mean()))) + y0,
+                ),
+            })
+        if not region_segments:
+            ys, xs = np.nonzero(mask)
+            if len(xs):
+                region_segments.append({
+                    "id": 1,
+                    "area": int(len(xs)),
+                    "centroid": (
+                        int(round(float(xs.mean()))) + x0,
+                        int(round(float(ys.mean()))) + y0,
+                    ),
+                })
+        if region_segments:
+            segments[gid] = region_segments
+    return segments
+
+
+def opencv_grouping_prolog(
+    background: int | None,
+    components: list[dict],
+    polygons: dict[int, dict],
+    watershed: dict[int, list[dict]],
+) -> str:
+    """Render advisory OpenCV grouping evidence as queryable Prolog facts."""
+    predicates = (
+        "opencv_background_candidate/1",
+        "opencv_component/2",
+        "opencv_component_area/2",
+        "opencv_component_centroid/2",
+        "opencv_contour/4",
+        "opencv_contour_hierarchy/6",
+        "opencv_morphology/4",
+        "opencv_shape_metrics/7",
+        "opencv_watershed_count/2",
+        "opencv_watershed_segment/4",
+    )
+    lines = [
+        "",
+        "% OpenCV grouping evidence (advisory; base topology remains authoritative).",
+    ]
+    for predicate in predicates:
+        lines.extend((
+            f":- dynamic {predicate}.",
+            f":- discontiguous {predicate}.",
+        ))
+    if background is not None:
+        lines.append(f"opencv_background_candidate(r{background}).")
+    for component in components:
+        component_id = f"cc{component['id']}"
+        members = ",".join(f"r{gid}" for gid in component["members"])
+        cx, cy = component["centroid"]
+        lines.append(f"opencv_component({component_id}, [{members}]).")
+        lines.append(f"opencv_component_area({component_id}, {component['area']}).")
+        lines.append(f"opencv_component_centroid({component_id}, centroid({cx},{cy})).")
+    for gid in sorted(polygons):
+        region = f"r{gid}"
+        details = polygons[gid]
+        morphology = details.get("morphology") or {}
+        lines.append(
+            f"opencv_morphology({region}, "
+            f"opening_area({morphology.get('openingArea', 0)}), "
+            f"closing_area({morphology.get('closingArea', 0)}), "
+            f"gradient_area({morphology.get('gradientArea', 0)}))."
+        )
+        metrics = details.get("shapeMetrics") or {}
+        lines.append(
+            f"opencv_shape_metrics({region}, "
+            f"contour_area({metrics.get('contourArea', 0)}), "
+            f"hull_area({metrics.get('hullArea', 0)}), "
+            f"solidity({metrics.get('solidity', 0)}), "
+            f"circularity({metrics.get('circularity', 0)}), "
+            f"extent({metrics.get('extent', 0)}), "
+            f"aspect_ratio({metrics.get('aspectRatio', 0)}))."
+        )
+        for contour in details.get("contours") or []:
+            contour_id = f"c{contour['index']}"
+
+            def contour_ref(value: int) -> str:
+                return "none" if value < 0 else f"c{value}"
+
+            lines.append(
+                f"opencv_contour({region}, {contour_id}, {contour['kind']}, "
+                f"{contour['area']})."
+            )
+            lines.append(
+                f"opencv_contour_hierarchy({region}, {contour_id}, "
+                f"next({contour_ref(contour['next'])}), "
+                f"previous({contour_ref(contour['previous'])}), "
+                f"child({contour_ref(contour['child'])}), "
+                f"parent({contour_ref(contour['parent'])}))."
+            )
+    for gid in sorted(watershed):
+        region_segments = watershed[gid]
+        lines.append(f"opencv_watershed_count(r{gid}, {len(region_segments)}).")
+        for segment in region_segments:
+            cx, cy = segment["centroid"]
+            lines.append(
+                f"opencv_watershed_segment(r{gid}, ws{segment['id']}, "
+                f"{segment['area']}, centroid({cx},{cy}))."
+            )
+    return "\n".join(lines) + "\n"
+
+
 def extract_region_facts_cv(
     image_path: str | Path,
     *,
@@ -249,8 +511,9 @@ def extract_region_facts_cv(
         img = img.resize((max(1, round(img.size[0] * scale)), max(1, round(img.size[1] * scale))), Image.LANCZOS)
     img, filter_action = enhance(img, filter_mode)
     w, h = img.size
+    image_rgb = np.asarray(img.convert("RGB"))
     if tolerance > 0:
-        labels, info = gradient_blobs(np.asarray(img.convert("RGB")), tolerance)
+        labels, info = gradient_blobs(image_rgb, tolerance)
     else:
         idx, colors = quantize(img, 14, 0)
         labels, info = label_map(idx, colors)
@@ -263,6 +526,11 @@ def extract_region_facts_cv(
     polygons = region_polygons_cv(labels, big, boxes)
     midlines = region_midlines_cv(labels, big, boxes)
     fillpoints = region_fillpoints_cv(labels, big, boxes)
+    background, components = foreground_components_cv(labels, info, big, w, h)
+    watershed_regions = set(big)
+    if background is not None:
+        watershed_regions.discard(background)
+    watershed = watershed_segments_cv(image_rgb, labels, watershed_regions, boxes)
     parts = [
         {
             "id": f"r{gid}",
@@ -270,8 +538,10 @@ def extract_region_facts_cv(
             "area": info[gid]["area"],
             "outer": len(polygons.get(gid, {}).get("outer", [])),
             "holes": len(polygons.get(gid, {}).get("holes", [])),
+            "contours": len(polygons.get(gid, {}).get("contours", [])),
             "midlines": len(midlines.get(gid, [])),
             "fillpoints": len(fillpoints.get(gid, [])),
+            "watershedSegments": len(watershed.get(gid, [])),
         }
         for gid in sorted(big, key=lambda g: -info[g]["area"])
     ]
@@ -286,14 +556,25 @@ def extract_region_facts_cv(
             "polygons": {str(g): d for g, d in polygons.items()},
             "midlines": {str(g): p for g, p in midlines.items()},
             "fillpoints": {str(g): p for g, p in fillpoints.items()},
+            "components": components,
+            "watershed": {str(g): p for g, p in watershed.items()},
         }, ensure_ascii=False), encoding="utf-8")
+    base_prolog = to_prolog(info, pairs, big, w, h, perims, polygons, midlines, fillpoints)
     return {
-        "prolog": to_prolog(info, pairs, big, w, h, perims, polygons, midlines, fillpoints),
+        "prolog": base_prolog + opencv_grouping_prolog(
+            background,
+            components,
+            polygons,
+            watershed,
+        ),
         "width": w,
         "height": h,
         "regionCount": len(big),
         "adjacencyCount": sum(1 for a, b in pairs if a in big and b in big),
         "blobCount": len(info),
+        "componentCount": len(components),
+        "contourCount": sum(len(value.get("contours", [])) for value in polygons.values()),
+        "watershedSegmentCount": sum(len(value) for value in watershed.values()),
         "tolerance": tolerance,
         "filterAction": filter_action,
         "minArea": min_area,

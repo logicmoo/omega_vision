@@ -39,12 +39,23 @@ part_map(Parts) :-
 
 part(Id, Color, Area, Centroid) :- region(Id, Color, Area, Centroid).
 
-% ---- background: hugs the edge and is large (bridges unrelated objects) -----
-background(Id) :-
+% ---- background: exterior plus matching-color regions in exposed cutouts -----
+% The exterior background hugs the image edge and is large. If a foreground
+% region touches it, a same-color region filling one of that region's cutouts
+% is background too rather than a detachable foreground part.
+exterior_background(Id) :-
     border(Id),
     img_size(W, H),
     region(Id, _, Area, _),
     Area >= 0.10 * W * H.
+
+background(Id) :- exterior_background(Id).
+background(Inner) :-
+    exterior_background(Bg),
+    adj(Outer, Bg),
+    region(Bg, Color, _, _),
+    region(Inner, Color, _, _),
+    in_cutout(Inner, Outer, _).
 
 foreground(Id) :- region(Id, _, _, _), \+ background(Id).
 
@@ -112,15 +123,18 @@ nonbg_cutout(Outer, Inner) :-
     in_smooth_cutout(Inner, Outer, _),
     \+ background(Outer).
 
-% Inner fills the smooth cutout Ring of Outer: enclosed, and a point of its
-% fill lies inside that hole ring. Fillpoints are guaranteed interior
-% (centroids are not: donuts, crescents), so probe those first.
-in_smooth_cutout(Inner, Outer, Ring) :-
+% Inner fills the cutout Ring of Outer: enclosed, and a point of its fill lies
+% inside that hole ring. Fillpoints are guaranteed interior (centroids are not:
+% donuts, crescents), so probe those first.
+in_cutout(Inner, Outer, Ring) :-
     encloses(Outer, Inner),
     inner_probe(Inner, CX, CY),
     hole(Outer, Ring),
-    ring_smooth(Ring),
     point_in_ring(CX, CY, Ring).
+
+in_smooth_cutout(Inner, Outer, Ring) :-
+    in_cutout(Inner, Outer, Ring),
+    ring_smooth(Ring).
 
 inner_probe(Inner, X, Y) :- fillpoint(Inner, xy(X, Y), _), !.
 inner_probe(Inner, X, Y) :- region(Inner, _, _, centroid(X, Y)).
@@ -177,7 +191,7 @@ crossings([xy(X1,Y1), xy(X2,Y2)|T], X, Y, Acc, C) :-
     ),
     crossings([xy(X2,Y2)|T], X, Y, Acc1, C).
 
-detachable(Inner) :- encloses(_, Inner).
+detachable(Inner) :- encloses(_, Inner), \+ background(Inner).
 
 scluster([], Acc, Sorted) :- sort(Acc, Sorted).
 scluster([X|Q], Acc, Out) :-
@@ -335,7 +349,7 @@ partition_objects([Id|T], Seen, Objs) :-
 report :-
     aggregate_all(count, region(_,_,_,_), NR),
     aggregate_all(count, encloses(_,_), NE),
-    findall(Id, background(Id), Bg), length(Bg, NB),
+    findall(Id, background(Id), Bg0), sort(Bg0, Bg), length(Bg, NB),
     objects(Objs), length(Objs, NO),
     part_groups(Groups),
     include([G]>>(length(G, LG), LG >= 2), Groups, RealGroups),

@@ -4,6 +4,7 @@ OUTER EDGE (polygon/2), INNER EDGES (hole/2), INNER MEDIALS (midline/2)."""
 from __future__ import annotations
 
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -36,6 +37,22 @@ def _assert_full_contract(prolog_text: str) -> None:
     assert "midline(" in prolog_text, "missing inner medials"
 
 
+def _assert_opencv_grouping_contract(prolog_text: str) -> None:
+    for predicate in (
+        "opencv_background_candidate(",
+        "opencv_component(",
+        "opencv_component_area(",
+        "opencv_component_centroid(",
+        "opencv_contour(",
+        "opencv_contour_hierarchy(",
+        "opencv_morphology(",
+        "opencv_shape_metrics(",
+        "opencv_watershed_count(",
+        "opencv_watershed_segment(",
+    ):
+        assert predicate in prolog_text, f"missing {predicate}"
+
+
 def test_scikit_finder_outputs_outer_inner_and_medials(shapes_image: Path) -> None:
     from omega_vision.perception.pixels_to_regions import extract_region_facts
 
@@ -50,7 +67,11 @@ def test_opencv_finder_outputs_outer_inner_and_medials(shapes_image: Path) -> No
 
     facts = extract_region_facts_cv(shapes_image, tolerance=24, max_dim=200)
     _assert_full_contract(facts["prolog"])
+    _assert_opencv_grouping_contract(facts["prolog"])
     assert facts["regionCount"] >= 3
+    assert facts["componentCount"] >= 2
+    assert facts["contourCount"] >= facts["regionCount"]
+    assert facts["watershedSegmentCount"] >= 2
     # the hole in the blue rectangle must be reported as an inner edge
     blue = [p for p in facts["parts"] if p["holes"] >= 1]
     assert blue, "no part carries an inner edge"
@@ -72,6 +93,28 @@ def test_opencv_and_scikit_agree_on_region_topology(shapes_image: Path) -> None:
     # both must SEE inner edges and land within one ring of each other
     assert sk_holes >= 1 and cv_holes >= 1
     assert abs(cv_holes - sk_holes) <= 1
+
+
+@pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
+def test_opencv_grouping_facts_are_valid_prolog(
+    shapes_image: Path,
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("cv2")
+    from omega_vision.perception.pixels_to_regions_cv import extract_region_facts_cv
+
+    facts = extract_region_facts_cv(shapes_image, tolerance=24, max_dim=200)
+    facts_path = tmp_path / "opencv_facts.pl"
+    facts_path.write_text(facts["prolog"], encoding="utf-8")
+    result = subprocess.run(
+        ["swipl", "-q", "-g", f"consult('{facts_path.as_posix()}')", "-t", "halt"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+    assert "Warning:" not in result.stderr
 
 
 @pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")

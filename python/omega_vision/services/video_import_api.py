@@ -2352,7 +2352,8 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                 try:
                     meta = json.loads(mp.read_text(encoding="utf-8"))
                     summary = {k: meta[k] for k in (
-                        "regionCount", "adjacencyCount", "blobCount", "groupCount",
+                        "regionCount", "adjacencyCount", "blobCount", "componentCount",
+                        "contourCount", "watershedSegmentCount", "groupCount",
                         "objectCount", "programCount", "width", "height",
                         "relationCount", "model", "shots", "partsFacts") if k in meta}
                     parts = meta.get("parts")
