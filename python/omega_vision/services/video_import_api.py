@@ -210,6 +210,7 @@ def _rewrite_data_paths(paths: list[Path], replacements: list[tuple[str, str]]) 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
+from omega_vision.inherited_source_overlay import data_homes as _data_homes  # noqa: E402
 from omega_vision.inherited_source_overlay import vision_data_root as _vision_data_root  # noqa: E402
 
 
@@ -2225,6 +2226,32 @@ def _resolve_set_images(d: Path) -> list[Path]:
     return sorted(list(d.glob("*.png")) + list(d.glob("*.jpg")))
 
 
+def _resolve_set_dir(root: Path, base_rel: str) -> Path:
+    """Overlay-aware image-set dir election.
+
+    ``_safe_workspace_child`` returns the nearest EXISTING overlay hit — but a
+    workspace-local shadow dir holding only derived outputs (``stages/``,
+    ``sym/``, ``transforms/``) must not hide the deeper layer that actually
+    holds the input frames. Elect the first layer that yields images; fall
+    back to the nearest existing dir when no layer has any.
+    """
+    first = _safe_workspace_child(root, base_rel)
+    if _resolve_set_images(first):
+        return first
+    tail = base_rel[5:] if base_rel.startswith("data/") else base_rel
+    first_resolved = first.resolve()
+    for home in _data_homes(root):
+        candidate = (home / tail)
+        if not candidate.is_dir():
+            continue
+        resolved = candidate.resolve()
+        if resolved == first_resolved or home.resolve() not in (resolved, *resolved.parents):
+            continue
+        if _resolve_set_images(candidate):
+            return candidate
+    return first
+
+
 def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
     """Summarise a unit's offline transformation todos for the manifest.
 
@@ -2372,7 +2399,7 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
         if not set_id or set_id in seen:
             return
         try:
-            d = _safe_workspace_child(root, rel_dir)
+            d = _resolve_set_dir(root, rel_dir)
         except ValueError:
             return
         image_count = len(_resolve_set_images(d))
@@ -2433,7 +2460,7 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
         return {"tiers": [], "count": 0, "items": [], "set": set_id}
     base = f"data/{set_id}"
     try:
-        d = _safe_workspace_child(root, base)
+        d = _resolve_set_dir(root, base)
     except ValueError:
         return {"tiers": [], "count": 0, "items": [], "set": set_id}
     pool = d / "pool"
@@ -2557,7 +2584,8 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
                 "rows": normalize_rows(m.get("rows")),
                 **({"transforms": tr["list"], "transformsDone": tr["done"], "transformsTotal": tr["total"]}
-                   if (tr := _unit_transforms(root, img.parent)) else {}),
+                   if (tr := _unit_transforms(root, img.parent if img.parent != d
+                                              else d / "transforms" / img.stem)) else {}),
             }
 
         images = _resolve_set_images(d)
@@ -6697,16 +6725,28 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         target = recording_rel
     else:
         try:
-            set_base = _safe_workspace_child(root, f"data/{set_id}")
+            set_base = _resolve_set_dir(root, f"data/{set_id}")
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
         pool = set_base / "pool"
-        if not pool.is_dir():
-            raise HTTPException(status_code=404, detail=f"image set has no pool: {set_id}")
-        for image in sorted(pool.iterdir()):
-            if image.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
-                continue
-            units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
+        if pool.is_dir():
+            for image in sorted(pool.iterdir()):
+                if image.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+                    continue
+                units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
+        else:
+            # No pool/: flat frame_*.png dumps put work in transforms/<stem>/;
+            # nested recording frames (<attempt>/<step>/image.png) keep the
+            # frame dir itself as the unit dir, matching the manifest reader.
+            for image in _resolve_set_images(set_base):
+                parent = image.parent
+                if parent == set_base:
+                    units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
+                else:
+                    unit_id = parent.name if parent.name.isdigit() else image.stem
+                    units.append({"id": unit_id, "dir": parent, "image": image})
+        if not units:
+            raise HTTPException(status_code=404, detail=f"image set has no images: {set_id}")
         target = f"data/{set_id}"
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]

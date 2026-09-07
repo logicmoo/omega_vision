@@ -3118,6 +3118,11 @@ export function VideoImportPage({
   const [recognitionGallery, setRecognitionGallery] = useState<any[]>([]);
   // Reduction stress-test (shot-tier agreement) manifest + UI state.
   const [recognitionReduce, setRecognitionReduce] = useState<any | null>(null);
+  // "Add todos" — stamp todos.json onto every unit of the visible set (planOnly
+  // transform: writes the work queue, runs nothing). The offline task pooler
+  // scans data/omega_vision for todos.json and does the actual work.
+  const [seedTodosBusy, setSeedTodosBusy] = useState(false);
+  const [seedTodosNote, setSeedTodosNote] = useState("");
   // Registry commit mode for the reduce: by default every reduced sequence is
   // COMMITTED to the canonical object registry (new objects stored, recognized
   // ones accumulate evidence). Flip this on for a recognize-only pass that
@@ -4340,6 +4345,31 @@ export function VideoImportPage({
       if (resp.ok) { const mf = await resp.json(); if (mf && Array.isArray(mf.items)) setRecognitionReduce(mf); }
     } catch { /* ignore */ }
   }, [workspaceId, selectedImageSet]);
+  // Stamp todos.json across every unit of the visible image set (planOnly =
+  // write the queue, run nothing) so the offline transform_task_pooler picks
+  // the work up on its next scan pass.
+  const seedTodos = useCallback(async () => {
+    if (!workspaceId || seedTodosBusy) return;
+    setSeedTodosBusy(true);
+    setSeedTodosNote("");
+    try {
+      const resp = await fetch(`${API}/sequence-sets/transform`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId, set: selectedImageSet, planOnly: true }),
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        setSeedTodosNote(String(data?.detail || `HTTP ${resp.status}`));
+        return;
+      }
+      setSeedTodosNote(`stamped ${data.moveCount} units · ${data.pendingTotal} pending — pooler picks them up`);
+      await refreshReduceManifest();
+    } catch (error: any) {
+      setSeedTodosNote(String(error?.message || error));
+    } finally {
+      setSeedTodosBusy(false);
+    }
+  }, [workspaceId, selectedImageSet, seedTodosBusy, refreshReduceManifest]);
   useEffect(() => {
     const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
     const pending = items.some((it: any) => Array.isArray(it.transforms) && it.transforms.some((t: any) => t.status !== "done"));
@@ -7198,6 +7228,11 @@ export function VideoImportPage({
                   <LaneReduceButton primary label={`▶ Reduce all ${recognitionReduce.items.length} · all impls`}
                     title="Run ALL implementations (LLM 1-shot + 2-shot tiers AND the SWI-Prolog symbolic line + registry) for every pool image, server-side."
                     laneRun={laneRuns["reduce"]} onStart={() => startServerStage("reduce")} onStop={() => void stopServerPipeline("reduce")} />
+                  <button type="button" className="video-import-btn" disabled={seedTodosBusy} onClick={() => void seedTodos()}
+                    title="Stamp todos.json onto every unit of this set (writes the offline work queue, runs nothing here). The transform task pooler scans for these and does the extraction/grouping/turtle work in the background.">
+                    {seedTodosBusy ? "adding todos…" : "⊕ Add todos (pooler)"}
+                  </button>
+                  {seedTodosNote ? <span className="video-import-reduce-partsbar-note">{seedTodosNote}</span> : null}
                   <LaneReduceButton label={`⟳ (prolog)${recognizeOnly ? " recog" : ""}`}
                     title="Run ONLY the SWI-Prolog symbolic line + canonical registry pass for every frame — no LLM / no models. Runs simultaneously with the LLM lane."
                     laneRun={laneRuns["prolog"]} onStart={() => startServerStage("reduce", { prologOnly: true })} onStop={() => void stopServerPipeline("prolog")} />
