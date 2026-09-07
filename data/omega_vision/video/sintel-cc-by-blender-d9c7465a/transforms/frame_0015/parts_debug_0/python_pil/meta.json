@@ -1,0 +1,12 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_debug_0",
+  "doer": "python_pil",
+  "options": {},
+  "createdAt": "2026-09-07T18:55:38.853394Z",
+  "elapsedMs": 93,
+  "width": 854,
+  "height": 364,
+  "module": "omega_vision.perception.pixels_to_regions",
+  "source": "geometry"
+}

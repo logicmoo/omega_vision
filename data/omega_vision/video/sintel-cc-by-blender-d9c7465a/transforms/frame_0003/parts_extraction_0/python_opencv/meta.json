@@ -1,0 +1,66 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_opencv",
+  "options": {},
+  "createdAt": "2026-09-07T19:19:32.133154Z",
+  "elapsedMs": 9409,
+  "width": 854,
+  "height": 364,
+  "regionCount": 4,
+  "adjacencyCount": 3,
+  "blobCount": 222,
+  "componentCount": 3,
+  "contourCount": 155,
+  "watershedSegmentCount": 3,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 248,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#b2bbbd",
+      "area": 310542,
+      "outer": 9,
+      "holes": 152,
+      "contours": 153,
+      "midlines": 118,
+      "fillpoints": 157,
+      "watershedSegments": 0
+    },
+    {
+      "id": "r103",
+      "color": "#919290",
+      "area": 7,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r64",
+      "color": "#959b9b",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r177",
+      "color": "#858a89",
+      "area": 4,
+      "outer": 0,
+      "holes": 0,
+      "contours": 0,
+      "midlines": 0,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions_cv"
+}

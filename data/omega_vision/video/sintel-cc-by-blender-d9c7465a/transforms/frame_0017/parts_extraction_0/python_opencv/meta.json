@@ -1,0 +1,121 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_opencv",
+  "options": {},
+  "createdAt": "2026-09-07T19:19:53.910787Z",
+  "elapsedMs": 18798,
+  "width": 854,
+  "height": 364,
+  "regionCount": 9,
+  "adjacencyCount": 8,
+  "blobCount": 1015,
+  "componentCount": 8,
+  "contourCount": 672,
+  "watershedSegmentCount": 8,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 248,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#7f8587",
+      "area": 308935,
+      "outer": 5,
+      "holes": 664,
+      "contours": 665,
+      "midlines": 350,
+      "fillpoints": 296,
+      "watershedSegments": 0
+    },
+    {
+      "id": "r418",
+      "color": "#a5a9aa",
+      "area": 274,
+      "outer": 7,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 17,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r326",
+      "color": "#a5a9aa",
+      "area": 262,
+      "outer": 9,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 4,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r84",
+      "color": "#585e62",
+      "area": 15,
+      "outer": 4,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 1,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r217",
+      "color": "#6e7070",
+      "area": 7,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r193",
+      "color": "#54595b",
+      "area": 5,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r98",
+      "color": "#6c7678",
+      "area": 4,
+      "outer": 0,
+      "holes": 0,
+      "contours": 0,
+      "midlines": 0,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r971",
+      "color": "#707678",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r269",
+      "color": "#636464",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions_cv"
+}

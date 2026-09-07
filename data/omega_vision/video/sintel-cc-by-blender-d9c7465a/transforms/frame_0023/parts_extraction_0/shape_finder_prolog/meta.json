@@ -1,0 +1,16 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "shape_finder_prolog",
+  "options": {},
+  "createdAt": "2026-09-07T18:57:50.751850Z",
+  "elapsedMs": 10430,
+  "module": "prolog/omega_vision/shape_finder.pl",
+  "width": 96,
+  "height": 41,
+  "maxDim": 96,
+  "regionCount": 1,
+  "polygonCount": 1,
+  "holeCount": 0,
+  "midlineCount": 1
+}

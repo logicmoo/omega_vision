@@ -1,28 +1,12 @@
 {
   "kind": "transform_pipeline_template",
-  "comment": "Initial todo template: stamped onto every unit as todos.json. priority: lower runs first; dependsOn gates on finished steps; type marks task kinds: ui (debug/preview renders), llm (1-shot LLM reductions), p_shot (N-shot LLM passes), py_pl (the python-scikit + prolog workflow).",
+  "comment": "Initial todo template: stamped onto every unit as todos.json. priority: lower runs first; dependsOn gates on finished steps; type marks task kinds: ui (debug/preview renders), llm (1-shot LLM reductions), p_shot (N-shot LLM passes), py_pl (the OpenCV + Prolog workflow).",
   "pipeline": [
     {
       "transformation": "parts_extraction_0",
       "doer": "python_opencv",
       "options": {},
       "priority": 10,
-      "type": "py_pl",
-      "dependsOn": []
-    },
-    {
-      "transformation": "parts_extraction_0",
-      "doer": "python_scikit",
-      "options": {},
-      "priority": 12,
-      "type": "py_pl",
-      "dependsOn": []
-    },
-    {
-      "transformation": "parts_extraction_0",
-      "doer": "shape_finder_prolog",
-      "options": {},
-      "priority": 14,
       "type": "py_pl",
       "dependsOn": []
     },

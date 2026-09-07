@@ -1,0 +1,44 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_opencv",
+  "options": {},
+  "createdAt": "2026-09-07T19:20:59.394162Z",
+  "elapsedMs": 33619,
+  "width": 854,
+  "height": 364,
+  "regionCount": 2,
+  "adjacencyCount": 1,
+  "blobCount": 421,
+  "componentCount": 1,
+  "contourCount": 273,
+  "watershedSegmentCount": 1,
+  "tolerance": 24,
+  "filterAction": "enhanced",
+  "minArea": 248,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#726159",
+      "area": 310363,
+      "outer": 8,
+      "holes": 271,
+      "contours": 272,
+      "midlines": 187,
+      "fillpoints": 150,
+      "watershedSegments": 0
+    },
+    {
+      "id": "r198",
+      "color": "#443c49",
+      "area": 36,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions_cv"
+}

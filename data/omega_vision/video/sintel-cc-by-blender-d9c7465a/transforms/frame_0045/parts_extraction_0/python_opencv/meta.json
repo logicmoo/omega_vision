@@ -1,0 +1,99 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_opencv",
+  "options": {},
+  "createdAt": "2026-09-07T19:24:31.669884Z",
+  "elapsedMs": 189786,
+  "width": 854,
+  "height": 364,
+  "regionCount": 7,
+  "adjacencyCount": 6,
+  "blobCount": 1533,
+  "componentCount": 6,
+  "contourCount": 796,
+  "watershedSegmentCount": 6,
+  "tolerance": 24,
+  "filterAction": "enhanced",
+  "minArea": 248,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#6c4f3c",
+      "area": 308848,
+      "outer": 8,
+      "holes": 789,
+      "contours": 790,
+      "midlines": 605,
+      "fillpoints": 319,
+      "watershedSegments": 0
+    },
+    {
+      "id": "r461",
+      "color": "#a89c9b",
+      "area": 28,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r805",
+      "color": "#966844",
+      "area": 6,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r700",
+      "color": "#ba8e68",
+      "area": 6,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r924",
+      "color": "#6d4a35",
+      "area": 5,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r1068",
+      "color": "#b7b0b9",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r975",
+      "color": "#71747a",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions_cv"
+}

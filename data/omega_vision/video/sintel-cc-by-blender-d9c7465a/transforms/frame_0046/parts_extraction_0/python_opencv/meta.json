@@ -1,0 +1,110 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_opencv",
+  "options": {},
+  "createdAt": "2026-09-07T19:24:31.745519Z",
+  "elapsedMs": 74882,
+  "width": 854,
+  "height": 364,
+  "regionCount": 8,
+  "adjacencyCount": 7,
+  "blobCount": 1116,
+  "componentCount": 5,
+  "contourCount": 525,
+  "watershedSegmentCount": 7,
+  "tolerance": 24,
+  "filterAction": "enhanced",
+  "minArea": 248,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#544d4d",
+      "area": 309001,
+      "outer": 8,
+      "holes": 517,
+      "contours": 518,
+      "midlines": 335,
+      "fillpoints": 284,
+      "watershedSegments": 0
+    },
+    {
+      "id": "r304",
+      "color": "#210d05",
+      "area": 407,
+      "outer": 8,
+      "holes": 3,
+      "contours": 4,
+      "midlines": 3,
+      "fillpoints": 8,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r646",
+      "color": "#a27b5f",
+      "area": 6,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r113",
+      "color": "#4a4956",
+      "area": 5,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r34",
+      "color": "#782b07",
+      "area": 4,
+      "outer": 0,
+      "holes": 0,
+      "contours": 0,
+      "midlines": 0,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r37",
+      "color": "#743111",
+      "area": 4,
+      "outer": 0,
+      "holes": 0,
+      "contours": 0,
+      "midlines": 0,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r428",
+      "color": "#846459",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "contours": 1,
+      "midlines": 1,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    },
+    {
+      "id": "r31",
+      "color": "#732702",
+      "area": 4,
+      "outer": 0,
+      "holes": 0,
+      "contours": 0,
+      "midlines": 0,
+      "fillpoints": 0,
+      "watershedSegments": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions_cv"
+}
