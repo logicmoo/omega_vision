@@ -1412,6 +1412,328 @@
 .video-import-transform-groups { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .video-import-transform-chip { border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; padding: 1px 7px; font-size: 10px; white-space: nowrap; }
 .video-import-transform-note { opacity: 0.6; font-size: 10px; }
+.video-import-prolog-open {
+  margin-top: auto;
+  padding: 4px 7px;
+  border: 1px solid rgba(39,220,194,0.45);
+  border-radius: 5px;
+  background: rgba(39,220,194,0.08);
+  color: #27dcc2;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+.video-import-prolog-open:hover,
+.video-import-prolog-open.is-active {
+  background: rgba(39,220,194,0.18);
+  border-color: rgba(39,220,194,0.75);
+}
+.video-import-prolog-inspector {
+  margin: 0 10px 10px;
+  border: 1px solid rgba(39,220,194,0.35);
+  border-radius: 9px;
+  overflow: hidden;
+  background: #0b1117;
+  box-shadow: 0 14px 32px rgba(0,0,0,0.25);
+}
+.video-import-prolog-head {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: #101820;
+}
+.video-import-prolog-fileicon {
+  width: 29px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(139,212,80,0.45);
+  border-radius: 5px;
+  background: rgba(139,212,80,0.1);
+  color: #8bd450;
+  font: 800 10px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.video-import-prolog-title {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.video-import-prolog-title b { font-size: 12px; }
+.video-import-prolog-title code {
+  max-width: 420px;
+  overflow: hidden;
+  color: rgba(255,255,255,0.5);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.video-import-prolog-summary {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.video-import-prolog-summary > span,
+.video-import-prolog-toolbar > span {
+  padding: 2px 7px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  color: rgba(255,255,255,0.65);
+  background: rgba(255,255,255,0.025);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+.video-import-prolog-formats {
+  margin-left: auto;
+  display: inline-flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+}
+.video-import-prolog-formats button {
+  min-width: 74px;
+  padding: 5px 9px;
+  border: 0;
+  border-left: 1px solid rgba(255,255,255,0.14);
+  background: transparent;
+  color: rgba(255,255,255,0.68);
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.video-import-prolog-formats button:first-child { border-left: 0; }
+.video-import-prolog-formats button.is-active {
+  background: rgba(39,220,194,0.16);
+  color: #27dcc2;
+}
+.video-import-prolog-close {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(255,255,255,0.62);
+  cursor: pointer;
+}
+.video-import-prolog-close:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+.video-import-prolog-tabs {
+  min-height: 36px;
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 5px 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: #0a1218;
+  scrollbar-width: thin;
+  scrollbar-color: #35515e #0a1218;
+}
+.video-import-prolog-tabs button {
+  min-width: 145px;
+  max-width: 260px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 9px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  background: rgba(255,255,255,0.025);
+  color: rgba(255,255,255,0.62);
+  cursor: pointer;
+  font-size: 9.5px;
+  text-align: left;
+}
+.video-import-prolog-tabs button:hover { background: rgba(255,255,255,0.06); }
+.video-import-prolog-tabs button.is-active {
+  box-shadow: inset 0 -2px #27dcc2;
+  background: rgba(39,220,194,0.11);
+  color: #dffffa;
+}
+.video-import-prolog-tabs button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.video-import-prolog-tabs button b {
+  min-width: 24px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(124,156,255,0.13);
+  color: #aebdff;
+  font: 9px/1.45 ui-sans-serif, system-ui, sans-serif;
+  text-align: center;
+}
+.video-import-prolog-toolbar {
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.video-import-prolog-toolbar input {
+  width: min(320px, 50%);
+  padding: 5px 8px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 5px;
+  outline: none;
+  background: rgba(0,0,0,0.3);
+  color: #fff;
+  font-size: 10.5px;
+}
+.video-import-prolog-toolbar input:focus { border-color: rgba(39,220,194,0.7); }
+.video-import-prolog-toolbar button {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 10px;
+}
+.video-import-prolog-toolbar em { color: #8bd450; font-size: 9.5px; font-style: normal; }
+.video-import-prolog-split {
+  display: grid;
+  grid-template-columns: minmax(230px, 28%) minmax(0, 1fr);
+  height: min(520px, 62vh);
+  min-height: 310px;
+}
+.video-import-prolog-tree {
+  overflow: auto;
+  border-right: 1px solid rgba(255,255,255,0.09);
+  background: #0a1015;
+}
+.video-import-prolog-treehead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px 6px;
+  background: #0a1015;
+  color: rgba(255,255,255,0.43);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.video-import-prolog-predicate {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 13px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.035);
+  background: transparent;
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+  text-align: left;
+  font: 10.5px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.video-import-prolog-predicate:hover { background: rgba(255,255,255,0.04); }
+.video-import-prolog-predicate.is-active {
+  box-shadow: 2px 0 #27dcc2 inset;
+  background: rgba(39,220,194,0.12);
+  color: #eafffb;
+}
+.video-import-prolog-predicate b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.video-import-prolog-chevron { color: rgba(255,255,255,0.38); }
+.video-import-prolog-count {
+  min-width: 25px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(124,156,255,0.13);
+  color: #aebdff;
+  text-align: center;
+  font: 9px/1.45 ui-sans-serif, system-ui, sans-serif;
+}
+.video-import-prolog-group ol {
+  margin: 0;
+  padding: 3px 8px 7px 30px;
+  color: rgba(255,255,255,0.42);
+  font: 9px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.video-import-prolog-group li {
+  overflow: hidden;
+  padding: 1px 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.video-import-prolog-source-editor {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #080d12;
+}
+.video-import-prolog-source-editor > .resource-source-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.video-import-prolog-source-editor .resource-source-editor > .llm-subhead { display: none; }
+.video-import-prolog-source-editor .resource-source-editor > .raw-json-editor {
+  min-height: 0;
+  height: 100%;
+  border: 0;
+  resize: none;
+}
+.video-import-prolog-source-editor .cm-scroller {
+  font: 10.5px/1.55 "Cascadia Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.video-import-prolog-empty,
+.video-import-prolog-message {
+  padding: 18px;
+  color: rgba(255,255,255,0.52);
+  font-size: 11px;
+}
+.video-import-prolog-message {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+.video-import-prolog-message.is-error { color: #ff9a9a; }
+.video-import-prolog-message button {
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.video-import-prolog-foot {
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 9px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.43);
+  font-size: 9.5px;
+}
+.video-import-prolog-foot .is-ok { color: #8bd450; }
+@media (max-width: 900px) {
+  .video-import-prolog-summary { display: none; }
+  .video-import-prolog-split { grid-template-columns: 220px minmax(0, 1fr); }
+}
 .video-import-transform-wait { opacity: 0.8; font-style: italic; }
 .video-import-transform-colors { display: inline-flex; gap: 2px; align-items: center; }
 .video-import-transform-colors i { width: 11px; height: 11px; border-radius: 2px; display: inline-block; border: 1px solid rgba(0,0,0,0.45); }

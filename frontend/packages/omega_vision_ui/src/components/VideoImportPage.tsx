@@ -4,6 +4,7 @@ import { ColoredTagCombobox, type ColoredTag, type ColoredTagDescription } from 
 import { SuperControl } from "@app/components/UniversalArtifactEditor";
 import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
+import { PrologDataInspector } from "./PrologDataInspector";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -3178,6 +3179,7 @@ export function VideoImportPage({
   // transform outputs (result.pl + meta.json + debug_image.png contract).
   const [partsPreviews, setPartsPreviews] = useState<Record<string, any>>({});
   const [partsRunBusy, setPartsRunBusy] = useState(false);
+  const [prologInspector, setPrologInspector] = useState<{ rowKey: string; path: string; title: string } | null>(null);
   const [partsTpl, setPartsTpl] = useState<{ open: boolean; text: string; busy: boolean; err: string | null }>({ open: false, text: "", busy: false, err: null });
   const [expandedReduceId, setExpandedReduceId] = useState<string | null>(null);
   // partOf tree ↔ groups-box highlight: which part ids to light up, scoped to one
@@ -7267,6 +7269,23 @@ export function VideoImportPage({
                               )}
                             </div>
                           )}
+                          {isExtraction && String(t.doer) === "python_opencv" && t.resultPath && (
+                            <button
+                              type="button"
+                              className={`video-import-prolog-open${prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? " is-active" : ""}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                const path = String(t.resultPath);
+                                setPrologInspector((current) =>
+                                  current?.rowKey === rowKey && current.path === path
+                                    ? null
+                                    : { rowKey, path, title: `${t.name} / ${t.doer}` }
+                                );
+                              }}
+                            >
+                              {"{}"} {prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? "Hide Prolog data" : "Inspect Prolog data"}
+                            </button>
+                          )}
                         </div>
                       );
                     }
@@ -7765,6 +7784,25 @@ export function VideoImportPage({
                                 );
                               })()}
                         </div>
+                        {prologInspector?.rowKey === String(it.id || inputRel) && (
+                          <PrologDataInspector
+                            sourcePath={prologInspector.path}
+                            sourceUrl={asset(prologInspector.path)}
+                            sources={(it.transforms || [])
+                              .filter((transform: any) =>
+                                transform.status === "done"
+                                && transform.resultPath
+                                && String(transform.resultPath).toLowerCase().endsWith(".pl")
+                              )
+                              .map((transform: any) => ({
+                                sourcePath: String(transform.resultPath),
+                                sourceUrl: asset(String(transform.resultPath)),
+                                label: `${transform.name} / ${transform.doer}`,
+                              }))}
+                            title={prologInspector.title}
+                            onClose={() => setPrologInspector(null)}
+                          />
+                        )}
                         {open && (
                           <div className="video-import-reduce-expanded">
                             <div className="video-import-reduce-tiers">

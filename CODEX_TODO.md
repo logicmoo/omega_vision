@@ -91,8 +91,22 @@ values here.
   object instances, and detachable parts without altering geometric
   `part_of/2` containment. The rule identifies the intended enclosed
   background in 16 active recording steps and the root image; all 69 existing
-  grouping outputs were regenerated. Five focused grouping tests, two OpenCV
+  grouping outputs were regenerated. Cutout attachment now requires both
+  endpoints to remain foreground, so only the yellow filler matching a yellow
+  exterior becomes background while differently colored items in the same
+  cutout remain grouped foreground objects. Six focused grouping tests, two OpenCV
   fact-contract/SWI-Prolog tests, and the production frontend build pass.
+
+- OpenCV Prolog data inspector (2026-09-08): every completed OpenCV extraction
+  can open its real generated symbolic artifacts below the reduction row. The
+  inspector loads every completed `.pl` transform result for that row through
+  the existing workspace asset route, presents them as horizontally scrollable
+  source tabs plus an all-sources view, groups clauses by predicate/arity, and
+  retains filtering and copy controls. Its source pane now reuses the shared
+  CodeMirror-backed `ResourceSourceEditor` with line numbers, folding, and
+  Prolog highlighting. Exact Prolog, generated MeTTa, and structured JSON are
+  synchronized read-only views of the same parsed clauses. The focused Video
+  Import UI contracts (12) and production frontend build pass.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten

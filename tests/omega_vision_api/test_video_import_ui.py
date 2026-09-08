@@ -11,6 +11,16 @@ VIDEO_IMPORT_PAGE = (
     / "components"
     / "VideoImportPage.tsx"
 )
+PROLOG_DATA_INSPECTOR = VIDEO_IMPORT_PAGE.with_name("PrologDataInspector.tsx")
+VIDEO_IMPORT_STYLES = (
+    ROOT
+    / "frontend"
+    / "packages"
+    / "omega_vision_ui"
+    / "src"
+    / "styles"
+    / "video_import.css"
+)
 MODEL_OPTION_DISPLAY = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "modelOptionDisplay.ts"
 COLORED_COMBOBOX = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ColoredTagCombobox.tsx"
 CHAT_CONVERSATION = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ChatConversation.tsx"
@@ -63,6 +73,27 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert '"↻ Fresh todos"' in source
     assert 'mergeTodos: mode === "merge"' in source
     assert 'freshTodos: mode === "fresh"' in source
+
+
+def test_prolog_inspector_uses_real_source_tabs_and_three_synchronized_views() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    inspector = PROLOG_DATA_INSPECTOR.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert 'sources={(it.transforms || [])' in page
+    assert 'String(transform.resultPath).toLowerCase().endsWith(".pl")' in page
+    assert 'role="tablist" aria-label="Loaded symbolic source files"' in inspector
+    assert "All sources" in inspector
+    tabs_start = styles.index(".video-import-prolog-tabs")
+    tabs_end = styles.index(".video-import-prolog-toolbar", tabs_start)
+    assert "overflow-x: auto" in styles[tabs_start:tabs_end]
+    assert 'from "@app/components/ResourceSourceEditor"' in inspector
+    assert "contentReadOnly" in inspector
+    assert 'defaultTextLang={editorLanguage}' in inspector
+    for label in ("PL source", "MeTTa", "JSON"):
+        assert f">{label}</button>" in inspector
+    for field in ("predicate:", "arity:", "arguments:", "prolog:", "metta:"):
+        assert field in inspector
 
 
 def test_inherited_model_is_available_before_full_model_enumeration() -> None:
