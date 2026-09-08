@@ -19,6 +19,7 @@ export type WorkspaceResourceFileControlsProps = {
   relativePath: string;
   dirty?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
   allowLoadDifferent?: boolean;
   onSave: (location: WorkspaceResourceLocation) => Promise<void> | void;
   onLoad: (location: WorkspaceResourceLocation) => Promise<void> | void;
@@ -48,6 +49,7 @@ export function WorkspaceResourceFileControls({
   relativePath,
   dirty = false,
   disabled = false,
+  readOnly = false,
   allowLoadDifferent = true,
   onSave,
   onLoad,
@@ -145,15 +147,15 @@ export function WorkspaceResourceFileControls({
 
   return <div className="workspace-resource-file-controls" data-resource-file-controls="shared">
     <div className="workspace-resource-file-channel"><span>WORKSPACE RESOURCE</span><div className="workspace-resource-file-actions">
-      <button type="button" className={dirty ? "primary" : ""} disabled={disabled || busy || !currentLocation.path} onClick={() => void run(() => onSave(currentLocation))}>Save To Workspace</button>
-      <button type="button" disabled={disabled || busy} onClick={() => setMode(mode === "saveAs" ? null : "saveAs")}>Save To Other Workspace…</button>
+      <button type="button" className={dirty ? "primary" : ""} disabled={disabled || readOnly || busy || !currentLocation.path} onClick={() => void run(() => onSave(currentLocation))}>Save To Workspace</button>
+      <button type="button" disabled={disabled || readOnly || busy} onClick={() => setMode(mode === "saveAs" ? null : "saveAs")}>Save To Other Workspace…</button>
       <button type="button" disabled={disabled || busy || !originLocation.path} onClick={() => void run(() => onLoad(originLocation))}>Reload From Origin</button>
       {allowLoadDifferent && <button type="button" disabled={disabled || busy} onClick={() => setMode(mode === "loadFrom" ? null : "loadFrom")}>Load From Workspace…</button>}
     </div></div>
     <div className="workspace-resource-file-channel"><span>LOCAL DISK · NATIVE FILE</span><div className="workspace-resource-file-actions">
       {allowLoadDifferent && <button type="button" disabled={disabled || busy} onClick={loadLocalFile}>Load…</button>}
-      <button type="button" disabled={disabled || busy || !localFileHandle} onClick={() => saveLocalFile(false)}>Save</button>
-      <button type="button" disabled={disabled || busy} onClick={() => saveLocalFile(true)}>Save As…</button>
+      <button type="button" disabled={disabled || readOnly || busy || !localFileHandle} onClick={() => saveLocalFile(false)}>Save</button>
+      <button type="button" disabled={disabled || readOnly || busy} onClick={() => saveLocalFile(true)}>Save As…</button>
       <button type="button" disabled={disabled || busy || !localFileHandle} onClick={reloadLocalFile}>Reload Local File</button>
       <small>{localFileHandle?.name || "No local file handle"}</small>
     </div></div>

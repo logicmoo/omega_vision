@@ -7786,6 +7786,7 @@ export function VideoImportPage({
                         </div>
                         {prologInspector?.rowKey === String(it.id || inputRel) && (
                           <PrologDataInspector
+                            workspaceId={workspaceId}
                             sourcePath={prologInspector.path}
                             sourceUrl={asset(prologInspector.path)}
                             sources={(it.transforms || [])

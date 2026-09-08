@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test:prolog-explorer": "node --test ../../packages/omega_vision_ui/src/components/PrologClauseExplorerModel.test.mjs src/lib/prologFolding.test.mjs",
     "build:ws_collab": "vite build --config vite.ws_collab.config.ts",
     "preview": "vite preview"
   },

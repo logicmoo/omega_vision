@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import type { Extension } from "@codemirror/state";
 import { foldAll, foldCode, unfoldAll, unfoldCode } from "@codemirror/language";
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import { json, jsonLanguage } from "@codemirror/lang-json";
 import { markdown } from "@codemirror/lang-markdown";
 import { javascript } from "@codemirror/lang-javascript";
@@ -43,6 +43,7 @@ import { vhdl } from "@codemirror/legacy-modes/mode/vhdl";
 import { standardSQL } from "@codemirror/legacy-modes/mode/sql";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { prolog } from "../lib/prologMode";
+import { prologClauseFolding } from "../lib/prologFolding";
 import { jsonDocumentToMetta, mettaDocumentToJson } from "../lib/mettaResourceCodec";
 import { useUserUiPreferences } from "../lib/uiPreferences";
 import { WorkspaceResourceFileControls, type WorkspaceResourceFileControlsProps } from "./WorkspaceResourceFileControls";
@@ -96,7 +97,10 @@ const TEXT_LANGUAGES: { id: string; label: string; extension: () => Extension[] 
   { id: "verilog", label: "Verilog", extension: () => streamLang(verilog) },
   { id: "vhdl", label: "VHDL", extension: () => streamLang(vhdl) },
   { id: "latex", label: "LaTeX", extension: () => streamLang(stex) },
-  { id: "prolog", label: "Prolog", extension: () => streamLang(prolog) },
+  { id: "prolog", label: "Prolog", extension: () => [
+    ...streamLang(prolog),
+    prologClauseFolding,
+  ] },
 ];
 function textLanguageExtension(id: string): Extension[] {
   return (TEXT_LANGUAGES.find((entry) => entry.id === id) || TEXT_LANGUAGES[0]).extension();
@@ -169,6 +173,8 @@ type Props = {
   stacked?: boolean;
   defaultFormat?: SourceFormat;
   defaultTextLang?: string;
+  revealLine?: number;
+  fileControlsContent?: string;
   fileControls?: Omit<WorkspaceResourceFileControlsProps, "disabled" | "content" | "onClientContent">;
 };
 
@@ -265,6 +271,14 @@ export function detectResourceSourceMode(
   defaultFormat?: SourceFormat,
   defaultTextLanguage?: string,
 ): SourceMode {
+  if (defaultFormat === "text") {
+    const explicitLanguage = normalizedLanguage(defaultTextLanguage || "");
+    const pathLanguage = textLanguageForFilename(sourcePath);
+    return {
+      format: "text",
+      textLanguage: explicitLanguage !== "plain" ? explicitLanguage : pathLanguage,
+    };
+  }
   if (isJsonContent(value)) return { format: "metta", textLanguage: "clojure" };
   const pathLanguage = textLanguageForFilename(sourcePath);
   // A known file extension is a stronger, more reliable signal than sniffing
@@ -607,6 +621,8 @@ export function ResourceSourceEditor({
   stacked = false,
   defaultFormat,
   defaultTextLang,
+  revealLine,
+  fileControlsContent,
   fileControls,
 }: Props) {
   const { resourceSourceFileControlsPlacement } = useUserUiPreferences();
@@ -625,6 +641,15 @@ export function ResourceSourceEditor({
   const sourceModel = useRef<"json" | "raw">(isJsonContent(value) ? "json" : "raw");
   const codeMirrorView = useRef<EditorView | null>(null);
   const foldPreference = useRef<"expanded" | "collapsed" | null>(null);
+
+  const revealRequestedLine = (view: EditorView) => {
+    if (!revealLine || revealLine < 1 || view.state.doc.lines === 0) return;
+    const line = view.state.doc.line(Math.min(revealLine, view.state.doc.lines));
+    view.dispatch({
+      selection: { anchor: line.from },
+      effects: EditorView.scrollIntoView(line.from, { y: "center" }),
+    });
+  };
 
   useEffect(() => {
     if (value === emittedJson.current) {
@@ -669,6 +694,22 @@ export function ResourceSourceEditor({
       }
     }
   }, [value]);
+
+  useEffect(() => {
+    if (!revealLine) return;
+    let cancelled = false;
+    const reveal = () => {
+      const view = codeMirrorView.current;
+      if (!cancelled && view) revealRequestedLine(view);
+    };
+    const frame = window.requestAnimationFrame(reveal);
+    const timer = window.setTimeout(reveal, 50);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [format, revealLine, textLang, value]);
 
   const editMetta = (next: string) => {
     setMetta(next);
@@ -956,7 +997,13 @@ export function ResourceSourceEditor({
   };
 
   const renderedFileControls = fileControls
-    ? <WorkspaceResourceFileControls {...fileControls} content={format === "metta" ? metta : jsonDraft} onClientContent={loadClientContent} disabled={disabled} />
+    ? <WorkspaceResourceFileControls
+        {...fileControls}
+        content={fileControlsContent ?? (format === "metta" ? metta : jsonDraft)}
+        onClientContent={loadClientContent}
+        disabled={disabled}
+        readOnly={contentReadOnly || fileControls.readOnly}
+      />
     : null;
   const codeMirrorLanguage = format === "metta"
     ? "clojure"
@@ -1024,10 +1071,11 @@ export function ResourceSourceEditor({
             theme="dark"
             editable={!editingLocked}
             readOnly={editingLocked}
-            basicSetup={{ lineNumbers: true, foldGutter: true, highlightActiveLine: !editingLocked }}
+            basicSetup={{ lineNumbers: true, foldGutter: true, highlightActiveLine: Boolean(revealLine) || !editingLocked }}
             extensions={format === "metta" ? streamLang(clojure) : format === "json" ? [json()] : format === "text" ? textLanguageExtension(textLang) : []}
             onCreateEditor={view => {
               codeMirrorView.current = view;
+              revealRequestedLine(view);
               if (format === "json" && foldPreference.current) {
                 window.requestAnimationFrame(() => {
                   if (foldPreference.current === "collapsed") foldAll(view);

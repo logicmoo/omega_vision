@@ -97,16 +97,29 @@ values here.
   cutout remain grouped foreground objects. Six focused grouping tests, two OpenCV
   fact-contract/SWI-Prolog tests, and the production frontend build pass.
 
-- OpenCV Prolog data inspector (2026-09-08): every completed OpenCV extraction
-  can open its real generated symbolic artifacts below the reduction row. The
-  inspector loads every completed `.pl` transform result for that row through
-  the existing workspace asset route, presents them as horizontally scrollable
-  source tabs plus an all-sources view, groups clauses by predicate/arity, and
-  retains filtering and copy controls. Its source pane now reuses the shared
-  CodeMirror-backed `ResourceSourceEditor` with line numbers, folding, and
-  Prolog highlighting. Exact Prolog, generated MeTTa, and structured JSON are
-  synchronized read-only views of the same parsed clauses. The focused Video
-  Import UI contracts (12) and production frontend build pass.
+- OpenCV symbolic Clause Explorer (updated 2026-09-08): every completed OpenCV
+  extraction can open all of its real generated `.pl` pipeline artifacts below
+  the reduction row. Sources load through the existing workspace asset route
+  into horizontally scrollable tabs; a failed source keeps its tab and exposes
+  a retryable partial-load warning instead of disappearing. The reusable
+  predicate/arity explorer provides independently expandable predicates,
+  argument partitions for large predicates, a 30-child root cap, paging,
+  filtering, file/alphabetical ordering, current-file scoping, matching clauses,
+  and exact clause-to-source navigation. The source pane reuses the shared
+  CodeMirror-backed `ResourceSourceEditor`, including real Prolog fold ranges,
+  read-only filesystem reload/download controls, horizontal source scrolling,
+  and exact-line selection after cross-source tab changes. Exact Prolog,
+  generated MeTTa, and structured JSON remain synchronized read-only views.
+  Live acceptance against `data/recordings/ls20/20260718-154544/2/image` indexed
+  672 clauses in 30 predicates from four real files and revealed
+  `background(r7).` at `group_regions_prolog/result.pl:29`. The same output
+  contains only the yellow exterior-color fillers `r2` and `r7` as background;
+  differently colored red and blue cutout members remain foreground. Validation:
+  22 focused grouping/Video Import tests and 10 executable parser/folding tests
+  pass, `git diff --check` is clean, and the production frontend build passes.
+  The repository-wide run reached 1072 passes with one unrelated local-plugin
+  failure: the existing plugin scanner test assumes one UI page, while the
+  separately checked-out `codex_cli` plugin currently publishes two.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten

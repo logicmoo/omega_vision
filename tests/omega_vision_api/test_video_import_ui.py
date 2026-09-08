@@ -12,6 +12,9 @@ VIDEO_IMPORT_PAGE = (
     / "VideoImportPage.tsx"
 )
 PROLOG_DATA_INSPECTOR = VIDEO_IMPORT_PAGE.with_name("PrologDataInspector.tsx")
+PROLOG_CLAUSE_EXPLORER = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorer.tsx")
+PROLOG_CLAUSE_MODEL = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.ts")
+PROLOG_CLAUSE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.test.mjs")
 VIDEO_IMPORT_STYLES = (
     ROOT
     / "frontend"
@@ -24,6 +27,12 @@ VIDEO_IMPORT_STYLES = (
 MODEL_OPTION_DISPLAY = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "modelOptionDisplay.ts"
 COLORED_COMBOBOX = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ColoredTagCombobox.tsx"
 CHAT_CONVERSATION = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ChatConversation.tsx"
+RESOURCE_SOURCE_EDITOR = (
+    ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "ResourceSourceEditor.tsx"
+)
+WORKSPACE_FILE_CONTROLS = (
+    ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkspaceResourceFileControls.tsx"
+)
 
 
 def test_colored_combobox_is_shared_by_chat_and_video_models() -> None:
@@ -75,25 +84,231 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert 'freshTodos: mode === "fresh"' in source
 
 
-def test_prolog_inspector_uses_real_source_tabs_and_three_synchronized_views() -> None:
+def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> None:
     page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
     inspector = PROLOG_DATA_INSPECTOR.read_text(encoding="utf-8")
+    explorer = PROLOG_CLAUSE_EXPLORER.read_text(encoding="utf-8")
+    model = PROLOG_CLAUSE_MODEL.read_text(encoding="utf-8")
     styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
 
     assert 'sources={(it.transforms || [])' in page
     assert 'String(transform.resultPath).toLowerCase().endsWith(".pl")' in page
-    assert 'role="tablist" aria-label="Loaded symbolic source files"' in inspector
-    assert "All sources" in inspector
-    tabs_start = styles.index(".video-import-prolog-tabs")
-    tabs_end = styles.index(".video-import-prolog-toolbar", tabs_start)
+    assert "workspaceId={workspaceId}" in page
+    assert 'from "./PrologClauseExplorer"' in inspector
+    assert "<PrologClauseExplorer" in inspector
+    assert "fetch(definition.sourceUrl" in inspector
+    assert 'dialect: "prolog" as const' in inspector
+    assert "readOnly: true" in inspector
+    assert "availableSources.map((definition)" in inspector
+    assert 'text: document?.text || ""' in inspector
+    assert "loadedSourceCount" in inspector
+    assert "retryFailedSources" in inspector
+    assert "failed.map((definition) => loadSource(definition))" in inspector
+    assert "const next = new Map(previous)" in inspector
+    assert "setReload" not in inspector
+    assert "rootLimit={30}" in inspector
+    assert 'role="tablist" aria-label="Loaded symbolic source files"' in explorer
+    assert "function sourceDisplayName" in explorer
+    assert "{sourceDisplayName(source)}" in explorer
+    tabs_start = styles.rindex(".pce-tabs {")
+    tabs_end = styles.index(".pce-tabs button", tabs_start)
     assert "overflow-x: auto" in styles[tabs_start:tabs_end]
-    assert 'from "@app/components/ResourceSourceEditor"' in inspector
-    assert "contentReadOnly" in inspector
-    assert 'defaultTextLang={editorLanguage}' in inspector
-    for label in ("PL source", "MeTTa", "JSON"):
-        assert f">{label}</button>" in inspector
+    assert 'from "@app/components/ResourceSourceEditor"' in explorer
+    assert "contentReadOnly" in explorer
+    assert 'defaultTextLang={editorLanguage}' in explorer
+    assert 'revealLine={syntax === "prolog" ? locationLine : undefined}' in explorer
+    for value, label in (("prolog", "Prolog syntax"), ("metta", "MeTTa syntax"), ("json", "JSON syntax")):
+        assert f'<option value="{value}">{label}</option>' in explorer
     for field in ("predicate:", "arity:", "arguments:", "prolog:", "metta:"):
-        assert field in inspector
+        assert field in model
+    assert "video-import-prolog-formats" not in inspector
+    assert 'placeholder="Filter predicates, atoms, or clause text' in explorer
+    assert "Copy visible" not in explorer
+
+
+def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:
+    explorer = PROLOG_CLAUSE_EXPLORER.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert "useState<Set<string>>(new Set())" in explorer
+    assert "if (next.has(key)) next.delete(key)" in explorer
+    assert "else next.add(key)" in explorer
+    assert "rows.slice(0, visibleCount)" in explorer
+    assert "renderGroupChildren(group)" in explorer
+    assert "partitionClausesByArgument(group.clauses, argumentIndex)" in explorer
+    assert "planExpandMost(" in explorer
+    assert "partitionRowsKey(group.key, argumentIndex)" in explorer
+    assert "Math.min(pageSize, rows.length - visibleCount)" in explorer
+    assert "Math.min(pageSize, partitions.length - visibleParts)" in explorer
+    assert "rootLimit: initialRootLimit = 30" in explorer
+    for control in (
+        "TSX control",
+        "CSS",
+        "Collapse all",
+        "Expand most",
+        "Edit facts",
+        "File appearance",
+        "Alphabetical",
+        "Auto: best argument",
+        "Always argument 1",
+        "Always argument 2",
+        "Never group by argument",
+        "Tree when over",
+        "Max parts / page",
+        "Root max",
+        "Predicate tree",
+        "Only current file",
+        "Link to file",
+        "Matching clauses",
+        "Edit source",
+        "Sync tree",
+        "Selection",
+        "unique atoms",
+    ):
+        assert control in explorer
+    assert 'event.key.toLowerCase() === "k"' in explorer
+    assert '["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]' in explorer
+    assert "filterPredicateGroups(orderedGroups, query)" in explorer
+    assert "orderPredicateGroups(fileOrderedGroups, predicateOrder)" in explorer
+    assert "const matchingRows = matchingClauses" in explorer
+    assert "setCurrentFile(source)" in explorer
+    assert "setFileFocus(source)" in explorer
+    assert "setMatching(false)" in explorer
+    assert "if (linkToFile)" in explorer
+    assert "setCurrentFile(clause.sourcePath)" in explorer
+    matching_start = explorer.index("{matchingRows.map")
+    matching_end = explorer.index("{!selectedPredicate", matching_start)
+    matching_block = explorer[matching_start:matching_end]
+    assert "selectMatchingClause(clause)" in matching_block
+    assert "setCurrentFile(clause.sourcePath)" not in matching_block
+    matching_selector = explorer[
+        explorer.index("const selectMatchingClause"):
+        explorer.index("const expandMost")
+    ]
+    assert "if (linkToFile)" in matching_selector
+    assert "setCurrentFile(clause.sourcePath)" in matching_selector
+    assert "setFileFocus(clause.sourcePath)" in matching_selector
+    assert "setMatching(false)" in matching_selector
+    assert 'aria-pressed={linkToFile}' in explorer
+    assert 'setFileFocus("")' in explorer
+    assert "setLimits(plan.limits)" in explorer
+    tree_start = styles.rindex(".pce-tree {")
+    tree_end = styles.index("}", tree_start)
+    assert "overflow: auto" in styles[tree_start:tree_end]
+    source_start = styles.index(".pce-source-editor .cm-scroller")
+    source_end = styles.index("}", source_start)
+    assert "overflow: auto" in styles[source_start:source_end]
+    workspace_start = styles.index(
+        ".pce-workspace {",
+        styles.index("/* Clause Explorer acceptance layout"),
+    )
+    workspace_end = styles.index("}", workspace_start)
+    assert "grid-template-columns: minmax(330px, 42%) 5px minmax(0, 1fr)" in styles[
+        workspace_start:workspace_end
+    ]
+    assert '<div className="pce-divider" aria-hidden="true" />' in explorer
+    assert ".pce-editor-dialog" in styles
+
+
+def test_prolog_clause_parser_tracks_multiline_statement_locations() -> None:
+    model = PROLOG_CLAUSE_MODEL.read_text(encoding="utf-8")
+    executable_test = PROLOG_CLAUSE_MODEL_TEST.read_text(encoding="utf-8")
+
+    assert "export function splitPrologStatements" in model
+    assert "let lineComment = false" in model
+    assert "let blockComment = false" in model
+    assert 'if (char === "/" && next === "*")' in model
+    assert "parens === 0" in model
+    assert "brackets === 0" in model
+    assert "braces === 0" in model
+    assert "line: statement.line" in model
+    assert "endLine: statement.endLine" in model
+    assert "splitTopLevel(match[2])" in model
+    assert "parser preserves multiline clauses" in executable_test
+    assert "predicate order switches" in executable_test
+    assert '["zeta/1", "alpha/1", "beta/1"]' in executable_test
+    assert '["alpha/1", "beta/1", "zeta/1"]' in executable_test
+
+
+def test_prolog_clause_paths_are_tooltips_and_file_sync_uses_shared_controls() -> None:
+    explorer = PROLOG_CLAUSE_EXPLORER.read_text(encoding="utf-8")
+    inspector = PROLOG_DATA_INSPECTOR.read_text(encoding="utf-8")
+    model = PROLOG_CLAUSE_MODEL.read_text(encoding="utf-8")
+    source_editor = RESOURCE_SOURCE_EDITOR.read_text(encoding="utf-8")
+    file_controls = WORKSPACE_FILE_CONTROLS.read_text(encoding="utf-8")
+
+    assert 'title={`${clause.sourcePath}:L${clause.line}\\n${rendered}`}' in explorer
+    assert "title={source.name}" in explorer
+    assert "<em>L{clause.line}</em>" in explorer
+    assert "{clause.sourcePath}:{clause.line}" not in explorer
+    assert "{clause.sourceLabel}:{clause.line}" not in explorer
+    assert "<code>{sourcePath}</code>" not in inspector
+    assert "path: clause.sourcePath" not in model
+    assert "path: source.name" not in model
+    assert "file: sourceBasename(clause.sourcePath)" in model
+    assert "file: sourceBasename(source.name)" in model
+
+    assert 'fileControlsContent={currentSource?.text || ""}' in explorer
+    assert 'fileControls={currentSource && workspaceId && !matching && syntax === "prolog"' in explorer
+    assert "relativePath: currentSource.name" in explorer
+    assert "readOnly: currentSource.readOnly === true" in explorer
+    assert "onLoad: () => syncTree()" in explorer
+    assert "if (currentSource.readOnly === true)" in explorer
+    assert "await onReloadSource(currentSource)" in explorer
+    assert "focusTreeClause(target)" in explorer
+    assert "onReloadSource={reloadSource}" in inspector
+    assert "fileControlsContent?: string" in source_editor
+    assert "content={fileControlsContent ??" in source_editor
+    assert "readOnly={contentReadOnly || fileControls.readOnly}" in source_editor
+    assert "const frame = window.requestAnimationFrame(reveal)" in source_editor
+    assert "const timer = window.setTimeout(reveal, 50)" in source_editor
+    assert "revealRequestedLine(view)" in source_editor
+    assert ">Reload From Origin</button>" in file_controls
+    assert "disabled={disabled || readOnly || busy" in file_controls
+    assert "prologClauseFolding" in source_editor
+
+
+def test_prolog_clause_tree_discloses_only_overflowing_structured_arguments() -> None:
+    explorer = PROLOG_CLAUSE_EXPLORER.read_text(encoding="utf-8")
+    model = PROLOG_CLAUSE_MODEL.read_text(encoding="utf-8")
+    executable_test = PROLOG_CLAUSE_MODEL_TEST.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert "export type PrologTerm =" in model
+    assert 'kind: "list"' in model
+    assert 'kind: "compound"' in model
+    assert "export function parsePrologTerm" in model
+    assert 'findTopLevelCharacter(body, "|")' in model
+    assert "tail: parsePrologTerm(tailSource)" in model
+    assert "argTerms: PrologTerm[]" in model
+    assert "argumentTerms: clause.argTerms.map(structuredTerm)" in model
+    assert "export function shouldExposeTermTree" in model
+    assert "&& isOverflowing" in model
+
+    assert "const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set())" in explorer
+    assert "new ResizeObserver(measure)" in explorer
+    assert "element.scrollWidth > element.clientWidth + 1" in explorer
+    assert "function useCompactClause" in explorer
+    assert "function ClauseTreeRow" in explorer
+    assert "function TermTreeNode" in explorer
+    assert "<TermTreeNode" in explorer
+    assert 'hiddenArguments.has(index) ? "."' in explorer
+    assert "structuredSummary(structuredTerms)" in explorer
+    assert "clause.argTerms.flatMap((term, index) => hiddenArguments.has(index)" in explorer
+    assert "label={`arg ${index + 1}:`}" in explorer
+    assert "term.items.map((item, index)" in explorer
+    assert 'label: `[${index}]`' in explorer
+    assert 'label: "tail"' in explorer
+    assert "visibleChildren.length < children.length" in explorer
+    assert "more list items" in explorer
+    assert ".pce-clause-measure" in styles
+    assert "visibility: hidden" in styles
+    assert ".pce-term-children" in styles
+
+    assert "generic Prolog terms preserve lists at every argument and nesting depth" in executable_test
+    assert "structured term disclosure follows measured visibility" in executable_test
+    assert 'parsePrologTerm("next(none)")' in executable_test
+    assert 'parsePrologTerm("wrapper([a,b], child(deep([x,y,z])))")' in executable_test
 
 
 def test_inherited_model_is_available_before_full_model_enumeration() -> None:
