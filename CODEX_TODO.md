@@ -228,6 +228,29 @@ values here.
   recorded design constraint only; UID, temporal, oN, and learning
   implementation remains blocked until the user explicitly resumes it.
 
+- Deferred final-G occlusion contract (2026-09-09): infer
+  movement-based occlusion at the final G level first and aggregate it to oN
+  only after oN composition exists. For a tracked G observation, project its
+  prior mask and centroid with the supported motion estimate. A directional
+  `occluded_by(Frame, OccludedG, OccluderG, Confidence, Evidence)` candidate or
+  fact requires the G to become missing or substantially clipped while another
+  visible G occupies its predicted pixels or path with compatible depth/contour
+  evidence. Do not treat every disappearance as occlusion: classify a projected
+  mask leaving the image as exited, no overlapping visible occluder as
+  missing/unexplained, and supported partial area loss as partial occlusion.
+  Reappearance near the predicted continuation confirms or strengthens the
+  account and preserves correspondence. Keep predictions separate from
+  confirmed observations so both remain replayable. When oN exists, aggregate
+  member-G evidence to
+  `object_occluded_by(Frame, OccludedO, OccluderO, Evidence)`; member groups of
+  the same oN represent self-occlusion, not object-object occlusion. Require
+  source frame, mask, motion, overlap, and direction provenance, record signed
+  contradictions, and create no debug image. Eventual regressions must cover
+  full and partial occlusion, exit, unexplained missing, reappearance,
+  wrong-direction overlap, self-occlusion, and object aggregation. This remains
+  blocked design work until the user explicitly resumes temporal/object
+  implementation.
+
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
   percent of the input image. It then recomputes attachment components among
