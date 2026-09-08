@@ -99,7 +99,11 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert "v groups" in source
     assert '"group_acceptance_0"' in source
     assert '"group_acceptance_prolog"' in source
+    assert '"observation_identity_0"' in source
+    assert '"content_hash"' in source
     assert 'dependsOn: ["group_acceptance_0/group_acceptance_prolog"]' in source
+    assert "s.observationCount != null" in source
+    assert "stable observations" in source
 
 
 def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> None:

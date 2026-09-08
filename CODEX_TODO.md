@@ -208,8 +208,21 @@ values here.
   final groups covering all 16 foreground regions: three exact consensus, one
   symbolic analogy, zero pixel fallbacks, and four singleton remainders, with
   one background region excluded and no debug image.
-  Persistent observation UIDs, temporal correspondence, oN tracking, grouping
-  learning, rule promotion, and expanded Object Memory remain deliberately
+  The new `observation_identity_0/content_hash` transform assigns deterministic
+  content-derived frame, region, V, W, and final-G observation IDs after
+  acceptance. Local rN/vN/wN/gN aliases remain truthful provenance but are
+  excluded from semantic identity, so alias renumbering does not change an
+  observation UID. Each unit persists deterministic `observations.json` and
+  Prolog observation facts with exact source artifact hashes; replay writes the
+  same bytes and creates no debug image. Exact prior built-in pipeline templates
+  migrate to the new stage while customized templates remain authoritative.
+  Focused validation passed 61 observation/group/API/UI regressions and the
+  frontend production build. A real LS20 scratch frame produced one frame,
+  17 region, 4 V, 6 W, and 8 final-G observations (36 total) with byte-stable
+  replay and no oN facts.
+  The next approved stages are final-G temporal correspondence, Prolog frame
+  events, and event-backed rule induction. oN tracking, grouping learning,
+  cross-sequence promotion, and expanded Object Memory remain deliberately
   deferred.
 
 - Deferred oN composition contract (2026-09-09): an oN is not a persistent

@@ -42,6 +42,18 @@
       ]
     },
     {
+      "transformation": "observation_identity_0",
+      "doer": "content_hash",
+      "options": {},
+      "priority": 37,
+      "type": "py_pl",
+      "dependsOn": [
+        "parts_extraction_0/python_opencv",
+        "parts_grouping_0/group_regions_prolog",
+        "group_acceptance_0/group_acceptance_prolog"
+      ]
+    },
+    {
       "transformation": "turtle_programs",
       "doer": "turtle_programs_prolog",
       "options": {},

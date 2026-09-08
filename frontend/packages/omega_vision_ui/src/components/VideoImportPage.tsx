@@ -7902,6 +7902,7 @@ export function VideoImportPage({
                               {s.watershedSegmentCount != null && <span>{s.watershedSegmentCount} watershed segments</span>}
                               {s.groupCount != null && <span>{s.groupCount} groups</span>}
                               {s.acceptedGroupCount != null && <span>{s.acceptedGroupCount} g final</span>}
+                              {s.observationCount != null && <span>{s.observationCount} stable observations</span>}
                               {s.objectCount != null && <span>{s.objectCount} objects</span>}
                               {s.programCount != null && <span>{s.programCount} programs</span>}
                               {Array.isArray(s.partColors) && s.partColors.length > 0 && (
@@ -7945,7 +7946,7 @@ export function VideoImportPage({
                     const cell = renderCell();
                     let header: any = null;
                     if (!isExtraction && !showAllPartsExtractors
-                        && ["parts_grouping_0", "group_acceptance_0", "turtle_programs"].includes(String(t.name))
+                        && ["parts_grouping_0", "group_acceptance_0", "observation_identity_0", "turtle_programs"].includes(String(t.name))
                         && t.status === "done" && selectedExtraction) {
                       const facts = String((t.summary || {}).partsFacts || "");
                       const stale = !!facts && !facts.startsWith(`parts_extraction_0/${partsExtractorSel}/`);
@@ -7954,11 +7955,12 @@ export function VideoImportPage({
                         const from = facts.split("/")[1] || "?";
                         header = (
                           <span className="video-import-extractor-pick is-stale"
-                            title={`Derived from ${from}. Re-derive W candidates, final G groups, and turtle output from ${partsExtractorSel}.`}>
+                            title={`Derived from ${from}. Re-derive W candidates, final G groups, stable observation IDs, and turtle output from ${partsExtractorSel}.`}>
                             <button type="button" disabled={!selDone || !!stripRefreshBusy[rowKey]}
                               onClick={() => void runUnitTransformSteps(it, inputRel, [
                                 { transformation: "parts_grouping_0", doer: "group_regions_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`], priority: 30, type: "py_pl" },
                                 { transformation: "group_acceptance_0", doer: "group_acceptance_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog"], priority: 35, type: "py_pl" },
+                                { transformation: "observation_identity_0", doer: "content_hash", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog", "group_acceptance_0/group_acceptance_prolog"], priority: 37, type: "py_pl" },
                                 { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["group_acceptance_0/group_acceptance_prolog"], priority: 40, type: "py_pl" },
                               ], { force: true })}>
                               {stripRefreshBusy[rowKey] ? "…" : `⟳ stale · re-derive from ${partsExtractorSel.replace(/^python_/, "").replace(/^shape_finder_/, "")}`}

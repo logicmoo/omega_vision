@@ -2415,6 +2415,10 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                         "acceptedGroupCount", "exactConsensusCount",
                         "symbolicShapeAnalogyCount", "pixelShapeFallbackCount",
                         "singletonRemainderCount", "foregroundCount", "backgroundCount",
+                        "observationCount", "regionObservationCount",
+                        "visualGroupObservationCount", "symbolicGroupObservationCount",
+                        "finalGroupObservationCount", "observationBundleId",
+                        "frameObservationId", "identityVersion",
                         "objectCount", "programCount", "width", "height",
                         "relationCount", "model", "shots", "partsFacts") if k in meta}
                     parts = meta.get("parts")
@@ -6835,6 +6839,122 @@ def _transform_group_acceptance(
     }
 
 
+def _transform_observation_identity(
+    unit: dict[str, Any],
+    out_dir: Path,
+    options: dict[str, Any],
+) -> dict[str, Any]:
+    from omega_vision.perception.observation_identity import (  # noqa: PLC0415
+        build_observation_bundle,
+        content_hash,
+        render_observation_facts,
+    )
+
+    parts_root = unit["dir"] / "parts_extraction_0"
+    preferred = str(options.get("partsDoer", "python_opencv"))
+    extraction_candidates = [
+        parts_root / preferred / "result.pl",
+        parts_root / "python_opencv" / "result.pl",
+        *sorted(parts_root.glob("*/result.pl")),
+    ]
+    extraction_file = next((path for path in extraction_candidates if path.is_file()), None)
+    grouping_file = unit["dir"] / "parts_grouping_0" / "group_regions_prolog" / "result.pl"
+    acceptance_dir = unit["dir"] / "group_acceptance_0" / "group_acceptance_prolog"
+    acceptance_file = acceptance_dir / "result.pl"
+    acceptance_meta_file = acceptance_dir / "meta.json"
+    image_file = unit.get("image")
+    if extraction_file is None:
+        raise RuntimeError("observation_identity_0 requires parts_extraction_0 output")
+    if not grouping_file.is_file():
+        raise RuntimeError("observation_identity_0 requires parts_grouping_0 output")
+    if not acceptance_file.is_file() or not acceptance_meta_file.is_file():
+        raise RuntimeError("observation_identity_0 requires group_acceptance_0 output")
+    if not isinstance(image_file, Path) or not image_file.is_file():
+        raise RuntimeError("observation_identity_0 requires the source frame image")
+
+    geometry_file = extraction_file.parent / "geometry.json"
+    geometry = (
+        json.loads(geometry_file.read_text(encoding="utf-8"))
+        if geometry_file.is_file()
+        else {}
+    )
+    extraction_meta_file = extraction_file.parent / "meta.json"
+    extraction_meta = (
+        json.loads(extraction_meta_file.read_text(encoding="utf-8"))
+        if extraction_meta_file.is_file()
+        else {}
+    )
+    acceptance_meta = json.loads(acceptance_meta_file.read_text(encoding="utf-8"))
+    accepted_groups = acceptance_meta.get("acceptedGroups")
+    if not isinstance(accepted_groups, list):
+        raise RuntimeError("group_acceptance_0 metadata is missing acceptedGroups")
+    visual_groups = extraction_meta.get("visualGroups")
+    image_bytes = image_file.read_bytes()
+    extraction_text = extraction_file.read_text(encoding="utf-8")
+    grouping_text = grouping_file.read_text(encoding="utf-8")
+    acceptance_text = acceptance_file.read_text(encoding="utf-8")
+    source_artifact_hashes = {
+        "image": content_hash(image_bytes),
+        "partsFacts": content_hash(extraction_file.read_bytes()),
+        "groupingFacts": content_hash(grouping_file.read_bytes()),
+        "acceptanceFacts": content_hash(acceptance_file.read_bytes()),
+        "acceptanceMetadata": content_hash(acceptance_meta_file.read_bytes()),
+    }
+    if geometry_file.is_file():
+        source_artifact_hashes["geometry"] = content_hash(geometry_file.read_bytes())
+    if extraction_meta_file.is_file():
+        source_artifact_hashes["extractionMetadata"] = content_hash(
+            extraction_meta_file.read_bytes()
+        )
+    bundle = build_observation_bundle(
+        frame_alias=str(unit["id"]),
+        sequence_id=str(unit.get("sequenceId") or options.get("sequenceId") or unit["id"]),
+        frame_order=(
+            int(unit["frameOrder"])
+            if unit.get("sequenceOrdered") and isinstance(unit.get("frameOrder"), int)
+            else None
+        ),
+        frame_key=str(unit.get("frameSourceKey") or unit["id"]),
+        image_bytes=image_bytes,
+        extraction_text=extraction_text,
+        grouping_text=grouping_text,
+        acceptance_text=acceptance_text,
+        geometry=geometry,
+        visual_groups=visual_groups if isinstance(visual_groups, list) else None,
+        accepted_groups=accepted_groups,
+        source_artifact_hashes=source_artifact_hashes,
+    )
+    observations_file = out_dir / "observations.json"
+    observations_file.write_text(
+        json.dumps(bundle, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    (out_dir / "result.pl").write_text(
+        render_observation_facts(bundle),
+        encoding="utf-8",
+        newline="\n",
+    )
+    return {
+        "module": "omega_vision.perception.observation_identity",
+        "partsFacts": extraction_file.relative_to(unit["dir"]).as_posix(),
+        "observationBundleId": bundle["bundleUid"],
+        "frameObservationId": bundle["frame"]["uid"],
+        "observationArtifact": observations_file.relative_to(unit["dir"]).as_posix(),
+        "observationCount": (
+            1
+            + len(bundle["regions"])
+            + sum(len(groups) for groups in bundle["groups"].values())
+        ),
+        "regionObservationCount": len(bundle["regions"]),
+        "visualGroupObservationCount": len(bundle["groups"]["visual"]),
+        "symbolicGroupObservationCount": len(bundle["groups"]["symbolic"]),
+        "finalGroupObservationCount": len(bundle["groups"]["final"]),
+        "identityVersion": bundle["identityVersion"],
+        "artifactHashes": bundle["artifactHashes"],
+    }
+
+
 def _transform_turtle_programs(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
     """turtle_programs by the turtle_programs_prolog doer (the .pl file that did
     it): every per-part list except fillpoints (outer edge, each cutout,
@@ -6890,6 +7010,7 @@ _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
     ("parts_debug_0", "python_pil"): _transform_parts_debug,
     ("parts_grouping_0", "group_regions_prolog"): _transform_part_groups,
     ("group_acceptance_0", "group_acceptance_prolog"): _transform_group_acceptance,
+    ("observation_identity_0", "content_hash"): _transform_observation_identity,
     ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
 }
 
@@ -6973,7 +7094,13 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     claim_file.unlink(missing_ok=True)
     entry = {"step": step_name, "status": "written", "elapsedMs": elapsed_ms}
-    for key in ("regionCount", "groupCount", "objectCount", "programCount"):
+    for key in (
+        "regionCount",
+        "groupCount",
+        "observationCount",
+        "objectCount",
+        "programCount",
+    ):
         if key in stats:
             entry[key] = stats[key]
     return entry
@@ -7038,6 +7165,10 @@ def write_unit_todos(unit: dict[str, Any],
     (unit["dir"] / "todos.json").write_text(json.dumps({
         "kind": "transformation_todos",
         "unit": str(unit["id"]),
+        "sequenceId": unit.get("sequenceId"),
+        "frameOrder": unit.get("frameOrder"),
+        "frameSourceKey": unit.get("frameSourceKey"),
+        "sequenceOrdered": bool(unit.get("sequenceOrdered", False)),
         "imagePath": image_rel,
         "updatedAt": _utc_now(),
         "todos": todos,
@@ -7045,7 +7176,7 @@ def write_unit_todos(unit: dict[str, Any],
     return pending
 
 
-_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
+_PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
     {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {},
      "priority": 10, "type": "py_pl", "dependsOn": []},
     {"transformation": "parts_debug_0", "doer": "python_pil", "options": {},
@@ -7057,6 +7188,17 @@ _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
      "dependsOn": ["parts_extraction_0/python_opencv", "parts_grouping_0/group_regions_prolog"]},
     {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {},
      "priority": 40, "type": "py_pl", "dependsOn": ["group_acceptance_0/group_acceptance_prolog"]},
+]
+_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
+    *_PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE[:-1],
+    {"transformation": "observation_identity_0", "doer": "content_hash", "options": {},
+     "priority": 37, "type": "py_pl",
+     "dependsOn": [
+         "parts_extraction_0/python_opencv",
+         "parts_grouping_0/group_regions_prolog",
+         "group_acceptance_0/group_acceptance_prolog",
+     ]},
+    _PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE[-1],
 ]
 
 
@@ -7109,6 +7251,7 @@ _FORMER_DEFAULT_PIPELINE_TEMPLATES = (
         ("shape_finder_prolog", 14),
     ]),
     _former_default_pipeline([("python_opencv", 10)]),
+    _PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE,
 )
 _PIPELINE_TEMPLATE_REL = "data/transform_pipeline.json"
 _PIPELINE_TEMPLATE_COMMENT = ("Initial todo template: stamped onto every unit as todos.json. "
@@ -7162,6 +7305,7 @@ def _pipeline_migration_signature(steps: list[dict[str, Any]]) -> list[tuple[Any
             json.dumps(step.get("options") or {}, sort_keys=True, separators=(",", ":")),
             int(step.get("priority", (index + 1) * 10)),
             tuple(str(value) for value in (step.get("dependsOn") or [])),
+            str(step.get("type") or ""),
         )
         for index, step in enumerate(steps)
     ]
@@ -7500,7 +7644,8 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     travel with the game sequence: ``<move>/<transformation>/<doer>/...`` for
     recordings, ``data/<set>/transforms/<image>/<transformation>/<doer>/...``
     for image sets. By default the full pipeline runs OpenCV parts extraction,
-    then parts_grouping_0 and turtle_programs by their Prolog rules. Pass
+    then parts_grouping_0, final group acceptance, observation identity, and
+    turtle_programs. Pass
     ``transformation``/``doer`` for a single step or ``pipeline`` for an
     explicit list. Already-transformed units are skipped unless ``force``;
     ``moves`` limits the run to specific ordinals/stems.
@@ -7546,6 +7691,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             units.append({"id": path.name, "dir": path, "image": path / "image.png"})
         target = recording_rel
         pooler_root = recording_dir
+        sequence_ordered = True
     else:
         try:
             set_base = _resolve_set_dir(root, f"data/{set_id}")
@@ -7573,6 +7719,16 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         adopt = _llm_adoption_maker(set_base)
         target = f"data/{set_id}"
         pooler_root = set_base
+        sequence_ordered = (set_base / "recording.json").is_file()
+    for frame_order, unit in enumerate(units):
+        unit["sequenceId"] = target
+        unit["frameOrder"] = frame_order
+        unit["sequenceOrdered"] = sequence_ordered
+        image = unit.get("image")
+        try:
+            unit["frameSourceKey"] = image.relative_to(pooler_root).as_posix()
+        except (AttributeError, ValueError):
+            unit["frameSourceKey"] = str(unit["id"])
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
