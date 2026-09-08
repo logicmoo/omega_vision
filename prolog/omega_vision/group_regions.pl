@@ -117,11 +117,14 @@ attached(A, B) :-
     background(Bg),
     in_smooth_cutout(A, Bg, Ring),
     in_smooth_cutout(B, Bg, Ring),
-    A \== B.
+    A \== B,
+    foreground(A),
+    foreground(B).
 
 nonbg_cutout(Outer, Inner) :-
     in_smooth_cutout(Inner, Outer, _),
-    \+ background(Outer).
+    foreground(Outer),
+    foreground(Inner).
 
 % Inner fills the cutout Ring of Outer: enclosed, and a point of its fill lies
 % inside that hole ring. Fillpoints are guaranteed interior (centroids are not:

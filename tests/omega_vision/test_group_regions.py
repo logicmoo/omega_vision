@@ -95,7 +95,44 @@ hole(shell, [xy(20,20),xy(40,20),xy(40,40),xy(20,40),xy(20,20)]).
     assert "background(exterior)." in grouped
     assert "background(cutout)." in grouped
     assert "part_group(g1, [shell])." in grouped
+    assert "part_group(g2," not in grouped
     assert "detachable(cutout)." not in grouped
+
+
+@pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
+def test_only_matching_color_region_in_shared_cutout_becomes_background(
+    tmp_path: Path,
+) -> None:
+    grouped = _group_facts(
+        tmp_path,
+        """
+:- dynamic region/4, adjacent/2, encloses/2, border/1, img_size/2, hole/2.
+img_size(200, 200).
+region(exterior, yellow, 25000, centroid(100, 100)).
+region(shell, green, 1000, centroid(60, 60)).
+region(yellow_fill, yellow, 100, centroid(50, 50)).
+region(red_item, red, 100, centroid(55, 50)).
+region(blue_item, blue, 100, centroid(60, 50)).
+border(exterior).
+adjacent(exterior, shell).
+encloses(shell, yellow_fill).
+encloses(shell, red_item).
+encloses(shell, blue_item).
+hole(shell, [xy(20,20),xy(80,20),xy(80,80),xy(20,80),xy(20,20)]).
+""",
+    )
+
+    assert "background(exterior)." in grouped
+    assert "background(yellow_fill)." in grouped
+    assert "background(red_item)." not in grouped
+    assert "background(blue_item)." not in grouped
+    assert "part_group(g1, [blue_item,red_item,shell])." in grouped
+    assert "yellow_fill" not in "\n".join(
+        line for line in grouped.splitlines() if line.startswith("part_group(")
+    )
+    assert "detachable(yellow_fill)." not in grouped
+    assert "detachable(red_item)." in grouped
+    assert "detachable(blue_item)." in grouped
 
 
 @pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
