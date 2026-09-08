@@ -7546,11 +7546,12 @@ export function VideoImportPage({
               const symbolicGroupClaims: VisualGroupClaim[] = (
                 Array.isArray(groupingCell?.groups) ? groupingCell.groups : []
               ).map((group: any, index: number) => ({
-                kind: "g",
+                kind: "w",
                 id: String(group.id),
                 members: (group.members || []).map(String),
                 sourceOrder: visualGroupClaims.length + index,
                 method: "prolog_symbolic_group",
+                evidence: group.sourceId ? { legacySourceAlias: String(group.sourceId) } : {},
               }));
               const peerGroupClaims = interleaveVisualGroupClaims([
                 ...visualGroupClaims,
@@ -7629,13 +7630,13 @@ export function VideoImportPage({
                 <div className="video-import-reduce-grouptree is-peer-tree">
                   <div className="video-import-group-claim-legend">
                     <span className="is-v">V · OpenCV hypothesis</span>
-                    <span className="is-g">G · Prolog group</span>
+                    <span className="is-w">W · Prolog group</span>
                   </div>
                   {coalesceIdenticalVisualAndSymbolicGroups(claims).map((displayRow) => {
                     const rowClaims = displayRow.claims;
                     const members = displayRow.members;
                     const visualClaim = rowClaims.find((claim) => claim.kind === "v");
-                    const symbolicClaim = rowClaims.find((claim) => claim.kind === "g");
+                    const symbolicClaim = rowClaims.find((claim) => claim.kind === "w");
                     const combined = Boolean(visualClaim && symbolicClaim);
                     const aliases = rowClaims.map((claim) => claim.id).join(" / ");
                     const claimKey = `${rowKey}#${rowClaims.map((claim) => `${claim.kind}:${claim.id}`).join("+")}`;
@@ -7656,7 +7657,7 @@ export function VideoImportPage({
                         : "";
                       return claim.kind === "v"
                         ? `${claim.id}: ${claim.method || "OpenCV"}${claim.confidence == null ? "" : ` · confidence ${Math.round(claim.confidence * 100)}%`}${evidence}`
-                        : `${claim.id}: Prolog symbolic group`;
+                        : `${claim.id}: Prolog symbolic group${claim.evidence?.legacySourceAlias ? ` · legacy source ${claim.evidence.legacySourceAlias}` : ""}`;
                     }).join("\n");
                     const toggleOpen = () => setStripOpenGroups((previous) => {
                       const next = new Set(previous);
@@ -7666,13 +7667,13 @@ export function VideoImportPage({
                     return (
                       <details
                         key={claimKey}
-                        className={`video-import-reduce-groupnode is-${combined ? "vg" : rowClaims[0].kind}`}
+                        className={`video-import-reduce-groupnode is-${combined ? "vw" : rowClaims[0].kind}`}
                         open={open}
                       >
                         <summary
                           className={claimSelected ? "is-sel" : ""}
                           style={{ color }}
-                          title={`${detail}\n${combined ? "Identical memberships share this display node; underlying V and G facts remain independent." : "Independent peer claim; overlap ordering is display-only."}`}
+                          title={`${detail}\n${combined ? "Identical memberships share this display node; underlying V and W facts remain independent." : "Independent peer claim; overlap ordering is display-only."}`}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -7692,8 +7693,8 @@ export function VideoImportPage({
                               }
                             }}
                           >{open ? "▾" : "▸"}</span>
-                          <span className={`video-import-group-kind is-${combined ? "vg" : rowClaims[0].kind}`}>
-                            {combined ? "V/G" : rowClaims[0].kind.toUpperCase()}
+                          <span className={`video-import-group-kind is-${combined ? "vw" : rowClaims[0].kind}`}>
+                            {combined ? "V/W" : rowClaims[0].kind.toUpperCase()}
                           </span>
                           <span className="video-import-reduce-groupdot" style={{ background: color }} />
                           {aliases} · {members.length}

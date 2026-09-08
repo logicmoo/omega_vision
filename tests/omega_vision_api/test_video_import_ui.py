@@ -226,14 +226,15 @@ def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
     assert "export function interleaveVisualGroupClaims" in model
     assert "sharedCount(current, right)" in model
     assert "right.kind !== current.kind" in model
-    assert "overlapping V and G claims are adjacent peers with deterministic alternation" in executable_test
+    assert "overlapping V and W claims are adjacent peers with deterministic alternation" in executable_test
     assert "claims remain independent data with no inferred connector fields" in executable_test
     assert 'kind: "v"' in page
-    assert 'kind: "g"' in page
+    assert 'kind: "w"' in page
+    assert 'kind: "g"' not in page
     assert "const peerGroupClaims = interleaveVisualGroupClaims" in page
     assert "coalesceIdenticalVisualAndSymbolicGroups(claims)" in page
     assert "const color = symbolicClaim" in page
-    assert "Identical memberships share this display node" in page
+    assert "underlying V and W facts remain independent" in page
     assert "visualGroupClaims.length > 0 && !groupingCell" in page
     assert "renderPeerGroupTree(visualGroupClaims)" in page
     assert "renderPeerGroupTree(peerGroupClaims)" in page
@@ -241,8 +242,8 @@ def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
     assert "setStripHoverMember({ rowKey, member: pid })" in page
     assert "mapsTo" not in page
     assert ".video-import-reduce-groupnode.is-v" in styles
-    assert ".video-import-reduce-groupnode.is-g" in styles
-    assert ".video-import-reduce-groupnode.is-vg" in styles
+    assert ".video-import-reduce-groupnode.is-w" in styles
+    assert ".video-import-reduce-groupnode.is-vw" in styles
     assert ".video-import-reduce-grouptree li button.is-hover" in styles
 
 

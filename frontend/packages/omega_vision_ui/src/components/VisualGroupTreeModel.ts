@@ -1,4 +1,4 @@
-export type VisualGroupClaimKind = "v" | "g" | "o";
+export type VisualGroupClaimKind = "v" | "w" | "o";
 
 export interface VisualGroupClaim {
   kind: VisualGroupClaimKind;
@@ -132,7 +132,7 @@ export function coalesceIdenticalVisualAndSymbolicGroups(
     const key = [...new Set(claim.members)].sort(compareAliases).join("\u0000");
     const bucket = buckets.get(key) || [claim];
     const kinds = new Set(bucket.map((candidate) => candidate.kind));
-    const combined = kinds.has("v") && kinds.has("g") ? bucket : [claim];
+    const combined = kinds.has("v") && kinds.has("w") ? bucket : [claim];
     combined.forEach((candidate) => emitted.add(candidate));
     rows.push({
       claims: combined,

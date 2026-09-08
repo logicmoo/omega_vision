@@ -2326,6 +2326,14 @@ def _opencv_visual_groups_from_prolog(text: str) -> list[dict[str, Any]]:
     return groups
 
 
+def _normalize_symbolic_group_alias(alias: str) -> tuple[str, str | None]:
+    """Map legacy frame-local gN aliases to the active wN vocabulary."""
+    match = re.fullmatch(r"g(\d+)", alias)
+    if not match:
+        return alias, None
+    return f"w{match.group(1)}", alias
+
+
 def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
     """Summarise a unit's offline transformation todos for the manifest.
 
@@ -2452,8 +2460,26 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
             if "grouping" in cell["name"] and rp.is_file():
                 try:
                     text = rp.read_text(encoding="utf-8")
-                    groups = [{"id": gid, "members": [m.strip() for m in members.split(",") if m.strip()]}
-                              for gid, members in re.findall(r"part_group\((\w+),\s*\[([^\]]*)\]\)", text)]
+                    group_areas = {
+                        _normalize_symbolic_group_alias(gid)[0]: float(area)
+                        for gid, area in re.findall(
+                            r"group_area\((\w+),\s*(-?\d+(?:\.\d+)?)\)",
+                            text,
+                        )
+                    }
+                    groups = []
+                    for gid, members in re.findall(r"part_group\((\w+),\s*\[([^\]]*)\]\)", text):
+                        active_id, legacy_id = _normalize_symbolic_group_alias(gid)
+                        group = {
+                            "id": active_id,
+                            "members": [member.strip() for member in members.split(",") if member.strip()],
+                        }
+                        if legacy_id:
+                            group["sourceId"] = legacy_id
+                        if active_id in group_areas:
+                            area = group_areas[active_id]
+                            group["area"] = int(area) if area.is_integer() else area
+                        groups.append(group)
                     if groups:
                         cell["groups"] = groups
                     part_of = re.findall(r"part_of\((\w+),\s*(\w+)\)", text)
@@ -6654,7 +6680,7 @@ def _transform_part_groups(unit: dict[str, Any], out_dir: Path, options: dict[st
         unit, out_dir, options,
         rules_rel="prolog/omega_vision/group_regions.pl",
         goal_name="write_groups",
-        counted={"groupCount": "part_group(g", "objectCount": "object_instance(o"})
+        counted={"groupCount": "part_group(", "objectCount": "object_instance(o"})
 
 
 def _transform_turtle_programs(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:

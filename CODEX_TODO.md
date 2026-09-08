@@ -154,16 +154,25 @@ values here.
   OpenCV extraction now persists deterministic frame-local
   `vision_group(vN, connected_component, Members, Evidence)` hypotheses from
   its existing component, contour-hierarchy, and watershed evidence. The UI
-  presents vN and Prolog gN as independent peer rows ordered only for display
-  by shared-member overlap; there are no inferred v-g links and no oN claims.
-  When a vN and gN have identical member sets, the UI coalesces them into one
-  dual-labeled display node using the gN color; both underlying claims remain
+  presents vN and Prolog wN as independent peer rows ordered only for display
+  by shared-member overlap; there are no inferred v-w links and no oN claims.
+  New `group_regions.pl` outputs use wN consistently in `part_group/2` and
+  `group_area/2`. Legacy gN files remain byte-truthful in the source inspector
+  while their derived API/UI group IDs normalize to wN. A real LS20 scratch
+  transform under `vn-real-ls20/parts_grouping_0/group_regions_prolog/`
+  produced six wN groups and six wN areas with no gN aliases; the live legacy
+  source retained SHA-256
+  `C982BD017CF9285568156B6C66082A378356805F8556A50252DFBD31F8E3CB50`.
+  When a vN and wN have
+  identical member sets, the UI coalesces them into one
+  dual-labeled display node using the wN color; both underlying claims remain
   independent. Legacy extraction results derive the same vN peers read-only from their
   persisted `opencv_component/*` evidence, so no runtime files were rewritten.
   Live verification used
   `data/omega_vision/arc_recordings/data-recordings-ls20-20260718-154544_attempt8/`
-  and showed frame 0 with `v1` over 11 regions beside overlapping `g5`, `g1`,
-  `g2`, `g3`, and `g4`, followed by four singleton v/g neighborhoods.
+  and showed frame 0 with `v1` over 11 regions beside legacy-source groups
+  displayed as `w5`, `w1`, `w2`, `w3`, and `w4`, followed by four singleton
+  v/w neighborhoods.
   The exact source artifacts are
   `transforms/frame_000000/parts_extraction_0/python_opencv/result.pl` and
   `transforms/frame_000000/parts_grouping_0/group_regions_prolog/result.pl`
@@ -174,7 +183,7 @@ values here.
   behavior remain unchanged.
   Persistent observation UIDs, temporal correspondence, oN tracking, grouping
   learning, rule promotion, and expanded Object Memory are deliberately
-  deferred. Stop at this observable vN/gN checkpoint for user inspection before
+  deferred. Stop at this observable vN/wN checkpoint for user inspection before
   implementing them.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a

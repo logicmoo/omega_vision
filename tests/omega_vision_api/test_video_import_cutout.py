@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import shutil
 import threading
 import zipfile
 from pathlib import Path
@@ -158,6 +159,72 @@ def test_legacy_opencv_evidence_adapts_to_visual_group_peers() -> None:
             "watershedSegmentCount": 3,
         },
     }]
+
+
+def test_legacy_group_aliases_normalize_to_w_without_rewriting_source(
+    tmp_path: Path,
+) -> None:
+    unit = tmp_path / "data" / "legacy" / "frame_000000"
+    output = unit / "parts_grouping_0" / "group_regions_prolog"
+    output.mkdir(parents=True)
+    legacy_source = (
+        "part_group(g1, [r2,r5]).\n"
+        "group_area(g1, 42).\n"
+    )
+    (output / "result.pl").write_text(legacy_source, encoding="utf-8")
+    (output / "meta.json").write_text('{"groupCount": 1}', encoding="utf-8")
+    (unit / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "todos": [{
+            "transformation": "parts_grouping_0",
+            "doer": "group_regions_prolog",
+            "output": "parts_grouping_0/group_regions_prolog",
+            "status": "done",
+            "dependsOn": [],
+        }],
+    }), encoding="utf-8")
+
+    summary = video_import_api._unit_transforms(tmp_path, unit)
+
+    assert summary is not None
+    assert summary["list"][0]["groups"] == [{
+        "id": "w1",
+        "sourceId": "g1",
+        "members": ["r2", "r5"],
+        "area": 42,
+    }]
+    assert (output / "result.pl").read_text(encoding="utf-8") == legacy_source
+    assert video_import_api._normalize_symbolic_group_alias("w3") == ("w3", None)
+
+
+@pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
+def test_group_transform_writes_and_counts_w_aliases(tmp_path: Path) -> None:
+    extraction = tmp_path / "parts_extraction_0" / "python_opencv"
+    extraction.mkdir(parents=True)
+    (extraction / "result.pl").write_text(
+        "\n".join([
+            "img_size(20, 20).",
+            "region(r1, red, 20, centroid(3,3)).",
+            "region(r2, blue, 20, centroid(5,3)).",
+            "shared_edge(r1, r2, 10).",
+        ]) + "\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "parts_grouping_0" / "group_regions_prolog"
+    output.mkdir(parents=True)
+
+    stats = video_import_api._transform_part_groups(
+        {"id": "frame", "dir": tmp_path, "image": tmp_path / "image.png"},
+        output,
+        {},
+    )
+    grouped = (output / "result.pl").read_text(encoding="utf-8")
+
+    assert stats["groupCount"] == 1
+    assert "part_group(w1, [r1,r2])." in grouped
+    assert "group_area(w1, 40)." in grouped
+    assert "part_group(g" not in grouped
+    assert "group_area(g" not in grouped
 
 
 @pytest.mark.parametrize(
