@@ -4,7 +4,5 @@
   "state": "idle",
   "root": "data/omega_vision/recordings/ls20/20260718-154544",
   "workers": 10,
-  "heartbeatAt": "2026-09-08T17:31:46.089837+00:00",
-  "lastPassDone": 0,
-  "lastPassAt": "2026-09-08T17:31:46.089802+00:00"
+  "heartbeatAt": "2026-09-08T17:32:12.629552+00:00"
 }
