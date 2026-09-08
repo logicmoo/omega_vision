@@ -14,6 +14,15 @@ import {
   type VisualSequenceCatalogEntry,
   type VisualSequenceLocation,
 } from "./VideoImportRecordingUrl";
+import {
+  inspectorNavigationSlug,
+  navigationPathFromUrl,
+  navigationSlug,
+  resolveRecognitionNavigation,
+  urlWithNavigation,
+  type RecognitionNavigationTab,
+  type RecognitionNavigationTransform,
+} from "./VideoImportNavigationUrl";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -2279,6 +2288,12 @@ export function VideoImportPage({
   const [selectedRecording, setSelectedRecording] = useState("");
   const [visualSequenceUrlError, setVisualSequenceUrlError] = useState(initialVisualSequenceUrl.current.error);
   const [recordingSelectionError, setRecordingSelectionError] = useState(initialVisualSequenceUrl.current.error);
+  const initialRecognitionNavigation = useRef(navigationPathFromUrl(window.location.href));
+  const [recognitionNavigationPath, setRecognitionNavigationPath] = useState<string[]>(
+    initialRecognitionNavigation.current,
+  );
+  const [recognitionNavigationWarning, setRecognitionNavigationWarning] = useState("");
+  const recognitionNavigationAppliedRef = useRef("");
   const selectedRecordingRef = useRef(selectedRecording);
   const recordingImportsRef = useRef<Set<string>>(new Set());
   const writeVisualSequenceLocation = useCallback((
@@ -2288,6 +2303,20 @@ export function VideoImportPage({
     setVisualSequenceLocation(location);
     if (historyMode === "none") return;
     const nextUrl = urlWithVisualSequence(window.location.href, location);
+    if (nextUrl === window.location.href) return;
+    if (historyMode === "push") window.history.pushState(window.history.state, "", nextUrl);
+    else window.history.replaceState(window.history.state, "", nextUrl);
+  }, []);
+  const writeRecognitionNavigation = useCallback((
+    path: readonly string[],
+    historyMode: RecordingHistoryMode,
+  ) => {
+    const normalized = path.map(navigationSlug).filter(Boolean);
+    setRecognitionNavigationPath((current) =>
+      current.join(",") === normalized.join(",") ? current : normalized
+    );
+    if (historyMode === "none") return;
+    const nextUrl = urlWithNavigation(window.location.href, normalized);
     if (nextUrl === window.location.href) return;
     if (historyMode === "push") window.history.pushState(window.history.state, "", nextUrl);
     else window.history.replaceState(window.history.state, "", nextUrl);
@@ -2356,6 +2385,8 @@ export function VideoImportPage({
       setSelectedRecording("");
       setVisualSequenceUrlError(parsed.error);
       setRecordingSelectionError(parsed.error);
+      recognitionNavigationAppliedRef.current = "";
+      setRecognitionNavigationPath(navigationPathFromUrl(window.location.href));
     };
     window.addEventListener("popstate", restoreVisualSequenceFromHistory);
     return () => window.removeEventListener("popstate", restoreVisualSequenceFromHistory);
@@ -3374,8 +3405,51 @@ export function VideoImportPage({
   // Two tab views: "inputs" = the 20x10 input-image grid; "extractions" = the
   // per-image reduction list.
   const [reduceTab, setReduceTab] = useState<"inputs" | "extractions">(() => {
-    try { return (window.localStorage.getItem("videoImport.reduceTab") as "inputs" | "extractions") || "extractions"; } catch { return "extractions"; }
+    let restored: RecognitionNavigationTab = "extractions";
+    try {
+      const stored = window.localStorage.getItem("videoImport.reduceTab");
+      if (stored === "inputs" || stored === "extractions") restored = stored;
+    } catch { /* use default */ }
+    return resolveRecognitionNavigation(initialRecognitionNavigation.current, [], restored).target.tab;
   });
+  const selectRecognitionNavigationTab = useCallback((tab: RecognitionNavigationTab) => {
+    setReduceTab(tab);
+    setExpandedReduceId(null);
+    setPrologInspector(null);
+    setRecognitionNavigationWarning("");
+    writeRecognitionNavigation([tab], "push");
+  }, [writeRecognitionNavigation]);
+  const selectExtractionNavigationRow = useCallback((rowId: string, open: boolean) => {
+    setReduceTab("extractions");
+    setExpandedReduceId(open ? rowId : null);
+    setPrologInspector(null);
+    setRecognitionNavigationWarning("");
+    writeRecognitionNavigation(
+      open ? ["extractions", navigationSlug(rowId)] : ["extractions"],
+      "push",
+    );
+  }, [writeRecognitionNavigation]);
+  const selectPrologNavigation = useCallback((
+    rowId: string,
+    transform: RecognitionNavigationTransform,
+  ) => {
+    const path = String(transform.resultPath || "");
+    const isOpen = prologInspector?.rowKey === rowId && prologInspector.path === path;
+    setReduceTab("extractions");
+    setExpandedReduceId(rowId);
+    setPrologInspector(isOpen ? null : {
+      rowKey: rowId,
+      path,
+      title: `${transform.name} / ${transform.doer}`,
+    });
+    setRecognitionNavigationWarning("");
+    writeRecognitionNavigation(
+      isOpen
+        ? ["extractions", navigationSlug(rowId)]
+        : ["extractions", navigationSlug(rowId), "prolog", inspectorNavigationSlug(transform)],
+      "push",
+    );
+  }, [prologInspector, writeRecognitionNavigation]);
   // Which single "line" each Extractions row shows by default (keeps rows thin);
   // the tree and the sequence list each render on their own full-width line.
   type ReduceRowView = "stages" | "groups" | "graph" | "sequence";
@@ -4535,6 +4609,39 @@ export function VideoImportPage({
     })();
     return () => { cancelled = true; };
   }, [visualSequenceReady, workspaceId, selectedImageSet]);
+  useEffect(() => {
+    const items = Array.isArray(recognitionReduce?.items) ? recognitionReduce.items : [];
+    if (!visualSequenceReady || items.length === 0) return;
+    const requestedKey = `${selectedImageSet}|${recognitionNavigationPath.join(",")}`;
+    if (recognitionNavigationAppliedRef.current === requestedKey) return;
+    const resolved = resolveRecognitionNavigation(
+      recognitionNavigationPath,
+      items,
+      reduceTab,
+    );
+    setReduceTab(resolved.target.tab);
+    setExpandedReduceId(resolved.target.rowId || null);
+    setPrologInspector(
+      resolved.target.rowId && resolved.target.inspector
+        ? {
+            rowKey: resolved.target.rowId,
+            path: resolved.target.inspector.path,
+            title: resolved.target.inspector.title,
+          }
+        : null,
+    );
+    if (resolved.target.rowId) setCollapsedReduceChars(new Set());
+    setRecognitionNavigationWarning(resolved.warning);
+    recognitionNavigationAppliedRef.current = `${selectedImageSet}|${resolved.canonicalPath.join(",")}`;
+    writeRecognitionNavigation(resolved.canonicalPath, "replace");
+  }, [
+    recognitionNavigationPath,
+    recognitionReduce,
+    reduceTab,
+    selectedImageSet,
+    visualSequenceReady,
+    writeRecognitionNavigation,
+  ]);
   // Re-read the disk manifest on demand (per-row refresh button) or while any
   // offline transformation todos are still pending/claimed, so pooler progress
   // (extraction/grouping/turtle cells) lands live without a manual reload.
@@ -7474,12 +7581,7 @@ export function VideoImportPage({
                               className={`video-import-prolog-open${prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? " is-active" : ""}`}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                const path = String(t.resultPath);
-                                setPrologInspector((current) =>
-                                  current?.rowKey === rowKey && current.path === path
-                                    ? null
-                                    : { rowKey, path, title: `${t.name} / ${t.doer}` }
-                                );
+                                selectPrologNavigation(rowKey, t);
                               }}
                             >
                               {"{}"} {prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? "Hide Prolog data" : "Inspect Prolog data"}
@@ -7716,8 +7818,8 @@ export function VideoImportPage({
                     els.push(
                       <div className={`video-import-reduce-listrow${open ? " is-open" : ""}`} key={it.id} role="option" aria-selected={open}>
                         <div className="video-import-reduce-listmain" role="button" tabIndex={0}
-                          onClick={() => setExpandedReduceId(open ? null : it.id)}
-                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedReduceId(open ? null : it.id); } }}>
+                          onClick={() => selectExtractionNavigationRow(String(it.id), !open)}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectExtractionNavigationRow(String(it.id), !open); } }}>
                           <div className="video-import-reduce-listcell is-desc">
                             <b>{nameBySlug.get(it.slug) || it.slug}</b>
                             <span className="video-import-reduce-desccond">{COND_LABELS[it.cond] || it.cond}</span>
@@ -8000,7 +8102,16 @@ export function VideoImportPage({
                                 label: `${transform.name} / ${transform.doer}`,
                               }))}
                             title={prologInspector.title}
-                            onClose={() => setPrologInspector(null)}
+                            onClose={() => selectPrologNavigation(
+                              String(it.id || inputRel),
+                              (it.transforms || []).find((transform: any) =>
+                                String(transform.resultPath) === prologInspector.path
+                              ) || {
+                                name: prologInspector.title.split(" / ")[0],
+                                doer: prologInspector.title.split(" / ")[1],
+                                resultPath: prologInspector.path,
+                              },
+                            )}
                           />
                         )}
                         {open && (
@@ -8321,6 +8432,7 @@ export function VideoImportPage({
       </div>
       {error && <div className="backend-error"><b>Video import error</b><span>{error}</span></div>}
       {recordingSelectionError && <div className="backend-error"><b>Visual Sequence unavailable</b><span>{recordingSelectionError}</span></div>}
+      {recognitionNavigationWarning && <div className="backend-error"><b>Navigation adjusted</b><span>{recognitionNavigationWarning}</span></div>}
 
       <Section {...section("intake", "INTAKE", `${videos.length} video(s) in the library`)}>
         <div className="vi2-body">
@@ -9546,8 +9658,8 @@ export function VideoImportPage({
 
           {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && (
             <div className="video-import-reduce-tabs" role="tablist" aria-label="Reduction views">
-              <button type="button" role="tab" aria-selected={reduceTab === "inputs"} className={reduceTab === "inputs" ? "is-active" : ""} onClick={() => setReduceTab("inputs")}>Inputs · {selectedImageSet === "recognition_reduce" ? "20 × 10" : recognitionReduce.items.length}</button>
-              <button type="button" role="tab" aria-selected={reduceTab === "extractions"} className={reduceTab === "extractions" ? "is-active" : ""} onClick={() => setReduceTab("extractions")}>Extractions · {recognitionReduce.items.filter((it: any) => ((it.transformsTotal || 0) > 0 ? it.transformsDone === it.transformsTotal : (it.rows || []).length > 0)).length}/{recognitionReduce.items.length}</button>
+              <button type="button" role="tab" aria-selected={reduceTab === "inputs"} className={reduceTab === "inputs" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("inputs")}>Inputs · {selectedImageSet === "recognition_reduce" ? "20 × 10" : recognitionReduce.items.length}</button>
+              <button type="button" role="tab" aria-selected={reduceTab === "extractions"} className={reduceTab === "extractions" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("extractions")}>Extractions · {recognitionReduce.items.filter((it: any) => ((it.transformsTotal || 0) > 0 ? it.transformsDone === it.transformsTotal : (it.rows || []).length > 0)).length}/{recognitionReduce.items.length}</button>
             </div>
           )}
 
@@ -9612,7 +9724,7 @@ export function VideoImportPage({
                             const pv = partsPreviews[inputRel];
                             return (
                               <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}${pv?.ok ? " is-withparts" : ""}`} key={it.id} role="button" tabIndex={0}
-                                onClick={() => { setExpandedReduceId(it.id); setReduceTab("extractions"); }}>
+                                onClick={() => selectExtractionNavigationRow(String(it.id), true)}>
                                 <div className="video-import-reduce-thumbpair">
                                   {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy"
                                     onError={(e) => { const el = e.currentTarget; if (pv.overlayLegacy && el.src !== pv.overlayLegacy) el.src = pv.overlayLegacy; else el.style.display = "none"; }} /> : null}
@@ -9660,7 +9772,7 @@ export function VideoImportPage({
                             const pv = partsPreviews[inputRel];
                             return (
                               <div className={`video-import-reduce-condcard${it.id === expandedReduceId ? " is-open" : ""}${pv?.ok ? " is-withparts" : ""}`} key={it.id} role="button" tabIndex={0}
-                                onClick={() => setExpandedReduceId(it.id === expandedReduceId ? null : it.id)}>
+                                onClick={() => selectExtractionNavigationRow(String(it.id), it.id !== expandedReduceId)}>
                                 <div className="video-import-reduce-thumbpair">
                                   {pv?.ok ? <img className="video-import-reduce-condthumb is-debug" src={pv.overlay} alt="parts" loading="lazy"
                                     onError={(e) => { const el = e.currentTarget; if (pv.overlayLegacy && el.src !== pv.overlayLegacy) el.src = pv.overlayLegacy; else el.style.display = "none"; }} /> : null}

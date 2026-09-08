@@ -17,6 +17,8 @@ PROLOG_CLAUSE_MODEL = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.ts"
 PROLOG_CLAUSE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.test.mjs")
 VIDEO_IMPORT_RECORDING_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUrl.ts")
 VIDEO_IMPORT_RECORDING_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUrl.test.mjs")
+VIDEO_IMPORT_NAVIGATION_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigationUrl.ts")
+VIDEO_IMPORT_NAVIGATION_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigationUrl.test.mjs")
 VIDEO_IMPORT_STYLES = (
     ROOT
     / "frontend"
@@ -158,6 +160,28 @@ def test_visual_sequence_selection_round_trips_through_recording_url_state() -> 
     assert "Visual Sequence unavailable" in page
     assert "Unavailable recording" in page
     assert "<select className=\"video-import-catalog\" value={selectedRecording}" in page
+
+
+def test_recognition_navigation_round_trips_without_replaying_actions() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    navigation = VIDEO_IMPORT_NAVIGATION_URL.read_text(encoding="utf-8")
+    executable_test = VIDEO_IMPORT_NAVIGATION_URL_TEST.read_text(encoding="utf-8")
+
+    assert 'const NAVIGATION_QUERY_PARAMETER = "nav"' in navigation
+    assert "url.searchParams.set(NAVIGATION_QUERY_PARAMETER, canonical.join(\",\"))" in navigation
+    assert "resolveRecognitionNavigation" in navigation
+    assert "rootIndex = normalized.findIndex" in navigation
+    assert "navigationPathFromUrl(window.location.href)" in page
+    assert 'writeRecognitionNavigation([tab], "push")' in page
+    assert 'selectExtractionNavigationRow(String(it.id), !open)' in page
+    assert "selectPrologNavigation(rowKey, t)" in page
+    assert 'writeRecognitionNavigation(resolved.canonicalPath, "replace")' in page
+    assert "Recognition nav reads tab names case-insensitively" in executable_test
+    assert "nested extraction and Prolog paths resolve without encoding source paths" in executable_test
+    assert "stale prefixes and suffixes stop at the deepest valid destination" in executable_test
+    assert "saved back and forward URLs independently restore their destinations" in executable_test
+    for mutating_action in ("Fresh todos", "Add/Merge todos", "fetch(", "method:"):
+        assert mutating_action not in navigation
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:
