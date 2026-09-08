@@ -87,8 +87,11 @@ export function visualSequenceLocationForEntry(
   const id = String(entry.id || "").trim();
   if (!id || !isSafeNamespacedId(id)) return null;
   if (entry.kind !== "arc-recording") return { recording: id };
-  const game = String(entry.gameId || "").trim();
-  const recording = id.split("/").pop() || "";
+  const parts = id.split("/");
+  const recording = parts.pop() || "";
+  const game = parts.pop() || "";
+  const family = parts.join("/");
+  if (family !== "recordings" && family !== "arc3_games/recordings") return null;
   if (!isSafeSegment(game) || !isSafeSegment(recording)) return null;
   return { game, recording };
 }

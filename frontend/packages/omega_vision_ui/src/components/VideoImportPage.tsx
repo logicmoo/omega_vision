@@ -11,7 +11,6 @@ import {
   visualSequenceLocationForEntry,
   visualSequenceLocationFromLegacyRef,
   visualSequenceLocationFromUrl,
-  visualSequenceProviderRef,
   type VisualSequenceCatalogEntry,
   type VisualSequenceLocation,
 } from "./VideoImportRecordingUrl";
@@ -415,6 +414,25 @@ const activeOutlineGroupNames = (inventory: MemberInventory): Set<string> | null
 type PipelineNext = { label: string; tone: "done" | "active" | "retry" | "wait" | "error" | "lost" };
 
 const API = "/workbench/video-import";
+const visualSequenceCatalogRequests = new Map<string, Promise<VisualSequenceCatalogEntry[]>>();
+
+const loadVisualSequenceCatalog = (workspaceId: string): Promise<VisualSequenceCatalogEntry[]> => {
+  const current = visualSequenceCatalogRequests.get(workspaceId);
+  if (current) return current;
+  const request = fetch(`${API}/image-sets?workspaceId=${encodeURIComponent(workspaceId)}`, { cache: "no-store" })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`Visual Sequence catalog request failed: HTTP ${response.status}`);
+      const data = await response.json();
+      return Array.isArray(data?.sets) ? data.sets : [];
+    })
+    .catch((error) => {
+      visualSequenceCatalogRequests.delete(workspaceId);
+      throw error;
+    });
+  visualSequenceCatalogRequests.set(workspaceId, request);
+  return request;
+};
+
 // Parse a MeTTa symbolic part-graph into parts (label + color) and a relation
 // count, so the Recognition reduce rows can render each stage panel NATIVELY
 // (turtle shapes) instead of a pre-baked composite image. bbox is intentionally
@@ -3281,6 +3299,7 @@ export function VideoImportPage({
   const DEFAULT_IMAGE_SET = "recordings/ls20";
   const [imageSetList, setImageSetList] = useState<VisualSequenceCatalogEntry[]>([]);
   const [imageSetsLoaded, setImageSetsLoaded] = useState(false);
+  const [visualSequenceReady, setVisualSequenceReady] = useState(false);
   const [selectedImageSet, setSelectedImageSet] = useState<string>(() => {
     try { return window.localStorage.getItem("videoImport.imageSet") || DEFAULT_IMAGE_SET; } catch { return DEFAULT_IMAGE_SET; }
   });
@@ -3299,14 +3318,9 @@ export function VideoImportPage({
       return;
     }
     setSelectedImageSet(entry.id);
-    if (entry.kind === "arc-recording") {
-      const providerRef = visualSequenceProviderRef(entry);
-      selectedRecordingRef.current = providerRef;
-      setSelectedRecording(providerRef);
-    } else {
-      selectedRecordingRef.current = "";
-      setSelectedRecording("");
-    }
+    selectedRecordingRef.current = "";
+    setSelectedRecording("");
+    setVisualSequenceReady(true);
     setVisualSequenceUrlError("");
     setRecordingSelectionError("");
     writeVisualSequenceLocation(location, historyMode);
@@ -4508,7 +4522,7 @@ export function VideoImportPage({
   // multiple simultaneously-open windows without any ingest step. Re-fetched
   // whenever the workspace changes.
   useEffect(() => {
-    if (!workspaceId) { setRecognitionReduce(null); return; }
+    if (!workspaceId || !visualSequenceReady) { setRecognitionReduce(null); return; }
     let cancelled = false;
     void (async () => {
       try {
@@ -4520,7 +4534,7 @@ export function VideoImportPage({
       } catch { if (!cancelled) setRecognitionReduce(null); }
     })();
     return () => { cancelled = true; };
-  }, [workspaceId, selectedImageSet]);
+  }, [visualSequenceReady, workspaceId, selectedImageSet]);
   // Re-read the disk manifest on demand (per-row refresh button) or while any
   // offline transformation todos are still pending/claimed, so pooler progress
   // (extraction/grouping/turtle cells) lands live without a manual reload.
@@ -4604,23 +4618,16 @@ export function VideoImportPage({
     if (!workspaceId) {
       setImageSetList([]);
       setImageSetsLoaded(false);
+      setVisualSequenceReady(false);
       return;
     }
     let cancelled = false;
     setImageSetsLoaded(false);
+    setVisualSequenceReady(false);
     void (async () => {
       try {
-        const resp = await fetch(`${API}/image-sets?workspaceId=${encodeURIComponent(workspaceId)}`, { cache: "no-store" });
-        if (!resp.ok) {
-          if (!cancelled) {
-            setImageSetList([]);
-            setImageSetsLoaded(true);
-          }
-          return;
-        }
-        const data = await resp.json();
+        const sets = await loadVisualSequenceCatalog(workspaceId);
         if (cancelled) return;
-        const sets: VisualSequenceCatalogEntry[] = Array.isArray(data?.sets) ? data.sets : [];
         setImageSetList(sets);
         setImageSetsLoaded(true);
       } catch {
@@ -4637,21 +4644,17 @@ export function VideoImportPage({
     if (visualSequenceLocation) {
       const resolved = resolveVisualSequenceLocation(imageSetList, visualSequenceLocation);
       if (!resolved.entry) {
+        setVisualSequenceReady(false);
         setVisualSequenceUrlError(resolved.error);
         setRecordingSelectionError(resolved.error);
         return;
       }
       if (selectedImageSet !== resolved.entry.id) setSelectedImageSet(resolved.entry.id);
-      if (resolved.entry.kind === "arc-recording") {
-        const providerRef = visualSequenceProviderRef(resolved.entry);
-        if (selectedRecordingRef.current !== providerRef) {
-          selectedRecordingRef.current = providerRef;
-          setSelectedRecording(providerRef);
-        }
-      } else if (selectedRecordingRef.current) {
+      if (selectedRecordingRef.current) {
         selectedRecordingRef.current = "";
         setSelectedRecording("");
       }
+      setVisualSequenceReady(true);
       setVisualSequenceUrlError("");
       setRecordingSelectionError("");
       writeVisualSequenceLocation(visualSequenceLocation, "replace");
