@@ -2,6 +2,19 @@ const NAVIGATION_QUERY_PARAMETER = "nav";
 const SAFE_NAVIGATION_SLUG = /^[a-z0-9][a-z0-9._-]*$/;
 
 export type RecognitionNavigationTab = "inputs" | "extractions";
+export type VideoImportShellSubview =
+  | "sources"
+  | "frames"
+  | "games"
+  | "objects"
+  | "sprite-view"
+  | "recognition";
+export type VideoImportIntegratedFocus = "finish" | "advanced" | null;
+
+export interface VideoImportShellDestination {
+  subview: VideoImportShellSubview;
+  focus: VideoImportIntegratedFocus;
+}
 
 export interface RecognitionNavigationTransform {
   name?: string;
@@ -52,6 +65,63 @@ export function urlWithNavigation(href: string, path: readonly string[]): string
   const canonical = path.map(navigationSlug).filter((segment) => SAFE_NAVIGATION_SLUG.test(segment));
   if (canonical.length) url.searchParams.set(NAVIGATION_QUERY_PARAMETER, canonical.join(","));
   else url.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
+  return url.toString();
+}
+
+export function resolveVideoImportShellDestination(href: string): VideoImportShellDestination {
+  const url = new URL(href);
+  const view = navigationSlug(url.searchParams.get("view") || "");
+  const subview = navigationSlug(url.searchParams.get("subview") || "");
+  const navigation = navigationPathFromUrl(href);
+  const root = navigation[0] || "";
+  if (
+    ["spriteviewer", "sprite-viewer", "sprite-view"].includes(view)
+    || ["spriteviewer", "sprite-viewer", "sprite-view"].includes(subview)
+    || root === "sprite-view"
+  ) {
+    return { subview: "sprite-view", focus: null };
+  }
+  if (["advanced", "vi-advanced", "videoimportadvanced"].includes(view) || subview === "advanced" || root === "advanced") {
+    return { subview: "sources", focus: "advanced" };
+  }
+  if (["finish", "videoimportfinish"].includes(view) || subview === "finish" || root === "finish") {
+    return { subview: "sources", focus: "finish" };
+  }
+  const visible = new Set<VideoImportShellSubview>([
+    "sources",
+    "frames",
+    "games",
+    "objects",
+    "sprite-view",
+    "recognition",
+  ]);
+  return {
+    subview: visible.has(subview as VideoImportShellSubview)
+      ? subview as VideoImportShellSubview
+      : "sources",
+    focus: null,
+  };
+}
+
+export function canonicalVideoImportShellUrl(
+  href: string,
+  destination: VideoImportShellDestination,
+): string {
+  const url = new URL(href);
+  url.searchParams.set("view", "videoImport");
+  url.searchParams.set("subview", destination.subview);
+  if (destination.focus) {
+    url.searchParams.set(NAVIGATION_QUERY_PARAMETER, destination.focus);
+  } else if (destination.subview === "sprite-view") {
+    url.searchParams.set(NAVIGATION_QUERY_PARAMETER, "sprite-view");
+  } else if (
+    destination.subview === "recognition"
+    && !["inputs", "extractions"].includes(navigationPathFromUrl(href)[0] || "")
+  ) {
+    url.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
+  } else if (destination.subview !== "recognition") {
+    url.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
+  }
   return url.toString();
 }
 

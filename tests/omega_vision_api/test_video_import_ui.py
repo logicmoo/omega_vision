@@ -42,6 +42,8 @@ WORKSPACE_FILE_CONTROLS = (
 OPERATION_EDITOR_STYLES = (
     ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_editor.css"
 )
+WORKBENCH_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
+SPRITE_VIEWER_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "SpriteViewerPage.tsx"
 
 
 def test_colored_combobox_is_shared_by_chat_and_video_models() -> None:
@@ -923,8 +925,8 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     split = source.index('aria-label="Video Import pipeline forks"')
     assert 'section("memberDescription", "SCENE OBJECTS TEXTUAL DESCRIPTION"' not in source
     assert automation < split
-    assert source.index('section("config", "JSON CONFIG"') > source.index('section("finish", "TURTLE / IMPORT GAME"')
-    assert "grid-column: 1 / -1; grid-row: 1" in styles
+    assert source.index('section("config", "ADVANCED CONTROLS · JSON CONFIG"') > source.index('section("finish", "COMPLETION / EXPORT"')
+    assert '.video-import-page[data-subview] > [data-section="finish"]' in styles
 
 
 def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tree() -> None:
@@ -953,9 +955,12 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     assert "2 · Frames & Filters" in source
     assert "3 · Games" in source
     assert "4 · Objects" in source
-    assert "5 · Finish" in source
+    assert "5 · Sprite View" in source
+    assert "6 · Recognition" in source
+    assert "5 · Finish" not in source
+    assert '{ id: "advanced", label: "Advanced" }' not in source
     assert '.video-import-page[data-subview="sources"]' in styles
-    assert '.video-import-page[data-subview="advanced"] > [data-section="config"]' in styles
+    assert '.video-import-page[data-subview] > [data-section="config"]' in styles
     assert "runnableInventoryIds" in source
     assert "runnableMemberInventories" in source
     assert "memberInputPaths.has(inventory.framePath)" in source
@@ -1002,6 +1007,43 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     board_start = styles.index("\n.video-import-pipe-board {")
     board_rule = styles[board_start:styles.index("}", board_start)]
     assert "overflow: visible" in board_rule
+
+
+def test_sprite_finish_and_advanced_have_one_canonical_video_import_surface() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    workbench = WORKBENCH_PAGE.read_text(encoding="utf-8")
+    sprite = SPRITE_VIEWER_PAGE.read_text(encoding="utf-8")
+    navigation = VIDEO_IMPORT_NAVIGATION_URL.read_text(encoding="utf-8")
+    navigation_test = VIDEO_IMPORT_NAVIGATION_URL_TEST.read_text(encoding="utf-8")
+
+    omega_start = workbench.index('group: "OMEGA VISION"')
+    omega_end = workbench.index('group: "CAPABILITIES"', omega_start)
+    omega_menu = workbench[omega_start:omega_end]
+    assert '{ label: "Sprite View", view: "videoImport", subview: "sprite-view", glyph: "◳" }' in omega_menu
+    assert 'label: "Finish"' not in omega_menu
+    assert 'label: "VI Advanced"' not in omega_menu
+    assert 'label: "Sprite Viewer"' not in omega_menu
+    assert 'view === "spriteViewer"' not in workbench
+    assert "default: module.SpriteViewerPage" not in workbench
+    assert 'value === "spriteviewer"' in workbench
+    assert page.count("<SpriteViewerPage />") == 1
+    assert "export function SpriteViewerPage()" in sprite
+    assert 'className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}' in page
+    assert page.count('section("finish", "COMPLETION / EXPORT"') == 1
+    assert page.count('section("config", "ADVANCED CONTROLS · JSON CONFIG"') == 1
+    for preserved_control in (
+        "Call LLM · Turtle Gen",
+        "Call LLM · Turtle PNG",
+        "Materialize filtered frames as a Visual Sequence",
+        "⏎ Apply to flow",
+        "↻ track live",
+        "⟲ forget saved",
+    ):
+        assert page.count(preserved_control) == 1
+    assert "resolveVideoImportShellDestination" in navigation
+    assert "canonicalVideoImportShellUrl" in navigation
+    assert "legacy Sprite Viewer routes migrate to Video Import step 5" in navigation_test
+    assert "legacy Finish and Advanced destinations open integrated sections" in navigation_test
 
 
 def test_alt_hover_gives_image_and_context_separate_half_page_panes() -> None:

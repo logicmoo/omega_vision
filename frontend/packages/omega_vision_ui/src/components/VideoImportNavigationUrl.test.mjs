@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  canonicalVideoImportShellUrl,
   inspectorNavigationSlug,
   navigationPathFromUrl,
   navigationSlug,
   resolveRecognitionNavigation,
+  resolveVideoImportShellDestination,
   urlWithNavigation,
 } from "./VideoImportNavigationUrl.ts";
 
@@ -70,4 +72,32 @@ test("saved back and forward URLs independently restore their destinations", () 
   assert.deepEqual(navigationPathFromUrl(forwardUrl), ["extractions", "frame_000007"]);
   assert.equal(resolveRecognitionNavigation(navigationPathFromUrl(backUrl), items).target.tab, "inputs");
   assert.equal(resolveRecognitionNavigation(navigationPathFromUrl(forwardUrl), items).target.rowId, "frame_000007");
+});
+
+test("legacy Sprite Viewer routes migrate to Video Import step 5", () => {
+  const original = "http://localhost:5173/?workspace=demo&view=spriteViewer&game=ls20&recording=run";
+  const destination = resolveVideoImportShellDestination(original);
+  const migrated = new URL(canonicalVideoImportShellUrl(original, destination));
+
+  assert.deepEqual(destination, { subview: "sprite-view", focus: null });
+  assert.equal(migrated.searchParams.get("view"), "videoImport");
+  assert.equal(migrated.searchParams.get("subview"), "sprite-view");
+  assert.equal(migrated.searchParams.get("nav"), "sprite-view");
+  assert.equal(migrated.searchParams.get("game"), "ls20");
+  assert.equal(migrated.searchParams.get("recording"), "run");
+});
+
+test("legacy Finish and Advanced destinations open integrated sections", () => {
+  assert.deepEqual(
+    resolveVideoImportShellDestination("http://localhost:5173/?view=videoImport&subview=finish"),
+    { subview: "sources", focus: "finish" },
+  );
+  assert.deepEqual(
+    resolveVideoImportShellDestination("http://localhost:5173/?view=videoImport&nav=Advanced"),
+    { subview: "sources", focus: "advanced" },
+  );
+  assert.deepEqual(
+    resolveVideoImportShellDestination("http://localhost:5173/?view=finish"),
+    { subview: "sources", focus: "finish" },
+  );
 });

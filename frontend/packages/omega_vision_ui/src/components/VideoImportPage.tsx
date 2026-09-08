@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { pushGlobalStatus } from "@app/lib/globalStatus";
 import { ColoredTagCombobox, type ColoredTag, type ColoredTagDescription } from "@app/components/ColoredTagCombobox";
+import { SpriteViewerPage } from "@app/components/SpriteViewerPage";
 import { SuperControl } from "@app/components/UniversalArtifactEditor";
 import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
@@ -15,13 +16,17 @@ import {
   type VisualSequenceLocation,
 } from "./VideoImportRecordingUrl";
 import {
+  canonicalVideoImportShellUrl,
   inspectorNavigationSlug,
   navigationPathFromUrl,
   navigationSlug,
   resolveRecognitionNavigation,
+  resolveVideoImportShellDestination,
   urlWithNavigation,
   type RecognitionNavigationTab,
   type RecognitionNavigationTransform,
+  type VideoImportIntegratedFocus,
+  type VideoImportShellSubview,
 } from "./VideoImportNavigationUrl";
 import {
   requiresVisualSequenceConfirmation,
@@ -59,16 +64,15 @@ type ExtractedImageSource = {
   kind: "video" | "stream" | "arc" | "curated" | "archive" | "restored";
   frames: Frame[];
 };
-type VideoImportSubview = "sources" | "frames" | "games" | "objects" | "finish" | "recognition" | "advanced";
+type VideoImportSubview = VideoImportShellSubview;
 type RecordingHistoryMode = "none" | "push" | "replace";
 const VIDEO_IMPORT_SUBVIEWS: Array<{ id: VideoImportSubview; label: string }> = [
   { id: "sources", label: "1 · Sources" },
   { id: "frames", label: "2 · Frames & Filters" },
   { id: "games", label: "3 · Games" },
   { id: "objects", label: "4 · Objects" },
-  { id: "finish", label: "5 · Finish" },
+  { id: "sprite-view", label: "5 · Sprite View" },
   { id: "recognition", label: "6 · Recognition" },
-  { id: "advanced", label: "Advanced" },
 ];
 type FilterEntry = {
   id: string; title: string; filter: string; description?: string;
@@ -1926,31 +1930,67 @@ export function VideoImportPage({
    * panel) without needing to lift the whole chain/filters state up. */
   onChainSummaryChange?: (steps: VideoImportChainSummaryStep[]) => void;
 }) {
-  const requestedSubview = new URL(window.location.href).searchParams.get("subview")?.toLowerCase();
+  const initialShellDestination = useRef(resolveVideoImportShellDestination(window.location.href));
   const [activeSubview, setActiveSubview] = useState<VideoImportSubview>(
-    VIDEO_IMPORT_SUBVIEWS.some((entry) => entry.id === requestedSubview)
-      ? requestedSubview as VideoImportSubview
-      : "sources",
+    initialShellDestination.current.subview,
+  );
+  const [integratedFocusRequest, setIntegratedFocusRequest] = useState<VideoImportIntegratedFocus>(
+    initialShellDestination.current.focus,
   );
   const selectSubview = (subview: VideoImportSubview) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("subview", subview);
-    window.history.replaceState(window.history.state, "", url);
+    const destination = { subview, focus: null };
+    const nextUrl = canonicalVideoImportShellUrl(window.location.href, destination);
+    window.history.replaceState(window.history.state, "", nextUrl);
     setActiveSubview(subview);
+    setIntegratedFocusRequest(null);
+    if (subview === "recognition") {
+      recognitionNavigationAppliedRef.current = "";
+      setRecognitionNavigationPath(navigationPathFromUrl(nextUrl));
+    }
     // Keep the app nav rail/topbar highlight in sync with the page's own tabs.
     window.dispatchEvent(new CustomEvent("workbench:subview-changed", { detail: subview }));
   };
   useEffect(() => {
+    const canonical = canonicalVideoImportShellUrl(
+      window.location.href,
+      initialShellDestination.current,
+    );
+    if (canonical !== window.location.href) {
+      window.history.replaceState(window.history.state, "", canonical);
+    }
+    window.dispatchEvent(new CustomEvent("workbench:subview-changed", {
+      detail: initialShellDestination.current.subview,
+    }));
     // Stage pages in the app nav address this component through ?subview=;
-    // honor switches that arrive while the page is already mounted.
+    // honor switches and legacy destinations while the page is already mounted.
     const onExternal = (event: Event) => {
       const detail = String((event as CustomEvent).detail || "").toLowerCase();
-      if (VIDEO_IMPORT_SUBVIEWS.some((entry) => entry.id === detail)) {
-        setActiveSubview(detail as VideoImportSubview);
+      const url = new URL(window.location.href);
+      url.searchParams.set("subview", detail);
+      const destination = resolveVideoImportShellDestination(url.toString());
+      setActiveSubview(destination.subview);
+      setIntegratedFocusRequest(destination.focus);
+      window.history.replaceState(
+        window.history.state,
+        "",
+        canonicalVideoImportShellUrl(window.location.href, destination),
+      );
+    };
+    const onHistory = () => {
+      const destination = resolveVideoImportShellDestination(window.location.href);
+      setActiveSubview(destination.subview);
+      setIntegratedFocusRequest(destination.focus);
+      const canonicalHistoryUrl = canonicalVideoImportShellUrl(window.location.href, destination);
+      if (canonicalHistoryUrl !== window.location.href) {
+        window.history.replaceState(window.history.state, "", canonicalHistoryUrl);
       }
     };
     window.addEventListener("workbench:set-subview", onExternal);
-    return () => window.removeEventListener("workbench:set-subview", onExternal);
+    window.addEventListener("popstate", onHistory);
+    return () => {
+      window.removeEventListener("workbench:set-subview", onExternal);
+      window.removeEventListener("popstate", onHistory);
+    };
   }, []);
   const hoveredImageRef = useRef<Element | null>(null);
   const [altImageZoom, setAltImageZoom] = useState<AltImageZoom | null>(null);
@@ -2158,6 +2198,15 @@ export function VideoImportPage({
     onAutoCollapse: () => setCollapsedMap((current) => (current[id] === false ? { ...current, [id]: true } : current)),
     onPin: () => setPinnedMap((current) => ({ ...current, [id]: !current[id] })),
   });
+  useEffect(() => {
+    if (!integratedFocusRequest) return;
+    const sectionId = integratedFocusRequest === "advanced" ? "config" : "finish";
+    setCollapsedMap((current) => ({ ...current, [sectionId]: false }));
+    const reveal = () => document.querySelector(`[data-section="${sectionId}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const timer = window.setTimeout(reveal, 120);
+    return () => window.clearTimeout(timer);
+  }, [integratedFocusRequest]);
 
   // ---- one job engine -----------------------------------------------------
   const [job, setJob] = useState<JobState | null>(null);
@@ -4686,6 +4735,7 @@ export function VideoImportPage({
     return () => { cancelled = true; };
   }, [visualSequenceReady, workspaceId, selectedImageSet]);
   useEffect(() => {
+    if (activeSubview !== "recognition") return;
     const items = Array.isArray(recognitionReduce?.items) ? recognitionReduce.items : [];
     if (!visualSequenceReady || items.length === 0) return;
     const requestedKey = `${selectedImageSet}|${recognitionNavigationPath.join(",")}`;
@@ -4711,6 +4761,7 @@ export function VideoImportPage({
     recognitionNavigationAppliedRef.current = `${selectedImageSet}|${resolved.canonicalPath.join(",")}`;
     writeRecognitionNavigation(resolved.canonicalPath, "replace");
   }, [
+    activeSubview,
     recognitionNavigationPath,
     recognitionReduce,
     reduceTab,
@@ -8543,6 +8594,12 @@ export function VideoImportPage({
           </section>
         </div>
       )}
+      <div
+        className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}
+        aria-hidden={activeSubview === "sprite-view" ? undefined : "true"}
+      >
+        <SpriteViewerPage />
+      </div>
 
       <Section {...section("intake", "INTAKE", `${videos.length} video(s) in the library`)}>
         <div className="vi2-body">
@@ -9094,7 +9151,7 @@ export function VideoImportPage({
         </Section>
       )}
 
-      {(activeSubview === "objects" || activeSubview === "finish") && (
+      {activeSubview === "objects" && (
       <div className="video-import-scene-object-workspace">
       <div className="video-import-reduce-tabs" role="tablist" aria-label="Objects views">
         <button type="button" role="tab" aria-selected={objectsTab === "pipeline"} className={objectsTab === "pipeline" ? "is-active" : ""} onClick={() => setObjectsTab("pipeline")}>Pipeline</button>
@@ -9604,39 +9661,6 @@ export function VideoImportPage({
         </Section>
       )}
 
-      {selected && (
-        <Section {...section("finish", "TURTLE / IMPORT GAME", `${output.length ? "OUTPUT frames feed the finish" : "input frames feed the finish"}`)}>
-          <div className="vi2-body video-import-timeline">
-            <b>TURTLE GEN</b>
-            <label>model
-              <ColoredTagCombobox value={turtleModel} ids={videoModelIds} ariaLabel="Turtle Gen model" allowNone noneLabel={`<use global · ${allCallsModel || "none"}>`} describe={describeVideoModel} disabled={busy} onChange={(value) => { turtleModelTouchedRef.current = true; setTurtleModel(value); }} />
-            </label>
-            <details className="video-import-member-prompt-disclosure">
-              <summary>TURTLE PROMPT</summary>
-              <label className="video-import-member-prompt-editor">
-                <span>EDIT PROMPT</span>
-                <textarea value={turtlePrompt} disabled={busy} onChange={(event) => { setTurtlePromptSelection("workspace"); setTurtlePrompt(event.target.value); }} spellCheck={false} />
-              </label>
-            </details>
-            <button disabled={busy || !isRunnableVisionModel(effectiveTurtleModel) || !members.length} onClick={() => startServerStage("turtle")}>Call LLM · Turtle Gen</button>
-            <b>TURTLE PNG</b>
-            <label>model
-              <ColoredTagCombobox value={turtlePngModel} ids={videoModelIds} ariaLabel="Turtle PNG model" allowNone noneLabel={`<use global · ${allCallsModel || "none"}>`} describe={describeVideoModel} disabled={busy} onChange={(value) => { turtlePngModelTouchedRef.current = true; setTurtlePngModel(value); }} />
-            </label>
-            <details className="video-import-member-prompt-disclosure">
-              <summary>TURTLE PNG PROMPT</summary>
-              <label className="video-import-member-prompt-editor">
-                <span>EDIT PROMPT</span>
-                <textarea value={turtlePngPrompt} disabled={busy} onChange={(event) => { setTurtlePngPromptSelection("workspace"); setTurtlePngPrompt(event.target.value); }} spellCheck={false} />
-              </label>
-            </details>
-            <button disabled={busy || !isRunnableVisionModel(effectiveTurtlePngModel) || !Object.values(turtleArtifacts).some((artifact) => artifact.rawProgram && !artifact.renderedImage)} onClick={() => startServerStage("turtlePng")}>Call LLM · Turtle PNG</button>
-            <b>MAKE SEQUENCE SET</b>
-            <label>game id <input type="text" value={gameId} disabled={busy} onChange={(event) => setGameId(event.target.value)} /></label>
-            <button disabled={busy || !frames.length || !gameId.trim()} onClick={() => void materialize()}>Materialize filtered frames as a Sequence Set</button>
-          </div>
-        </Section>
-      )}
       </>)}
       {objectsTab === "extractions" && <div className="video-import-imageset-bar">{renderImageSetSelector("objects")}{!objectsShowLive && <span className="video-import-imageset-hint">disk-backed · switching keeps reduced work</span>}</div>}
       {objectsTab === "extractions" && !objectsShowLive && renderReduceExtractions()}
@@ -9711,6 +9735,37 @@ export function VideoImportPage({
       })()}
       </div>
       )}
+      <Section {...section("finish", "COMPLETION / EXPORT", selected ? `${output.length ? "OUTPUT frames feed completion" : "input frames feed completion"}` : "choose a source to enable completion controls")}>
+          <div className="vi2-body video-import-timeline">
+            <b>TURTLE GEN</b>
+            <label>model
+              <ColoredTagCombobox value={turtleModel} ids={videoModelIds} ariaLabel="Turtle Gen model" allowNone noneLabel={`<use global · ${allCallsModel || "none"}>`} describe={describeVideoModel} disabled={busy} onChange={(value) => { turtleModelTouchedRef.current = true; setTurtleModel(value); }} />
+            </label>
+            <details className="video-import-member-prompt-disclosure">
+              <summary>TURTLE PROMPT</summary>
+              <label className="video-import-member-prompt-editor">
+                <span>EDIT PROMPT</span>
+                <textarea value={turtlePrompt} disabled={busy} onChange={(event) => { setTurtlePromptSelection("workspace"); setTurtlePrompt(event.target.value); }} spellCheck={false} />
+              </label>
+            </details>
+            <button disabled={busy || !isRunnableVisionModel(effectiveTurtleModel) || !members.length} onClick={() => startServerStage("turtle")}>Call LLM · Turtle Gen</button>
+            <b>TURTLE PNG</b>
+            <label>model
+              <ColoredTagCombobox value={turtlePngModel} ids={videoModelIds} ariaLabel="Turtle PNG model" allowNone noneLabel={`<use global · ${allCallsModel || "none"}>`} describe={describeVideoModel} disabled={busy} onChange={(value) => { turtlePngModelTouchedRef.current = true; setTurtlePngModel(value); }} />
+            </label>
+            <details className="video-import-member-prompt-disclosure">
+              <summary>TURTLE PNG PROMPT</summary>
+              <label className="video-import-member-prompt-editor">
+                <span>EDIT PROMPT</span>
+                <textarea value={turtlePngPrompt} disabled={busy} onChange={(event) => { setTurtlePngPromptSelection("workspace"); setTurtlePngPrompt(event.target.value); }} spellCheck={false} />
+              </label>
+            </details>
+            <button disabled={busy || !isRunnableVisionModel(effectiveTurtlePngModel) || !Object.values(turtleArtifacts).some((artifact) => artifact.rawProgram && !artifact.renderedImage)} onClick={() => startServerStage("turtlePng")}>Call LLM · Turtle PNG</button>
+            <b>MAKE VISUAL SEQUENCE</b>
+            <label>game id <input type="text" value={gameId} disabled={busy} onChange={(event) => setGameId(event.target.value)} /></label>
+            <button disabled={busy || !frames.length || !gameId.trim()} onClick={() => void materialize()}>Materialize filtered frames as a Visual Sequence</button>
+          </div>
+      </Section>
       {activeSubview === "recognition" && (
         <section className="video-import-recognition">
           <div className="video-import-recognition-headbar">
@@ -10029,8 +10084,7 @@ export function VideoImportPage({
           )}
         </section>
       )}
-      {activeSubview === "advanced" && (
-      <Section {...section("config", "JSON CONFIG", `the page's exact state as editable JSON${configDraft === null ? " · live" : configValid ? " · editing (applies live)" : " · INVALID JSON — keep typing"}`,
+      <Section {...section("config", "ADVANCED CONTROLS · JSON CONFIG", `the page's exact state as editable JSON${configDraft === null ? " · live" : configValid ? " · editing (applies live)" : " · INVALID JSON — keep typing"}`,
         <>
           <button disabled={busy || configDraft === null} title="Force-apply now and resume tracking the live config" onClick={applyConfigDraft}>⏎ Apply</button>
           <button disabled={configDraft === null} title="Discard edits and track the live config again" onClick={() => setConfigDraft(null)}>↻ live</button>
@@ -10069,7 +10123,6 @@ export function VideoImportPage({
           />
         </div>
       </Section>
-      )}
       {visibleAltImageZoom && (
         <div
           className={`video-import-alt-image-zoom${pinnedAltImageZoom ? " is-pinned" : ""}`}
