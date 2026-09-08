@@ -2412,6 +2412,9 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                     summary = {k: meta[k] for k in (
                         "regionCount", "adjacencyCount", "blobCount", "componentCount",
                         "contourCount", "watershedSegmentCount", "visualGroupCount", "groupCount",
+                        "acceptedGroupCount", "exactConsensusCount",
+                        "symbolicShapeAnalogyCount", "pixelShapeFallbackCount",
+                        "singletonRemainderCount", "foregroundCount", "backgroundCount",
                         "objectCount", "programCount", "width", "height",
                         "relationCount", "model", "shots", "partsFacts") if k in meta}
                     parts = meta.get("parts")
@@ -2434,6 +2437,20 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                                 "evidence": group.get("evidence") if isinstance(group.get("evidence"), dict) else {},
                             }
                             for group in visual_groups
+                            if isinstance(group, dict) and group.get("id")
+                        ]
+                    accepted_groups = meta.get("acceptedGroups")
+                    if isinstance(accepted_groups, list):
+                        cell["acceptedGroups"] = [
+                            {
+                                "id": str(group.get("id")),
+                                "members": [str(member) for member in (group.get("members") or [])],
+                                "mode": str(group.get("mode") or ""),
+                                "provenance": group.get("provenance")
+                                if isinstance(group.get("provenance"), dict)
+                                else {},
+                            }
+                            for group in accepted_groups
                             if isinstance(group, dict) and group.get("id")
                         ]
                     if summary:
@@ -6512,6 +6529,7 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 #     <move_num>/<transformation>/<doer>/...results...
 #     e.g. 0/parts_extraction_0/python_opencv/result.pl + meta.json + debug_image.png
 #          0/parts_grouping_0/group_regions_prolog/result.pl + meta.json
+#          0/group_acceptance_0/group_acceptance_prolog/result.pl + meta.json
 #          0/turtle_programs/turtle_programs_prolog/result.pl + meta.json
 #
 # so one move can carry many transformations, each attributed to the doer
@@ -6521,8 +6539,9 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 # transform output folder follows one contract: result.pl (the facts),
 # meta.json (attribution + stats; records the exact module behind the
 # doer), and optionally debug_image.png. The default pipeline runs
-# parts_extraction_0, parts_grouping_0, then turtle_programs, so one call
-# takes a raw frame all the way to grouped parts with redraw programs.
+# parts_extraction_0, parts_grouping_0, group_acceptance_0, then
+# turtle_programs, so one call takes a raw frame all the way to accepted
+# final groups with redraw programs.
 
 _TRANSFORM_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 _MANUAL_ONLY_PARTS_EXTRACTORS = frozenset({
@@ -6683,6 +6702,139 @@ def _transform_part_groups(unit: dict[str, Any], out_dir: Path, options: dict[st
         counted={"groupCount": "part_group(", "objectCount": "object_instance(o"})
 
 
+def _transform_group_acceptance(
+    unit: dict[str, Any],
+    out_dir: Path,
+    options: dict[str, Any],
+) -> dict[str, Any]:
+    from collections import Counter  # noqa: PLC0415
+    from omega_vision.perception.group_acceptance import (  # noqa: PLC0415
+        PIXEL_COLOR_MASS_TOLERANCE,
+        PIXEL_SHAPE_FALLBACK_THRESHOLD,
+        PIXEL_SHAPE_UNIQUE_MARGIN,
+        SYMBOLIC_GEOMETRY_TOLERANCE,
+        parse_group_acceptance_result,
+        parse_current_frame_evidence,
+        prepare_current_frame_group_evidence,
+        render_group_acceptance_input,
+    )
+
+    parts_root = unit["dir"] / "parts_extraction_0"
+    preferred = str(options.get("partsDoer", "python_opencv"))
+    extraction_candidates = [
+        parts_root / preferred / "result.pl",
+        parts_root / "python_opencv" / "result.pl",
+        *sorted(parts_root.glob("*/result.pl")),
+    ]
+    extraction_file = next((path for path in extraction_candidates if path.is_file()), None)
+    grouping_file = unit["dir"] / "parts_grouping_0" / "group_regions_prolog" / "result.pl"
+    if extraction_file is None:
+        raise RuntimeError("group_acceptance_0 requires parts_extraction_0 output")
+    if not grouping_file.is_file():
+        raise RuntimeError("group_acceptance_0 requires parts_grouping_0 output")
+    geometry_file = extraction_file.parent / "geometry.json"
+    geometry = (
+        json.loads(geometry_file.read_text(encoding="utf-8"))
+        if geometry_file.is_file()
+        else {}
+    )
+    evidence = parse_current_frame_evidence(
+        extraction_file.read_text(encoding="utf-8"),
+        grouping_file.read_text(encoding="utf-8"),
+        geometry,
+    )
+    extraction_meta_file = extraction_file.parent / "meta.json"
+    if extraction_meta_file.is_file():
+        extraction_meta = json.loads(extraction_meta_file.read_text(encoding="utf-8"))
+        visual_groups = extraction_meta.get("visualGroups")
+        if isinstance(visual_groups, list):
+            evidence["visualGroups"] = [
+                {**group, "sourceOrder": index}
+                for index, group in enumerate(visual_groups)
+                if isinstance(group, dict) and group.get("id")
+            ]
+    prepared = prepare_current_frame_group_evidence(
+        evidence,
+        frame_id=str(unit["id"]),
+        symbolic_tolerance=float(
+            options.get("symbolicGeometryTolerance", SYMBOLIC_GEOMETRY_TOLERANCE)
+        ),
+        pixel_threshold=float(
+            options.get("pixelShapeThreshold", PIXEL_SHAPE_FALLBACK_THRESHOLD)
+        ),
+        pixel_unique_margin=float(
+            options.get("pixelUniqueMargin", PIXEL_SHAPE_UNIQUE_MARGIN)
+        ),
+        pixel_color_tolerance=float(
+            options.get("pixelColorMassTolerance", PIXEL_COLOR_MASS_TOLERANCE)
+        ),
+    )
+    acceptance_input = out_dir / "acceptance_input.pl"
+    acceptance_input.write_text(
+        render_group_acceptance_input(prepared),
+        encoding="utf-8",
+        newline="\n",
+    )
+    rules = _REPO_ROOT / "prolog" / "omega_vision" / "group_acceptance.pl"
+    out_file = out_dir / "result.pl"
+    goal = "consult('{}'), consult('{}'), write_group_acceptance('{}')".format(
+        rules.as_posix(),
+        acceptance_input.as_posix(),
+        out_file.as_posix(),
+    )
+    try:
+        process = subprocess.run(
+            ["swipl", "-q", "-g", goal, "-t", "halt"],
+            capture_output=True,
+            text=True,
+            timeout=int(options.get("timeout", 120)),
+        )
+    except FileNotFoundError as error:
+        raise RuntimeError("swipl is not installed or not on PATH") from error
+    if process.returncode != 0 or not out_file.is_file():
+        raise RuntimeError(
+            (process.stderr or process.stdout or "SWI-Prolog group acceptance failed").strip()[:800]
+        )
+    result = parse_group_acceptance_result(
+        out_file.read_text(encoding="utf-8"),
+        prepared,
+    )
+    source_provenance = {
+        "partsFacts": extraction_file.relative_to(unit["dir"]).as_posix(),
+        "candidateFacts": grouping_file.relative_to(unit["dir"]).as_posix(),
+        "acceptanceMeasurements": acceptance_input.relative_to(unit["dir"]).as_posix(),
+        "acceptanceRules": "prolog/omega_vision/group_acceptance.pl",
+    }
+    for group in result["acceptedGroups"]:
+        group["provenance"]["sources"] = source_provenance
+    for rejection in [
+        *result["rejectedSymbolicGroups"],
+        *result["rejectedTemplateCandidates"],
+    ]:
+        rejection.setdefault("evidence", {})["sources"] = source_provenance
+    modes = Counter(group["mode"] for group in result["acceptedGroups"])
+    return {
+        "module": "omega_vision.perception.group_acceptance",
+        "partsFacts": extraction_file.relative_to(unit["dir"]).as_posix(),
+        "candidateFacts": grouping_file.relative_to(unit["dir"]).as_posix(),
+        "acceptedGroupCount": len(result["acceptedGroups"]),
+        "exactConsensusCount": modes["exact_consensus"],
+        "symbolicShapeAnalogyCount": modes["symbolic_shape_analogy"],
+        "pixelShapeFallbackCount": modes["pixel_shape_fallback"],
+        "singletonRemainderCount": modes["singleton_remainder"],
+        "foregroundCount": len(prepared["foreground"]),
+        "backgroundCount": len(prepared["background"]),
+        "acceptedGroups": result["acceptedGroups"],
+        "rejectedSymbolicGroups": result["rejectedSymbolicGroups"],
+        "rejectedTemplateCandidates": result["rejectedTemplateCandidates"],
+        "trustedTemplateGroups": [
+            group["id"] for group in result["acceptedGroups"]
+            if group["mode"] == "exact_consensus"
+        ],
+        "parameters": prepared["parameters"],
+    }
+
+
 def _transform_turtle_programs(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
     """turtle_programs by the turtle_programs_prolog doer (the .pl file that did
     it): every per-part list except fillpoints (outer edge, each cutout,
@@ -6737,6 +6889,7 @@ _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
     ("parts_extraction_0", "shape_finder_prolog"): _transform_parts_extraction_prolog,
     ("parts_debug_0", "python_pil"): _transform_parts_debug,
     ("parts_grouping_0", "group_regions_prolog"): _transform_part_groups,
+    ("group_acceptance_0", "group_acceptance_prolog"): _transform_group_acceptance,
     ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
 }
 
@@ -6899,9 +7052,64 @@ _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
      "priority": 20, "type": "ui", "dependsOn": ["parts_extraction_0/python_opencv"]},
     {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {},
      "priority": 30, "type": "py_pl", "dependsOn": ["parts_extraction_0/python_opencv"]},
+    {"transformation": "group_acceptance_0", "doer": "group_acceptance_prolog", "options": {},
+     "priority": 35, "type": "py_pl",
+     "dependsOn": ["parts_extraction_0/python_opencv", "parts_grouping_0/group_regions_prolog"]},
     {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {},
-     "priority": 40, "type": "py_pl", "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+     "priority": 40, "type": "py_pl", "dependsOn": ["group_acceptance_0/group_acceptance_prolog"]},
 ]
+
+
+def _former_default_pipeline(extractors: list[tuple[str, int]]) -> list[dict[str, Any]]:
+    primary = "python_opencv" if any(doer == "python_opencv" for doer, _ in extractors) else extractors[0][0]
+    return [
+        *[
+            {
+                "transformation": "parts_extraction_0",
+                "doer": doer,
+                "options": {},
+                "priority": priority,
+                "dependsOn": [],
+            }
+            for doer, priority in extractors
+        ],
+        {
+            "transformation": "parts_debug_0",
+            "doer": "python_pil",
+            "options": {},
+            "priority": 20,
+            "dependsOn": [f"parts_extraction_0/{primary}"],
+        },
+        {
+            "transformation": "parts_grouping_0",
+            "doer": "group_regions_prolog",
+            "options": {},
+            "priority": 30,
+            "dependsOn": [f"parts_extraction_0/{primary}"],
+        },
+        {
+            "transformation": "turtle_programs",
+            "doer": "turtle_programs_prolog",
+            "options": {},
+            "priority": 40,
+            "dependsOn": ["parts_grouping_0/group_regions_prolog"],
+        },
+    ]
+
+
+_FORMER_DEFAULT_PIPELINE_TEMPLATES = (
+    _former_default_pipeline([("python_scikit", 10)]),
+    _former_default_pipeline([
+        ("python_opencv", 10),
+        ("python_scikit", 12),
+        ("shape_finder_prolog", 14),
+    ]),
+    _former_default_pipeline([
+        ("python_opencv", 10),
+        ("shape_finder_prolog", 14),
+    ]),
+    _former_default_pipeline([("python_opencv", 10)]),
+)
 _PIPELINE_TEMPLATE_REL = "data/transform_pipeline.json"
 _PIPELINE_TEMPLATE_COMMENT = ("Initial todo template: stamped onto every unit as todos.json. "
                               "priority: lower runs first; dependsOn gates on finished steps; "
@@ -6946,6 +7154,19 @@ def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
     return steps
 
 
+def _pipeline_migration_signature(steps: list[dict[str, Any]]) -> list[tuple[Any, ...]]:
+    return [
+        (
+            str(step.get("transformation") or ""),
+            str(step.get("doer") or ""),
+            json.dumps(step.get("options") or {}, sort_keys=True, separators=(",", ":")),
+            int(step.get("priority", (index + 1) * 10)),
+            tuple(str(value) for value in (step.get("dependsOn") or [])),
+        )
+        for index, step in enumerate(steps)
+    ]
+
+
 def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
     """Read the editable initial-todo template, creating it from the built-in
     default on first use so it is always visible and editable as a file."""
@@ -6955,38 +7176,12 @@ def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
             payload = json.loads(file.read_text(encoding="utf-8"))
             steps = payload.get("pipeline") if isinstance(payload, dict) else payload
             if isinstance(steps, list) and steps:
-                legacy_keys = {
-                    (str(step.get("transformation")), str(step.get("doer")))
-                    for step in steps if isinstance(step, dict)
-                }
-                former_defaults = (
-                    {
-                        ("parts_extraction_0", "python_scikit"),
-                        ("parts_debug_0", "python_pil"),
-                        ("parts_grouping_0", "group_regions_prolog"),
-                        ("turtle_programs", "turtle_programs_prolog"),
-                    },
-                    {
-                        ("parts_extraction_0", "python_opencv"),
-                        ("parts_extraction_0", "python_scikit"),
-                        ("parts_extraction_0", "shape_finder_prolog"),
-                        ("parts_debug_0", "python_pil"),
-                        ("parts_grouping_0", "group_regions_prolog"),
-                        ("turtle_programs", "turtle_programs_prolog"),
-                    },
-                    {
-                        ("parts_extraction_0", "python_opencv"),
-                        ("parts_extraction_0", "shape_finder_prolog"),
-                        ("parts_debug_0", "python_pil"),
-                        ("parts_grouping_0", "group_regions_prolog"),
-                        ("turtle_programs", "turtle_programs_prolog"),
-                    },
-                )
                 # Upgrade only exact former built-in templates. User-edited
                 # templates remain authoritative.
                 if any(
-                    legacy_keys == default_keys and len(steps) == len(default_keys)
-                    for default_keys in former_defaults
+                    _pipeline_migration_signature(steps)
+                    == _pipeline_migration_signature(former_default)
+                    for former_default in _FORMER_DEFAULT_PIPELINE_TEMPLATES
                 ):
                     upgraded = [dict(step) for step in _DEFAULT_PIPELINE_TEMPLATE]
                     file.write_text(json.dumps({

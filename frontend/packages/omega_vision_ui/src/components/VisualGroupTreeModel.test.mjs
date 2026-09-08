@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   coalesceIdenticalVisualAndSymbolicGroups,
   interleaveVisualGroupClaims,
+  visualGroupDisplayRows,
 } from "./VisualGroupTreeModel.ts";
 
 test("overlapping V and W claims are adjacent peers with deterministic alternation", () => {
@@ -55,4 +56,35 @@ test("identical V and W memberships share one dual-labeled display row", () => {
   assert.deepEqual(rows[1].claims, [other]);
   assert.deepEqual(v, { kind: "v", id: "v2", members: ["r16", "r15"], sourceOrder: 0 });
   assert.deepEqual(w, { kind: "w", id: "w6", members: ["r15", "r16"], sourceOrder: 1 });
+});
+
+test("layer filters keep only anchors while retaining exact equality aliases", () => {
+  const claims = interleaveVisualGroupClaims([
+    { kind: "v", id: "v1", members: ["r9"], sourceOrder: 0 },
+    { kind: "v", id: "v2", members: ["r15", "r16"], sourceOrder: 1 },
+    { kind: "w", id: "w6", members: ["r16", "r15"], sourceOrder: 2 },
+    { kind: "w", id: "w7", members: ["r17"], sourceOrder: 3 },
+    { kind: "g", id: "g1", members: ["r15", "r16"], sourceOrder: 4 },
+  ]);
+
+  const vRows = visualGroupDisplayRows(claims, "v");
+  const wRows = visualGroupDisplayRows(claims, "w");
+  const gRows = visualGroupDisplayRows(claims, "g");
+  const allRows = visualGroupDisplayRows(claims, "all");
+
+  assert.deepEqual(vRows.map((row) => row.claims.map((claim) => claim.id)), [
+    ["v1"],
+    ["v2", "w6", "g1"],
+  ]);
+  assert.deepEqual(wRows.map((row) => row.claims.map((claim) => claim.id)), [
+    ["w6", "v2", "g1"],
+    ["w7"],
+  ]);
+  assert.deepEqual(gRows.map((row) => row.claims.map((claim) => claim.id)), [
+    ["g1", "v2", "w6"],
+  ]);
+  assert(allRows.some((row) =>
+    row.claims.map((claim) => claim.id).join(",") === "v2,w6,g1"
+  ));
+  assert.deepEqual(visualGroupDisplayRows(claims.filter((claim) => claim.kind !== "g"), "g"), []);
 });

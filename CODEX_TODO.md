@@ -150,7 +150,8 @@ values here.
   Completion / Export and Advanced Controls sections. Legacy routes canonicalize
   to those destinations while preserving workspace and Visual Sequence state.
   Local commits are `d7b33d533`, `8d86259c7`, `df3b2508d`, `6f2149cfd`,
-  `b2ec3581a`, and `a92b741ba`; nothing was pushed by this session.
+  `b2ec3581a`, `a92b741ba`, `2169b0d2d`, `0a90064a3`, and `79d96590f`;
+  nothing was pushed by this session.
   OpenCV extraction now persists deterministic frame-local
   `vision_group(vN, connected_component, Members, Evidence)` hypotheses from
   its existing component, contour-hierarchy, and watershed evidence. The UI
@@ -181,10 +182,35 @@ values here.
   the session artifact `vn-real-ls20/parts_extraction_0/python_opencv/` with no
   additional `debug_image.png`. Existing `parts_debug_0` and debug-image
   behavior remain unchanged.
+  The current-frame `group_acceptance_0/group_acceptance_prolog` stage now
+  produces final gN groups. Python/OpenCV writes replayable measurements to
+  `acceptance_input.pl`; SWI-Prolog is the sole acceptance authority and emits
+  `accepted_group/2`, `group_acceptance/3`, evidence, and rejections. Its fixed
+  order is exact V/W consensus, A `symbolic_shape_analogy` using only
+  current-frame exact templates, C `pixel_shape_fallback` only after A fails,
+  then D `singleton_remainder` for every uncovered foreground region.
+  Background regions never receive gN and the Prolog pass verifies exclusive
+  complete foreground coverage. Overlapping/background exact-template
+  candidates and unmatched wN candidates emit explicit rejection provenance
+  rather than disappearing. Named defaults are symbolic geometry tolerance
+  0.18, pixel-shape threshold 0.82, unique-best margin 0.03, and color-mass
+  tolerance 0.12. The editable built-in pipeline inserts this stage between wN
+  grouping and Turtle generation; only exact historical built-in templates
+  migrate, while customized templates remain unchanged.
+  The compact persisted group-layer selector offers V, W, G, and W+V+G.
+  Single-layer views keep exact-equality aliases on their anchor row; all-layer
+  view interleaves independent facts and may combine exact V/W/G memberships.
+  G is honestly pending when the acceptance stage has no output.
+  Final validation passed 65 focused Python/API regressions, 5 executable
+  V/W/G tree-model tests, `git diff --check`, and the frontend production build.
+  Real LS20 scratch validation under
+  `vn-real-ls20/group_acceptance_0/group_acceptance_prolog/` produced eight
+  final groups covering all 16 foreground regions: three exact consensus, one
+  symbolic analogy, zero pixel fallbacks, and four singleton remainders, with
+  one background region excluded and no debug image.
   Persistent observation UIDs, temporal correspondence, oN tracking, grouping
-  learning, rule promotion, and expanded Object Memory are deliberately
-  deferred. Stop at this observable vN/wN checkpoint for user inspection before
-  implementing them.
+  learning, rule promotion, and expanded Object Memory remain deliberately
+  deferred.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten

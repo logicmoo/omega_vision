@@ -97,6 +97,9 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert 'freshTodos: mode === "fresh"' in source
     assert "s.visualGroupCount != null" in source
     assert "v groups" in source
+    assert '"group_acceptance_0"' in source
+    assert '"group_acceptance_prolog"' in source
+    assert 'dependsOn: ["group_acceptance_0/group_acceptance_prolog"]' in source
 
 
 def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> None:
@@ -230,11 +233,15 @@ def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
     assert "claims remain independent data with no inferred connector fields" in executable_test
     assert 'kind: "v"' in page
     assert 'kind: "w"' in page
-    assert 'kind: "g"' not in page
+    assert 'kind: "g"' in page
+    assert "const acceptanceCell = cells.find" in page
+    assert "Array.isArray(t.acceptedGroups)" in page
+    assert "const activeStrokeGroups = finalGroupClaims.length" in page
+    assert "const activeGroupColorOf = finalGroupClaims.length ? finalGroupColorOf : groupColorOf" in page
     assert "const peerGroupClaims = interleaveVisualGroupClaims" in page
-    assert "coalesceIdenticalVisualAndSymbolicGroups(claims)" in page
-    assert "const color = symbolicClaim" in page
-    assert "underlying V and W facts remain independent" in page
+    assert "visualGroupDisplayRows(claims, groupLayerFilter)" in page
+    assert "finalGroupColorOf.get(finalClaim.id)" in page
+    assert "underlying V/W/G facts remain independent" in page
     assert "visualGroupClaims.length > 0 && !groupingCell" in page
     assert "renderPeerGroupTree(visualGroupClaims)" in page
     assert "renderPeerGroupTree(peerGroupClaims)" in page
@@ -243,8 +250,16 @@ def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
     assert "mapsTo" not in page
     assert ".video-import-reduce-groupnode.is-v" in styles
     assert ".video-import-reduce-groupnode.is-w" in styles
-    assert ".video-import-reduce-groupnode.is-vw" in styles
+    assert ".video-import-reduce-groupnode.is-g" in styles
+    assert ".video-import-reduce-groupnode.is-combined" in styles
     assert ".video-import-reduce-grouptree li button.is-hover" in styles
+    assert 'aria-label="Group layers"' in page
+    for value, label in (("v", "V"), ("w", "W"), ("g", "G"), ("all", "W+V+G")):
+        assert f'<option value="{value}">{label}</option>' in page
+    assert 'window.localStorage.getItem("videoImport.groupLayerFilter")' in page
+    assert 'window.localStorage.setItem("videoImport.groupLayerFilter", groupLayerFilter)' in page
+    assert "G · final groups pending" in page
+    assert "layer filters keep only anchors while retaining exact equality aliases" in executable_test
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:

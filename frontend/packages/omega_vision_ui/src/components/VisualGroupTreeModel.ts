@@ -1,4 +1,5 @@
-export type VisualGroupClaimKind = "v" | "w" | "o";
+export type VisualGroupClaimKind = "v" | "w" | "g" | "o";
+export type GroupLayerFilter = "all" | "v" | "w" | "g";
 
 export interface VisualGroupClaim {
   kind: VisualGroupClaimKind;
@@ -13,6 +14,7 @@ export interface VisualGroupClaim {
 export interface VisualGroupDisplayRow {
   claims: VisualGroupClaim[];
   members: string[];
+  anchorKind?: VisualGroupClaimKind;
 }
 
 function naturalAliasKey(value: string): [string, number, string] {
@@ -132,11 +134,51 @@ export function coalesceIdenticalVisualAndSymbolicGroups(
     const key = [...new Set(claim.members)].sort(compareAliases).join("\u0000");
     const bucket = buckets.get(key) || [claim];
     const kinds = new Set(bucket.map((candidate) => candidate.kind));
-    const combined = kinds.has("v") && kinds.has("w") ? bucket : [claim];
+    const combined = kinds.size > 1 ? bucket : [claim];
     combined.forEach((candidate) => emitted.add(candidate));
     rows.push({
       claims: combined,
       members: [...new Set(claim.members)],
+    });
+  }
+  return rows;
+}
+
+export function visualGroupDisplayRows(
+  orderedClaims: readonly VisualGroupClaim[],
+  filter: GroupLayerFilter,
+): VisualGroupDisplayRow[] {
+  if (filter === "all") {
+    return coalesceIdenticalVisualAndSymbolicGroups(orderedClaims);
+  }
+  const kindOrder: VisualGroupClaimKind[] = ["v", "w", "g", "o"];
+  const memberKey = (claim: VisualGroupClaim) =>
+    [...new Set(claim.members)].sort(compareAliases).join("\u0000");
+  const allByMembers = new Map<string, VisualGroupClaim[]>();
+  for (const claim of orderedClaims) {
+    const key = memberKey(claim);
+    const bucket = allByMembers.get(key) || [];
+    bucket.push(claim);
+    allByMembers.set(key, bucket);
+  }
+  const emitted = new Set<string>();
+  const rows: VisualGroupDisplayRow[] = [];
+  for (const anchor of orderedClaims) {
+    if (anchor.kind !== filter) continue;
+    const key = memberKey(anchor);
+    if (emitted.has(key)) continue;
+    emitted.add(key);
+    const equals = [...(allByMembers.get(key) || [])].sort((left, right) => {
+      if (left === anchor) return -1;
+      if (right === anchor) return 1;
+      return kindOrder.indexOf(left.kind) - kindOrder.indexOf(right.kind)
+        || left.sourceOrder - right.sourceOrder
+        || compareAliases(left.id, right.id);
+    });
+    rows.push({
+      claims: equals,
+      members: [...new Set(anchor.members)],
+      anchorKind: anchor.kind,
     });
   }
   return rows;

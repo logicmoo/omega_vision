@@ -31,13 +31,24 @@
       ]
     },
     {
+      "transformation": "group_acceptance_0",
+      "doer": "group_acceptance_prolog",
+      "options": {},
+      "priority": 35,
+      "type": "py_pl",
+      "dependsOn": [
+        "parts_extraction_0/python_opencv",
+        "parts_grouping_0/group_regions_prolog"
+      ]
+    },
+    {
       "transformation": "turtle_programs",
       "doer": "turtle_programs_prolog",
       "options": {},
       "priority": 40,
       "type": "py_pl",
       "dependsOn": [
-        "parts_grouping_0/group_regions_prolog"
+        "group_acceptance_0/group_acceptance_prolog"
       ]
     }
   ]

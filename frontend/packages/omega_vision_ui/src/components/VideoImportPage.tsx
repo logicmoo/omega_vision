@@ -33,8 +33,9 @@ import {
   visualSequenceConfirmationMessage,
 } from "./VisualSequenceLoadGate";
 import {
-  coalesceIdenticalVisualAndSymbolicGroups,
   interleaveVisualGroupClaims,
+  visualGroupDisplayRows,
+  type GroupLayerFilter,
   type VisualGroupClaim,
 } from "./VisualGroupTreeModel";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
@@ -3587,6 +3588,12 @@ export function VideoImportPage({
   const [reduceRowView, setReduceRowView] = useState<ReduceRowView>(() => {
     try { return (window.localStorage.getItem("videoImport.reduceRowView") as ReduceRowView) || "groups"; } catch { return "groups"; }
   });
+  const [groupLayerFilter, setGroupLayerFilter] = useState<GroupLayerFilter>(() => {
+    try {
+      const stored = window.localStorage.getItem("videoImport.groupLayerFilter");
+      return stored === "v" || stored === "w" || stored === "g" ? stored : "all";
+    } catch { return "all"; }
+  });
   // Object-permanence "occlusion horizon" (frames): how many later frames a
   // vanished part may stay missing before it is committed (occluded within the
   // horizon, else gone). 0 = wait for the whole sequence. Initialized from the
@@ -4777,7 +4784,7 @@ export function VideoImportPage({
   ]);
   // Re-read the disk manifest on demand (per-row refresh button) or while any
   // offline transformation todos are still pending/claimed, so pooler progress
-  // (extraction/grouping/turtle cells) lands live without a manual reload.
+  // (extraction/W-grouping/G-acceptance/turtle cells) lands live without a manual reload.
   const refreshReduceManifest = useCallback(async () => {
     if (!workspaceId) return;
     try {
@@ -4931,6 +4938,9 @@ export function VideoImportPage({
   useEffect(() => {
     try { window.localStorage.setItem("videoImport.reduceRowView", reduceRowView); } catch { /* ignore */ }
   }, [reduceRowView]);
+  useEffect(() => {
+    try { window.localStorage.setItem("videoImport.groupLayerFilter", groupLayerFilter); } catch { /* ignore */ }
+  }, [groupLayerFilter]);
   useEffect(() => {
     try { window.localStorage.setItem("videoImport.recogHeadCollapsed", recogHeadCollapsed ? "1" : "0"); } catch { /* ignore */ }
   }, [recogHeadCollapsed]);
@@ -5378,8 +5388,8 @@ export function VideoImportPage({
       setPartsRunBusy(false);
     }
   };
-  // Per-unit partial transform runs from the strip: re-derive grouping/turtle
-  // from the selected extractor (fast prolog steps, run synchronously with
+  // Per-unit partial transform runs from the strip: re-derive W/G groups and turtle
+  // output from the selected extractor (fast Prolog steps, run synchronously with
   // force) or stamp a missing extractor todo for the pooler (planOnly).
   const [stripRefreshBusy, setStripRefreshBusy] = useState<Record<string, boolean>>({});
   const runUnitTransformSteps = async (it: any, inputRel: string, pipeline: any[],
@@ -7532,6 +7542,7 @@ export function VideoImportPage({
               const partColor = new Map<string, string>();
               ((partsCell && partsCell.parts) || []).forEach((p: any) => { if (p && p.id) partColor.set(String(p.id), String(p.color || "")); });
               const groupingCell = cells.find((t: any) => Array.isArray(t.groups) && t.groups.length > 0);
+              const acceptanceCell = cells.find((t: any) => Array.isArray(t.acceptedGroups));
               const visualGroupClaims: VisualGroupClaim[] = (
                 Array.isArray(primaryExtraction?.visualGroups) ? primaryExtraction.visualGroups : []
               ).map((group: any, index: number) => ({
@@ -7553,9 +7564,22 @@ export function VideoImportPage({
                 method: "prolog_symbolic_group",
                 evidence: group.sourceId ? { legacySourceAlias: String(group.sourceId) } : {},
               }));
+              const finalGroupClaims: VisualGroupClaim[] = (
+                Array.isArray(acceptanceCell?.acceptedGroups) ? acceptanceCell.acceptedGroups : []
+              ).map((group: any, index: number) => ({
+                kind: "g",
+                id: String(group.id),
+                members: (group.members || []).map(String),
+                sourceOrder: visualGroupClaims.length + symbolicGroupClaims.length + index,
+                method: String(group.mode || "final_group"),
+                evidence: group.provenance && typeof group.provenance === "object"
+                  ? group.provenance
+                  : {},
+              }));
               const peerGroupClaims = interleaveVisualGroupClaims([
                 ...visualGroupClaims,
                 ...symbolicGroupClaims,
+                ...finalGroupClaims,
               ]);
               const turtleCell = cells.find((t: any) => t.status === "done" && t.resultPath && /turtle/.test(String(t.name || "")));
               const turtleText = turtleCell ? reduceMetta[String(turtleCell.resultPath)] : undefined;
@@ -7566,11 +7590,30 @@ export function VideoImportPage({
               let dims: [number, number] = [640, 640];
               for (const c of cells) { const cs = c && c.summary; if (cs && cs.width && cs.height) { dims = [Number(cs.width), Number(cs.height)]; break; } }
               const groupColorOf = new Map<string, string>();
+              const finalGroupColorOf = new Map<string, string>();
               const partGroup = new Map<string, string>();
               ((groupingCell && groupingCell.groups) || []).forEach((g: any, gi: number) => {
                 groupColorOf.set(String(g.id), GROUP_COLORS[gi % GROUP_COLORS.length]);
-                (g.members || []).forEach((m: any) => partGroup.set(String(m), String(g.id)));
               });
+              ((acceptanceCell && acceptanceCell.acceptedGroups) || []).forEach((g: any, gi: number) => {
+                const provenance = g.provenance || {};
+                const sourceW = String(
+                  provenance.symbolicGroup
+                  || (Array.isArray(provenance.symbolicGroups) ? provenance.symbolicGroups[0] : "")
+                  || "",
+                );
+                finalGroupColorOf.set(
+                  String(g.id),
+                  groupColorOf.get(sourceW) || GROUP_COLORS[gi % GROUP_COLORS.length],
+                );
+              });
+              const activeStrokeGroups = finalGroupClaims.length
+                ? ((acceptanceCell && acceptanceCell.acceptedGroups) || [])
+                : ((groupingCell && groupingCell.groups) || []);
+              activeStrokeGroups.forEach((g: any) =>
+                (g.members || []).forEach((m: any) => partGroup.set(String(m), String(g.id)))
+              );
+              const activeGroupColorOf = finalGroupClaims.length ? finalGroupColorOf : groupColorOf;
               const childrenOf = new Map<string, string[]>();
               const parentOf = new Map<string, string>();
               ((groupingCell && groupingCell.partOf) || []).forEach((pair: any) => {
@@ -7589,7 +7632,7 @@ export function VideoImportPage({
                 return { ...prev, [rowKey]: same ? [] : ids };
               });
               const strokeColor = (st: TurtleStroke, byGroup: boolean) =>
-                (byGroup ? groupColorOf.get(partGroup.get(st.id) || "") : undefined) || partColor.get(st.id) || "#8a8f98";
+                (byGroup ? activeGroupColorOf.get(partGroup.get(st.id) || "") : undefined) || partColor.get(st.id) || "#8a8f98";
               const strokeEl = (st: TurtleStroke, key: string, col: string) => {
                 const pts = st.points.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
                 const w = st.kind === "outer" ? 2.5 : st.kind === "inner" ? 1.8 : 1.6;
@@ -7626,26 +7669,51 @@ export function VideoImportPage({
                   </li>
                 );
               };
-              const renderPeerGroupTree = (claims: VisualGroupClaim[]) => (
-                <div className="video-import-reduce-grouptree is-peer-tree">
-                  <div className="video-import-group-claim-legend">
-                    <span className="is-v">V · OpenCV hypothesis</span>
-                    <span className="is-w">W · Prolog group</span>
-                  </div>
-                  {coalesceIdenticalVisualAndSymbolicGroups(claims).map((displayRow) => {
+              const renderPeerGroupTree = (claims: VisualGroupClaim[]) => {
+                const displayRows = visualGroupDisplayRows(claims, groupLayerFilter);
+                return (
+                  <div className="video-import-reduce-grouptree is-peer-tree">
+                    <div className="video-import-group-claim-legend">
+                      <span className="is-v">V · OpenCV</span>
+                      <span className="is-w">W · Prolog</span>
+                      <span className="is-g">G · final</span>
+                    </div>
+                    {displayRows.length === 0 && (
+                      <div className="video-import-reduce-treeempty">
+                        {groupLayerFilter === "g"
+                          ? (acceptanceCell ? "G · no foreground groups" : "G · final groups pending")
+                          : "No groups in this layer"}
+                      </div>
+                    )}
+                    {displayRows.map((displayRow) => {
                     const rowClaims = displayRow.claims;
                     const members = displayRow.members;
                     const visualClaim = rowClaims.find((claim) => claim.kind === "v");
                     const symbolicClaim = rowClaims.find((claim) => claim.kind === "w");
-                    const combined = Boolean(visualClaim && symbolicClaim);
-                    const aliases = rowClaims.map((claim) => claim.id).join(" / ");
-                    const claimKey = `${rowKey}#${rowClaims.map((claim) => `${claim.kind}:${claim.id}`).join("+")}`;
+                    const finalClaim = rowClaims.find((claim) => claim.kind === "g");
+                    const anchor = displayRow.anchorKind
+                      ? rowClaims.find((claim) => claim.kind === displayRow.anchorKind)
+                      : undefined;
+                    const kinds = [...new Set(rowClaims.map((claim) => claim.kind))];
+                    const combined = !anchor && kinds.length > 1;
+                    const aliases = anchor
+                      ? `${anchor.id}${rowClaims.filter((claim) => claim !== anchor).map((claim) => ` · =${claim.id}`).join("")}`
+                      : rowClaims.map((claim) => claim.id).join(" / ");
+                    const claimKey = `${rowKey}#${anchor?.kind || "all"}:${rowClaims.map((claim) => `${claim.kind}:${claim.id}`).join("+")}`;
                     const open = stripOpenGroups.has(claimKey);
                     const claimSelected = !!sel && members.length > 0 && members.every((member) => sel.has(member));
-                    const color = symbolicClaim
-                      ? groupColorOf.get(symbolicClaim.id) || "#27dcc2"
-                      : visualClaim ? "#9b8cff" : "#f2c14e";
-                    const roots = symbolicClaim
+                    const color = anchor?.kind === "v"
+                      ? "#9b8cff"
+                      : anchor?.kind === "w"
+                        ? groupColorOf.get(anchor.id) || "#27dcc2"
+                        : anchor?.kind === "g"
+                          ? finalGroupColorOf.get(anchor.id) || "#f2c14e"
+                          : finalClaim
+                            ? finalGroupColorOf.get(finalClaim.id) || "#f2c14e"
+                            : symbolicClaim
+                              ? groupColorOf.get(symbolicClaim.id) || "#27dcc2"
+                              : "#9b8cff";
+                    const roots = symbolicClaim || finalClaim
                       ? members.filter((member) => {
                           const parent = parentOf.get(member);
                           return !parent || !members.includes(parent);
@@ -7657,7 +7725,9 @@ export function VideoImportPage({
                         : "";
                       return claim.kind === "v"
                         ? `${claim.id}: ${claim.method || "OpenCV"}${claim.confidence == null ? "" : ` · confidence ${Math.round(claim.confidence * 100)}%`}${evidence}`
-                        : `${claim.id}: Prolog symbolic group${claim.evidence?.legacySourceAlias ? ` · legacy source ${claim.evidence.legacySourceAlias}` : ""}`;
+                        : claim.kind === "w"
+                          ? `${claim.id}: Prolog candidate group${claim.evidence?.legacySourceAlias ? ` · legacy source ${claim.evidence.legacySourceAlias}` : ""}`
+                          : `${claim.id}: final accepted group · ${claim.method || "acceptance"}${evidence}`;
                     }).join("\n");
                     const toggleOpen = () => setStripOpenGroups((previous) => {
                       const next = new Set(previous);
@@ -7667,13 +7737,13 @@ export function VideoImportPage({
                     return (
                       <details
                         key={claimKey}
-                        className={`video-import-reduce-groupnode is-${combined ? "vw" : rowClaims[0].kind}`}
+                        className={`video-import-reduce-groupnode is-${combined ? "combined" : (anchor || rowClaims[0]).kind}`}
                         open={open}
                       >
                         <summary
                           className={claimSelected ? "is-sel" : ""}
                           style={{ color }}
-                          title={`${detail}\n${combined ? "Identical memberships share this display node; underlying V and W facts remain independent." : "Independent peer claim; overlap ordering is display-only."}`}
+                          title={`${detail}\n${rowClaims.length > 1 ? "Exact-equality aliases share this display row; underlying V/W/G facts remain independent." : "Independent peer claim; overlap ordering is display-only."}`}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -7693,8 +7763,8 @@ export function VideoImportPage({
                               }
                             }}
                           >{open ? "▾" : "▸"}</span>
-                          <span className={`video-import-group-kind is-${combined ? "vw" : rowClaims[0].kind}`}>
-                            {combined ? "V/W" : rowClaims[0].kind.toUpperCase()}
+                          <span className={`video-import-group-kind is-${combined ? "combined" : (anchor || rowClaims[0]).kind}`}>
+                            {combined ? kinds.map((kind) => kind.toUpperCase()).join("/") : (anchor || rowClaims[0]).kind.toUpperCase()}
                           </span>
                           <span className="video-import-reduce-groupdot" style={{ background: color }} />
                           {aliases} · {members.length}
@@ -7702,12 +7772,13 @@ export function VideoImportPage({
                             ? <small>{Math.round(visualClaim.confidence * 100)}%</small>
                             : null}
                         </summary>
-                        <ul>{roots.map((member) => renderPartNode(member, 0, Boolean(symbolicClaim)))}</ul>
+                        <ul>{roots.map((member) => renderPartNode(member, 0, Boolean(symbolicClaim || finalClaim)))}</ul>
                       </details>
                     );
-                  })}
-                </div>
-              );
+                    })}
+                  </div>
+                );
+              };
               return (
                 <div className="video-import-transform-strip">
                   <figure className="video-import-reduce-stage is-submitted">
@@ -7830,6 +7901,7 @@ export function VideoImportPage({
                               {s.contourCount != null && <span>{s.contourCount} contours</span>}
                               {s.watershedSegmentCount != null && <span>{s.watershedSegmentCount} watershed segments</span>}
                               {s.groupCount != null && <span>{s.groupCount} groups</span>}
+                              {s.acceptedGroupCount != null && <span>{s.acceptedGroupCount} g final</span>}
                               {s.objectCount != null && <span>{s.objectCount} objects</span>}
                               {s.programCount != null && <span>{s.programCount} programs</span>}
                               {Array.isArray(s.partColors) && s.partColors.length > 0 && (
@@ -7873,7 +7945,7 @@ export function VideoImportPage({
                     const cell = renderCell();
                     let header: any = null;
                     if (!isExtraction && !showAllPartsExtractors
-                        && (String(t.name) === "parts_grouping_0" || String(t.name) === "turtle_programs")
+                        && ["parts_grouping_0", "group_acceptance_0", "turtle_programs"].includes(String(t.name))
                         && t.status === "done" && selectedExtraction) {
                       const facts = String((t.summary || {}).partsFacts || "");
                       const stale = !!facts && !facts.startsWith(`parts_extraction_0/${partsExtractorSel}/`);
@@ -7882,11 +7954,12 @@ export function VideoImportPage({
                         const from = facts.split("/")[1] || "?";
                         header = (
                           <span className="video-import-extractor-pick is-stale"
-                            title={`Derived from ${from}. Re-derive grouping + turtle from ${partsExtractorSel} (runs the prolog steps now).`}>
+                            title={`Derived from ${from}. Re-derive W candidates, final G groups, and turtle output from ${partsExtractorSel}.`}>
                             <button type="button" disabled={!selDone || !!stripRefreshBusy[rowKey]}
                               onClick={() => void runUnitTransformSteps(it, inputRel, [
                                 { transformation: "parts_grouping_0", doer: "group_regions_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`], priority: 30, type: "py_pl" },
-                                { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["parts_grouping_0/group_regions_prolog"], priority: 40, type: "py_pl" },
+                                { transformation: "group_acceptance_0", doer: "group_acceptance_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog"], priority: 35, type: "py_pl" },
+                                { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["group_acceptance_0/group_acceptance_prolog"], priority: 40, type: "py_pl" },
                               ], { force: true })}>
                               {stripRefreshBusy[rowKey] ? "…" : `⟳ stale · re-derive from ${partsExtractorSel.replace(/^python_/, "").replace(/^shape_finder_/, "")}`}
                             </button>
@@ -8039,6 +8112,19 @@ export function VideoImportPage({
                     </select>
                   </label>
                   <input className="video-import-reduce-search" type="search" placeholder="Filter by character or condition…" value={reduceListQuery} onChange={(e) => setReduceListQuery(e.target.value)} />
+                  <label className="video-import-imageset-selector video-import-group-layer-filter">
+                    <span>group layers</span>
+                    <select
+                      aria-label="Group layers"
+                      value={groupLayerFilter}
+                      onChange={(event) => setGroupLayerFilter(event.target.value as GroupLayerFilter)}
+                    >
+                      <option value="v">V</option>
+                      <option value="w">W</option>
+                      <option value="g">G</option>
+                      <option value="all">W+V+G</option>
+                    </select>
+                  </label>
                   <label className="video-import-imageset-selector"><span>row line</span>
                     <select value={reduceRowView} onChange={(e) => setReduceRowView(e.target.value as ReduceRowView)}>
                       <option value="stages">Stages only (thin)</option>
@@ -9968,7 +10054,7 @@ export function VideoImportPage({
                   {partsRunBusy ? "extracting parts…" : "▶ Parts extraction (edges + medians, all inputs)"}
                 </button>
                 <span className="video-import-reduce-partsbar-note">
-                  parts_extraction_0/python_opencv → debug_image.png (left) + result.pl · then parts_grouping_0 + turtle_programs by prolog
+                  parts_extraction_0/python_opencv → debug_image.png + result.pl · then W candidates → Prolog final G → turtle
                 </span>
                 <button type="button" className="video-import-btn" onClick={togglePartsTemplate}>
                   {partsTpl.open ? "close todo template" : "✎ todo template"}
