@@ -169,11 +169,6 @@ const GoogleMeetBridgePage = lazy(() =>
     default: module.GoogleMeetBridgePage,
   })),
 );
-const SpriteViewerPage = lazy(() =>
-  import("../components/SpriteViewerPage").then((module) => ({
-    default: module.SpriteViewerPage,
-  })),
-);
 const RecognitionDemosPage = lazy(() =>
   import("@omega_vision_ui/components/RecognitionDemosPage").then((module) => ({
     default: module.RecognitionDemosPage,
@@ -441,7 +436,6 @@ type View =
   | "arc3B1B2Pipeline"
   | "arc3Play"
   | "videoImport"
-  | "spriteViewer"
   | "recognitionDemos"
   | "arc3GamesGallery"
   | "chat"
@@ -555,6 +549,8 @@ const viewFromLocation = (): View | null => {
   if (value === "b1-b2-pipeline" || value === "b1b2pipeline" || value === "arc3-b1-b2-pipeline") return "arc3B1B2Pipeline";
   if (value === "play" || value === "arc3-play" || value === "arc3play" || value === "play-record") return "arc3Play";
   if (value === "video-import" || value === "videoimport" || value === "youtube-import" || value === "video") return "videoImport";
+  if (value === "spriteviewer" || value === "sprite-viewer" || value === "sprite-view") return "videoImport";
+  if (value === "advanced" || value === "vi-advanced" || value === "videoimportadvanced" || value === "finish" || value === "videoimportfinish") return "videoImport";
   if (value === "resource-atomspace" || value === "resourceatomspace" || value === "all-resources-atomspace") return "resourceAtomspace";
   if (value === "google-meet" || value === "googlemeet" || value === "meet") return "googleMeet";
   if (value === "games" || value === "arc3-games" || value === "arc3games" || value === "games-gallery" || value === "arc3-games-gallery") return "arc3GamesGallery";
@@ -740,10 +736,8 @@ export const NAVIGATION_V2: Array<{
       { label: "Frames & Filters", view: "videoImport", subview: "frames", glyph: "▤" },
       { label: "Game Recordings", view: "videoImport", subview: "games", glyph: "⊞" },
       { label: "Objects", view: "videoImport", subview: "objects", glyph: "◍" },
-      { label: "Finish", view: "videoImport", subview: "finish", glyph: "✓" },
+      { label: "Sprite View", view: "videoImport", subview: "sprite-view", glyph: "◳" },
       { label: "Recognition", view: "videoImport", subview: "recognition", glyph: "❖" },
-      { label: "VI Advanced", view: "videoImport", subview: "advanced", glyph: "⚙" },
-      { label: "Sprite Viewer", view: "spriteViewer", glyph: "◳" },
       { label: "Demos", view: "recognitionDemos", glyph: "✦" },
     ],
   },
@@ -1343,7 +1337,18 @@ export function FilesystemWorkbenchPage() {
   // Current ?subview= (Video Import stage pages); kept in state so the nav
   // rail/topbar highlight follows both nav clicks and the page's own tabs.
   const [activeNavSubview, setActiveNavSubview] = useState<string | null>(
-    () => new URLSearchParams(window.location.search).get("subview"),
+    () => {
+      const parameters = new URLSearchParams(window.location.search);
+      const legacyView = parameters.get("view")?.trim().toLowerCase();
+      const subview = parameters.get("subview")?.trim().toLowerCase() || "";
+      const navRoot = parameters.get("nav")?.split(",")[0]?.trim().toLowerCase() || "";
+      if (["spriteviewer", "sprite-viewer", "sprite-view"].includes(legacyView || "") || navRoot === "sprite-view") {
+        return "sprite-view";
+      }
+      return ["finish", "advanced"].includes(subview) || ["finish", "advanced"].includes(navRoot)
+        ? "sources"
+        : subview || null;
+    },
   );
   useEffect(() => {
     const onChanged = (event: Event) =>
@@ -4866,7 +4871,6 @@ export function FilesystemWorkbenchPage() {
               />
             )}{" "}
             {view === "googleMeet" && <GoogleMeetBridgePage />}{" "}
-            {view === "spriteViewer" && <SpriteViewerPage />}{" "}
         {view === "recognitionDemos" && <RecognitionDemosPage />}{" "}
             {view === "pluginPage" && <PluginHostedPage entry={pluginPage} />}{" "}
             {view === "setup" && (

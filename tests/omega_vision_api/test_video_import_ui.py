@@ -17,6 +17,12 @@ PROLOG_CLAUSE_MODEL = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.ts"
 PROLOG_CLAUSE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.test.mjs")
 VIDEO_IMPORT_RECORDING_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUrl.ts")
 VIDEO_IMPORT_RECORDING_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUrl.test.mjs")
+VIDEO_IMPORT_NAVIGATION_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigationUrl.ts")
+VIDEO_IMPORT_NAVIGATION_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigationUrl.test.mjs")
+VISUAL_SEQUENCE_LOAD_GATE = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.ts")
+VISUAL_SEQUENCE_LOAD_GATE_TEST = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.test.mjs")
+VISUAL_GROUP_TREE_MODEL = VIDEO_IMPORT_PAGE.with_name("VisualGroupTreeModel.ts")
+VISUAL_GROUP_TREE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("VisualGroupTreeModel.test.mjs")
 VIDEO_IMPORT_STYLES = (
     ROOT
     / "frontend"
@@ -38,6 +44,8 @@ WORKSPACE_FILE_CONTROLS = (
 OPERATION_EDITOR_STYLES = (
     ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_editor.css"
 )
+WORKBENCH_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "FilesystemWorkbenchPage.tsx"
+SPRITE_VIEWER_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "SpriteViewerPage.tsx"
 
 
 def test_colored_combobox_is_shared_by_chat_and_video_models() -> None:
@@ -87,6 +95,15 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert '"↻ Fresh todos"' in source
     assert 'mergeTodos: mode === "merge"' in source
     assert 'freshTodos: mode === "fresh"' in source
+    assert "s.visualGroupCount != null" in source
+    assert "v groups" in source
+    assert '"group_acceptance_0"' in source
+    assert '"group_acceptance_prolog"' in source
+    assert '"observation_identity_0"' in source
+    assert '"content_hash"' in source
+    assert 'dependsOn: ["group_acceptance_0/group_acceptance_prolog"]' in source
+    assert "s.observationCount != null" in source
+    assert "stable observations" in source
 
 
 def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> None:
@@ -147,6 +164,9 @@ def test_visual_sequence_selection_round_trips_through_recording_url_state() -> 
     assert "legacy full-path recording links resolve then canonicalize" in executable_test
     assert "catalog resolution rejects unknown, ambiguous, and unsafe locations" in executable_test
     assert "visualSequenceLocationFromUrl(window.location.href)" in page
+    assert "`${API}/visual-sequences?workspaceId=" in page
+    assert "Array.isArray(data?.visualSequences)" in page
+    assert "A Visual Sequence may contain one image or many" in page
     assert 'type RecordingHistoryMode = "none" | "push" | "replace"' in page
     assert 'selectRecording(recording, "push")' in page
     assert 'selectRecording(currentRecording, "replace")' in page
@@ -158,6 +178,92 @@ def test_visual_sequence_selection_round_trips_through_recording_url_state() -> 
     assert "Visual Sequence unavailable" in page
     assert "Unavailable recording" in page
     assert "<select className=\"video-import-catalog\" value={selectedRecording}" in page
+
+
+def test_recognition_navigation_round_trips_without_replaying_actions() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    navigation = VIDEO_IMPORT_NAVIGATION_URL.read_text(encoding="utf-8")
+    executable_test = VIDEO_IMPORT_NAVIGATION_URL_TEST.read_text(encoding="utf-8")
+
+    assert 'const NAVIGATION_QUERY_PARAMETER = "nav"' in navigation
+    assert "url.searchParams.set(NAVIGATION_QUERY_PARAMETER, canonical.join(\",\"))" in navigation
+    assert "resolveRecognitionNavigation" in navigation
+    assert "rootIndex = normalized.findIndex" in navigation
+    assert "navigationPathFromUrl(window.location.href)" in page
+    assert 'writeRecognitionNavigation([tab], "push")' in page
+    assert 'selectExtractionNavigationRow(String(it.id), !open)' in page
+    assert "selectPrologNavigation(rowKey, t)" in page
+    assert 'writeRecognitionNavigation(resolved.canonicalPath, "replace")' in page
+    assert "Recognition nav reads tab names case-insensitively" in executable_test
+    assert "nested extraction and Prolog paths resolve without encoding source paths" in executable_test
+    assert "stale prefixes and suffixes stop at the deepest valid destination" in executable_test
+    assert "saved back and forward URLs independently restore their destinations" in executable_test
+    for mutating_action in ("Fresh todos", "Add/Merge todos", "fetch(", "method:"):
+        assert mutating_action not in navigation
+
+
+def test_large_visual_sequences_require_explicit_non_mutating_confirmation() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    gate = VISUAL_SEQUENCE_LOAD_GATE.read_text(encoding="utf-8")
+    executable_test = VISUAL_SEQUENCE_LOAD_GATE_TEST.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert "VISUAL_SEQUENCE_CONFIRMATION_THRESHOLD = 800" in gate
+    assert "Number(entry.imageCount || 0) > VISUAL_SEQUENCE_CONFIRMATION_THRESHOLD" in gate
+    assert "the confirmation threshold allows 800 and gates 801" in executable_test
+    assert "large sequence confirmation reports the exact formatted count" in executable_test
+    assert "const [pendingVisualSequence, setPendingVisualSequence]" in page
+    assert "requiresVisualSequenceConfirmation(entry, isVisualSequenceConfirmed(entry))" in page
+    assert "setPendingVisualSequence" in page
+    assert "commitVisualSequence(pendingVisualSequence.entry, pendingVisualSequence.historyMode)" in page
+    assert 'role="dialog"' in page
+    assert 'aria-modal="true"' in page
+    assert '<button type="button" autoFocus onClick={cancelVisualSequence}>Cancel</button>' in page
+    assert "It does not run reductions" in page
+    assert ".video-import-confirm-backdrop" in styles
+    assert ".video-import-confirm-dialog" in styles
+
+
+def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    model = VISUAL_GROUP_TREE_MODEL.read_text(encoding="utf-8")
+    executable_test = VISUAL_GROUP_TREE_MODEL_TEST.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert "export function interleaveVisualGroupClaims" in model
+    assert "sharedCount(current, right)" in model
+    assert "right.kind !== current.kind" in model
+    assert "overlapping V and W claims are adjacent peers with deterministic alternation" in executable_test
+    assert "claims remain independent data with no inferred connector fields" in executable_test
+    assert 'kind: "v"' in page
+    assert 'kind: "w"' in page
+    assert 'kind: "g"' in page
+    assert "const acceptanceCell = cells.find" in page
+    assert "Array.isArray(t.acceptedGroups)" in page
+    assert "const activeStrokeGroups = finalGroupClaims.length" in page
+    assert "const activeGroupColorOf = finalGroupClaims.length ? finalGroupColorOf : groupColorOf" in page
+    assert "const peerGroupClaims = interleaveVisualGroupClaims" in page
+    assert "visualGroupDisplayRows(claims, groupLayerFilter)" in page
+    assert "finalGroupColorOf.get(finalClaim.id)" in page
+    assert "underlying V/W/G facts remain independent" in page
+    assert "visualGroupClaims.length > 0 && !groupingCell" in page
+    assert "renderPeerGroupTree(visualGroupClaims)" in page
+    assert "renderPeerGroupTree(peerGroupClaims)" in page
+    assert "Independent peer claim; overlap ordering is display-only." in page
+    assert "setStripHoverMember({ rowKey, member: pid })" in page
+    assert "mapsTo" not in page
+    assert ".video-import-reduce-groupnode.is-v" in styles
+    assert ".video-import-reduce-groupnode.is-w" in styles
+    assert ".video-import-reduce-groupnode.is-g" in styles
+    assert ".video-import-reduce-groupnode.is-combined" in styles
+    assert ".video-import-reduce-grouptree li button.is-hover" in styles
+    assert 'aria-label="Group layers"' in page
+    for value, label in (("v", "V"), ("w", "W"), ("g", "G"), ("all", "W+V+G")):
+        assert f'<option value="{value}">{label}</option>' in page
+    assert 'window.localStorage.getItem("videoImport.groupLayerFilter")' in page
+    assert 'window.localStorage.setItem("videoImport.groupLayerFilter", groupLayerFilter)' in page
+    assert "G · final groups pending" in page
+    assert "layer filters keep only anchors while retaining exact equality aliases" in executable_test
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:
@@ -872,8 +978,8 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     split = source.index('aria-label="Video Import pipeline forks"')
     assert 'section("memberDescription", "SCENE OBJECTS TEXTUAL DESCRIPTION"' not in source
     assert automation < split
-    assert source.index('section("config", "JSON CONFIG"') > source.index('section("finish", "TURTLE / IMPORT GAME"')
-    assert "grid-column: 1 / -1; grid-row: 1" in styles
+    assert source.index('section("config", "ADVANCED CONTROLS · JSON CONFIG"') > source.index('section("finish", "COMPLETION / EXPORT"')
+    assert '.video-import-page[data-subview] > [data-section="finish"]' in styles
 
 
 def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tree() -> None:
@@ -902,9 +1008,12 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     assert "2 · Frames & Filters" in source
     assert "3 · Games" in source
     assert "4 · Objects" in source
-    assert "5 · Finish" in source
+    assert "5 · Sprite View" in source
+    assert "6 · Recognition" in source
+    assert "5 · Finish" not in source
+    assert '{ id: "advanced", label: "Advanced" }' not in source
     assert '.video-import-page[data-subview="sources"]' in styles
-    assert '.video-import-page[data-subview="advanced"] > [data-section="config"]' in styles
+    assert '.video-import-page[data-subview] > [data-section="config"]' in styles
     assert "runnableInventoryIds" in source
     assert "runnableMemberInventories" in source
     assert "memberInputPaths.has(inventory.framePath)" in source
@@ -951,6 +1060,43 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     board_start = styles.index("\n.video-import-pipe-board {")
     board_rule = styles[board_start:styles.index("}", board_start)]
     assert "overflow: visible" in board_rule
+
+
+def test_sprite_finish_and_advanced_have_one_canonical_video_import_surface() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    workbench = WORKBENCH_PAGE.read_text(encoding="utf-8")
+    sprite = SPRITE_VIEWER_PAGE.read_text(encoding="utf-8")
+    navigation = VIDEO_IMPORT_NAVIGATION_URL.read_text(encoding="utf-8")
+    navigation_test = VIDEO_IMPORT_NAVIGATION_URL_TEST.read_text(encoding="utf-8")
+
+    omega_start = workbench.index('group: "OMEGA VISION"')
+    omega_end = workbench.index('group: "CAPABILITIES"', omega_start)
+    omega_menu = workbench[omega_start:omega_end]
+    assert '{ label: "Sprite View", view: "videoImport", subview: "sprite-view", glyph: "◳" }' in omega_menu
+    assert 'label: "Finish"' not in omega_menu
+    assert 'label: "VI Advanced"' not in omega_menu
+    assert 'label: "Sprite Viewer"' not in omega_menu
+    assert 'view === "spriteViewer"' not in workbench
+    assert "default: module.SpriteViewerPage" not in workbench
+    assert 'value === "spriteviewer"' in workbench
+    assert page.count("<SpriteViewerPage />") == 1
+    assert "export function SpriteViewerPage()" in sprite
+    assert 'className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}' in page
+    assert page.count('section("finish", "COMPLETION / EXPORT"') == 1
+    assert page.count('section("config", "ADVANCED CONTROLS · JSON CONFIG"') == 1
+    for preserved_control in (
+        "Call LLM · Turtle Gen",
+        "Call LLM · Turtle PNG",
+        "Materialize filtered frames as a Visual Sequence",
+        "⏎ Apply to flow",
+        "↻ track live",
+        "⟲ forget saved",
+    ):
+        assert page.count(preserved_control) == 1
+    assert "resolveVideoImportShellDestination" in navigation
+    assert "canonicalVideoImportShellUrl" in navigation
+    assert "legacy Sprite Viewer routes migrate to Video Import step 5" in navigation_test
+    assert "legacy Finish and Advanced destinations open integrated sections" in navigation_test
 
 
 def test_alt_hover_gives_image_and_context_separate_half_page_panes() -> None:

@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import shutil
 import threading
 import zipfile
 from pathlib import Path
@@ -35,6 +36,295 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
     assert saved["lastExtract"] == {"count": 4}
 
 
+def test_visual_sequence_catalog_exposes_stable_selection_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data"
+    recording = data_root / "recordings" / "ls20" / "20260718-154544"
+    frame = recording / "0"
+    frame.mkdir(parents=True)
+    Image.new("RGB", (3, 3), "yellow").save(frame / "image.png")
+    (recording / "recording.json").write_text(
+        json.dumps({"game_id": "ls20-9607627b", "level": 1}),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(video_import_api, "_data_homes", lambda _root: [data_root])
+    monkeypatch.setattr(
+        video_import_api,
+        "_resolve_set_dir",
+        lambda _root, rel: data_root / rel.removeprefix("data/"),
+    )
+
+    sequences = video_import_api._list_image_sets(tmp_path)
+    selected = next(
+        item for item in sequences
+        if item["id"] == "recordings/ls20/20260718-154544"
+    )
+
+    assert selected["visualSequenceId"] == selected["id"]
+    assert selected["providerRef"] == "data/recordings/ls20/20260718-154544"
+    assert selected["game"] == "ls20"
+    assert selected["recording"] == "20260718-154544"
+    assert selected["gameId"] == "ls20-9607627b"
+    assert selected["ordered"] is True
+    assert selected["imageCount"] == 1
+
+
+def test_visual_sequence_route_and_image_set_adapter_share_one_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    catalog = [{"id": "curated/one", "visualSequenceId": "curated/one"}]
+    monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
+    monkeypatch.setattr(video_import_api, "_list_image_sets", lambda _root: catalog)
+
+    unified = video_import_api.visual_sequences("demo")
+    legacy = video_import_api.image_sets("demo")
+
+    assert unified == {"visualSequences": catalog, "sets": catalog}
+    assert legacy == {"sets": catalog}
+    assert unified["visualSequences"] is unified["sets"]
+
+
+def test_transform_manifest_exposes_visual_group_hypotheses(tmp_path: Path) -> None:
+    unit = tmp_path / "data" / "recordings" / "demo" / "run" / "0"
+    output = unit / "parts_extraction_0" / "python_opencv"
+    output.mkdir(parents=True)
+    (unit / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "todos": [{
+            "transformation": "parts_extraction_0",
+            "doer": "python_opencv",
+            "output": "parts_extraction_0/python_opencv",
+            "status": "done",
+            "dependsOn": [],
+        }],
+    }), encoding="utf-8")
+    (output / "result.pl").write_text(
+        "vision_group(v1, connected_component, [r2,r3], evidence(confidence(0.75))).\n",
+        encoding="utf-8",
+    )
+    (output / "meta.json").write_text(json.dumps({
+        "visualGroupCount": 1,
+        "visualGroups": [{
+            "id": "v1",
+            "method": "connected_component",
+            "members": ["r2", "r3"],
+            "confidence": 0.75,
+            "evidence": {"component": "cc1", "pixelArea": 42},
+        }],
+    }), encoding="utf-8")
+
+    summary = video_import_api._unit_transforms(tmp_path, unit)
+
+    assert summary is not None
+    cell = summary["list"][0]
+    assert cell["summary"]["visualGroupCount"] == 1
+    assert cell["visualGroups"] == [{
+        "id": "v1",
+        "method": "connected_component",
+        "members": ["r2", "r3"],
+        "confidence": 0.75,
+        "evidence": {"component": "cc1", "pixelArea": 42},
+    }]
+
+
+def test_legacy_opencv_evidence_adapts_to_visual_group_peers() -> None:
+    groups = video_import_api._opencv_visual_groups_from_prolog(
+        "\n".join([
+            "opencv_component(cc1, [r2,r5]).",
+            "opencv_component_area(cc1, 42).",
+            "opencv_component_centroid(cc1, centroid(7,9)).",
+            "opencv_contour(r2, c0, outer, 20).",
+            "opencv_contour(r5, c0, outer, 18).",
+            "opencv_contour_hierarchy(r5, c0, next(none), previous(none), child(c1), parent(none)).",
+            "opencv_watershed_count(r2, 2).",
+            "opencv_watershed_count(r5, 1).",
+        ])
+    )
+
+    assert groups == [{
+        "id": "v1",
+        "method": "connected_component",
+        "members": ["r2", "r5"],
+        "confidence": 0.75,
+        "evidence": {
+            "component": "cc1",
+            "pixelArea": 42,
+            "centroid": [7, 9],
+            "contourCount": 2,
+            "hierarchyLinkCount": 1,
+            "watershedSegmentCount": 3,
+        },
+    }]
+
+
+def test_legacy_group_aliases_normalize_to_w_without_rewriting_source(
+    tmp_path: Path,
+) -> None:
+    unit = tmp_path / "data" / "legacy" / "frame_000000"
+    output = unit / "parts_grouping_0" / "group_regions_prolog"
+    output.mkdir(parents=True)
+    legacy_source = (
+        "part_group(g1, [r2,r5]).\n"
+        "group_area(g1, 42).\n"
+    )
+    (output / "result.pl").write_text(legacy_source, encoding="utf-8")
+    (output / "meta.json").write_text('{"groupCount": 1}', encoding="utf-8")
+    (unit / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "todos": [{
+            "transformation": "parts_grouping_0",
+            "doer": "group_regions_prolog",
+            "output": "parts_grouping_0/group_regions_prolog",
+            "status": "done",
+            "dependsOn": [],
+        }],
+    }), encoding="utf-8")
+
+    summary = video_import_api._unit_transforms(tmp_path, unit)
+
+    assert summary is not None
+    assert summary["list"][0]["groups"] == [{
+        "id": "w1",
+        "sourceId": "g1",
+        "members": ["r2", "r5"],
+        "area": 42,
+    }]
+    assert (output / "result.pl").read_text(encoding="utf-8") == legacy_source
+    assert video_import_api._normalize_symbolic_group_alias("w3") == ("w3", None)
+
+
+@pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
+def test_group_transform_writes_and_counts_w_aliases(tmp_path: Path) -> None:
+    extraction = tmp_path / "parts_extraction_0" / "python_opencv"
+    extraction.mkdir(parents=True)
+    (extraction / "result.pl").write_text(
+        "\n".join([
+            "img_size(20, 20).",
+            "region(r1, red, 20, centroid(3,3)).",
+            "region(r2, blue, 20, centroid(5,3)).",
+            "shared_edge(r1, r2, 10).",
+        ]) + "\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "parts_grouping_0" / "group_regions_prolog"
+    output.mkdir(parents=True)
+
+    stats = video_import_api._transform_part_groups(
+        {"id": "frame", "dir": tmp_path, "image": tmp_path / "image.png"},
+        output,
+        {},
+    )
+    grouped = (output / "result.pl").read_text(encoding="utf-8")
+
+    assert stats["groupCount"] == 1
+    assert "part_group(w1, [r1,r2])." in grouped
+    assert "group_area(w1, 40)." in grouped
+    assert "part_group(g" not in grouped
+    assert "group_area(g" not in grouped
+
+
+def test_group_acceptance_transform_writes_distinct_final_g_facts(
+    tmp_path: Path,
+) -> None:
+    extraction = tmp_path / "parts_extraction_0" / "python_opencv"
+    grouping = tmp_path / "parts_grouping_0" / "group_regions_prolog"
+    output = tmp_path / "group_acceptance_0" / "group_acceptance_prolog"
+    extraction.mkdir(parents=True)
+    grouping.mkdir(parents=True)
+    output.mkdir(parents=True)
+    (extraction / "result.pl").write_text(
+        "\n".join([
+            "region(r1, red, 100, centroid(10,10)).",
+            "region(r2, gray, 100, centroid(20,10)).",
+            "vision_group(v1, connected_component, [r1,r2], evidence(confidence(0.75))).",
+        ]) + "\n",
+        encoding="utf-8",
+    )
+    (extraction / "geometry.json").write_text(json.dumps({
+        "width": 40,
+        "height": 30,
+        "polygons": {
+            "1": {"outer": [[5, 5], [15, 5], [15, 15], [5, 15], [5, 5]], "holes": []},
+            "2": {"outer": [[15, 5], [25, 5], [25, 15], [15, 15], [15, 5]], "holes": []},
+        },
+    }), encoding="utf-8")
+    (grouping / "result.pl").write_text(
+        "part_group(w1, [r1,r2]).\ngroup_area(w1, 200).\n",
+        encoding="utf-8",
+    )
+
+    stats = video_import_api._transform_group_acceptance(
+        {"id": "frame_000000", "dir": tmp_path, "image": tmp_path / "image.png"},
+        output,
+        {},
+    )
+    result = (output / "result.pl").read_text(encoding="utf-8")
+
+    assert stats["acceptedGroupCount"] == 1
+    assert stats["exactConsensusCount"] == 1
+    assert stats["foregroundCount"] == 2
+    assert stats["acceptedGroups"][0]["mode"] == "exact_consensus"
+    assert stats["acceptedGroups"][0]["provenance"]["sources"] == {
+        "partsFacts": "parts_extraction_0/python_opencv/result.pl",
+        "candidateFacts": "parts_grouping_0/group_regions_prolog/result.pl",
+        "acceptanceMeasurements": (
+            "group_acceptance_0/group_acceptance_prolog/acceptance_input.pl"
+        ),
+        "acceptanceRules": "prolog/omega_vision/group_acceptance.pl",
+    }
+    assert "accepted_group(g1, [r1,r2])." in result
+    assert "exact_consensus([v1],[w1])" in result
+    assert "final current-frame groups by SWI-Prolog group_acceptance.pl" in result
+    assert "part_group(" not in result
+    assert not (output / "debug_image.png").exists()
+
+
+def test_transform_manifest_exposes_final_group_acceptance(tmp_path: Path) -> None:
+    unit = tmp_path / "data" / "final" / "frame_000000"
+    output = unit / "group_acceptance_0" / "group_acceptance_prolog"
+    output.mkdir(parents=True)
+    accepted = [{
+        "id": "g1",
+        "members": ["r1", "r2"],
+        "mode": "exact_consensus",
+        "provenance": {
+            "visualGroups": ["v1"],
+            "symbolicGroups": ["w1"],
+            "score": 1.0,
+        },
+    }]
+    (output / "result.pl").write_text(
+        "accepted_group(g1, [r1,r2]).\n",
+        encoding="utf-8",
+    )
+    (output / "meta.json").write_text(json.dumps({
+        "acceptedGroupCount": 1,
+        "exactConsensusCount": 1,
+        "acceptedGroups": accepted,
+    }), encoding="utf-8")
+    (unit / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "todos": [{
+            "transformation": "group_acceptance_0",
+            "doer": "group_acceptance_prolog",
+            "output": "group_acceptance_0/group_acceptance_prolog",
+            "status": "done",
+            "dependsOn": [],
+        }],
+    }), encoding="utf-8")
+
+    summary = video_import_api._unit_transforms(tmp_path, unit)
+
+    assert summary is not None
+    cell = summary["list"][0]
+    assert cell["summary"]["acceptedGroupCount"] == 1
+    assert cell["acceptedGroups"] == accepted
+
+
 @pytest.mark.parametrize(
     "pipeline",
     [
@@ -42,6 +332,12 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
             {"transformation": "parts_extraction_0", "doer": "python_scikit", "options": {}, "priority": 10, "dependsOn": []},
             {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_scikit"]},
             {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_scikit"]},
+            {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
+        ],
+        [
+            {"transformation": "parts_extraction_0", "doer": "python_opencv", "options": {}, "priority": 10, "dependsOn": []},
+            {"transformation": "parts_debug_0", "doer": "python_pil", "options": {}, "priority": 20, "dependsOn": ["parts_extraction_0/python_opencv"]},
+            {"transformation": "parts_grouping_0", "doer": "group_regions_prolog", "options": {}, "priority": 30, "dependsOn": ["parts_extraction_0/python_opencv"]},
             {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
         ],
         [
@@ -60,7 +356,7 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
             {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {}, "priority": 40, "dependsOn": ["parts_grouping_0/group_regions_prolog"]},
         ],
     ],
-    ids=["scikit-only-default", "three-extractor-default", "two-extractor-default"],
+    ids=["scikit-only-default", "opencv-only-default", "three-extractor-default", "two-extractor-default"],
 )
 def test_former_builtin_pipeline_templates_upgrade_to_opencv_only(
     tmp_path: Path,
@@ -83,7 +379,34 @@ def test_former_builtin_pipeline_templates_upgrade_to_opencv_only(
         step["doer"] not in {"python_scikit", "scikit_python", "shape_finder_prolog"}
         for step in upgraded
     )
+    acceptance = next(
+        step for step in upgraded
+        if step["transformation"] == "group_acceptance_0"
+    )
+    assert acceptance["doer"] == "group_acceptance_prolog"
+    assert acceptance["dependsOn"] == [
+        "parts_extraction_0/python_opencv",
+        "parts_grouping_0/group_regions_prolog",
+    ]
+    turtle = next(
+        step for step in upgraded
+        if step["transformation"] == "turtle_programs"
+    )
+    assert turtle["dependsOn"] == ["group_acceptance_0/group_acceptance_prolog"]
     assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == upgraded
+
+
+def test_customized_same_key_pipeline_is_not_migrated(tmp_path: Path) -> None:
+    custom = video_import_api._former_default_pipeline([("python_opencv", 10)])
+    custom[2]["options"] = {"strongEdgeMin": 99}
+    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template.parent.mkdir(parents=True)
+    template.write_text(json.dumps({"pipeline": custom}), encoding="utf-8")
+
+    loaded = video_import_api.load_pipeline_template(tmp_path)
+
+    assert loaded == custom
+    assert all(step["transformation"] != "group_acceptance_0" for step in loaded)
 
 
 def test_merge_todos_removes_manual_extractors_and_retargets_dependencies(

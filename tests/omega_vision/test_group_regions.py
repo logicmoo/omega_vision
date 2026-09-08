@@ -49,9 +49,12 @@ shared_edge(detail, accent_b, 20).
 """,
     )
 
-    assert "part_group(g1, [mass])." in grouped
-    assert "part_group(g2, [accent_a,accent_b,detail])." in grouped
-    assert "part_group(g3, [marker])." in grouped
+    assert "part_group(w1, [mass])." in grouped
+    assert "part_group(w2, [accent_a,accent_b,detail])." in grouped
+    assert "part_group(w3, [marker])." in grouped
+    assert "group_area(w1," in grouped
+    assert "part_group(g" not in grouped
+    assert "group_area(g" not in grouped
 
 
 @pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
@@ -69,8 +72,8 @@ shared_edge(mass, detail, 20).
 """,
     )
 
-    assert "part_group(g1, [detail,mass])." in grouped
-    assert "part_group(g2," not in grouped
+    assert "part_group(w1, [detail,mass])." in grouped
+    assert "part_group(w2," not in grouped
 
 
 @pytest.mark.skipif(shutil.which("swipl") is None, reason="swipl not on PATH")
@@ -94,8 +97,8 @@ hole(shell, [xy(20,20),xy(40,20),xy(40,40),xy(20,40),xy(20,20)]).
 
     assert "background(exterior)." in grouped
     assert "background(cutout)." in grouped
-    assert "part_group(g1, [shell])." in grouped
-    assert "part_group(g2," not in grouped
+    assert "part_group(w1, [shell])." in grouped
+    assert "part_group(w2," not in grouped
     assert "detachable(cutout)." not in grouped
 
 
@@ -126,7 +129,7 @@ hole(shell, [xy(20,20),xy(80,20),xy(80,80),xy(20,80),xy(20,20)]).
     assert "background(yellow_fill)." in grouped
     assert "background(red_item)." not in grouped
     assert "background(blue_item)." not in grouped
-    assert "part_group(g1, [blue_item,red_item,shell])." in grouped
+    assert "part_group(w1, [blue_item,red_item,shell])." in grouped
     assert "yellow_fill" not in "\n".join(
         line for line in grouped.splitlines() if line.startswith("part_group(")
     )
@@ -163,6 +166,6 @@ hole(shell, [xy(20,20),xy(40,20),xy(40,40),xy(20,40),xy(20,20)]).
 
     assert "background(exterior)." in grouped
     assert "background(cutout)." not in grouped
-    assert "part_group(g1, [shell])." in grouped
-    assert "part_group(g2, [cutout])." in grouped
+    assert "part_group(w1, [shell])." in grouped
+    assert "part_group(w2, [cutout])." in grouped
     assert "detachable(cutout)." in grouped

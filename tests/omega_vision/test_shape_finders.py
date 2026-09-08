@@ -49,6 +49,7 @@ def _assert_opencv_grouping_contract(prolog_text: str) -> None:
         "opencv_shape_metrics(",
         "opencv_watershed_count(",
         "opencv_watershed_segment(",
+        "vision_group(",
     ):
         assert predicate in prolog_text, f"missing {predicate}"
 
@@ -70,11 +71,52 @@ def test_opencv_finder_outputs_outer_inner_and_medials(shapes_image: Path) -> No
     _assert_opencv_grouping_contract(facts["prolog"])
     assert facts["regionCount"] >= 3
     assert facts["componentCount"] >= 2
+    assert facts["visualGroupCount"] == facts["componentCount"]
+    assert [group["id"] for group in facts["visualGroups"]] == [
+        f"v{index}" for index in range(1, facts["visualGroupCount"] + 1)
+    ]
+    assert all(group["method"] == "connected_component" for group in facts["visualGroups"])
+    assert all(group["members"] for group in facts["visualGroups"])
+    assert all(
+        {
+            "component",
+            "pixelArea",
+            "centroid",
+            "contourCount",
+            "hierarchyLinkCount",
+            "watershedSegmentCount",
+        } <= group["evidence"].keys()
+        for group in facts["visualGroups"]
+    )
     assert facts["contourCount"] >= facts["regionCount"]
     assert facts["watershedSegmentCount"] >= 2
     # the hole in the blue rectangle must be reported as an inner edge
     blue = [p for p in facts["parts"] if p["holes"] >= 1]
     assert blue, "no part carries an inner edge"
+
+
+def test_opencv_visual_group_hypotheses_are_replayably_deterministic(
+    shapes_image: Path,
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("cv2")
+    from omega_vision.perception.pixels_to_regions_cv import extract_region_facts_cv
+
+    first = extract_region_facts_cv(shapes_image, tolerance=24, max_dim=200)
+    second = extract_region_facts_cv(shapes_image, tolerance=24, max_dim=200)
+
+    assert first["visualGroups"] == second["visualGroups"]
+    first_facts = [
+        line for line in first["prolog"].splitlines()
+        if line.startswith("vision_group(")
+    ]
+    second_facts = [
+        line for line in second["prolog"].splitlines()
+        if line.startswith("vision_group(")
+    ]
+    assert first_facts == second_facts
+    assert len(first_facts) == first["visualGroupCount"]
+    assert not (tmp_path / "debug_image.png").exists()
 
 
 def test_opencv_and_scikit_agree_on_region_topology(shapes_image: Path) -> None:

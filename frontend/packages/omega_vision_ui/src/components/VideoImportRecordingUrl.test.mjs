@@ -11,7 +11,9 @@ const gameSequence = {
   id: "recordings/ls20/20260718-154544",
   dir: "data/recordings/ls20/20260718-154544",
   kind: "arc-recording",
-  gameId: "ls20",
+  gameId: "ls20-9607627b",
+  game: "ls20",
+  recording: "20260718-154544",
 };
 
 const stillSequence = {

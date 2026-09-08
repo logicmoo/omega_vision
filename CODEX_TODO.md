@@ -136,6 +136,134 @@ values here.
   failure: the existing plugin scanner test assumes one UI page, while the
   separately checked-out `codex_cli` plugin currently publishes two.
 
+- Visual Sequence URL/shell and OpenCV vN experiment (2026-09-09): the active
+  selector now resolves one filesystem catalog for standalone images,
+  collections, movie frames, and game recordings. Game-backed URLs use stable
+  `game=<game>&recording=<sequence>` segments; non-game sources retain a
+  namespaced catalog ID in `recording=`. Safe `nav=` paths restore Recognition
+  tabs, rows, and the Prolog inspector without replaying actions. Sequences over
+  800 images require an explicit modal confirmation before URL selection,
+  manifest loading, rendering, or TODO controls target them. Video Import now
+  has six steps: Sources, Frames & Filters, Games, Objects, Sprite View, and
+  Recognition. The original Sprite Viewer has one canonical render in step 5;
+  former Finish and Advanced controls remain exactly once as collapsed
+  Completion / Export and Advanced Controls sections. Legacy routes canonicalize
+  to those destinations while preserving workspace and Visual Sequence state.
+  Local commits are `d7b33d533`, `8d86259c7`, `df3b2508d`, `6f2149cfd`,
+  `b2ec3581a`, `a92b741ba`, `2169b0d2d`, `0a90064a3`, and `79d96590f`;
+  nothing was pushed by this session.
+  OpenCV extraction now persists deterministic frame-local
+  `vision_group(vN, connected_component, Members, Evidence)` hypotheses from
+  its existing component, contour-hierarchy, and watershed evidence. The UI
+  presents vN and Prolog wN as independent peer rows ordered only for display
+  by shared-member overlap; there are no inferred v-w links and no oN claims.
+  New `group_regions.pl` outputs use wN consistently in `part_group/2` and
+  `group_area/2`. Legacy gN files remain byte-truthful in the source inspector
+  while their derived API/UI group IDs normalize to wN. A real LS20 scratch
+  transform under `vn-real-ls20/parts_grouping_0/group_regions_prolog/`
+  produced six wN groups and six wN areas with no gN aliases; the live legacy
+  source retained SHA-256
+  `C982BD017CF9285568156B6C66082A378356805F8556A50252DFBD31F8E3CB50`.
+  When a vN and wN have
+  identical member sets, the UI coalesces them into one
+  dual-labeled display node using the wN color; both underlying claims remain
+  independent. Legacy extraction results derive the same vN peers read-only from their
+  persisted `opencv_component/*` evidence, so no runtime files were rewritten.
+  Live verification used
+  `data/omega_vision/arc_recordings/data-recordings-ls20-20260718-154544_attempt8/`
+  and showed frame 0 with `v1` over 11 regions beside legacy-source groups
+  displayed as `w5`, `w1`, `w2`, `w3`, and `w4`, followed by four singleton
+  v/w neighborhoods.
+  The exact source artifacts are
+  `transforms/frame_000000/parts_extraction_0/python_opencv/result.pl` and
+  `transforms/frame_000000/parts_grouping_0/group_regions_prolog/result.pl`
+  under that Visual Sequence directory.
+  A separately generated real-LS20 evidence sample produced four vN facts under
+  the session artifact `vn-real-ls20/parts_extraction_0/python_opencv/` with no
+  additional `debug_image.png`. Existing `parts_debug_0` and debug-image
+  behavior remain unchanged.
+  The current-frame `group_acceptance_0/group_acceptance_prolog` stage now
+  produces final gN groups. Python/OpenCV writes replayable measurements to
+  `acceptance_input.pl`; SWI-Prolog is the sole acceptance authority and emits
+  `accepted_group/2`, `group_acceptance/3`, evidence, and rejections. Its fixed
+  order is exact V/W consensus, A `symbolic_shape_analogy` using only
+  current-frame exact templates, C `pixel_shape_fallback` only after A fails,
+  then D `singleton_remainder` for every uncovered foreground region.
+  Background regions never receive gN and the Prolog pass verifies exclusive
+  complete foreground coverage. Overlapping/background exact-template
+  candidates and unmatched wN candidates emit explicit rejection provenance
+  rather than disappearing. Named defaults are symbolic geometry tolerance
+  0.18, pixel-shape threshold 0.82, unique-best margin 0.03, and color-mass
+  tolerance 0.12. The editable built-in pipeline inserts this stage between wN
+  grouping and Turtle generation; only exact historical built-in templates
+  migrate, while customized templates remain unchanged.
+  The compact persisted group-layer selector offers V, W, G, and W+V+G.
+  Single-layer views keep exact-equality aliases on their anchor row; all-layer
+  view interleaves independent facts and may combine exact V/W/G memberships.
+  G is honestly pending when the acceptance stage has no output.
+  Final validation passed 65 focused Python/API regressions, 5 executable
+  V/W/G tree-model tests, `git diff --check`, and the frontend production build.
+  Real LS20 scratch validation under
+  `vn-real-ls20/group_acceptance_0/group_acceptance_prolog/` produced eight
+  final groups covering all 16 foreground regions: three exact consensus, one
+  symbolic analogy, zero pixel fallbacks, and four singleton remainders, with
+  one background region excluded and no debug image.
+  The new `observation_identity_0/content_hash` transform assigns deterministic
+  content-derived frame, region, V, W, and final-G observation IDs after
+  acceptance. Local rN/vN/wN/gN aliases remain truthful provenance but are
+  excluded from semantic identity, so alias renumbering does not change an
+  observation UID. Each unit persists deterministic `observations.json` and
+  Prolog observation facts with exact source artifact hashes; replay writes the
+  same bytes and creates no debug image. Exact prior built-in pipeline templates
+  migrate to the new stage while customized templates remain authoritative.
+  Focused validation passed 61 observation/group/API/UI regressions and the
+  frontend production build. A real LS20 scratch frame produced one frame,
+  17 region, 4 V, 6 W, and 8 final-G observations (36 total) with byte-stable
+  replay and no oN facts.
+  The next approved stages are final-G temporal correspondence, Prolog frame
+  events, and event-backed rule induction. oN tracking, grouping learning,
+  cross-sequence promotion, and expanded Object Memory remain deliberately
+  deferred.
+
+- Deferred oN composition contract (2026-09-09): an oN is not a persistent
+  one-to-one alias for a final gN. It is a higher-level object composed of at
+  least two final G groups. When this work is explicitly resumed, Prolog may
+  infer an oN only when attributable evidence proves both (1) coherent
+  cross-frame co-motion with compatible displacement/transform and stable
+  relative arrangement, and (2) attachment under the existing symbolic
+  attachment semantics: a strong shared edge or a valid smooth cutout relation
+  between the groups' member regions. Co-motion alone is insufficient,
+  attachment alone is insufficient, and a lone persistent G remains a G rather
+  than becoming an O. Reuse the existing attachment rules; do not substitute
+  generic bounding-box proximity or containment. Expected future evidence may
+  include group motion/correspondence facts, group attachment facts, and
+  `object_at(Frame, oN, [G1,G2,...])` with provenance and confidence. This is a
+  recorded design constraint only; UID, temporal, oN, and learning
+  implementation remains blocked until the user explicitly resumes it.
+
+- Deferred final-G occlusion contract (2026-09-09): infer
+  movement-based occlusion at the final G level first and aggregate it to oN
+  only after oN composition exists. For a tracked G observation, project its
+  prior mask and centroid with the supported motion estimate. A directional
+  `occluded_by(Frame, OccludedG, OccluderG, Confidence, Evidence)` candidate or
+  fact requires the G to become missing or substantially clipped while another
+  visible G occupies its predicted pixels or path with compatible depth/contour
+  evidence. Do not treat every disappearance as occlusion: classify a projected
+  mask leaving the image as exited, no overlapping visible occluder as
+  missing/unexplained, and supported partial area loss as partial occlusion.
+  Reappearance near the predicted continuation confirms or strengthens the
+  account and preserves correspondence. Keep predictions separate from
+  confirmed observations so both remain replayable. When oN exists, aggregate
+  member-G evidence to
+  `object_occluded_by(Frame, OccludedO, OccluderO, Evidence)`; member groups of
+  the same oN represent self-occlusion, not object-object occlusion. Require
+  source frame, mask, motion, overlap, and direction provenance, record signed
+  contradictions, and create no debug image. Eventual regressions must cover
+  full and partial occlusion, exit, unexplained missing, reappearance,
+  wrong-direction overlap, self-occlusion, and object aggregation. This remains
+  blocked design work until the user explicitly resumes temporal/object
+  implementation.
+
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
   percent of the input image. It then recomputes attachment components among
