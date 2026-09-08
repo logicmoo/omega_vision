@@ -136,6 +136,41 @@ values here.
   failure: the existing plugin scanner test assumes one UI page, while the
   separately checked-out `codex_cli` plugin currently publishes two.
 
+- Visual Sequence URL/shell and OpenCV vN experiment (2026-09-09): the active
+  selector now resolves one filesystem catalog for standalone images,
+  collections, movie frames, and game recordings. Game-backed URLs use stable
+  `game=<game>&recording=<sequence>` segments; non-game sources retain a
+  namespaced catalog ID in `recording=`. Safe `nav=` paths restore Recognition
+  tabs, rows, and the Prolog inspector without replaying actions. Sequences over
+  800 images require an explicit modal confirmation before URL selection,
+  manifest loading, rendering, or TODO controls target them. Video Import now
+  has six steps: Sources, Frames & Filters, Games, Objects, Sprite View, and
+  Recognition. The original Sprite Viewer has one canonical render in step 5;
+  former Finish and Advanced controls remain exactly once as collapsed
+  Completion / Export and Advanced Controls sections. Legacy routes canonicalize
+  to those destinations while preserving workspace and Visual Sequence state.
+  Local commits are `d7b33d533`, `8d86259c7`, `df3b2508d`, `6f2149cfd`,
+  `b2ec3581a`, and `a92b741ba`; nothing was pushed by this session.
+  OpenCV extraction now persists deterministic frame-local
+  `vision_group(vN, connected_component, Members, Evidence)` hypotheses from
+  its existing component, contour-hierarchy, and watershed evidence. The UI
+  presents vN and Prolog gN as independent peer rows ordered only for display
+  by shared-member overlap; there are no inferred v-g links and no oN claims.
+  Legacy extraction results derive the same vN peers read-only from their
+  persisted `opencv_component/*` evidence, so no runtime files were rewritten.
+  Live verification used
+  `data/omega_vision/arc_recordings/data-recordings-ls20-20260718-154544_attempt8/`
+  and showed frame 0 with `v1` over 11 regions beside overlapping `g5`, `g1`,
+  `g2`, `g3`, and `g4`, followed by four singleton v/g neighborhoods.
+  A separately generated real-LS20 evidence sample produced four vN facts under
+  the session artifact `vn-real-ls20/parts_extraction_0/python_opencv/` with no
+  additional `debug_image.png`. Existing `parts_debug_0` and debug-image
+  behavior remain unchanged.
+  Persistent observation UIDs, temporal correspondence, oN tracking, grouping
+  learning, rule promotion, and expanded Object Memory are deliberately
+  deferred. Stop at this observable vN/gN checkpoint for user inspection before
+  implementing them.
+
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
   percent of the input image. It then recomputes attachment components among

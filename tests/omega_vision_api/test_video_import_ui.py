@@ -21,6 +21,8 @@ VIDEO_IMPORT_NAVIGATION_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigation
 VIDEO_IMPORT_NAVIGATION_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigationUrl.test.mjs")
 VISUAL_SEQUENCE_LOAD_GATE = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.ts")
 VISUAL_SEQUENCE_LOAD_GATE_TEST = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.test.mjs")
+VISUAL_GROUP_TREE_MODEL = VIDEO_IMPORT_PAGE.with_name("VisualGroupTreeModel.ts")
+VISUAL_GROUP_TREE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("VisualGroupTreeModel.test.mjs")
 VIDEO_IMPORT_STYLES = (
     ROOT
     / "frontend"
@@ -213,6 +215,31 @@ def test_large_visual_sequences_require_explicit_non_mutating_confirmation() -> 
     assert "It does not run reductions" in page
     assert ".video-import-confirm-backdrop" in styles
     assert ".video-import-confirm-dialog" in styles
+
+
+def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    model = VISUAL_GROUP_TREE_MODEL.read_text(encoding="utf-8")
+    executable_test = VISUAL_GROUP_TREE_MODEL_TEST.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert "export function interleaveVisualGroupClaims" in model
+    assert "sharedCount(current, right)" in model
+    assert "right.kind !== current.kind" in model
+    assert "overlapping V and G claims are adjacent peers with deterministic alternation" in executable_test
+    assert "claims remain independent data with no inferred connector fields" in executable_test
+    assert 'kind: "v"' in page
+    assert 'kind: "g"' in page
+    assert "const peerGroupClaims = interleaveVisualGroupClaims" in page
+    assert "visualGroupClaims.length > 0 && !groupingCell" in page
+    assert "renderPeerGroupTree(visualGroupClaims)" in page
+    assert "renderPeerGroupTree(peerGroupClaims)" in page
+    assert "Independent peer claim; overlap ordering is display-only." in page
+    assert "setStripHoverMember({ rowKey, member: pid })" in page
+    assert "mapsTo" not in page
+    assert ".video-import-reduce-groupnode.is-v" in styles
+    assert ".video-import-reduce-groupnode.is-g" in styles
+    assert ".video-import-reduce-grouptree li button.is-hover" in styles
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:

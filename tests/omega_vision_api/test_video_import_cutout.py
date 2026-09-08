@@ -130,6 +130,36 @@ def test_transform_manifest_exposes_visual_group_hypotheses(tmp_path: Path) -> N
     }]
 
 
+def test_legacy_opencv_evidence_adapts_to_visual_group_peers() -> None:
+    groups = video_import_api._opencv_visual_groups_from_prolog(
+        "\n".join([
+            "opencv_component(cc1, [r2,r5]).",
+            "opencv_component_area(cc1, 42).",
+            "opencv_component_centroid(cc1, centroid(7,9)).",
+            "opencv_contour(r2, c0, outer, 20).",
+            "opencv_contour(r5, c0, outer, 18).",
+            "opencv_contour_hierarchy(r5, c0, next(none), previous(none), child(c1), parent(none)).",
+            "opencv_watershed_count(r2, 2).",
+            "opencv_watershed_count(r5, 1).",
+        ])
+    )
+
+    assert groups == [{
+        "id": "v1",
+        "method": "connected_component",
+        "members": ["r2", "r5"],
+        "confidence": 0.75,
+        "evidence": {
+            "component": "cc1",
+            "pixelArea": 42,
+            "centroid": [7, 9],
+            "contourCount": 2,
+            "hierarchyLinkCount": 1,
+            "watershedSegmentCount": 3,
+        },
+    }]
+
+
 @pytest.mark.parametrize(
     "pipeline",
     [

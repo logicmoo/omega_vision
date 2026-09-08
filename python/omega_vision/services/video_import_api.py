@@ -2276,6 +2276,56 @@ def _resolve_set_dir(root: Path, base_rel: str) -> Path:
     return first
 
 
+def _opencv_visual_groups_from_prolog(text: str) -> list[dict[str, Any]]:
+    """Compatibility adapter for extraction results written before vision_group/4."""
+    areas = {
+        component: int(area)
+        for component, area in re.findall(r"opencv_component_area\((cc\d+),\s*(\d+)\)", text)
+    }
+    centroids = {
+        component: [int(x), int(y)]
+        for component, x, y in re.findall(
+            r"opencv_component_centroid\((cc\d+),\s*centroid\((-?\d+),\s*(-?\d+)\)\)",
+            text,
+        )
+    }
+    contour_counts: dict[str, int] = {}
+    for region in re.findall(r"opencv_contour\((r\d+),", text):
+        contour_counts[region] = contour_counts.get(region, 0) + 1
+    hierarchy_counts: dict[str, int] = {}
+    for region, child, parent in re.findall(
+        r"opencv_contour_hierarchy\((r\d+),[^.]*?child\(([^)]+)\),\s*parent\(([^)]+)\)\)",
+        text,
+    ):
+        if child != "none" or parent != "none":
+            hierarchy_counts[region] = hierarchy_counts.get(region, 0) + 1
+    watershed_counts = {
+        region: int(count)
+        for region, count in re.findall(r"opencv_watershed_count\((r\d+),\s*(\d+)\)", text)
+    }
+    groups: list[dict[str, Any]] = []
+    for index, (component, raw_members) in enumerate(
+        re.findall(r"opencv_component\((cc\d+),\s*\[([^\]]*)\]\)", text),
+        start=1,
+    ):
+        members = [member.strip() for member in raw_members.split(",") if member.strip()]
+        groups.append({
+            "id": f"v{index}",
+            "method": "connected_component",
+            "members": members,
+            "confidence": 0.75,
+            "evidence": {
+                "component": component,
+                "pixelArea": areas.get(component, 0),
+                "centroid": centroids.get(component, [0, 0]),
+                "contourCount": sum(contour_counts.get(member, 0) for member in members),
+                "hierarchyLinkCount": sum(hierarchy_counts.get(member, 0) for member in members),
+                "watershedSegmentCount": sum(watershed_counts.get(member, 0) for member in members),
+            },
+        })
+    return groups
+
+
 def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
     """Summarise a unit's offline transformation todos for the manifest.
 
@@ -2381,6 +2431,21 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                     if summary:
                         cell["summary"] = summary
                 except (OSError, json.JSONDecodeError):
+                    pass
+            if (
+                cell["name"] == "parts_extraction_0"
+                and cell["doer"] == "python_opencv"
+                and rp.is_file()
+                and not cell.get("visualGroups")
+            ):
+                try:
+                    visual_groups = _opencv_visual_groups_from_prolog(
+                        rp.read_text(encoding="utf-8")
+                    )
+                    if visual_groups:
+                        cell["visualGroups"] = visual_groups
+                        cell.setdefault("summary", {})["visualGroupCount"] = len(visual_groups)
+                except OSError:
                     pass
             # Grouping facts are tiny — parse them here so the row can show
             # group chips without fetching the .pl client-side.

@@ -3178,12 +3178,37 @@
 .video-import-reduce-groupnode > summary::-webkit-details-marker { display: none; }
 .video-import-reduce-groupnode > summary:hover { background: rgba(255,255,255,0.06); }
 .video-import-reduce-groupnode > summary.is-sel { background: rgba(255,255,255,0.14); }
+.video-import-reduce-groupnode.is-v { border-left: 1px dashed rgba(155,140,255,0.7); }
+.video-import-reduce-groupnode.is-g { border-left: 2px solid rgba(39,220,194,0.65); }
+.video-import-reduce-groupnode > summary small { margin-left: auto; opacity: 0.65; font-size: 9px; }
+.video-import-group-kind {
+  min-width: 15px;
+  padding: 0 3px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font: 800 8px/13px ui-monospace, monospace;
+  text-align: center;
+}
+.video-import-group-kind.is-v, .video-import-group-claim-legend .is-v { color: #9b8cff; }
+.video-import-group-kind.is-g, .video-import-group-claim-legend .is-g { color: #27dcc2; }
+.video-import-group-claim-legend {
+  display: flex;
+  gap: 7px;
+  padding: 0 2px 4px;
+  font: 700 8px/1.2 ui-monospace, monospace;
+  white-space: nowrap;
+}
+.video-import-transform-duo .video-import-reduce-grouptree.is-peer-tree { width: 190px; }
+.video-import-transform-cell.is-visual-groups { min-width: 210px; max-width: 260px; }
+.video-import-transform-cell.is-visual-groups .video-import-reduce-grouptree { width: 100%; max-height: 170px; }
+.video-import-peer-group-panel { min-width: 0; }
 .video-import-reduce-groupdot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
 .video-import-reduce-groupchev { flex: none; width: 14px; text-align: center; color: rgba(255,255,255,0.55); cursor: pointer; border-radius: 3px; }
 .video-import-reduce-groupchev:hover { background: rgba(255,255,255,0.12); color: #fff; }
 .video-import-reduce-grouptree ul { list-style: none; margin: 0 0 4px 0; padding: 0 0 0 16px; }
 .video-import-reduce-grouptree li button { background: none; border: none; color: rgba(255,255,255,0.68); font-size: 11px; text-align: left; padding: 1px 5px; border-radius: 4px; cursor: pointer; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .video-import-reduce-grouptree li button:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.video-import-reduce-grouptree li button.is-hover { outline: 1px solid rgba(242,193,78,0.8); color: #fff; }
 .video-import-reduce-grouptree li button.is-sel { background: rgba(39,220,194,0.22); color: #fff; }
 /* own-line row sections (tree / graph) toggled by the row-line dropdown */
 .video-import-reduce-rowline { width: 100%; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px; }

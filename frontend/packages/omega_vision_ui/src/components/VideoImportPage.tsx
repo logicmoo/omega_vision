@@ -32,6 +32,10 @@ import {
   requiresVisualSequenceConfirmation,
   visualSequenceConfirmationMessage,
 } from "./VisualSequenceLoadGate";
+import {
+  interleaveVisualGroupClaims,
+  type VisualGroupClaim,
+} from "./VisualGroupTreeModel";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -3503,6 +3507,7 @@ export function VideoImportPage({
   // which part/group ids are selected in the grouping tree (empty = render ALL),
   // which stroke kinds the turtle cell draws, and which tree nodes are open.
   const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
+  const [stripHoverMember, setStripHoverMember] = useState<{ rowKey: string; member: string } | null>(null);
   const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
   // Which active parts_extraction_0 doer every transform strip displays.
   // "__all__" expands every active path side by side for each input image.
@@ -7526,6 +7531,30 @@ export function VideoImportPage({
               const partColor = new Map<string, string>();
               ((partsCell && partsCell.parts) || []).forEach((p: any) => { if (p && p.id) partColor.set(String(p.id), String(p.color || "")); });
               const groupingCell = cells.find((t: any) => Array.isArray(t.groups) && t.groups.length > 0);
+              const visualGroupClaims: VisualGroupClaim[] = (
+                Array.isArray(primaryExtraction?.visualGroups) ? primaryExtraction.visualGroups : []
+              ).map((group: any, index: number) => ({
+                kind: "v",
+                id: String(group.id),
+                members: (group.members || []).map(String),
+                sourceOrder: index,
+                method: String(group.method || "opencv"),
+                confidence: typeof group.confidence === "number" ? group.confidence : undefined,
+                evidence: group.evidence && typeof group.evidence === "object" ? group.evidence : {},
+              }));
+              const symbolicGroupClaims: VisualGroupClaim[] = (
+                Array.isArray(groupingCell?.groups) ? groupingCell.groups : []
+              ).map((group: any, index: number) => ({
+                kind: "g",
+                id: String(group.id),
+                members: (group.members || []).map(String),
+                sourceOrder: visualGroupClaims.length + index,
+                method: "prolog_symbolic_group",
+              }));
+              const peerGroupClaims = interleaveVisualGroupClaims([
+                ...visualGroupClaims,
+                ...symbolicGroupClaims,
+              ]);
               const turtleCell = cells.find((t: any) => t.status === "done" && t.resultPath && /turtle/.test(String(t.name || "")));
               const turtleText = turtleCell ? reduceMetta[String(turtleCell.resultPath)] : undefined;
               const strokes = turtleText ? parseTurtleStrokes(turtleText) : [];
@@ -7568,18 +7597,102 @@ export function VideoImportPage({
                   ? <polygon key={key} points={pts} fill="none" stroke={col} strokeWidth={w} strokeDasharray={dash} opacity={op} vectorEffect="non-scaling-stroke" />
                   : <polyline key={key} points={pts} fill="none" stroke={col} strokeWidth={w} strokeDasharray={dash} opacity={op} vectorEffect="non-scaling-stroke" />;
               };
-              const renderPartNode = (pid: string, depth: number): any => {
+              const renderPartNode = (pid: string, depth: number, allowNesting = true): any => {
                 const isSel = !!sel && sel.has(pid);
-                const kids = (childrenOf.get(pid) || []).filter((k) => partGroup.get(k) === partGroup.get(pid));
+                const isHovered = stripHoverMember?.rowKey === rowKey && stripHoverMember.member === pid;
+                const kids = allowNesting
+                  ? (childrenOf.get(pid) || []).filter((k) => partGroup.get(k) === partGroup.get(pid))
+                  : [];
                 return (
                   <li key={pid}>
-                    <button type="button" className={isSel ? "is-sel" : ""} title={pid} onClick={(e) => setSel([pid], e.shiftKey)}>
+                    <button
+                      type="button"
+                      className={`${isSel ? "is-sel" : ""}${isHovered ? " is-hover" : ""}`}
+                      title={`${pid} · click to highlight this region in every peer claim`}
+                      onMouseEnter={() => setStripHoverMember({ rowKey, member: pid })}
+                      onMouseLeave={() => setStripHoverMember((current) =>
+                        current?.rowKey === rowKey && current.member === pid ? null : current
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSel([pid], e.shiftKey);
+                      }}
+                    >
                       <span className="video-import-reduce-treedot" style={{ background: partColor.get(pid) || "#8a8f98" }} />{pid}
                     </button>
-                    {depth < 3 && kids.length > 0 && <ul>{kids.map((k) => renderPartNode(k, depth + 1))}</ul>}
+                    {depth < 3 && kids.length > 0 && <ul>{kids.map((k) => renderPartNode(k, depth + 1, allowNesting))}</ul>}
                   </li>
                 );
               };
+              const renderPeerGroupTree = (claims: VisualGroupClaim[]) => (
+                <div className="video-import-reduce-grouptree is-peer-tree">
+                  <div className="video-import-group-claim-legend">
+                    <span className="is-v">V · OpenCV hypothesis</span>
+                    <span className="is-g">G · Prolog group</span>
+                  </div>
+                  {claims.map((claim) => {
+                    const members = claim.members;
+                    const claimKey = `${rowKey}#${claim.kind}:${claim.id}`;
+                    const open = stripOpenGroups.has(claimKey);
+                    const claimSelected = !!sel && members.length > 0 && members.every((member) => sel.has(member));
+                    const color = claim.kind === "g"
+                      ? groupColorOf.get(claim.id) || "#27dcc2"
+                      : claim.kind === "o" ? "#f2c14e" : "#9b8cff";
+                    const roots = claim.kind === "g"
+                      ? members.filter((member) => {
+                          const parent = parentOf.get(member);
+                          return !parent || !members.includes(parent);
+                        })
+                      : members;
+                    const evidence = claim.evidence && Object.keys(claim.evidence).length
+                      ? `\n${JSON.stringify(claim.evidence)}`
+                      : "";
+                    const detail = claim.kind === "v"
+                      ? `${claim.method || "OpenCV"}${claim.confidence == null ? "" : ` · confidence ${Math.round(claim.confidence * 100)}%`}${evidence}`
+                      : "Prolog symbolic group";
+                    const toggleOpen = () => setStripOpenGroups((previous) => {
+                      const next = new Set(previous);
+                      if (next.has(claimKey)) next.delete(claimKey); else next.add(claimKey);
+                      return next;
+                    });
+                    return (
+                      <details key={`${claim.kind}:${claim.id}`} className={`video-import-reduce-groupnode is-${claim.kind}`} open={open}>
+                        <summary
+                          className={claimSelected ? "is-sel" : ""}
+                          style={{ color }}
+                          title={`${detail}\nIndependent peer claim; overlap ordering is display-only.`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setSel(members, event.shiftKey);
+                          }}
+                        >
+                          <span
+                            className="video-import-reduce-groupchev"
+                            role="button"
+                            tabIndex={0}
+                            onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggleOpen(); }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                toggleOpen();
+                              }
+                            }}
+                          >{open ? "▾" : "▸"}</span>
+                          <span className={`video-import-group-kind is-${claim.kind}`}>{claim.kind.toUpperCase()}</span>
+                          <span className="video-import-reduce-groupdot" style={{ background: color }} />
+                          {claim.id} · {members.length}
+                          {claim.kind === "v" && claim.confidence != null
+                            ? <small>{Math.round(claim.confidence * 100)}%</small>
+                            : null}
+                        </summary>
+                        <ul>{roots.map((member) => renderPartNode(member, 0, claim.kind === "g"))}</ul>
+                      </details>
+                    );
+                  })}
+                </div>
+              );
               return (
                 <div className="video-import-transform-strip">
                   <figure className="video-import-reduce-stage is-submitted">
@@ -7593,6 +7706,31 @@ export function VideoImportPage({
                     if (t.status === "done") {
                       const s = t.summary || {};
                       const hasStats = Object.keys(s).length > 0 || (Array.isArray(t.groups) && t.groups.length > 0);
+                      if (isExtraction && t === primaryExtraction && visualGroupClaims.length > 0 && !groupingCell) {
+                        return (
+                          <div key={ti} className="video-import-transform-cell is-done is-visual-groups" title={t.resultPath || t.output}>
+                            <div className="video-import-transform-title">
+                              {t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""} · {visualGroupClaims.length} v hypotheses</span>
+                            </div>
+                            {renderPeerGroupTree(visualGroupClaims)}
+                            <div className="video-import-transform-note">
+                              OpenCV visual hypotheses · Prolog grouping pending
+                            </div>
+                            {t.resultPath && (
+                              <button
+                                type="button"
+                                className={`video-import-prolog-open${prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? " is-active" : ""}`}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  selectPrologNavigation(rowKey, t);
+                                }}
+                              >
+                                {"{}"} {prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? "Hide Prolog data" : "Inspect Prolog data"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      }
                       // Interactive grouping cell: partOf tree (click = select; empty
                       // selection = everything) + outer strokes over the dimmed input.
                       if (groupingCell && t === groupingCell) {
@@ -7602,32 +7740,11 @@ export function VideoImportPage({
                           <div key={ti} className="video-import-transform-cell is-done is-grouping" title={t.resultPath || t.output}>
                             <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""}</span></div>
                             <div className="video-import-transform-duo">
-                              <div className="video-import-reduce-grouptree">
-                                {(t.groups || []).map((g: any, gi: number) => {
-                                  const gid = String(g.id);
-                                  const col = groupColorOf.get(gid) || "#8a8f98";
-                                  const members = (g.members || []).map(String);
-                                  const gkey = `${rowKey}#${gid}`;
-                                  const gopen = stripOpenGroups.has(gkey);
-                                  const groupSel = !!sel && members.length > 0 && members.every((m: string) => sel.has(m));
-                                  const toggleOpen = () => setStripOpenGroups((prev) => { const n = new Set(prev); if (n.has(gkey)) n.delete(gkey); else n.add(gkey); return n; });
-                                  const roots = members.filter((m: string) => { const p = parentOf.get(m); return !p || !members.includes(p); });
-                                  return (
-                                    <details key={gi} className="video-import-reduce-groupnode" open={gopen}>
-                                      <summary className={groupSel ? "is-sel" : ""} style={{ color: col }}
-                                        onClick={(e) => { e.preventDefault(); setSel(members, e.shiftKey); }}>
-                                        <span className="video-import-reduce-groupchev" role="button" tabIndex={0}
-                                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleOpen(); }}
-                                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); toggleOpen(); } }}>{gopen ? "▾" : "▸"}</span>
-                                        <span className="video-import-reduce-groupdot" style={{ background: col }} />{gid} · {members.length}
-                                      </summary>
-                                      <ul>{roots.map((m: string) => renderPartNode(m, 0))}</ul>
-                                    </details>
-                                  );
-                                })}
+                              <div className="video-import-peer-group-panel">
+                                {renderPeerGroupTree(peerGroupClaims)}
                                 {bg.length > 0 && (
                                   <button type="button" className="video-import-transform-bgchip" title={`background: ${bg.join(", ")}`}
-                                    onClick={(e) => setSel(bg, e.shiftKey)}>bg {bg.join(",")}</button>
+                                    onClick={(e) => { e.stopPropagation(); setSel(bg, e.shiftKey); }}>bg {bg.join(",")}</button>
                                 )}
                               </div>
                               <svg viewBox={`0 0 ${dims[0]} ${dims[1]}`} className="video-import-reduce-svg is-strip" preserveAspectRatio="xMidYMid meet">
