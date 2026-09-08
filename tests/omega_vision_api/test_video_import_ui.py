@@ -131,24 +131,31 @@ def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> 
     assert "Copy visible" not in explorer
 
 
-def test_recording_selection_round_trips_through_the_url_without_losing_page_state() -> None:
+def test_visual_sequence_selection_round_trips_through_recording_url_state() -> None:
     page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
     url_state = VIDEO_IMPORT_RECORDING_URL.read_text(encoding="utf-8")
     executable_test = VIDEO_IMPORT_RECORDING_URL_TEST.read_text(encoding="utf-8")
 
     assert 'const RECORDING_QUERY_PARAMETER = "recording"' in url_state
-    assert "url.searchParams.set(RECORDING_QUERY_PARAMETER, normalized)" in url_state
+    assert 'const GAME_QUERY_PARAMETER = "game"' in url_state
+    assert "url.searchParams.set(RECORDING_QUERY_PARAMETER, location.recording)" in url_state
+    assert "url.searchParams.set(GAME_QUERY_PARAMETER, location.game)" in url_state
+    assert "url.searchParams.delete(GAME_QUERY_PARAMETER)" in url_state
     assert "url.searchParams.delete(RECORDING_QUERY_PARAMETER)" in url_state
-    assert "recording updates preserve every unrelated query parameter and hash" in executable_test
-    assert "recording replacement changes only the recording parameter" in executable_test
-    assert "recordingFromUrl(window.location.href)" in page
+    assert "game-backed Visual Sequence updates preserve every unrelated query parameter" in executable_test
+    assert "one-image non-game Visual Sequence uses its catalog-stable id" in executable_test
+    assert "legacy full-path recording links resolve then canonicalize" in executable_test
+    assert "catalog resolution rejects unknown, ambiguous, and unsafe locations" in executable_test
+    assert "visualSequenceLocationFromUrl(window.location.href)" in page
     assert 'type RecordingHistoryMode = "none" | "push" | "replace"' in page
     assert 'selectRecording(recording, "push")' in page
     assert 'selectRecording(currentRecording, "replace")' in page
     assert 'importArcRecording(selectedRecording, "none")' in page
-    assert 'window.addEventListener("popstate", restoreRecordingFromHistory)' in page
-    assert 'window.removeEventListener("popstate", restoreRecordingFromHistory)' in page
-    assert "Recording unavailable" in page
+    assert 'selectVisualSequence(sequence, "push")' in page
+    assert 'writeVisualSequenceLocation(visualSequenceLocation, "replace")' in page
+    assert 'window.addEventListener("popstate", restoreVisualSequenceFromHistory)' in page
+    assert 'window.removeEventListener("popstate", restoreVisualSequenceFromHistory)' in page
+    assert "Visual Sequence unavailable" in page
     assert "Unavailable recording" in page
     assert "<select className=\"video-import-catalog\" value={selectedRecording}" in page
 

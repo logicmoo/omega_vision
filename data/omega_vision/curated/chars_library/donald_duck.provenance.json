@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/curated/chars_library/donald_duck.jpg",
+  "provenance": "data/curated/chars_library/donald_duck.provenance.json",
+  "createdAt": "2026-09-07T14:00:34.794533Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 2000,
+    "height": 2750
+  },
+  "originalDimensions": {
+    "width": 2000,
+    "height": 2750
+  },
+  "root": {
+    "firstSeenImage": "data/curated/chars_library/donald_duck.jpg",
+    "dimensions": {
+      "width": 2000,
+      "height": 2750
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/curated/chars_library/donald_duck.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/curated/chars_library/donald_duck.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 2000,
+        "height": 2750
+      },
+      "transform": {},
+      "createdAt": "2026-09-07T14:00:34.794533Z"
+    }
+  ]
+}

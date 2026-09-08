@@ -1,0 +1,85 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/arc_recordings/data-recordings-ls20-20260718-154544_attempt7/frame_000001.png",
+  "provenance": "data/arc_recordings/data-recordings-ls20-20260718-154544_attempt7/frame_000001.provenance.json",
+  "createdAt": "2026-09-08T16:27:57.364315Z",
+  "operation": "import_arc_playback_frame",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/recordings/ls20/20260718-154544_attempt7/0/image.png",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/recordings/ls20/20260718-154544_attempt7/0/image.png",
+    "provenance": "data/recordings/ls20/20260718-154544_attempt7/0/image.provenance.json"
+  },
+  "source": {
+    "arcRecording": "data/recordings/ls20/20260718-154544_attempt7",
+    "arcFrame": "0/image.png",
+    "frameIndex": 1,
+    "moveCount": 1,
+    "moveList": [
+      {
+        "index": 0,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544_attempt7/0",
+        "state": "NOT_FINISHED",
+        "level": "6",
+        "recorded_at": "2026-09-07T09:50:09.191085Z"
+      }
+    ],
+    "incomingAction": "ACTION1",
+    "actionData": {},
+    "actionPath": [
+      "0"
+    ],
+    "gameState": "NOT_FINISHED",
+    "level": "6",
+    "observation": {
+      "available_actions": [
+        "ACTION1",
+        "ACTION2",
+        "ACTION3",
+        "ACTION4"
+      ],
+      "levels_completed": 5,
+      "win_levels": 7,
+      "log_step": 241
+    }
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recordings/ls20/20260718-154544_attempt7/0/image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-08T16:27:57.316497Z"
+    },
+    {
+      "image": "data/arc_recordings/data-recordings-ls20-20260718-154544_attempt7/frame_000001.png",
+      "operation": "import_arc_playback_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-08T16:27:57.364315Z"
+    }
+  ]
+}

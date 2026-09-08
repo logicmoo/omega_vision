@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/curated/chars_library/transforms/donald_duck/parts_debug_0/python_pil/debug_image.png",
+  "provenance": "data/curated/chars_library/transforms/donald_duck/parts_debug_0/python_pil/debug_image.provenance.json",
+  "createdAt": "2026-09-07T14:00:34.280048Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 698,
+    "height": 960
+  },
+  "originalDimensions": {
+    "width": 698,
+    "height": 960
+  },
+  "root": {
+    "firstSeenImage": "data/curated/chars_library/transforms/donald_duck/parts_debug_0/python_pil/debug_image.png",
+    "dimensions": {
+      "width": 698,
+      "height": 960
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/curated/chars_library/transforms/donald_duck/parts_debug_0/python_pil/debug_image.png"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/curated/chars_library/transforms/donald_duck/parts_debug_0/python_pil/debug_image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 698,
+        "height": 960
+      },
+      "transform": {},
+      "createdAt": "2026-09-07T14:00:34.280048Z"
+    }
+  ]
+}

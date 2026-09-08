@@ -1,0 +1,1189 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_scikit",
+  "options": {},
+  "createdAt": "2026-09-07T13:32:41.053558Z",
+  "elapsedMs": 1389115,
+  "width": 960,
+  "height": 899,
+  "regionCount": 130,
+  "adjacencyCount": 134,
+  "blobCount": 16827,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 690,
+  "parts": [
+    {
+      "id": "r2",
+      "color": "#a59434",
+      "area": 420230,
+      "outer": 99,
+      "holes": 530,
+      "midlines": 1489,
+      "fillpoints": 558
+    },
+    {
+      "id": "r16410",
+      "color": "#000000",
+      "area": 23651,
+      "outer": 13,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r839",
+      "color": "#ffffff",
+      "area": 15670,
+      "outer": 31,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 81
+    },
+    {
+      "id": "r6558",
+      "color": "#31302c",
+      "area": 12332,
+      "outer": 52,
+      "holes": 12,
+      "midlines": 23,
+      "fillpoints": 245
+    },
+    {
+      "id": "r2198",
+      "color": "#cac88d",
+      "area": 11378,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r714",
+      "color": "#ffffff",
+      "area": 11225,
+      "outer": 35,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 63
+    },
+    {
+      "id": "r253",
+      "color": "#030304",
+      "area": 10296,
+      "outer": 105,
+      "holes": 2,
+      "midlines": 11,
+      "fillpoints": 477
+    },
+    {
+      "id": "r16044",
+      "color": "#010101",
+      "area": 9190,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r11057",
+      "color": "#fdfdfc",
+      "area": 7612,
+      "outer": 14,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 29
+    },
+    {
+      "id": "r7173",
+      "color": "#fdf455",
+      "area": 7542,
+      "outer": 49,
+      "holes": 0,
+      "midlines": 4,
+      "fillpoints": 50
+    },
+    {
+      "id": "r5954",
+      "color": "#fdf455",
+      "area": 6860,
+      "outer": 50,
+      "holes": 0,
+      "midlines": 5,
+      "fillpoints": 41
+    },
+    {
+      "id": "r9509",
+      "color": "#d7d5c7",
+      "area": 6508,
+      "outer": 13,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 10
+    },
+    {
+      "id": "r7286",
+      "color": "#c6c6bf",
+      "area": 6402,
+      "outer": 24,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 12
+    },
+    {
+      "id": "r13139",
+      "color": "#a6a6a5",
+      "area": 6121,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5767",
+      "color": "#040403",
+      "area": 5713,
+      "outer": 56,
+      "holes": 1,
+      "midlines": 8,
+      "fillpoints": 216
+    },
+    {
+      "id": "r11325",
+      "color": "#fefefe",
+      "area": 5491,
+      "outer": 14,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 21
+    },
+    {
+      "id": "r15565",
+      "color": "#a7a7a7",
+      "area": 5265,
+      "outer": 8,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 5
+    },
+    {
+      "id": "r15962",
+      "color": "#020202",
+      "area": 5091,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r12780",
+      "color": "#9d9e18",
+      "area": 4973,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r11373",
+      "color": "#9edef8",
+      "area": 4768,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 15
+    },
+    {
+      "id": "r6878",
+      "color": "#fefefe",
+      "area": 4668,
+      "outer": 26,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 9
+    },
+    {
+      "id": "r12307",
+      "color": "#d8d7a4",
+      "area": 4486,
+      "outer": 4,
+      "holes": 1,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1821",
+      "color": "#c5be93",
+      "area": 4277,
+      "outer": 6,
+      "holes": 1,
+      "midlines": 7,
+      "fillpoints": 3
+    },
+    {
+      "id": "r1452",
+      "color": "#e0dfb5",
+      "area": 4256,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r4273",
+      "color": "#b8ba5e",
+      "area": 4112,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r16251",
+      "color": "#040404",
+      "area": 4090,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r12823",
+      "color": "#414141",
+      "area": 4066,
+      "outer": 8,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 1
+    },
+    {
+      "id": "r7813",
+      "color": "#c5c5c4",
+      "area": 3822,
+      "outer": 38,
+      "holes": 0,
+      "midlines": 11,
+      "fillpoints": 2
+    },
+    {
+      "id": "r16031",
+      "color": "#000000",
+      "area": 3789,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r1715",
+      "color": "#02afe5",
+      "area": 3674,
+      "outer": 18,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 63
+    },
+    {
+      "id": "r6072",
+      "color": "#fffffe",
+      "area": 3655,
+      "outer": 14,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r1845",
+      "color": "#c5bf85",
+      "area": 3650,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r9410",
+      "color": "#f59d85",
+      "area": 3483,
+      "outer": 18,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 21
+    },
+    {
+      "id": "r390",
+      "color": "#f8f3db",
+      "area": 3385,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5471",
+      "color": "#d6dbbb",
+      "area": 3182,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r16816",
+      "color": "#000000",
+      "area": 3170,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r12117",
+      "color": "#ef492f",
+      "area": 2843,
+      "outer": 8,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1758",
+      "color": "#03afe5",
+      "area": 2838,
+      "outer": 16,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 56
+    },
+    {
+      "id": "r3617",
+      "color": "#d9d7a5",
+      "area": 2572,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r218",
+      "color": "#eae9c3",
+      "area": 2562,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15400",
+      "color": "#010101",
+      "area": 2499,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r105",
+      "color": "#eceac9",
+      "area": 2484,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 4
+    },
+    {
+      "id": "r15396",
+      "color": "#010101",
+      "area": 2401,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4926",
+      "color": "#d9d7b1",
+      "area": 2400,
+      "outer": 10,
+      "holes": 1,
+      "midlines": 3,
+      "fillpoints": 4
+    },
+    {
+      "id": "r15958",
+      "color": "#030303",
+      "area": 2347,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 4
+    },
+    {
+      "id": "r14996",
+      "color": "#9a9a9a",
+      "area": 2328,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15632",
+      "color": "#aeaeae",
+      "area": 2317,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 2
+    },
+    {
+      "id": "r12161",
+      "color": "#fdf455",
+      "area": 2277,
+      "outer": 17,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 49
+    },
+    {
+      "id": "r15772",
+      "color": "#fdf555",
+      "area": 2173,
+      "outer": 18,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 46
+    },
+    {
+      "id": "r749",
+      "color": "#b3b65c",
+      "area": 2160,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r378",
+      "color": "#a7ad4d",
+      "area": 2056,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r10915",
+      "color": "#dad8a2",
+      "area": 1998,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15825",
+      "color": "#020202",
+      "area": 1896,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r4",
+      "color": "#f6f5dd",
+      "area": 1834,
+      "outer": 8,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 4
+    },
+    {
+      "id": "r14574",
+      "color": "#999d9e",
+      "area": 1830,
+      "outer": 10,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 10
+    },
+    {
+      "id": "r10800",
+      "color": "#dededc",
+      "area": 1818,
+      "outer": 10,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 4
+    },
+    {
+      "id": "r9939",
+      "color": "#b9b9b7",
+      "area": 1814,
+      "outer": 9,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r16321",
+      "color": "#9c9c9c",
+      "area": 1769,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 2
+    },
+    {
+      "id": "r16176",
+      "color": "#dfdfdf",
+      "area": 1753,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 2
+    },
+    {
+      "id": "r15478",
+      "color": "#909090",
+      "area": 1744,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r2171",
+      "color": "#010103",
+      "area": 1701,
+      "outer": 15,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 7
+    },
+    {
+      "id": "r15936",
+      "color": "#606060",
+      "area": 1683,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15908",
+      "color": "#dfdfdf",
+      "area": 1678,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r1598",
+      "color": "#020405",
+      "area": 1675,
+      "outer": 17,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 77
+    },
+    {
+      "id": "r12196",
+      "color": "#e0e1bf",
+      "area": 1575,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r16230",
+      "color": "#020202",
+      "area": 1558,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6671",
+      "color": "#a5a5a5",
+      "area": 1548,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r16812",
+      "color": "#000000",
+      "area": 1529,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r14577",
+      "color": "#1d1d1e",
+      "area": 1524,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6364",
+      "color": "#fefefe",
+      "area": 1503,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2153",
+      "color": "#010103",
+      "area": 1498,
+      "outer": 14,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 6
+    },
+    {
+      "id": "r9559",
+      "color": "#565656",
+      "area": 1495,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 4,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15412",
+      "color": "#c4c4c4",
+      "area": 1493,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 7
+    },
+    {
+      "id": "r11701",
+      "color": "#808080",
+      "area": 1432,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3362",
+      "color": "#989a3a",
+      "area": 1345,
+      "outer": 6,
+      "holes": 1,
+      "midlines": 3,
+      "fillpoints": 2
+    },
+    {
+      "id": "r1209",
+      "color": "#c7c481",
+      "area": 1338,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r11735",
+      "color": "#ebe9bd",
+      "area": 1326,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r11403",
+      "color": "#dadaba",
+      "area": 1282,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r14337",
+      "color": "#696969",
+      "area": 1261,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r16787",
+      "color": "#060606",
+      "area": 1255,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r14048",
+      "color": "#3a3a3a",
+      "area": 1240,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r14122",
+      "color": "#0f0f11",
+      "area": 1240,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r10999",
+      "color": "#fefefe",
+      "area": 1192,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 5
+    },
+    {
+      "id": "r15757",
+      "color": "#020202",
+      "area": 1178,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r15560",
+      "color": "#b2b2b2",
+      "area": 1150,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 3,
+      "fillpoints": 4
+    },
+    {
+      "id": "r4096",
+      "color": "#dcdaae",
+      "area": 1146,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r12052",
+      "color": "#c9c88a",
+      "area": 1121,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r15507",
+      "color": "#6e6e6e",
+      "area": 1110,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15359",
+      "color": "#e4e4e5",
+      "area": 1067,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15544",
+      "color": "#b0b0b0",
+      "area": 1055,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15285",
+      "color": "#9e9ea0",
+      "area": 1049,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r15428",
+      "color": "#d6d6d6",
+      "area": 1035,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r14949",
+      "color": "#5f5f61",
+      "area": 1034,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r12029",
+      "color": "#a5a5a5",
+      "area": 1024,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r14668",
+      "color": "#646464",
+      "area": 1019,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r284",
+      "color": "#010101",
+      "area": 993,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5382",
+      "color": "#b6b85f",
+      "area": 925,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5215",
+      "color": "#f2efde",
+      "area": 920,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r16186",
+      "color": "#5e5e5f",
+      "area": 909,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 2
+    },
+    {
+      "id": "r16781",
+      "color": "#0c0c0c",
+      "area": 904,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r11981",
+      "color": "#9ca12b",
+      "area": 893,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r1",
+      "color": "#f8f4dd",
+      "area": 890,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 4
+    },
+    {
+      "id": "r13863",
+      "color": "#fdfdfd",
+      "area": 884,
+      "outer": 8,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 8
+    },
+    {
+      "id": "r1438",
+      "color": "#efedc5",
+      "area": 882,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r11671",
+      "color": "#d7d48d",
+      "area": 870,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r204",
+      "color": "#dad8a4",
+      "area": 845,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r15752",
+      "color": "#020202",
+      "area": 838,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r15863",
+      "color": "#575757",
+      "area": 831,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r15901",
+      "color": "#e5e5e5",
+      "area": 813,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15805",
+      "color": "#afafaf",
+      "area": 805,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r10777",
+      "color": "#dfdcae",
+      "area": 802,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r10881",
+      "color": "#a8ad47",
+      "area": 795,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r277",
+      "color": "#010101",
+      "area": 795,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15712",
+      "color": "#a5a5a7",
+      "area": 780,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15254",
+      "color": "#868686",
+      "area": 780,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15589",
+      "color": "#bbbbbb",
+      "area": 775,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 3
+    },
+    {
+      "id": "r49",
+      "color": "#a7a598",
+      "area": 769,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r159",
+      "color": "#efebc9",
+      "area": 755,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 2
+    },
+    {
+      "id": "r15519",
+      "color": "#aaaaaa",
+      "area": 754,
+      "outer": 6,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 5
+    },
+    {
+      "id": "r15559",
+      "color": "#e1e1e1",
+      "area": 754,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r13962",
+      "color": "#010101",
+      "area": 741,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4958",
+      "color": "#dfe1aa",
+      "area": 740,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 1
+    },
+    {
+      "id": "r636",
+      "color": "#dadfac",
+      "area": 720,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15486",
+      "color": "#999c9e",
+      "area": 713,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 4
+    },
+    {
+      "id": "r15323",
+      "color": "#545456",
+      "area": 708,
+      "outer": 5,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r15312",
+      "color": "#979798",
+      "area": 706,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r16441",
+      "color": "#3c3c3c",
+      "area": 11,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3646",
+      "color": "#5f6129",
+      "area": 7,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r12840",
+      "color": "#333333",
+      "area": 6,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6604",
+      "color": "#8c8c8c",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions"
+}

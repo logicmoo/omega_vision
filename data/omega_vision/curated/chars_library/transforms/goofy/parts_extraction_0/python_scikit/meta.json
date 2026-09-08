@@ -1,0 +1,217 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_scikit",
+  "options": {},
+  "createdAt": "2026-09-07T13:15:28.254535Z",
+  "elapsedMs": 648991,
+  "width": 687,
+  "height": 960,
+  "regionCount": 22,
+  "adjacencyCount": 21,
+  "blobCount": 8878,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 527,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#f9f9f9",
+      "area": 489617,
+      "outer": 176,
+      "holes": 272,
+      "midlines": 619,
+      "fillpoints": 140
+    },
+    {
+      "id": "r3438",
+      "color": "#496d71",
+      "area": 104228,
+      "outer": 155,
+      "holes": 91,
+      "midlines": 219,
+      "fillpoints": 156
+    },
+    {
+      "id": "r3738",
+      "color": "#df6f17",
+      "area": 18195,
+      "outer": 36,
+      "holes": 8,
+      "midlines": 14,
+      "fillpoints": 56
+    },
+    {
+      "id": "r7611",
+      "color": "#844f13",
+      "area": 12516,
+      "outer": 34,
+      "holes": 4,
+      "midlines": 16,
+      "fillpoints": 23
+    },
+    {
+      "id": "r3808",
+      "color": "#d76317",
+      "area": 11775,
+      "outer": 31,
+      "holes": 7,
+      "midlines": 33,
+      "fillpoints": 47
+    },
+    {
+      "id": "r12",
+      "color": "#c6cc23",
+      "area": 2446,
+      "outer": 17,
+      "holes": 5,
+      "midlines": 13,
+      "fillpoints": 2
+    },
+    {
+      "id": "r1808",
+      "color": "#13304c",
+      "area": 1522,
+      "outer": 19,
+      "holes": 12,
+      "midlines": 24,
+      "fillpoints": 35
+    },
+    {
+      "id": "r3806",
+      "color": "#03304a",
+      "area": 1377,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 58
+    },
+    {
+      "id": "r255",
+      "color": "#90af1e",
+      "area": 1327,
+      "outer": 18,
+      "holes": 0,
+      "midlines": 2,
+      "fillpoints": 6
+    },
+    {
+      "id": "r2067",
+      "color": "#2b4f66",
+      "area": 998,
+      "outer": 15,
+      "holes": 1,
+      "midlines": 3,
+      "fillpoints": 10
+    },
+    {
+      "id": "r306",
+      "color": "#dbd71d",
+      "area": 894,
+      "outer": 14,
+      "holes": 2,
+      "midlines": 6,
+      "fillpoints": 13
+    },
+    {
+      "id": "r7382",
+      "color": "#fdfdfc",
+      "area": 719,
+      "outer": 7,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 8
+    },
+    {
+      "id": "r647",
+      "color": "#9bb51a",
+      "area": 542,
+      "outer": 9,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 6
+    },
+    {
+      "id": "r8569",
+      "color": "#271d1d",
+      "area": 16,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1259",
+      "color": "#6c7289",
+      "area": 15,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2970",
+      "color": "#96bac4",
+      "area": 10,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5383",
+      "color": "#b6231f",
+      "area": 5,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2850",
+      "color": "#361112",
+      "area": 5,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r2801",
+      "color": "#a0c1cd",
+      "area": 5,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r8579",
+      "color": "#b5b5b5",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r6308",
+      "color": "#d6e3e9",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r8568",
+      "color": "#d5d5d5",
+      "area": 4,
+      "outer": 4,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions"
+}

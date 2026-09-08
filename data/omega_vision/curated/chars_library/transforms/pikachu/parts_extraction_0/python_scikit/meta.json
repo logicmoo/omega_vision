@@ -1,0 +1,91 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_scikit",
+  "options": {},
+  "createdAt": "2026-09-07T13:29:23.091209Z",
+  "elapsedMs": 1191161,
+  "width": 960,
+  "height": 862,
+  "regionCount": 8,
+  "adjacencyCount": 7,
+  "blobCount": 6175,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 662,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#4b3d0a",
+      "area": 806268,
+      "outer": 23,
+      "holes": 207,
+      "midlines": 963,
+      "fillpoints": 151
+    },
+    {
+      "id": "r2155",
+      "color": "#a4303a",
+      "area": 7115,
+      "outer": 21,
+      "holes": 19,
+      "midlines": 63,
+      "fillpoints": 17
+    },
+    {
+      "id": "r1789",
+      "color": "#f52d13",
+      "area": 2805,
+      "outer": 16,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 3
+    },
+    {
+      "id": "r1019",
+      "color": "#010101",
+      "area": 1597,
+      "outer": 15,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 15
+    },
+    {
+      "id": "r1575",
+      "color": "#010101",
+      "area": 1329,
+      "outer": 16,
+      "holes": 1,
+      "midlines": 1,
+      "fillpoints": 14
+    },
+    {
+      "id": "r2724",
+      "color": "#f52d14",
+      "area": 1226,
+      "outer": 11,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 8
+    },
+    {
+      "id": "r2552",
+      "color": "#6d141e",
+      "area": 15,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r5414",
+      "color": "#8b6328",
+      "area": 5,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions"
+}

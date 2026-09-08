@@ -1,0 +1,155 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/arc_recordings/data-recordings-ls20-20260718-154544/frame_000008.png",
+  "provenance": "data/arc_recordings/data-recordings-ls20-20260718-154544/frame_000008.provenance.json",
+  "createdAt": "2026-09-08T12:53:24.139060Z",
+  "operation": "import_arc_playback_frame",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/recordings/ls20/20260718-154544/7/image.png",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/recordings/ls20/20260718-154544/7/image.png",
+    "provenance": "data/recordings/ls20/20260718-154544/7/image.provenance.json"
+  },
+  "source": {
+    "arcRecording": "data/recordings/ls20/20260718-154544",
+    "arcFrame": "7/image.png",
+    "frameIndex": 8,
+    "moveCount": 8,
+    "moveList": [
+      {
+        "index": 0,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/0",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:45.855615Z"
+      },
+      {
+        "index": 1,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/1",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:45.954929Z"
+      },
+      {
+        "index": 2,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/2",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.048554Z"
+      },
+      {
+        "index": 3,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/3",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.146922Z"
+      },
+      {
+        "index": 4,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/4",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.247364Z"
+      },
+      {
+        "index": 5,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/5",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.366583Z"
+      },
+      {
+        "index": 6,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/6",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.481753Z"
+      },
+      {
+        "index": 7,
+        "action": "ACTION4",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/7",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.605695Z"
+      }
+    ],
+    "incomingAction": "ACTION4",
+    "actionData": {},
+    "actionPath": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
+    "gameState": "NOT_FINISHED",
+    "level": "1",
+    "observation": {
+      "available_actions": [
+        "ACTION1",
+        "ACTION2",
+        "ACTION3",
+        "ACTION4"
+      ],
+      "levels_completed": 0,
+      "win_levels": 7,
+      "log_step": 8
+    }
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recordings/ls20/20260718-154544/7/image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-08T12:53:23.916902Z"
+    },
+    {
+      "image": "data/arc_recordings/data-recordings-ls20-20260718-154544/frame_000008.png",
+      "operation": "import_arc_playback_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-08T12:53:24.139060Z"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/curated/chars_library/bart_simpson.jpg",
+  "provenance": "data/curated/chars_library/bart_simpson.provenance.json",
+  "createdAt": "2026-09-07T14:00:38.902670Z",
+  "operation": "legacy_source",
+  "dimensions": {
+    "width": 200,
+    "height": 298
+  },
+  "originalDimensions": {
+    "width": 200,
+    "height": 298
+  },
+  "root": {
+    "firstSeenImage": "data/curated/chars_library/bart_simpson.jpg",
+    "dimensions": {
+      "width": 200,
+      "height": 298
+    }
+  },
+  "parent": null,
+  "source": {
+    "path": "data/curated/chars_library/bart_simpson.jpg"
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/curated/chars_library/bart_simpson.jpg",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 200,
+        "height": 298
+      },
+      "transform": {},
+      "createdAt": "2026-09-07T14:00:38.902670Z"
+    }
+  ]
+}

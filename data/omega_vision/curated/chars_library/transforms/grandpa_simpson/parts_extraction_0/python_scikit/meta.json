@@ -1,0 +1,109 @@
+{
+  "kind": "sequence_set_transformation",
+  "transformation": "parts_extraction_0",
+  "doer": "python_scikit",
+  "options": {},
+  "createdAt": "2026-09-07T13:15:18.088434Z",
+  "elapsedMs": 638823,
+  "width": 960,
+  "height": 768,
+  "regionCount": 10,
+  "adjacencyCount": 8,
+  "blobCount": 4768,
+  "tolerance": 24,
+  "filterAction": "skipped (flat art/grid)",
+  "minArea": 589,
+  "parts": [
+    {
+      "id": "r1",
+      "color": "#f8f4f2",
+      "area": 717313,
+      "outer": 18,
+      "holes": 363,
+      "midlines": 981,
+      "fillpoints": 153
+    },
+    {
+      "id": "r1505",
+      "color": "#fee0d5",
+      "area": 7191,
+      "outer": 17,
+      "holes": 1,
+      "midlines": 2,
+      "fillpoints": 56
+    },
+    {
+      "id": "r3399",
+      "color": "#fd8d03",
+      "area": 1612,
+      "outer": 17,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 17
+    },
+    {
+      "id": "r1967",
+      "color": "#5e413c",
+      "area": 1310,
+      "outer": 13,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r1975",
+      "color": "#5d403c",
+      "area": 1306,
+      "outer": 16,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r3906",
+      "color": "#e6cbb1",
+      "area": 1052,
+      "outer": 23,
+      "holes": 0,
+      "midlines": 5,
+      "fillpoints": 7
+    },
+    {
+      "id": "r3361",
+      "color": "#fb0235",
+      "area": 720,
+      "outer": 14,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 11
+    },
+    {
+      "id": "r4679",
+      "color": "#cbbebe",
+      "area": 6,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4612",
+      "color": "#867c7f",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    },
+    {
+      "id": "r4754",
+      "color": "#876456",
+      "area": 4,
+      "outer": 3,
+      "holes": 0,
+      "midlines": 1,
+      "fillpoints": 1
+    }
+  ],
+  "module": "omega_vision.perception.pixels_to_regions"
+}

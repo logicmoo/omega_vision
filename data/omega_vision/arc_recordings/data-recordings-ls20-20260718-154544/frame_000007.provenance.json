@@ -1,0 +1,145 @@
+{
+  "kind": "video_import_image_provenance",
+  "version": 1,
+  "image": "data/arc_recordings/data-recordings-ls20-20260718-154544/frame_000007.png",
+  "provenance": "data/arc_recordings/data-recordings-ls20-20260718-154544/frame_000007.provenance.json",
+  "createdAt": "2026-09-08T12:53:23.060169Z",
+  "operation": "import_arc_playback_frame",
+  "dimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "originalDimensions": {
+    "width": 640,
+    "height": 640
+  },
+  "root": {
+    "firstSeenImage": "data/recordings/ls20/20260718-154544/6/image.png",
+    "dimensions": {
+      "width": 640,
+      "height": 640
+    }
+  },
+  "parent": {
+    "image": "data/recordings/ls20/20260718-154544/6/image.png",
+    "provenance": "data/recordings/ls20/20260718-154544/6/image.provenance.json"
+  },
+  "source": {
+    "arcRecording": "data/recordings/ls20/20260718-154544",
+    "arcFrame": "6/image.png",
+    "frameIndex": 7,
+    "moveCount": 7,
+    "moveList": [
+      {
+        "index": 0,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/0",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:45.855615Z"
+      },
+      {
+        "index": 1,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/1",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:45.954929Z"
+      },
+      {
+        "index": 2,
+        "action": "ACTION3",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/2",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.048554Z"
+      },
+      {
+        "index": 3,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/3",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.146922Z"
+      },
+      {
+        "index": 4,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/4",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.247364Z"
+      },
+      {
+        "index": 5,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/5",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.366583Z"
+      },
+      {
+        "index": 6,
+        "action": "ACTION1",
+        "data": {},
+        "directory": "data/recordings/ls20/20260718-154544/6",
+        "state": "NOT_FINISHED",
+        "level": "1",
+        "recorded_at": "2026-09-07T09:49:46.481753Z"
+      }
+    ],
+    "incomingAction": "ACTION1",
+    "actionData": {},
+    "actionPath": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6"
+    ],
+    "gameState": "NOT_FINISHED",
+    "level": "1",
+    "observation": {
+      "available_actions": [
+        "ACTION1",
+        "ACTION2",
+        "ACTION3",
+        "ACTION4"
+      ],
+      "levels_completed": 0,
+      "win_levels": 7,
+      "log_step": 7
+    }
+  },
+  "transform": {},
+  "lineage": [
+    {
+      "image": "data/recordings/ls20/20260718-154544/6/image.png",
+      "operation": "legacy_source",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-08T12:53:22.640926Z"
+    },
+    {
+      "image": "data/arc_recordings/data-recordings-ls20-20260718-154544/frame_000007.png",
+      "operation": "import_arc_playback_frame",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "transform": {},
+      "createdAt": "2026-09-08T12:53:23.060169Z"
+    }
+  ]
+}

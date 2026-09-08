@@ -3,7 +3,7 @@
   "version": 1,
   "image": "data/arc_recordings/data-recordings-ls20-20260718-154544_attempt8/frame_000070.png",
   "provenance": "data/arc_recordings/data-recordings-ls20-20260718-154544_attempt8/frame_000070.provenance.json",
-  "createdAt": "2026-09-07T11:14:58.299926Z",
+  "createdAt": "2026-09-08T16:35:53.763927Z",
   "operation": "import_arc_playback_frame",
   "dimensions": {
     "width": 640,
@@ -769,7 +769,7 @@
         "height": 640
       },
       "transform": {},
-      "createdAt": "2026-09-07T11:14:58.299926Z"
+      "createdAt": "2026-09-08T16:35:53.763927Z"
     }
   ]
 }
