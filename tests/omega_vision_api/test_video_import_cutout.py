@@ -35,6 +35,58 @@ def test_concurrent_scene_and_extraction_metadata_updates_are_merged(tmp_path: P
     assert saved["lastExtract"] == {"count": 4}
 
 
+def test_visual_sequence_catalog_exposes_stable_selection_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root = tmp_path / "data"
+    recording = data_root / "recordings" / "ls20" / "20260718-154544"
+    frame = recording / "0"
+    frame.mkdir(parents=True)
+    Image.new("RGB", (3, 3), "yellow").save(frame / "image.png")
+    (recording / "recording.json").write_text(
+        json.dumps({"game_id": "ls20-9607627b", "level": 1}),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(video_import_api, "_data_homes", lambda _root: [data_root])
+    monkeypatch.setattr(
+        video_import_api,
+        "_resolve_set_dir",
+        lambda _root, rel: data_root / rel.removeprefix("data/"),
+    )
+
+    sequences = video_import_api._list_image_sets(tmp_path)
+    selected = next(
+        item for item in sequences
+        if item["id"] == "recordings/ls20/20260718-154544"
+    )
+
+    assert selected["visualSequenceId"] == selected["id"]
+    assert selected["providerRef"] == "data/recordings/ls20/20260718-154544"
+    assert selected["game"] == "ls20"
+    assert selected["recording"] == "20260718-154544"
+    assert selected["gameId"] == "ls20-9607627b"
+    assert selected["ordered"] is True
+    assert selected["imageCount"] == 1
+
+
+def test_visual_sequence_route_and_image_set_adapter_share_one_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    catalog = [{"id": "curated/one", "visualSequenceId": "curated/one"}]
+    monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
+    monkeypatch.setattr(video_import_api, "_list_image_sets", lambda _root: catalog)
+
+    unified = video_import_api.visual_sequences("demo")
+    legacy = video_import_api.image_sets("demo")
+
+    assert unified == {"visualSequences": catalog, "sets": catalog}
+    assert legacy == {"sets": catalog}
+    assert unified["visualSequences"] is unified["sets"]
+
+
 @pytest.mark.parametrize(
     "pipeline",
     [

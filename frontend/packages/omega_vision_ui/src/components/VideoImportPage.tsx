@@ -428,11 +428,13 @@ const visualSequenceCatalogRequests = new Map<string, Promise<VisualSequenceCata
 const loadVisualSequenceCatalog = (workspaceId: string): Promise<VisualSequenceCatalogEntry[]> => {
   const current = visualSequenceCatalogRequests.get(workspaceId);
   if (current) return current;
-  const request = fetch(`${API}/image-sets?workspaceId=${encodeURIComponent(workspaceId)}`, { cache: "no-store" })
+  const request = fetch(`${API}/visual-sequences?workspaceId=${encodeURIComponent(workspaceId)}`, { cache: "no-store" })
     .then(async (response) => {
       if (!response.ok) throw new Error(`Visual Sequence catalog request failed: HTTP ${response.status}`);
       const data = await response.json();
-      return Array.isArray(data?.sets) ? data.sets : [];
+      return Array.isArray(data?.visualSequences)
+        ? data.visualSequences
+        : (Array.isArray(data?.sets) ? data.sets : []);
     })
     .catch((error) => {
       visualSequenceCatalogRequests.delete(workspaceId);
@@ -3320,12 +3322,10 @@ export function VideoImportPage({
   const [recognizeOnly, setRecognizeOnly] = useState<boolean>(() => {
     try { return window.localStorage.getItem("videoImport.recognizeOnly") === "1"; } catch { return false; }
   });
-  // Shared, disk-backed IMAGE SET selector (used by both the Recognition and
-  // Objects Extractions views). `selectedImageSet` is always a real reduce-style
-  // set on disk (default the canonical Recognition 20x10 set); the reduce
-  // manifest is fetched per-set, so switching sets/pages reuses on-disk work and
-  // never has to redo it. The Objects page additionally offers a "live pipeline"
-  // choice (objectsShowLive) that shows its own in-progress object-graphs.
+  // Shared, disk-backed Visual Sequence selector (used by both Recognition and
+  // Objects Extractions). `selectedImageSet` is the legacy API adapter field for
+  // the selected Visual Sequence id; persisted paths and `set=` request bodies
+  // remain compatible while the active UI uses the unified domain model.
   const OBJECTS_LIVE_SET = "objects_live";
   const DEFAULT_IMAGE_SET = "recordings/ls20";
   const [imageSetList, setImageSetList] = useState<VisualSequenceCatalogEntry[]>([]);
@@ -8319,7 +8319,7 @@ export function VideoImportPage({
             <span className="video-import-topbar-sep">·</span>
             <span className="video-import-topbar-title">Video Import 2</span>
           </div>
-          <span className="video-import-topbar-desc">Rebuilt from its own build prompt: import → timeline → the preview stack for building filter chains → probes and entity strips → materialize. Cobbling filters together materializes new Sequence Sets automatically; Sequence Sets (from Movies or Games) later populate Image Sets. Every gallery collapses, every step interrupts.</span>
+          <span className="video-import-topbar-desc">Rebuilt from its own build prompt: import → timeline → the preview stack for building filter chains → probes and entity strips → materialize. A Visual Sequence may contain one image or many from standalone imports, collections, movies, or games. Every gallery collapses, every step interrupts.</span>
         </div>
         <nav className="video-import-human-nav" aria-label="Video Import steps">
           {VIDEO_IMPORT_SUBVIEWS.map((entry) => (

@@ -149,6 +149,9 @@ def test_visual_sequence_selection_round_trips_through_recording_url_state() -> 
     assert "legacy full-path recording links resolve then canonicalize" in executable_test
     assert "catalog resolution rejects unknown, ambiguous, and unsafe locations" in executable_test
     assert "visualSequenceLocationFromUrl(window.location.href)" in page
+    assert "`${API}/visual-sequences?workspaceId=" in page
+    assert "Array.isArray(data?.visualSequences)" in page
+    assert "A Visual Sequence may contain one image or many" in page
     assert 'type RecordingHistoryMode = "none" | "push" | "replace"' in page
     assert 'selectRecording(recording, "push")' in page
     assert 'selectRecording(currentRecording, "replace")' in page

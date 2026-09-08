@@ -2453,10 +2453,13 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
         seen.add(set_id)
         entry: dict[str, Any] = {
             "id": set_id,
+            "visualSequenceId": set_id,
             "label": label or _IMAGE_SET_LABELS.get(set_id, set_id.replace("_", " ")),
             "dir": rel_dir,
+            "providerRef": rel_dir,
             "imageCount": image_count,
             "reducedCount": reduced_count,
+            "ordered": (d / "recording.json").is_file(),
             "canonical": set_id == _CANONICAL_IMAGE_SET,
             "group": group,
             "groupKey": group_key,
@@ -2503,6 +2506,8 @@ def _list_image_sets(root: Path) -> list[dict[str, Any]]:
                         extras={
                             "kind": "arc-recording",
                             "gameId": str(manifest.get("game_id") or child.name),
+                            "game": child.name,
+                            "recording": recording.name,
                             "level": manifest.get("level"),
                         },
                     )
@@ -2734,6 +2739,18 @@ def image_sets(workspaceId: str) -> dict[str, Any]:
     """
     root = _workspace_root(workspaceId)
     return {"sets": _list_image_sets(root)}
+
+
+@router.get("/visual-sequences")
+def visual_sequences(workspaceId: str) -> dict[str, Any]:
+    """List the unified Visual Sequence catalog.
+
+    ``image-sets`` remains a compatibility route for older clients; both read
+    the same provider-aware filesystem catalog.
+    """
+    root = _workspace_root(workspaceId)
+    sequences = _list_image_sets(root)
+    return {"visualSequences": sequences, "sets": sequences}
 
 
 @router.get("/reduce-manifest")

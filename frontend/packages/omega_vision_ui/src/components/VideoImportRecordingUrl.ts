@@ -4,9 +4,14 @@ const SAFE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export interface VisualSequenceCatalogEntry {
   id: string;
+  visualSequenceId?: string;
   dir?: string;
+  providerRef?: string;
   kind?: string;
   gameId?: string;
+  game?: string;
+  recording?: string;
+  ordered?: boolean;
   label?: string;
   group?: string;
   groupKey?: string;
@@ -87,6 +92,12 @@ export function visualSequenceLocationForEntry(
   const id = String(entry.id || "").trim();
   if (!id || !isSafeNamespacedId(id)) return null;
   if (entry.kind !== "arc-recording") return { recording: id };
+  const explicitGame = String(entry.game || "").trim();
+  const explicitRecording = String(entry.recording || "").trim();
+  if (explicitGame || explicitRecording) {
+    if (!isSafeSegment(explicitGame) || !isSafeSegment(explicitRecording)) return null;
+    return { game: explicitGame, recording: explicitRecording };
+  }
   const parts = id.split("/");
   const recording = parts.pop() || "";
   const game = parts.pop() || "";
@@ -97,7 +108,7 @@ export function visualSequenceLocationForEntry(
 }
 
 export function visualSequenceProviderRef(entry: VisualSequenceCatalogEntry): string {
-  const dir = String(entry.dir || "").trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  const dir = String(entry.providerRef || entry.dir || "").trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
   return dir || `data/${entry.id}`;
 }
 
