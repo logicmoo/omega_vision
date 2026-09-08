@@ -19,6 +19,8 @@ VIDEO_IMPORT_RECORDING_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUr
 VIDEO_IMPORT_RECORDING_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUrl.test.mjs")
 VIDEO_IMPORT_NAVIGATION_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigationUrl.ts")
 VIDEO_IMPORT_NAVIGATION_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportNavigationUrl.test.mjs")
+VISUAL_SEQUENCE_LOAD_GATE = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.ts")
+VISUAL_SEQUENCE_LOAD_GATE_TEST = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.test.mjs")
 VIDEO_IMPORT_STYLES = (
     ROOT
     / "frontend"
@@ -185,6 +187,28 @@ def test_recognition_navigation_round_trips_without_replaying_actions() -> None:
     assert "saved back and forward URLs independently restore their destinations" in executable_test
     for mutating_action in ("Fresh todos", "Add/Merge todos", "fetch(", "method:"):
         assert mutating_action not in navigation
+
+
+def test_large_visual_sequences_require_explicit_non_mutating_confirmation() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    gate = VISUAL_SEQUENCE_LOAD_GATE.read_text(encoding="utf-8")
+    executable_test = VISUAL_SEQUENCE_LOAD_GATE_TEST.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert "VISUAL_SEQUENCE_CONFIRMATION_THRESHOLD = 800" in gate
+    assert "Number(entry.imageCount || 0) > VISUAL_SEQUENCE_CONFIRMATION_THRESHOLD" in gate
+    assert "the confirmation threshold allows 800 and gates 801" in executable_test
+    assert "large sequence confirmation reports the exact formatted count" in executable_test
+    assert "const [pendingVisualSequence, setPendingVisualSequence]" in page
+    assert "requiresVisualSequenceConfirmation(entry, isVisualSequenceConfirmed(entry))" in page
+    assert "setPendingVisualSequence" in page
+    assert "commitVisualSequence(pendingVisualSequence.entry, pendingVisualSequence.historyMode)" in page
+    assert 'role="dialog"' in page
+    assert 'aria-modal="true"' in page
+    assert '<button type="button" autoFocus onClick={cancelVisualSequence}>Cancel</button>' in page
+    assert "It does not run reductions" in page
+    assert ".video-import-confirm-backdrop" in styles
+    assert ".video-import-confirm-dialog" in styles
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:

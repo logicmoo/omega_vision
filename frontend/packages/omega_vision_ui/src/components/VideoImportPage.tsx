@@ -23,6 +23,10 @@ import {
   type RecognitionNavigationTab,
   type RecognitionNavigationTransform,
 } from "./VideoImportNavigationUrl";
+import {
+  requiresVisualSequenceConfirmation,
+  visualSequenceConfirmationMessage,
+} from "./VisualSequenceLoadGate";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -2385,6 +2389,7 @@ export function VideoImportPage({
       setVisualSequenceLocation(parsed.location);
       selectedRecordingRef.current = "";
       setSelectedRecording("");
+      setPendingVisualSequence(null);
       setVisualSequenceUrlError(parsed.error);
       setRecordingSelectionError(parsed.error);
       recognitionNavigationAppliedRef.current = "";
@@ -3327,17 +3332,34 @@ export function VideoImportPage({
   // the selected Visual Sequence id; persisted paths and `set=` request bodies
   // remain compatible while the active UI uses the unified domain model.
   const OBJECTS_LIVE_SET = "objects_live";
-  const DEFAULT_IMAGE_SET = "recordings/ls20";
+  const DEFAULT_IMAGE_SET = "recognition_reduce";
   const [imageSetList, setImageSetList] = useState<VisualSequenceCatalogEntry[]>([]);
   const [imageSetsLoaded, setImageSetsLoaded] = useState(false);
   const [visualSequenceReady, setVisualSequenceReady] = useState(false);
-  const [selectedImageSet, setSelectedImageSet] = useState<string>(() => {
+  const restoredVisualSequenceIdRef = useRef((() => {
     try { return window.localStorage.getItem("videoImport.imageSet") || DEFAULT_IMAGE_SET; } catch { return DEFAULT_IMAGE_SET; }
-  });
+  })());
+  const [selectedImageSet, setSelectedImageSet] = useState("");
+  const [pendingVisualSequence, setPendingVisualSequence] = useState<{
+    entry: VisualSequenceCatalogEntry;
+    historyMode: RecordingHistoryMode;
+    previousEntry: VisualSequenceCatalogEntry | null;
+  } | null>(null);
+  const confirmedVisualSequencesRef = useRef<Set<string>>(new Set());
   const [objectsShowLive, setObjectsShowLive] = useState<boolean>(() => {
     try { return (window.localStorage.getItem("videoImport.objectsShowLive") ?? "1") !== "0"; } catch { return true; }
   });
-  const selectVisualSequence = useCallback((
+  const visualSequenceConfirmationKey = useCallback(
+    (entry: VisualSequenceCatalogEntry) =>
+      `videoImport.visualSequenceConfirmed:${workspaceId}:${entry.id}`,
+    [workspaceId],
+  );
+  const isVisualSequenceConfirmed = useCallback((entry: VisualSequenceCatalogEntry) => {
+    const key = visualSequenceConfirmationKey(entry);
+    if (confirmedVisualSequencesRef.current.has(key)) return true;
+    try { return window.sessionStorage.getItem(key) === "1"; } catch { return false; }
+  }, [visualSequenceConfirmationKey]);
+  const commitVisualSequence = useCallback((
     entry: VisualSequenceCatalogEntry,
     historyMode: RecordingHistoryMode,
   ) => {
@@ -3348,6 +3370,7 @@ export function VideoImportPage({
       setRecordingSelectionError(message);
       return;
     }
+    setPendingVisualSequence(null);
     setSelectedImageSet(entry.id);
     selectedRecordingRef.current = "";
     setSelectedRecording("");
@@ -3356,6 +3379,59 @@ export function VideoImportPage({
     setRecordingSelectionError("");
     writeVisualSequenceLocation(location, historyMode);
   }, [writeVisualSequenceLocation]);
+  const selectVisualSequence = useCallback((
+    entry: VisualSequenceCatalogEntry,
+    historyMode: RecordingHistoryMode,
+  ) => {
+    if (requiresVisualSequenceConfirmation(entry, isVisualSequenceConfirmed(entry))) {
+      const previousEntry = imageSetList.find((candidate) => candidate.id === selectedImageSet)
+        || imageSetList.find((candidate) =>
+          candidate.id === restoredVisualSequenceIdRef.current
+          && !requiresVisualSequenceConfirmation(candidate, isVisualSequenceConfirmed(candidate))
+        )
+        || imageSetList.find((candidate) =>
+          candidate.id === DEFAULT_IMAGE_SET
+          && !requiresVisualSequenceConfirmation(candidate, isVisualSequenceConfirmed(candidate))
+        )
+        || imageSetList.find((candidate) =>
+          !requiresVisualSequenceConfirmation(candidate, isVisualSequenceConfirmed(candidate))
+        )
+        || null;
+      setPendingVisualSequence((current) =>
+        current?.entry.id === entry.id && current.historyMode === historyMode
+          ? current
+          : { entry, historyMode, previousEntry }
+      );
+      return;
+    }
+    commitVisualSequence(entry, historyMode);
+  }, [
+    commitVisualSequence,
+    imageSetList,
+    isVisualSequenceConfirmed,
+    selectedImageSet,
+  ]);
+  const confirmVisualSequence = useCallback(() => {
+    if (!pendingVisualSequence) return;
+    const key = visualSequenceConfirmationKey(pendingVisualSequence.entry);
+    confirmedVisualSequencesRef.current.add(key);
+    try {
+      window.sessionStorage.setItem(key, "1");
+    } catch { /* confirmation still applies to this mounted view */ }
+    commitVisualSequence(pendingVisualSequence.entry, pendingVisualSequence.historyMode);
+  }, [commitVisualSequence, pendingVisualSequence, visualSequenceConfirmationKey]);
+  const cancelVisualSequence = useCallback(() => {
+    if (!pendingVisualSequence) return;
+    const previous = pendingVisualSequence.previousEntry;
+    setPendingVisualSequence(null);
+    if (previous) {
+      commitVisualSequence(previous, "replace");
+      return;
+    }
+    setSelectedImageSet("");
+    setVisualSequenceReady(false);
+    writeVisualSequenceLocation(null, "replace");
+  }, [commitVisualSequence, pendingVisualSequence, writeVisualSequenceLocation]);
   const [reduceOnlyGood, setReduceOnlyGood] = useState(false);
   const [reduceMetta, setReduceMetta] = useState<Record<string, string>>({});
   const [reduceParts, setReduceParts] = useState<Record<string, any[]>>({});
@@ -4747,7 +4823,7 @@ export function VideoImportPage({
     return () => { cancelled = true; };
   }, [workspaceId]);
   useEffect(() => {
-    if (!imageSetsLoaded) return;
+    if (!imageSetsLoaded || pendingVisualSequence) return;
     if (visualSequenceLocation) {
       const resolved = resolveVisualSequenceLocation(imageSetList, visualSequenceLocation);
       if (!resolved.entry) {
@@ -4756,20 +4832,19 @@ export function VideoImportPage({
         setRecordingSelectionError(resolved.error);
         return;
       }
-      if (selectedImageSet !== resolved.entry.id) setSelectedImageSet(resolved.entry.id);
-      if (selectedRecordingRef.current) {
-        selectedRecordingRef.current = "";
-        setSelectedRecording("");
+      if (selectedImageSet === resolved.entry.id && visualSequenceReady) {
+        setVisualSequenceUrlError("");
+        setRecordingSelectionError("");
+        writeVisualSequenceLocation(visualSequenceLocation, "replace");
+        return;
       }
-      setVisualSequenceReady(true);
-      setVisualSequenceUrlError("");
-      setRecordingSelectionError("");
-      writeVisualSequenceLocation(visualSequenceLocation, "replace");
+      selectVisualSequence(resolved.entry, "replace");
       return;
     }
     if (visualSequenceUrlError || imageSetList.length === 0) return;
     const restored = imageSetList.find((entry) => entry.id === selectedImageSet);
     const fallback = restored
+      || imageSetList.find((entry) => entry.id === restoredVisualSequenceIdRef.current)
       || imageSetList.find((entry) => entry.id === DEFAULT_IMAGE_SET)
       || imageSetList.find((entry) => entry.id === "recognition_reduce")
       || imageSetList[0];
@@ -4777,14 +4852,17 @@ export function VideoImportPage({
   }, [
     imageSetList,
     imageSetsLoaded,
+    pendingVisualSequence,
     selectVisualSequence,
     selectedImageSet,
     visualSequenceLocation,
+    visualSequenceReady,
     visualSequenceUrlError,
     writeVisualSequenceLocation,
   ]);
   // Persist the shared image-set selection so switching pages/reloading keeps it.
   useEffect(() => {
+    if (!selectedImageSet) return;
     try { window.localStorage.setItem("videoImport.imageSet", selectedImageSet); } catch { /* ignore */ }
   }, [selectedImageSet]);
   useEffect(() => {
@@ -8433,6 +8511,38 @@ export function VideoImportPage({
       {error && <div className="backend-error"><b>Video import error</b><span>{error}</span></div>}
       {recordingSelectionError && <div className="backend-error"><b>Visual Sequence unavailable</b><span>{recordingSelectionError}</span></div>}
       {recognitionNavigationWarning && <div className="backend-error"><b>Navigation adjusted</b><span>{recognitionNavigationWarning}</span></div>}
+      {pendingVisualSequence && (
+        <div className="video-import-confirm-backdrop" role="presentation">
+          <section
+            className="video-import-confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="visual-sequence-confirm-title"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                cancelVisualSequence();
+              }
+            }}
+          >
+            <header>
+              <span>VISUAL SEQUENCE SAFETY</span>
+              <h2 id="visual-sequence-confirm-title">Confirm large sequence</h2>
+            </header>
+            <p>{visualSequenceConfirmationMessage(pendingVisualSequence.entry)}</p>
+            <small>
+              Confirming loads and renders the full sequence. It does not run reductions
+              or alter TODOs unless you later choose those actions.
+            </small>
+            <footer>
+              <button type="button" autoFocus onClick={cancelVisualSequence}>Cancel</button>
+              <button type="button" className="is-primary" onClick={confirmVisualSequence}>
+                Load {Number(pendingVisualSequence.entry.imageCount || 0).toLocaleString("en-US")} images
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
 
       <Section {...section("intake", "INTAKE", `${videos.length} video(s) in the library`)}>
         <div className="vi2-body">
