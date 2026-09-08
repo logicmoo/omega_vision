@@ -220,10 +220,31 @@ values here.
   frontend production build. A real LS20 scratch frame produced one frame,
   17 region, 4 V, 6 W, and 8 final-G observations (36 total) with byte-stable
   replay and no oN facts.
-  The next approved stages are final-G temporal correspondence, Prolog frame
-  events, and event-backed rule induction. oN tracking, grouping learning,
-  cross-sequence promotion, and expanded Object Memory remain deliberately
-  deferred.
+  A real LS20 correction now preserves small coherent high-contrast marks
+  before the ordinary area gate discards them. In frame 000000 the raw
+  gradient component was already exact but its 200 pixels fell below the
+  640x640 ordinary floor of 327; the existing single-neighbor enclosure
+  exception did not apply because the mark borders green, yellow, and exterior
+  gray. The general recovery rule requires a configurable 16-pixel floor,
+  non-border connected pixels, high contrast against every immediate neighbor,
+  a substantially larger non-background host with strong shared-edge contact,
+  compact/thick geometry, and near-complete contact with retained structure.
+  It records exact pixel runs and uses unsimplified contours without changing
+  the raw label mask. OpenCV mirrors Prolog's set-valued exterior-background
+  rule, so no qualifying border background can act as a host.
+  Exterior-background enclosures, isolated speckles, and one-pixel lines remain
+  rejected.
+  The real `#0074d9` mark is now `region(r10, '#0074d9', 200,
+  centroid(400,194))`, appears in v1, becomes `part_group(w1,[r10])`, is
+  covered by `accepted_group(g14,[r10])`, and receives stable region
+  observation ID `region-observation-586ae2161192723ba132be64`. Scratch
+  end-to-end output created no debug image. Focused validation passed 86
+  extraction/group/acceptance/observation/API/UI regressions and the frontend
+  production build.
+  Final-G temporal correspondence, Prolog frame events, and event-backed rule
+  induction remain paused at this clean post-UID boundary for inspection. oN
+  tracking, grouping learning, cross-sequence promotion, and expanded Object
+  Memory remain deliberately deferred.
 
 - Deferred oN composition contract (2026-09-09): an oN is not a persistent
   one-to-one alias for a final gN. It is a higher-level object composed of at

@@ -2411,7 +2411,8 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                     meta = json.loads(mp.read_text(encoding="utf-8"))
                     summary = {k: meta[k] for k in (
                         "regionCount", "adjacencyCount", "blobCount", "componentCount",
-                        "contourCount", "watershedSegmentCount", "visualGroupCount", "groupCount",
+                        "contourCount", "watershedSegmentCount", "visualGroupCount",
+                        "smallFeatureCount", "groupCount",
                         "acceptedGroupCount", "exactConsensusCount",
                         "symbolicShapeAnalogyCount", "pixelShapeFallbackCount",
                         "singletonRemainderCount", "foregroundCount", "backgroundCount",
@@ -2428,7 +2429,17 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                         # Full id->color list so the UI can colour grouping-tree
                         # dots and turtle strokes per part.
                         cell["parts"] = [
-                            {"id": str(p.get("id")), "color": str(p.get("color") or ""), "area": p.get("area")}
+                            {
+                                "id": str(p.get("id")),
+                                "color": str(p.get("color") or ""),
+                                "area": p.get("area"),
+                                "smallFeature": bool(p.get("smallFeature", False)),
+                                "smallFeatureEvidence": (
+                                    p.get("smallFeatureEvidence")
+                                    if isinstance(p.get("smallFeatureEvidence"), dict)
+                                    else {}
+                                ),
+                            }
                             for p in parts if isinstance(p, dict) and p.get("id")]
                     visual_groups = meta.get("visualGroups")
                     if isinstance(visual_groups, list):
@@ -6599,6 +6610,8 @@ def _transform_parts_extraction_cv(unit: dict[str, Any], out_dir: Path, options:
         filter_mode=str(options.get("filter", "auto")),
         max_dim=int(options.get("maxDim", 960)),
         minfrac=float(options.get("minfrac", 0.0008)),
+        small_feature_floor=int(options.get("smallFeatureFloor", 16)),
+        small_feature_contrast=int(options.get("smallFeatureContrast", 48)),
         geometry_out=out_dir / "geometry.json",
     )
     prolog = facts.pop("prolog")
