@@ -90,7 +90,14 @@ def _region_geometry(alias: str, geometry: Mapping[str, Any]) -> dict[str, Any]:
         (_canonical_ring(hole) for hole in (details.get("holes") or [])),
         key=_canonical_json,
     )
-    return {"outer": outer, "holes": holes}
+    result: dict[str, Any] = {"outer": outer, "holes": holes}
+    small_feature = details.get("smallFeature")
+    if isinstance(small_feature, Mapping):
+        result["pixelRuns"] = [
+            [int(value) for value in run]
+            for run in (small_feature.get("pixelRuns") or [])
+        ]
+    return result
 
 
 def _region_payload(

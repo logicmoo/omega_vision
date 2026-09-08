@@ -12,6 +12,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
+LS20_SMALL_MARK_CROP = Path(__file__).parent / "fixtures" / "ls20_frame000000_small_mark_crop.png"
 for entry in (ROOT / "python", ROOT / "python" / "workbench_api_server"):
     if str(entry) not in sys.path:
         sys.path.insert(0, str(entry))
@@ -117,6 +118,93 @@ def test_opencv_visual_group_hypotheses_are_replayably_deterministic(
     assert first_facts == second_facts
     assert len(first_facts) == first["visualGroupCount"]
     assert not (tmp_path / "debug_image.png").exists()
+
+
+def test_opencv_preserves_real_ls20_small_contrast_mark() -> None:
+    pytest.importorskip("cv2")
+    from omega_vision.perception.pixels_to_regions_cv import extract_region_facts_cv
+
+    filtered = extract_region_facts_cv(
+        LS20_SMALL_MARK_CROP,
+        minfrac=0.03,
+        small_feature_floor=201,
+    )
+    recovered = extract_region_facts_cv(
+        LS20_SMALL_MARK_CROP,
+        minfrac=0.03,
+        small_feature_floor=16,
+    )
+
+    assert filtered["minArea"] == recovered["minArea"] == 330
+    assert all(part["color"] != "#0074d9" for part in filtered["parts"])
+    mark = next(part for part in recovered["parts"] if part["color"] == "#0074d9")
+    assert (mark["id"], mark["area"], mark["smallFeature"]) == ("r4", 200, True)
+    evidence = mark["smallFeatureEvidence"]
+    host = next(part for part in recovered["parts"] if part["id"] == f"r{evidence['host']}")
+    assert f"opencv_background_candidate({host['id']})." not in recovered["prolog"]
+    assert host["area"] >= 4 * mark["area"]
+    assert evidence["sharedEdge"] / evidence["perimeter"] >= 0.25
+    assert evidence["minContrast"] == 153
+    assert evidence["bboxFill"] == 1.0
+    assert recovered["smallFeatures"][0]["pixelRuns"] == [
+        [y, 30, 49] for y in range(70, 80)
+    ]
+    assert "region(r4, '#0074d9', 200, centroid(40,74))." in recovered["prolog"]
+    assert "opencv_small_feature(r4, host(" in recovered["prolog"]
+    assert "opencv_small_feature_pixel_run(r4, 70, 30, 49)." in recovered["prolog"]
+    assert any("r4" in group["members"] for group in recovered["visualGroups"])
+
+
+def test_opencv_small_feature_rule_rejects_speckles_and_thin_noise(
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("cv2")
+    from omega_vision.perception.pixels_to_regions_cv import extract_region_facts_cv
+
+    image = Image.new("RGB", (120, 120), (170, 170, 170))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([20, 20, 99, 99], fill=(46, 204, 64))
+    for point in ((40, 40), (45, 50), (70, 75), (105, 20), (110, 40)):
+        draw.point(point, fill=(0, 116, 217))
+    draw.line([5, 110, 24, 110], fill=(0, 116, 217), width=1)
+    path = tmp_path / "speckles.png"
+    image.save(path)
+
+    facts = extract_region_facts_cv(path, minfrac=0.02)
+
+    assert facts["minArea"] == 288
+    assert facts["smallFeatureCount"] == 0
+    assert {part["color"] for part in facts["parts"]} == {"#aaaaaa", "#2ecc40"}
+    assert "opencv_small_feature(" not in "\n".join(
+        line
+        for line in facts["prolog"].splitlines()
+        if not line.startswith((":- dynamic", ":- discontiguous"))
+    )
+
+
+def test_opencv_small_feature_rule_excludes_every_exterior_background(
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("cv2")
+    from omega_vision.perception.pixels_to_regions_cv import extract_region_facts_cv
+
+    image = Image.new("RGB", (120, 120), (170, 170, 170))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([0, 0, 59, 119], fill=(190, 20, 40))
+    draw.rectangle([55, 50, 64, 69], fill=(0, 116, 217))
+    path = tmp_path / "two_exteriors.png"
+    image.save(path)
+
+    facts = extract_region_facts_cv(path, minfrac=0.03)
+    background_facts = [
+        line
+        for line in facts["prolog"].splitlines()
+        if line.startswith("opencv_background_candidate(")
+    ]
+
+    assert len(background_facts) == 2
+    assert facts["smallFeatureCount"] == 0
+    assert all(part["color"] != "#0074d9" for part in facts["parts"])
 
 
 def test_opencv_and_scikit_agree_on_region_topology(shapes_image: Path) -> None:

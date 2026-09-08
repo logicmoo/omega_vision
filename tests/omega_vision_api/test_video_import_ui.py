@@ -97,6 +97,8 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert 'freshTodos: mode === "fresh"' in source
     assert "s.visualGroupCount != null" in source
     assert "v groups" in source
+    assert "s.smallFeatureCount != null" in source
+    assert "small marks" in source
     assert '"group_acceptance_0"' in source
     assert '"group_acceptance_prolog"' in source
     assert '"observation_identity_0"' in source

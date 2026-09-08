@@ -194,12 +194,20 @@ def enclosures(info, neigh):
     return out
 
 
-def add_enclosed_parts(info, pairs, big: set, floor: int = 4) -> set:
+def add_enclosed_parts(
+    info,
+    pairs,
+    big: set,
+    floor: int = 4,
+    excluded_outers: set[int] | None = None,
+) -> set:
     """Enclosed fillers survive min_area: a region fully surrounded by a kept
     part is itself a part (eye dots, mouth holes), however small - it is the
     thing that fills a cutout. Iterates so nested fillers (pupil inside iris
-    inside eye-white) all make it in."""
+    inside eye-white) all make it in. Callers may exclude an elected exterior
+    background so isolated image noise does not become a semantic filler."""
     neigh = defaultdict(set)
+    excluded_outers = excluded_outers or set()
     for a, b in pairs:
         neigh[a].add(b)
         neigh[b].add(a)
@@ -207,7 +215,12 @@ def add_enclosed_parts(info, pairs, big: set, floor: int = 4) -> set:
     while added:
         added = False
         for outer, inner in enclosures(info, neigh):
-            if outer in big and inner not in big and info[inner]["area"] >= floor:
+            if (
+                outer in big
+                and outer not in excluded_outers
+                and inner not in big
+                and info[inner]["area"] >= floor
+            ):
                 big.add(inner)
                 added = True
     return big

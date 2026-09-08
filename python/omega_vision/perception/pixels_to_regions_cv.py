@@ -76,7 +76,8 @@ def _ring(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
 
 def region_polygons_cv(labels: np.ndarray, big: set,
                        boxes: dict[int, tuple[int, int, int, int]],
-                       tolerance: float = 1.5) -> dict[int, dict]:
+                       tolerance: float = 1.5,
+                       preserve_exact: set[int] | None = None) -> dict[int, dict]:
     """OUTER EDGE + INNER EDGES per part via cv2.findContours on the cropped
     mask: the largest external contour is the silhouette, every hierarchy
     child is an inner edge (hole)."""
@@ -94,7 +95,8 @@ def region_polygons_cv(labels: np.ndarray, big: set,
         hierarchy = hierarchy[0]
 
         def simplify(contour) -> list[tuple[int, int]]:
-            approx = cv2.approxPolyDP(contour, tolerance, True)
+            epsilon = 0.0 if preserve_exact and gid in preserve_exact else tolerance
+            approx = cv2.approxPolyDP(contour, epsilon, True)
             return [(int(p[0][0]) + x0, int(p[0][1]) + y0) for p in approx]
 
         externals = [i for i, h in enumerate(hierarchy) if h[3] < 0]
@@ -281,13 +283,158 @@ def region_fillpoints_cv(labels: np.ndarray, big: set,
     return fillpoints
 
 
-def _background_candidate(info: dict, big: set, width: int, height: int) -> int | None:
-    min_area = 0.06 * width * height
-    candidates = [
-        gid for gid in big
+def exterior_background_candidates(
+    info: dict[int, dict],
+    kept: set[int],
+    width: int,
+    height: int,
+) -> set[int]:
+    """Mirror group_regions.pl exterior_background/1 for OpenCV evidence."""
+    min_area = 0.10 * width * height
+    return {
+        gid
+        for gid in kept
         if info[gid].get("border") and info[gid]["area"] >= min_area
-    ]
-    return max(candidates, key=lambda gid: info[gid]["area"], default=None)
+    }
+
+
+def _hex_rgb(value: str) -> np.ndarray:
+    value = value.lstrip("#")
+    return np.array(
+        [int(value[index:index + 2], 16) for index in (0, 2, 4)],
+        dtype=np.int16,
+    )
+
+
+def _pixel_runs(labels: np.ndarray, gid: int) -> list[list[int]]:
+    runs: list[list[int]] = []
+    ys = np.flatnonzero(np.any(labels == gid, axis=1))
+    for y in ys:
+        xs = np.flatnonzero(labels[y] == gid)
+        if not xs.size:
+            continue
+        start = previous = int(xs[0])
+        for value in xs[1:]:
+            x = int(value)
+            if x != previous + 1:
+                runs.append([int(y), start, previous])
+                start = x
+            previous = x
+        runs.append([int(y), start, previous])
+    return runs
+
+
+def small_contrast_features_cv(
+    image_rgb: np.ndarray,
+    labels: np.ndarray,
+    info: dict[int, dict],
+    pairs: dict[tuple[int, int], int],
+    kept: set[int],
+    perims: dict[int, int],
+    *,
+    floor: int = 16,
+    min_contrast: int = 48,
+    min_host_area_ratio: float = 4.0,
+    min_host_contact_ratio: float = 0.25,
+    min_surround_contact_ratio: float = 0.75,
+    min_bbox_fill: float = 0.2,
+    min_thickness: float = 1.5,
+    max_color_std: float = 24.0,
+) -> dict[int, dict]:
+    """Recover coherent raw components that carry strong embedded mark evidence.
+
+    The ordinary area floor remains the noise gate. This exception is limited
+    to non-border components with a substantially larger non-background host,
+    strong shared-edge support, high contrast against every immediate neighbor,
+    compact/thick raw pixels, and nearly complete contact with kept structure.
+    No morphology changes the component; it is used only as stability evidence.
+    """
+    cv2 = _require_cv2()
+    height, width = labels.shape
+    backgrounds = exterior_background_candidates(info, kept, width, height)
+    contacts: dict[int, dict[int, int]] = {}
+    for (left, right), shared in pairs.items():
+        contacts.setdefault(left, {})[right] = int(shared)
+        contacts.setdefault(right, {})[left] = int(shared)
+
+    recovered: dict[int, dict] = {}
+    for gid in sorted(set(info) - kept):
+        details = info[gid]
+        area = int(details["area"])
+        if area < max(4, int(floor)) or details.get("border"):
+            continue
+        neighbors = contacts.get(gid, {})
+        eligible_hosts = [
+            neighbor
+            for neighbor in neighbors
+            if neighbor in kept
+            and neighbor not in backgrounds
+            and int(info[neighbor]["area"]) >= min_host_area_ratio * area
+        ]
+        if not eligible_hosts:
+            continue
+        host = max(
+            eligible_hosts,
+            key=lambda neighbor: (
+                neighbors[neighbor],
+                int(info[neighbor]["area"]),
+                -neighbor,
+            ),
+        )
+        perimeter = max(1, int(perims.get(gid, 0)))
+        host_contact = int(neighbors[host])
+        surround_contact = sum(
+            shared for neighbor, shared in neighbors.items() if neighbor in kept
+        )
+        host_ratio = host_contact / perimeter
+        surround_ratio = surround_contact / perimeter
+        if (
+            host_ratio < min_host_contact_ratio
+            or surround_ratio < min_surround_contact_ratio
+        ):
+            continue
+
+        neighbor_contrasts = [
+            int(np.abs(_hex_rgb(details["color"]) - _hex_rgb(info[neighbor]["color"])).max())
+            for neighbor in neighbors
+        ]
+        contrast = min(neighbor_contrasts, default=0)
+        if contrast < min_contrast:
+            continue
+
+        ys, xs = np.nonzero(labels == gid)
+        color_std = float(image_rgb[ys, xs].astype(np.float32).std(axis=0).max())
+        if color_std > max_color_std:
+            continue
+        box_area = int((xs.max() - xs.min() + 1) * (ys.max() - ys.min() + 1))
+        bbox_fill = area / max(1, box_area)
+        if bbox_fill < min_bbox_fill:
+            continue
+        crop = (labels[ys.min():ys.max() + 1, xs.min():xs.max() + 1] == gid).astype(np.uint8)
+        padded = np.pad(crop, 1)
+        thickness = float(cv2.distanceTransform(padded, cv2.DIST_L2, 3).max())
+        if thickness < min_thickness:
+            continue
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        opened = cv2.morphologyEx(padded, cv2.MORPH_OPEN, kernel)
+        opening_retention = int(np.count_nonzero(opened)) / area
+
+        recovered[gid] = {
+            "host": host,
+            "area": area,
+            "floor": int(floor),
+            "sharedEdge": host_contact,
+            "perimeter": perimeter,
+            "hostContactRatio": round(host_ratio, 6),
+            "surroundContactRatio": round(surround_ratio, 6),
+            "minContrast": contrast,
+            "colorStd": round(color_std, 6),
+            "bboxFill": round(bbox_fill, 6),
+            "thickness": round(thickness, 6),
+            "openingRetention": round(opening_retention, 6),
+            "pixelRuns": _pixel_runs(labels, gid),
+        }
+    return recovered
 
 
 def foreground_components_cv(
@@ -296,17 +443,17 @@ def foreground_components_cv(
     big: set,
     width: int,
     height: int,
-) -> tuple[int | None, list[dict]]:
-    """Eight-connected components after removing the largest plausible
-    border-background candidate. These remain advisory rather than duplicating
-    the richer authoritative Prolog background rules."""
+) -> tuple[set[int], list[dict]]:
+    """Eight-connected components after removing every exterior background.
+
+    The set mirrors the authoritative Prolog exterior rule; richer cutout
+    background propagation remains Prolog-owned.
+    """
     cv2 = _require_cv2()
-    background = _background_candidate(info, big, width, height)
-    foreground = set(big)
-    if background is not None:
-        foreground.discard(background)
+    backgrounds = exterior_background_candidates(info, big, width, height)
+    foreground = set(big) - backgrounds
     if not foreground:
-        return background, []
+        return backgrounds, []
     mask = np.isin(labels, list(foreground)).astype(np.uint8)
     count, component_labels, stats, centroids = cv2.connectedComponentsWithStats(
         mask,
@@ -331,7 +478,7 @@ def foreground_components_cv(
                 int(round(float(centroids[component_id][1]))),
             ),
         })
-    return background, components
+    return backgrounds, components
 
 
 def watershed_segments_cv(
@@ -406,11 +553,12 @@ def watershed_segments_cv(
 
 
 def opencv_grouping_prolog(
-    background: int | None,
+    backgrounds: set[int],
     components: list[dict],
     polygons: dict[int, dict],
     watershed: dict[int, list[dict]],
     visual_groups: list[dict],
+    small_features: dict[int, dict] | None = None,
 ) -> str:
     """Render advisory OpenCV grouping evidence as queryable Prolog facts."""
     predicates = (
@@ -424,6 +572,8 @@ def opencv_grouping_prolog(
         "opencv_shape_metrics/7",
         "opencv_watershed_count/2",
         "opencv_watershed_segment/4",
+        "opencv_small_feature/9",
+        "opencv_small_feature_pixel_run/4",
         "vision_group/4",
     )
     lines = [
@@ -435,8 +585,20 @@ def opencv_grouping_prolog(
             f":- dynamic {predicate}.",
             f":- discontiguous {predicate}.",
         ))
-    if background is not None:
+    for background in sorted(backgrounds):
         lines.append(f"opencv_background_candidate(r{background}).")
+    for gid, evidence in sorted((small_features or {}).items()):
+        lines.append(
+            f"opencv_small_feature(r{gid}, host(r{evidence['host']}), "
+            f"area({evidence['area']}), floor({evidence['floor']}), "
+            f"shared_edge({evidence['sharedEdge']}), perimeter({evidence['perimeter']}), "
+            f"min_contrast({evidence['minContrast']}), bbox_fill({evidence['bboxFill']}), "
+            f"thickness({evidence['thickness']}))."
+        )
+        for y, x0, x1 in evidence["pixelRuns"]:
+            lines.append(
+                f"opencv_small_feature_pixel_run(r{gid}, {y}, {x0}, {x1})."
+            )
     for component in components:
         component_id = f"cc{component['id']}"
         members = ",".join(f"r{gid}" for gid in component["members"])
@@ -552,6 +714,8 @@ def extract_region_facts_cv(
     filter_mode: str = "auto",
     max_dim: int = 960,
     minfrac: float = 0.0008,
+    small_feature_floor: int = 16,
+    small_feature_contrast: int = 48,
     debug_image: str | Path | None = None,
     geometry_out: str | Path | None = None,
 ) -> dict:
@@ -574,16 +738,39 @@ def extract_region_facts_cv(
     min_area = max(12, int(minfrac * w * h))
     big = {gid for gid, i in info.items() if i["area"] >= min_area}
     pairs = adjacency(labels)
-    big = add_enclosed_parts(info, pairs, big)
+    exteriors = exterior_background_candidates(info, big, w, h)
+    big = add_enclosed_parts(
+        info,
+        pairs,
+        big,
+        excluded_outers=exteriors,
+    )
     perims = perimeters(labels)
+    small_features = small_contrast_features_cv(
+        image_rgb,
+        labels,
+        info,
+        pairs,
+        big,
+        perims,
+        floor=small_feature_floor,
+        min_contrast=small_feature_contrast,
+    )
+    big.update(small_features)
     boxes = _region_boxes(labels, big)
-    polygons = region_polygons_cv(labels, big, boxes)
+    polygons = region_polygons_cv(
+        labels,
+        big,
+        boxes,
+        preserve_exact=set(small_features),
+    )
+    for gid, evidence in small_features.items():
+        if gid in polygons:
+            polygons[gid]["smallFeature"] = evidence
     midlines = region_midlines_cv(labels, big, boxes)
     fillpoints = region_fillpoints_cv(labels, big, boxes)
-    background, components = foreground_components_cv(labels, info, big, w, h)
-    watershed_regions = set(big)
-    if background is not None:
-        watershed_regions.discard(background)
+    backgrounds, components = foreground_components_cv(labels, info, big, w, h)
+    watershed_regions = set(big) - backgrounds
     watershed = watershed_segments_cv(image_rgb, labels, watershed_regions, boxes)
     visual_groups = visual_group_hypotheses(components, polygons, watershed)
     parts = [
@@ -597,6 +784,12 @@ def extract_region_facts_cv(
             "midlines": len(midlines.get(gid, [])),
             "fillpoints": len(fillpoints.get(gid, [])),
             "watershedSegments": len(watershed.get(gid, [])),
+            "smallFeature": gid in small_features,
+            "smallFeatureEvidence": {
+                key: value
+                for key, value in small_features.get(gid, {}).items()
+                if key != "pixelRuns"
+            },
         }
         for gid in sorted(big, key=lambda g: -info[g]["area"])
     ]
@@ -614,15 +807,17 @@ def extract_region_facts_cv(
             "components": components,
             "watershed": {str(g): p for g, p in watershed.items()},
             "visualGroups": visual_groups,
+            "smallFeatures": {str(g): value for g, value in small_features.items()},
         }, ensure_ascii=False), encoding="utf-8")
     base_prolog = to_prolog(info, pairs, big, w, h, perims, polygons, midlines, fillpoints)
     return {
         "prolog": base_prolog + opencv_grouping_prolog(
-            background,
+            backgrounds,
             components,
             polygons,
             watershed,
             visual_groups,
+            small_features,
         ),
         "width": w,
         "height": h,
@@ -633,9 +828,16 @@ def extract_region_facts_cv(
         "contourCount": sum(len(value.get("contours", [])) for value in polygons.values()),
         "watershedSegmentCount": sum(len(value) for value in watershed.values()),
         "visualGroupCount": len(visual_groups),
+        "smallFeatureCount": len(small_features),
         "tolerance": tolerance,
         "filterAction": filter_action,
         "minArea": min_area,
+        "smallFeatureFloor": small_feature_floor,
+        "smallFeatureContrast": small_feature_contrast,
         "parts": parts,
         "visualGroups": visual_groups,
+        "smallFeatures": [
+            {"id": f"r{gid}", **evidence}
+            for gid, evidence in sorted(small_features.items())
+        ],
     }
