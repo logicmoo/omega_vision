@@ -101,6 +101,7 @@ export function PrologDataInspector({
     return {
       name: definition.sourcePath,
       label: definition.label,
+      sourceUrl: definition.sourceUrl,
       text: document?.text || "",
       dialect: "prolog" as const,
       readOnly: true,

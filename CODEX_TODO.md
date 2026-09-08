@@ -108,15 +108,30 @@ values here.
   and exact clause-to-source navigation. The source pane reuses the shared
   CodeMirror-backed `ResourceSourceEditor`, including real Prolog fold ranges,
   read-only filesystem reload/download controls, horizontal source scrolling,
-  and exact-line selection after cross-source tab changes. Exact Prolog,
-  generated MeTTa, and structured JSON remain synchronized read-only views.
+  and exact-line selection after cross-source tab changes. Explorer file
+  controls use a dedicated compact 34px, non-wrapping row: generated read-only
+  sources expose only applicable Open, Reload, and Download actions, while the
+  original stacked rich-editor controls remain unchanged elsewhere. Exact
+  Prolog, generated MeTTa, and structured JSON remain synchronized read-only
+  views. Video Import now owns recording selection in the `recording` query
+  parameter without rebuilding the rest of the URL. Valid URL recordings
+  auto-import after catalog validation, page-state-selected recordings
+  canonicalize missing parameters, back/forward and reload restore the selected
+  source, and invalid IDs remain visible with an explicit error instead of
+  silently falling back.
   Live acceptance against `data/recordings/ls20/20260718-154544/2/image` indexed
   672 clauses in 30 predicates from four real files and revealed
   `background(r7).` at `group_regions_prolog/result.pl:29`. The same output
   contains only the yellow exterior-color fillers `r2` and `r7` as background;
-  differently colored red and blue cutout members remain foreground. Validation:
-  22 focused grouping/Video Import tests and 10 executable parser/folding tests
-  pass, `git diff --check` is clean, and the production frontend build passes.
+  differently colored red and blue cutout members remain foreground. Live URL
+  acceptance also restored `data/recordings/ls20/20260718-154544_attempt8`
+  across reload and browser history, preserved workspace/view/subview/gen
+  parameters through inspector Sync, rejected an unavailable recording in
+  place, and opened frame 86's real four-source explorer with its one-row
+  Open/Reload/Download toolbar. Validation: 23 focused grouping/Video Import
+  tests, 10 executable parser/folding tests, and 3 executable recording-URL
+  tests pass, `git diff --check` is clean, and the production frontend build
+  passes.
   The repository-wide run reached 1072 passes with one unrelated local-plugin
   failure: the existing plugin scanner test assumes one UI page, while the
   separately checked-out `codex_cli` plugin currently publishes two.

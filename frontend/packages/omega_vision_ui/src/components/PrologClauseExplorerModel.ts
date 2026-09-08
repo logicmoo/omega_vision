@@ -7,6 +7,7 @@ export interface SourceFile {
   name: string;
   text: string;
   label?: string;
+  sourceUrl?: string;
   dialect?: SourceDialect;
   readOnly?: boolean;
 }

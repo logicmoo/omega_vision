@@ -17,6 +17,8 @@ export type WorkspaceResourceFileControlsProps = {
   workspaceId: string;
   originWorkspaceId?: string;
   relativePath: string;
+  variant?: "default" | "compact";
+  openHref?: string;
   dirty?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
@@ -47,6 +49,8 @@ export function WorkspaceResourceFileControls({
   workspaceId,
   originWorkspaceId,
   relativePath,
+  variant = "default",
+  openHref,
   dirty = false,
   disabled = false,
   readOnly = false,
@@ -144,6 +148,40 @@ export function WorkspaceResourceFileControls({
     anchor.click();
     URL.revokeObjectURL(url);
   };
+
+  if (variant === "compact") {
+    return <div className="workspace-resource-file-controls is-compact" data-resource-file-controls="compact">
+      <div className="workspace-resource-file-actions">
+        {openHref && <a
+          className="resource-file-open"
+          href={openHref}
+          target="_blank"
+          rel="noreferrer"
+          title={`Open ${relativePath} in a new tab`}
+        >Open</a>}
+        {!readOnly && currentLocation.path && <button
+          type="button"
+          className={dirty ? "primary" : ""}
+          disabled={disabled || busy}
+          title={`Save ${relativePath} to workspace ${currentLocation.workspaceId}`}
+          onClick={() => void run(() => onSave(currentLocation))}
+        >Save</button>}
+        {originLocation.path && <button
+          type="button"
+          disabled={disabled || busy}
+          title={`Reload ${relativePath} from workspace ${originLocation.workspaceId}`}
+          onClick={() => void run(() => onLoad(originLocation))}
+        >Reload</button>}
+        <button
+          type="button"
+          disabled={disabled || busy}
+          title={`Download ${relativePath.split("/").at(-1) || "source"}`}
+          onClick={downloadClientFile}
+        >Download</button>
+        {error && <span className="workspace-resource-file-error" role="alert" title={error}>{error}</span>}
+      </div>
+    </div>;
+  }
 
   return <div className="workspace-resource-file-controls" data-resource-file-controls="shared">
     <div className="workspace-resource-file-channel"><span>WORKSPACE RESOURCE</span><div className="workspace-resource-file-actions">

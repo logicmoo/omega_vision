@@ -1481,6 +1481,8 @@ export function PrologClauseExplorer({
                     workspaceId,
                     originWorkspaceId: workspaceId,
                     relativePath: currentSource.name,
+                    variant: "compact",
+                    openHref: currentSource.sourceUrl,
                     allowLoadDifferent: false,
                     dirty: false,
                     readOnly: currentSource.readOnly === true,

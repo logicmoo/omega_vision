@@ -15,6 +15,8 @@ PROLOG_DATA_INSPECTOR = VIDEO_IMPORT_PAGE.with_name("PrologDataInspector.tsx")
 PROLOG_CLAUSE_EXPLORER = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorer.tsx")
 PROLOG_CLAUSE_MODEL = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.ts")
 PROLOG_CLAUSE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("PrologClauseExplorerModel.test.mjs")
+VIDEO_IMPORT_RECORDING_URL = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUrl.ts")
+VIDEO_IMPORT_RECORDING_URL_TEST = VIDEO_IMPORT_PAGE.with_name("VideoImportRecordingUrl.test.mjs")
 VIDEO_IMPORT_STYLES = (
     ROOT
     / "frontend"
@@ -32,6 +34,9 @@ RESOURCE_SOURCE_EDITOR = (
 )
 WORKSPACE_FILE_CONTROLS = (
     ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "WorkspaceResourceFileControls.tsx"
+)
+OPERATION_EDITOR_STYLES = (
+    ROOT / "frontend" / "apps" / "workbench" / "src" / "styles" / "operation_editor.css"
 )
 
 
@@ -124,6 +129,28 @@ def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> 
     assert "video-import-prolog-formats" not in inspector
     assert 'placeholder="Filter predicates, atoms, or clause text' in explorer
     assert "Copy visible" not in explorer
+
+
+def test_recording_selection_round_trips_through_the_url_without_losing_page_state() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    url_state = VIDEO_IMPORT_RECORDING_URL.read_text(encoding="utf-8")
+    executable_test = VIDEO_IMPORT_RECORDING_URL_TEST.read_text(encoding="utf-8")
+
+    assert 'const RECORDING_QUERY_PARAMETER = "recording"' in url_state
+    assert "url.searchParams.set(RECORDING_QUERY_PARAMETER, normalized)" in url_state
+    assert "url.searchParams.delete(RECORDING_QUERY_PARAMETER)" in url_state
+    assert "recording updates preserve every unrelated query parameter and hash" in executable_test
+    assert "recording replacement changes only the recording parameter" in executable_test
+    assert "recordingFromUrl(window.location.href)" in page
+    assert 'type RecordingHistoryMode = "none" | "push" | "replace"' in page
+    assert 'selectRecording(recording, "push")' in page
+    assert 'selectRecording(currentRecording, "replace")' in page
+    assert 'importArcRecording(selectedRecording, "none")' in page
+    assert 'window.addEventListener("popstate", restoreRecordingFromHistory)' in page
+    assert 'window.removeEventListener("popstate", restoreRecordingFromHistory)' in page
+    assert "Recording unavailable" in page
+    assert "Unavailable recording" in page
+    assert "<select className=\"video-import-catalog\" value={selectedRecording}" in page
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:
@@ -236,6 +263,8 @@ def test_prolog_clause_paths_are_tooltips_and_file_sync_uses_shared_controls() -
     model = PROLOG_CLAUSE_MODEL.read_text(encoding="utf-8")
     source_editor = RESOURCE_SOURCE_EDITOR.read_text(encoding="utf-8")
     file_controls = WORKSPACE_FILE_CONTROLS.read_text(encoding="utf-8")
+    source_styles = OPERATION_EDITOR_STYLES.read_text(encoding="utf-8")
+    explorer_styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
 
     assert 'title={`${clause.sourcePath}:L${clause.line}\\n${rendered}`}' in explorer
     assert "title={source.name}" in explorer
@@ -251,6 +280,8 @@ def test_prolog_clause_paths_are_tooltips_and_file_sync_uses_shared_controls() -
     assert 'fileControlsContent={currentSource?.text || ""}' in explorer
     assert 'fileControls={currentSource && workspaceId && !matching && syntax === "prolog"' in explorer
     assert "relativePath: currentSource.name" in explorer
+    assert 'variant: "compact"' in explorer
+    assert "openHref: currentSource.sourceUrl" in explorer
     assert "readOnly: currentSource.readOnly === true" in explorer
     assert "onLoad: () => syncTree()" in explorer
     assert "if (currentSource.readOnly === true)" in explorer
@@ -265,6 +296,25 @@ def test_prolog_clause_paths_are_tooltips_and_file_sync_uses_shared_controls() -
     assert "revealRequestedLine(view)" in source_editor
     assert ">Reload From Origin</button>" in file_controls
     assert "disabled={disabled || readOnly || busy" in file_controls
+    assert 'variant?: "default" | "compact"' in file_controls
+    assert 'data-resource-file-controls="compact"' in file_controls
+    assert "variant === \"compact\"" in file_controls
+    assert "{openHref && <a" in file_controls
+    compact_controls = file_controls[
+        file_controls.index('if (variant === "compact")'):
+        file_controls.index('data-resource-file-controls="shared"')
+    ]
+    assert "{!readOnly && currentLocation.path" in compact_controls
+    assert "Save To Workspace" not in compact_controls
+    assert "Save To Other Workspace" not in compact_controls
+    assert "Reload Local File" not in compact_controls
+    assert ".workspace-resource-file-controls.is-compact{" in source_styles
+    assert "height:34px" in source_styles
+    assert "flex-wrap:nowrap" in source_styles
+    compact_explorer_styles = explorer_styles[
+        explorer_styles.index(".pce-source-editor .workspace-resource-file-controls.is-compact"):
+    ]
+    assert "flex: 0 0 34px" in compact_explorer_styles
     assert "prologClauseFolding" in source_editor
 
 

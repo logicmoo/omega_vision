@@ -5,6 +5,7 @@ import { SuperControl } from "@app/components/UniversalArtifactEditor";
 import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
 import { PrologDataInspector } from "./PrologDataInspector";
+import { recordingFromUrl, urlWithRecording } from "./VideoImportRecordingUrl";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -38,6 +39,7 @@ type ExtractedImageSource = {
   frames: Frame[];
 };
 type VideoImportSubview = "sources" | "frames" | "games" | "objects" | "finish" | "recognition" | "advanced";
+type RecordingHistoryMode = "none" | "push" | "replace";
 const VIDEO_IMPORT_SUBVIEWS: Array<{ id: VideoImportSubview; label: string }> = [
   { id: "sources", label: "1 · Sources" },
   { id: "frames", label: "2 · Frames & Filters" },
@@ -2242,6 +2244,22 @@ export function VideoImportPage({
   const [catalog, setCatalog] = useState<Array<{ title: string; url: string }>>([]);
   const [importables, setImportables] = useState<Array<{ path: string; name: string }>>([]);
   const [arcRecordings, setArcRecordings] = useState<Array<{ path: string; gameId: string; level?: number; frames: number; preview: string }>>([]);
+  const [arcRecordingsLoaded, setArcRecordingsLoaded] = useState(false);
+  const [selectedRecording, setSelectedRecording] = useState(() => recordingFromUrl(window.location.href));
+  const [recordingSelectionError, setRecordingSelectionError] = useState("");
+  const selectedRecordingRef = useRef(selectedRecording);
+  const recordingImportsRef = useRef<Set<string>>(new Set());
+  const selectRecording = useCallback((recording: string, historyMode: RecordingHistoryMode) => {
+    const normalized = recording.trim();
+    selectedRecordingRef.current = normalized;
+    setSelectedRecording(normalized);
+    setRecordingSelectionError("");
+    if (historyMode === "none") return;
+    if (recordingFromUrl(window.location.href) === normalized) return;
+    const nextUrl = urlWithRecording(window.location.href, normalized);
+    if (historyMode === "push") window.history.pushState(window.history.state, "", nextUrl);
+    else window.history.replaceState(window.history.state, "", nextUrl);
+  }, []);
   const [curatedSources, setCuratedSources] = useState<Array<{ path: string; label: string; frames: number; preview: string }>>([]);
   const [streamId, setStreamId] = useState("workbench");
   const [streamPublicHost, setStreamPublicHost] = useState(() => window.location.hostname || "127.0.0.1");
@@ -2261,8 +2279,10 @@ export function VideoImportPage({
     setStreamRouterRunning(payload.running === true);
   }, [safeStreamId, streamPublicHost]);
   const refreshArcRecordings = useCallback(async () => {
+    setArcRecordingsLoaded(false);
     const payload = await api(`arc-recordings?workspaceId=${encodeURIComponent(workspaceId)}`);
     setArcRecordings((payload.recordings as typeof arcRecordings) || []);
+    setArcRecordingsLoaded(true);
   }, [workspaceId]);
   useEffect(() => {
     void loadVideos();
@@ -2281,6 +2301,16 @@ export function VideoImportPage({
   useEffect(() => {
     void refreshStreamRouter().catch(() => undefined);
   }, [refreshStreamRouter]);
+  useEffect(() => {
+    const restoreRecordingFromHistory = () => {
+      const recording = recordingFromUrl(window.location.href);
+      selectedRecordingRef.current = recording;
+      setSelectedRecording(recording);
+      setRecordingSelectionError("");
+    };
+    window.addEventListener("popstate", restoreRecordingFromHistory);
+    return () => window.removeEventListener("popstate", restoreRecordingFromHistory);
+  }, []);
 
   // ---- intake -------------------------------------------------------------
   const [source, setSource] = useState("");
@@ -2584,6 +2614,10 @@ export function VideoImportPage({
   const selectFrameSource = (sourceId: string) => {
     const source = frameSources.find((candidate) => candidate.id === sourceId);
     if (!source) return;
+    if (sourceId.startsWith("arc:")) {
+      const recording = sourceId.slice("arc:".length);
+      selectRecording(recording, "push");
+    }
     setSelectedFrameSourceId(sourceId);
     setFrames(source.frames);
     setMemberInputPaths((current) => new Set([...current].filter((path) => source.frames.some((frame) => frame.path === path))));
@@ -2725,16 +2759,65 @@ export function VideoImportPage({
       });
       return `consuming ${streamSource} until end or Stop scene scan`;
     });
-  const importArcRecording = (recording: string) =>
-    run("Importing ARC playback image sequence", async () => {
-      const payload = await api("arc-recordings/import", { workspaceId, recording });
+  const importArcRecording = (
+    recording: string,
+    historyMode: RecordingHistoryMode = "push",
+  ) => {
+    const normalized = recording.trim();
+    if (!normalized) return Promise.resolve();
+    selectRecording(normalized, historyMode);
+    if (recordingImportsRef.current.has(normalized)) return Promise.resolve();
+    recordingImportsRef.current.add(normalized);
+    return run("Importing ARC playback image sequence", async () => {
+      const payload = await api("arc-recordings/import", { workspaceId, recording: normalized });
+      if (selectedRecordingRef.current !== normalized) {
+        return `ignored stale ARC playback response for ${normalized}`;
+      }
       acceptFrames(payload.frames, {
-        id: `arc:${recording}`,
-        label: `ARC playback · ${recording}`,
+        id: `arc:${normalized}`,
+        label: `ARC playback · ${normalized}`,
         kind: "arc",
       });
       return `imported ${(payload.frames as Frame[] | undefined)?.length || 0} ARC playback frame(s) with move-list provenance`;
-    });
+    }).finally(() => recordingImportsRef.current.delete(normalized));
+  };
+  useEffect(() => {
+    if (!arcRecordingsLoaded) return;
+
+    if (!selectedRecording) {
+      const currentRecording = selectedFrameSourceId.startsWith("arc:")
+        ? selectedFrameSourceId.slice("arc:".length)
+        : "";
+      if (currentRecording && arcRecordings.some((recording) => recording.path === currentRecording)) {
+        selectRecording(currentRecording, "replace");
+      }
+      return;
+    }
+
+    if (!arcRecordings.some((recording) => recording.path === selectedRecording)) {
+      const message = `Recording "${selectedRecording}" is not available in this workspace. Choose an existing recording or correct the recording URL parameter.`;
+      setRecordingSelectionError((current) => current === message ? current : message);
+      return;
+    }
+
+    setRecordingSelectionError("");
+    const sourceId = `arc:${selectedRecording}`;
+    const loadedSource = frameSources.find((source) => source.id === sourceId && source.frames.length > 0);
+    if (loadedSource) {
+      if (selectedFrameSourceId !== sourceId) selectFrameSource(sourceId);
+      return;
+    }
+    if (recordingImportsRef.current.has(selectedRecording)) return;
+    void importArcRecording(selectedRecording, "none");
+    // This effect reconciles URL/history state with the asynchronously loaded recording catalog.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    arcRecordings,
+    arcRecordingsLoaded,
+    frameSources,
+    selectedFrameSourceId,
+    selectedRecording,
+  ]);
   const clearExtractedFrames = () => {
     setFrames([]);
     setPicked(null);
@@ -6518,7 +6601,13 @@ export function VideoImportPage({
       const bySource = new Map(output.map((entry) => [entry.source, entry.path]));
       const payload = await api("materialize", { workspaceId, gameId, frames: frames.map((frame) => ({ ...frame, path: bySource.get(frame.path) || frame.path })) });
       const directory = String(payload.gameDirectory || gameId);
-      window.setTimeout(() => { window.location.href = `/?workspace=${encodeURIComponent(workspaceId)}&view=arc3-play&game=${encodeURIComponent(directory)}`; }, 600);
+      window.setTimeout(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("workspace", workspaceId);
+        url.searchParams.set("view", "arc3-play");
+        url.searchParams.set("game", directory);
+        window.location.href = url.toString();
+      }, 600);
       return `recording ready: ${payload.levelDir} — opening Play & Record`;
     });
 
@@ -8120,6 +8209,7 @@ export function VideoImportPage({
         })}
       </div>
       {error && <div className="backend-error"><b>Video import error</b><span>{error}</span></div>}
+      {recordingSelectionError && <div className="backend-error"><b>Recording unavailable</b><span>{recordingSelectionError}</span></div>}
 
       <Section {...section("intake", "INTAKE", `${videos.length} video(s) in the library`)}>
         <div className="vi2-body">
@@ -8184,8 +8274,11 @@ export function VideoImportPage({
       <Section {...section("gameImport", "SEQUENCE SETS · IMPORT GAME MOVES", `${arcRecordings.length} recording(s)`)}>
         <div className="vi2-body">
           <div className="video-import-row">
-            <select className="video-import-catalog" value="" disabled={busy} onChange={(event) => { if (event.target.value) void importArcRecording(event.target.value); }}>
+            <select className="video-import-catalog" value={selectedRecording} disabled={busy} onChange={(event) => { if (event.target.value) void importArcRecording(event.target.value); }}>
               <option value="">Select a game recording to import its moves as a Sequence Set… ({arcRecordings.length})</option>
+              {selectedRecording && !arcRecordings.some((recording) => recording.path === selectedRecording) && (
+                <option value={selectedRecording}>Unavailable recording · {selectedRecording}</option>
+              )}
               {arcRecordings.map((recording) => (<option key={recording.path} value={recording.path}>{recording.gameId} · {recording.frames} frames · {recording.path}</option>))}
             </select>
           </div>

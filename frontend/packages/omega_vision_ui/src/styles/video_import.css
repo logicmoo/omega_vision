@@ -2794,10 +2794,11 @@
   font: 12px/1.55 "Cascadia Code", ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 .pce-source-editor .cm-content { min-width: max-content; }
-.pce-source-editor .workspace-resource-file-controls {
-  max-height: 145px;
-  flex: 0 0 auto;
-  overflow: auto;
+.pce-source-editor .workspace-resource-file-controls.is-compact {
+  max-height: 34px;
+  flex: 0 0 34px;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-top: 1px solid var(--pce-line);
 }
 .pce-matches {
