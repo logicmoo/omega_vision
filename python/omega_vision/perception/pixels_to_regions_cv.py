@@ -410,6 +410,7 @@ def opencv_grouping_prolog(
     components: list[dict],
     polygons: dict[int, dict],
     watershed: dict[int, list[dict]],
+    visual_groups: list[dict],
 ) -> str:
     """Render advisory OpenCV grouping evidence as queryable Prolog facts."""
     predicates = (
@@ -423,6 +424,7 @@ def opencv_grouping_prolog(
         "opencv_shape_metrics/7",
         "opencv_watershed_count/2",
         "opencv_watershed_segment/4",
+        "vision_group/4",
     )
     lines = [
         "",
@@ -488,7 +490,59 @@ def opencv_grouping_prolog(
                 f"opencv_watershed_segment(r{gid}, ws{segment['id']}, "
                 f"{segment['area']}, centroid({cx},{cy}))."
             )
+    for group in visual_groups:
+        members = ",".join(group["members"])
+        evidence = group["evidence"]
+        cx, cy = evidence["centroid"]
+        lines.append(
+            f"vision_group({group['id']}, {group['method']}, [{members}], "
+            f"evidence(confidence({group['confidence']}), "
+            f"component({evidence['component']}), "
+            f"pixel_area({evidence['pixelArea']}), "
+            f"centroid({cx},{cy}), "
+            f"contours({evidence['contourCount']}), "
+            f"hierarchy_links({evidence['hierarchyLinkCount']}), "
+            f"watershed_segments({evidence['watershedSegmentCount']})))."
+        )
     return "\n".join(lines) + "\n"
+
+
+def visual_group_hypotheses(
+    components: list[dict],
+    polygons: dict[int, dict],
+    watershed: dict[int, list[dict]],
+) -> list[dict]:
+    """Project existing OpenCV evidence into deterministic advisory vN claims."""
+    groups: list[dict] = []
+    ordered = sorted(components, key=lambda item: (tuple(item["members"]), item["id"]))
+    for index, component in enumerate(ordered, start=1):
+        members = [int(member) for member in component["members"]]
+        contours = [
+            contour
+            for member in members
+            for contour in (polygons.get(member, {}).get("contours") or [])
+        ]
+        groups.append({
+            "id": f"v{index}",
+            "method": "connected_component",
+            "members": [f"r{member}" for member in members],
+            "confidence": 0.75,
+            "evidence": {
+                "component": f"cc{component['id']}",
+                "pixelArea": int(component["area"]),
+                "centroid": [int(value) for value in component["centroid"]],
+                "contourCount": len(contours),
+                "hierarchyLinkCount": sum(
+                    1
+                    for contour in contours
+                    if any(int(contour.get(key, -1)) >= 0 for key in ("child", "parent"))
+                ),
+                "watershedSegmentCount": sum(
+                    len(watershed.get(member, [])) for member in members
+                ),
+            },
+        })
+    return groups
 
 
 def extract_region_facts_cv(
@@ -531,6 +585,7 @@ def extract_region_facts_cv(
     if background is not None:
         watershed_regions.discard(background)
     watershed = watershed_segments_cv(image_rgb, labels, watershed_regions, boxes)
+    visual_groups = visual_group_hypotheses(components, polygons, watershed)
     parts = [
         {
             "id": f"r{gid}",
@@ -558,6 +613,7 @@ def extract_region_facts_cv(
             "fillpoints": {str(g): p for g, p in fillpoints.items()},
             "components": components,
             "watershed": {str(g): p for g, p in watershed.items()},
+            "visualGroups": visual_groups,
         }, ensure_ascii=False), encoding="utf-8")
     base_prolog = to_prolog(info, pairs, big, w, h, perims, polygons, midlines, fillpoints)
     return {
@@ -566,6 +622,7 @@ def extract_region_facts_cv(
             components,
             polygons,
             watershed,
+            visual_groups,
         ),
         "width": w,
         "height": h,
@@ -575,8 +632,10 @@ def extract_region_facts_cv(
         "componentCount": len(components),
         "contourCount": sum(len(value.get("contours", [])) for value in polygons.values()),
         "watershedSegmentCount": sum(len(value) for value in watershed.values()),
+        "visualGroupCount": len(visual_groups),
         "tolerance": tolerance,
         "filterAction": filter_action,
         "minArea": min_area,
         "parts": parts,
+        "visualGroups": visual_groups,
     }

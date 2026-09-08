@@ -93,6 +93,8 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert '"↻ Fresh todos"' in source
     assert 'mergeTodos: mode === "merge"' in source
     assert 'freshTodos: mode === "fresh"' in source
+    assert "s.visualGroupCount != null" in source
+    assert "v groups" in source
 
 
 def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> None:

@@ -2353,7 +2353,7 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                     meta = json.loads(mp.read_text(encoding="utf-8"))
                     summary = {k: meta[k] for k in (
                         "regionCount", "adjacencyCount", "blobCount", "componentCount",
-                        "contourCount", "watershedSegmentCount", "groupCount",
+                        "contourCount", "watershedSegmentCount", "visualGroupCount", "groupCount",
                         "objectCount", "programCount", "width", "height",
                         "relationCount", "model", "shots", "partsFacts") if k in meta}
                     parts = meta.get("parts")
@@ -2365,6 +2365,19 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
                         cell["parts"] = [
                             {"id": str(p.get("id")), "color": str(p.get("color") or ""), "area": p.get("area")}
                             for p in parts if isinstance(p, dict) and p.get("id")]
+                    visual_groups = meta.get("visualGroups")
+                    if isinstance(visual_groups, list):
+                        cell["visualGroups"] = [
+                            {
+                                "id": str(group.get("id")),
+                                "method": str(group.get("method") or ""),
+                                "members": [str(member) for member in (group.get("members") or [])],
+                                "confidence": group.get("confidence"),
+                                "evidence": group.get("evidence") if isinstance(group.get("evidence"), dict) else {},
+                            }
+                            for group in visual_groups
+                            if isinstance(group, dict) and group.get("id")
+                        ]
                     if summary:
                         cell["summary"] = summary
                 except (OSError, json.JSONDecodeError):

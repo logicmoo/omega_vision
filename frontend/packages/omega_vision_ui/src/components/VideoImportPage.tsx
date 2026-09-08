@@ -7694,6 +7694,7 @@ export function VideoImportPage({
                               {s.adjacencyCount != null && <span>{s.adjacencyCount} adjacent</span>}
                               {s.blobCount != null && <span>{s.blobCount} blobs</span>}
                               {s.componentCount != null && <span>{s.componentCount} cv components</span>}
+                              {s.visualGroupCount != null && <span>{s.visualGroupCount} v groups</span>}
                               {s.contourCount != null && <span>{s.contourCount} contours</span>}
                               {s.watershedSegmentCount != null && <span>{s.watershedSegmentCount} watershed segments</span>}
                               {s.groupCount != null && <span>{s.groupCount} groups</span>}

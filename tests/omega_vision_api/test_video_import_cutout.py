@@ -87,6 +87,49 @@ def test_visual_sequence_route_and_image_set_adapter_share_one_catalog(
     assert unified["visualSequences"] is unified["sets"]
 
 
+def test_transform_manifest_exposes_visual_group_hypotheses(tmp_path: Path) -> None:
+    unit = tmp_path / "data" / "recordings" / "demo" / "run" / "0"
+    output = unit / "parts_extraction_0" / "python_opencv"
+    output.mkdir(parents=True)
+    (unit / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "todos": [{
+            "transformation": "parts_extraction_0",
+            "doer": "python_opencv",
+            "output": "parts_extraction_0/python_opencv",
+            "status": "done",
+            "dependsOn": [],
+        }],
+    }), encoding="utf-8")
+    (output / "result.pl").write_text(
+        "vision_group(v1, connected_component, [r2,r3], evidence(confidence(0.75))).\n",
+        encoding="utf-8",
+    )
+    (output / "meta.json").write_text(json.dumps({
+        "visualGroupCount": 1,
+        "visualGroups": [{
+            "id": "v1",
+            "method": "connected_component",
+            "members": ["r2", "r3"],
+            "confidence": 0.75,
+            "evidence": {"component": "cc1", "pixelArea": 42},
+        }],
+    }), encoding="utf-8")
+
+    summary = video_import_api._unit_transforms(tmp_path, unit)
+
+    assert summary is not None
+    cell = summary["list"][0]
+    assert cell["summary"]["visualGroupCount"] == 1
+    assert cell["visualGroups"] == [{
+        "id": "v1",
+        "method": "connected_component",
+        "members": ["r2", "r3"],
+        "confidence": 0.75,
+        "evidence": {"component": "cc1", "pixelArea": 42},
+    }]
+
+
 @pytest.mark.parametrize(
     "pipeline",
     [
