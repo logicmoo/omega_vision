@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { interleaveVisualGroupClaims } from "./VisualGroupTreeModel.ts";
+import {
+  coalesceIdenticalVisualAndSymbolicGroups,
+  interleaveVisualGroupClaims,
+} from "./VisualGroupTreeModel.ts";
 
 test("overlapping V and G claims are adjacent peers with deterministic alternation", () => {
   const claims = [
@@ -37,4 +40,19 @@ test("claims remain independent data with no inferred connector fields", () => {
 
   assert.deepEqual(ordered, claims);
   assert.equal(ordered.some((claim) => "mapsTo" in claim || "parent" in claim), false);
+});
+
+test("identical V and G memberships share one dual-labeled display row", () => {
+  const v = { kind: "v", id: "v2", members: ["r16", "r15"], sourceOrder: 0 };
+  const g = { kind: "g", id: "g6", members: ["r15", "r16"], sourceOrder: 1 };
+  const other = { kind: "g", id: "g7", members: ["r17"], sourceOrder: 2 };
+
+  const rows = coalesceIdenticalVisualAndSymbolicGroups([v, g, other]);
+
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows[0].claims.map((claim) => claim.id), ["v2", "g6"]);
+  assert.deepEqual(rows[0].members, ["r16", "r15"]);
+  assert.deepEqual(rows[1].claims, [other]);
+  assert.deepEqual(v, { kind: "v", id: "v2", members: ["r16", "r15"], sourceOrder: 0 });
+  assert.deepEqual(g, { kind: "g", id: "g6", members: ["r15", "r16"], sourceOrder: 1 });
 });

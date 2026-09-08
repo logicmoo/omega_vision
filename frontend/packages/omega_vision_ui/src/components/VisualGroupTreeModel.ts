@@ -10,6 +10,11 @@ export interface VisualGroupClaim {
   evidence?: Record<string, unknown>;
 }
 
+export interface VisualGroupDisplayRow {
+  claims: VisualGroupClaim[];
+  members: string[];
+}
+
 function naturalAliasKey(value: string): [string, number, string] {
   const match = /^([a-z_-]*?)(\d+)$/i.exec(value);
   return match
@@ -108,4 +113,31 @@ export function interleaveVisualGroupClaims(
     }
   }
   return output;
+}
+
+export function coalesceIdenticalVisualAndSymbolicGroups(
+  orderedClaims: readonly VisualGroupClaim[],
+): VisualGroupDisplayRow[] {
+  const buckets = new Map<string, VisualGroupClaim[]>();
+  for (const claim of orderedClaims) {
+    const key = [...new Set(claim.members)].sort(compareAliases).join("\u0000");
+    const bucket = buckets.get(key) || [];
+    bucket.push(claim);
+    buckets.set(key, bucket);
+  }
+  const emitted = new Set<VisualGroupClaim>();
+  const rows: VisualGroupDisplayRow[] = [];
+  for (const claim of orderedClaims) {
+    if (emitted.has(claim)) continue;
+    const key = [...new Set(claim.members)].sort(compareAliases).join("\u0000");
+    const bucket = buckets.get(key) || [claim];
+    const kinds = new Set(bucket.map((candidate) => candidate.kind));
+    const combined = kinds.has("v") && kinds.has("g") ? bucket : [claim];
+    combined.forEach((candidate) => emitted.add(candidate));
+    rows.push({
+      claims: combined,
+      members: [...new Set(claim.members)],
+    });
+  }
+  return rows;
 }

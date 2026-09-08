@@ -33,6 +33,7 @@ import {
   visualSequenceConfirmationMessage,
 } from "./VisualSequenceLoadGate";
 import {
+  coalesceIdenticalVisualAndSymbolicGroups,
   interleaveVisualGroupClaims,
   type VisualGroupClaim,
 } from "./VisualGroupTreeModel";
@@ -7630,37 +7631,48 @@ export function VideoImportPage({
                     <span className="is-v">V · OpenCV hypothesis</span>
                     <span className="is-g">G · Prolog group</span>
                   </div>
-                  {claims.map((claim) => {
-                    const members = claim.members;
-                    const claimKey = `${rowKey}#${claim.kind}:${claim.id}`;
+                  {coalesceIdenticalVisualAndSymbolicGroups(claims).map((displayRow) => {
+                    const rowClaims = displayRow.claims;
+                    const members = displayRow.members;
+                    const visualClaim = rowClaims.find((claim) => claim.kind === "v");
+                    const symbolicClaim = rowClaims.find((claim) => claim.kind === "g");
+                    const combined = Boolean(visualClaim && symbolicClaim);
+                    const aliases = rowClaims.map((claim) => claim.id).join(" / ");
+                    const claimKey = `${rowKey}#${rowClaims.map((claim) => `${claim.kind}:${claim.id}`).join("+")}`;
                     const open = stripOpenGroups.has(claimKey);
                     const claimSelected = !!sel && members.length > 0 && members.every((member) => sel.has(member));
-                    const color = claim.kind === "g"
-                      ? groupColorOf.get(claim.id) || "#27dcc2"
-                      : claim.kind === "o" ? "#f2c14e" : "#9b8cff";
-                    const roots = claim.kind === "g"
+                    const color = symbolicClaim
+                      ? groupColorOf.get(symbolicClaim.id) || "#27dcc2"
+                      : visualClaim ? "#9b8cff" : "#f2c14e";
+                    const roots = symbolicClaim
                       ? members.filter((member) => {
                           const parent = parentOf.get(member);
                           return !parent || !members.includes(parent);
                         })
                       : members;
-                    const evidence = claim.evidence && Object.keys(claim.evidence).length
-                      ? `\n${JSON.stringify(claim.evidence)}`
-                      : "";
-                    const detail = claim.kind === "v"
-                      ? `${claim.method || "OpenCV"}${claim.confidence == null ? "" : ` · confidence ${Math.round(claim.confidence * 100)}%`}${evidence}`
-                      : "Prolog symbolic group";
+                    const detail = rowClaims.map((claim) => {
+                      const evidence = claim.evidence && Object.keys(claim.evidence).length
+                        ? `\n${JSON.stringify(claim.evidence)}`
+                        : "";
+                      return claim.kind === "v"
+                        ? `${claim.id}: ${claim.method || "OpenCV"}${claim.confidence == null ? "" : ` · confidence ${Math.round(claim.confidence * 100)}%`}${evidence}`
+                        : `${claim.id}: Prolog symbolic group`;
+                    }).join("\n");
                     const toggleOpen = () => setStripOpenGroups((previous) => {
                       const next = new Set(previous);
                       if (next.has(claimKey)) next.delete(claimKey); else next.add(claimKey);
                       return next;
                     });
                     return (
-                      <details key={`${claim.kind}:${claim.id}`} className={`video-import-reduce-groupnode is-${claim.kind}`} open={open}>
+                      <details
+                        key={claimKey}
+                        className={`video-import-reduce-groupnode is-${combined ? "vg" : rowClaims[0].kind}`}
+                        open={open}
+                      >
                         <summary
                           className={claimSelected ? "is-sel" : ""}
                           style={{ color }}
-                          title={`${detail}\nIndependent peer claim; overlap ordering is display-only.`}
+                          title={`${detail}\n${combined ? "Identical memberships share this display node; underlying V and G facts remain independent." : "Independent peer claim; overlap ordering is display-only."}`}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -7680,14 +7692,16 @@ export function VideoImportPage({
                               }
                             }}
                           >{open ? "▾" : "▸"}</span>
-                          <span className={`video-import-group-kind is-${claim.kind}`}>{claim.kind.toUpperCase()}</span>
+                          <span className={`video-import-group-kind is-${combined ? "vg" : rowClaims[0].kind}`}>
+                            {combined ? "V/G" : rowClaims[0].kind.toUpperCase()}
+                          </span>
                           <span className="video-import-reduce-groupdot" style={{ background: color }} />
-                          {claim.id} · {members.length}
-                          {claim.kind === "v" && claim.confidence != null
-                            ? <small>{Math.round(claim.confidence * 100)}%</small>
+                          {aliases} · {members.length}
+                          {visualClaim?.confidence != null
+                            ? <small>{Math.round(visualClaim.confidence * 100)}%</small>
                             : null}
                         </summary>
-                        <ul>{roots.map((member) => renderPartNode(member, 0, claim.kind === "g"))}</ul>
+                        <ul>{roots.map((member) => renderPartNode(member, 0, Boolean(symbolicClaim)))}</ul>
                       </details>
                     );
                   })}

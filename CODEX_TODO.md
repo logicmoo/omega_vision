@@ -156,12 +156,18 @@ values here.
   its existing component, contour-hierarchy, and watershed evidence. The UI
   presents vN and Prolog gN as independent peer rows ordered only for display
   by shared-member overlap; there are no inferred v-g links and no oN claims.
-  Legacy extraction results derive the same vN peers read-only from their
+  When a vN and gN have identical member sets, the UI coalesces them into one
+  dual-labeled display node using the gN color; both underlying claims remain
+  independent. Legacy extraction results derive the same vN peers read-only from their
   persisted `opencv_component/*` evidence, so no runtime files were rewritten.
   Live verification used
   `data/omega_vision/arc_recordings/data-recordings-ls20-20260718-154544_attempt8/`
   and showed frame 0 with `v1` over 11 regions beside overlapping `g5`, `g1`,
   `g2`, `g3`, and `g4`, followed by four singleton v/g neighborhoods.
+  The exact source artifacts are
+  `transforms/frame_000000/parts_extraction_0/python_opencv/result.pl` and
+  `transforms/frame_000000/parts_grouping_0/group_regions_prolog/result.pl`
+  under that Visual Sequence directory.
   A separately generated real-LS20 evidence sample produced four vN facts under
   the session artifact `vn-real-ls20/parts_extraction_0/python_opencv/` with no
   additional `debug_image.png`. Existing `parts_debug_0` and debug-image
