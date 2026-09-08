@@ -212,6 +212,22 @@ values here.
   learning, rule promotion, and expanded Object Memory remain deliberately
   deferred.
 
+- Deferred oN composition contract (2026-09-09): an oN is not a persistent
+  one-to-one alias for a final gN. It is a higher-level object composed of at
+  least two final G groups. When this work is explicitly resumed, Prolog may
+  infer an oN only when attributable evidence proves both (1) coherent
+  cross-frame co-motion with compatible displacement/transform and stable
+  relative arrangement, and (2) attachment under the existing symbolic
+  attachment semantics: a strong shared edge or a valid smooth cutout relation
+  between the groups' member regions. Co-motion alone is insufficient,
+  attachment alone is insufficient, and a lone persistent G remains a G rather
+  than becoming an O. Reuse the existing attachment rules; do not substitute
+  generic bounding-box proximity or containment. Expected future evidence may
+  include group motion/correspondence facts, group attachment facts, and
+  `object_at(Frame, oN, [G1,G2,...])` with provenance and confidence. This is a
+  recorded design constraint only; UID, temporal, oN, and learning
+  implementation remains blocked until the user explicitly resumes it.
+
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
   percent of the input image. It then recomputes attachment components among
