@@ -52,8 +52,29 @@ values here.
   acceptance ran real OpenCV and Turtle calls on one of the actual 92 LS20
   inputs; both completed, while hashes of todos.json and pooler_control.json
   stayed unchanged. Focused direct/pipeline tests and the frontend build pass.
-  Main integration is pending for this increment; temporal/event/memory core
-  work is separate and must not be declared complete before active wiring.
+  Main integration applied only `7a4c479c8` as `4f7312c6e`, preserving both
+  factual recovery histories when this ledger alone conflicted. Source files
+  applied cleanly; temporal/event/memory implementation remains separate.
+  Local direct-plan/API/UI regressions passed 37 tests and the frontend build
+  passed. Only owned main API/Vite processes were restarted.
+  On the retained 92-frame LS20 Recognition selection, computed visibility and
+  a viewport screenshot confirmed exactly two enabled Call slots, each with
+  eight real registered pairs, First N retained, the old extractor/Reduce All
+  controls absent, and one shared Add/Fresh/pooler row.
+  A real proxy API call to parts_extraction_0/python_opencv with firstN=1
+  completed 1/1 steps (job 3ed11d13d2a34fd3bd7c0a02872a60d4); the first unit's
+  todos.json remained absent and pooler_control.json's hash was unchanged.
+  The durable run status returned HTTP 200 in 0.026s. Registry direct/proxy
+  returned 200 (4.208s startup / 0.209s warm); chain returned 200 in 0.856s.
+  Catalog latency remains a separate limitation: bounded 20s catalog probes
+  timed out, although the retained page eventually resolved and displayed the
+  real controls. An actual process stack showed catalog workers waiting on
+  the cache lock/source signature scan while MainThread was in asyncio polling.
+  No caching/feature code was changed for that limitation. No model calls,
+  TODO stamping, pooler retargeting, or test-only UI preference changes were
+  performed; the retained UI First N value was 1 and was not changed here.
+  All commits remain local/unpushed; runtime files and recovery artifacts were
+  preserved, and no follow-on implementation was started.
 
 - Remaining-task authorization (2026-09-09): the user explicitly said to skip
   task 1 (broader Visual Sequence caching) and do every other remaining task,
