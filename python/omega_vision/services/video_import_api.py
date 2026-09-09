@@ -34,7 +34,7 @@ from contextvars import ContextVar
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Sequence
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from fastapi import APIRouter, Body, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, StreamingResponse
@@ -2522,7 +2522,10 @@ def _unit_transforms(root: Path, unit_dir: Path, sequence_root: Path | None = No
                         "finalGroupObservationCount", "observationBundleId",
                         "frameObservationId", "identityVersion",
                         "objectCount", "programCount", "width", "height",
-                        "relationCount", "model", "shots", "partsFacts") if k in meta}
+                        "relationCount", "model", "shots", "partsFacts",
+                        "matchCount", "ambiguityCount", "eventCount", "hypothesisCount",
+                        "prototypeCount", "candidateCount", "assessment", "authority",
+                        "resultArtifact", "checkpointArtifact", "rawResponseArtifact") if k in meta}
                     parts = meta.get("parts")
                     if isinstance(parts, list) and parts:
                         summary["partCount"] = len(parts)
@@ -2688,7 +2691,8 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
             d = _resolve_set_dir(root, rel_dir)
         except ValueError:
             return
-        image_count = len(_resolve_set_images(d))
+        sequence_images = _resolve_set_images(d)
+        image_count = len(sequence_images)
         reduced_count = 0
         mp = d / "manifest.json"
         if mp.is_file():
@@ -2710,7 +2714,7 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
             "providerRef": rel_dir,
             "imageCount": image_count,
             "reducedCount": reduced_count,
-            "ordered": (d / "recording.json").is_file(),
+            "ordered": _sequence_ordering(d, sequence_images)[0],
             "canonical": set_id == _CANONICAL_IMAGE_SET,
             "group": group,
             "groupKey": group_key,
@@ -7179,6 +7183,13 @@ def _transform_parts_extraction_cv(unit: dict[str, Any], out_dir: Path, options:
     prolog = facts.pop("prolog")
     (out_dir / "result.pl").write_text(prolog, encoding="utf-8", newline="\n")
     facts["module"] = "omega_vision.perception.pixels_to_regions_cv"
+    provenance = _read_image_provenance(image_path) or {}
+    evidence = facts["attachmentEvidence"]
+    evidence["extractionPolicyHash"] = hashlib.sha256(json.dumps({
+        "producer": evidence["extractionPolicyHash"],
+        "preprocessing": unit.get("preprocessingRevision", _preprocessing_revision([])),
+        "implementations": (provenance.get("source") or {}).get("implementationVersions", {}),
+    }, sort_keys=True, allow_nan=False).encode()).hexdigest()
     return facts
 
 
@@ -7637,6 +7648,18 @@ def _transform_definitions() -> dict[str, dict[str, Any]]:
     return definitions
 
 
+def _step_for_unit(spec: dict[str, Any], unit: Mapping[str, Any]) -> dict[str, Any] | None:
+    definition = _TRANSFORM_METADATA.get((spec["transformation"], spec["doer"]), {})
+    if definition.get("orderedOnly") and not unit.get("sequenceOrdered"):
+        return None
+    if unit.get("frameOrder") == 0:
+        if definition.get("skipFirstFrame"):
+            return None
+        if "firstFrameDependsOn" in definition:
+            return {**spec, "dependsOn": list(definition["firstFrameDependsOn"])}
+    return spec
+
+
 def _claim_worker_id() -> str:
     import socket  # noqa: PLC0415
     return f"{socket.gethostname()}:{os.getpid()}"
@@ -7675,7 +7698,13 @@ def _resolve_cross_frame_runtime(unit: dict[str, Any], parsed: Any) -> dict[str,
     frame id within its ordered sibling frames."""
     from omega_vision.perception.cross_frame_deps import resolve_dependency  # noqa: PLC0415
     root = unit["dir"].parent
-    frame_ids = [d.name for d in _recording_step_dirs(root)]
+    if unit.get("sequenceRoot"):
+        sequence_root = Path(unit["sequenceRoot"])
+        frame_units = [_preprocessing_unit(sequence_root, image) for image in _resolve_set_images(sequence_root)]
+        frame_dirs = {str(frame["id"]): frame["dir"] for frame in frame_units}
+    else:
+        frame_dirs = {directory.name: directory for directory in _recording_step_dirs(root)}
+    frame_ids = list(frame_dirs)
     res = resolve_dependency(
         parsed,
         current_frame_id=str(unit.get("id")),
@@ -7686,7 +7715,7 @@ def _resolve_cross_frame_runtime(unit: dict[str, Any], parsed: Any) -> dict[str,
     )
     if res.resolved and res.frame_id is not None:
         return {"selector": parsed.raw, "output": parsed.output,
-                "metaPath": root / str(res.frame_id) / parsed.output / "meta.json",
+                "metaPath": frame_dirs[str(res.frame_id)] / parsed.output / "meta.json",
                 "frameId": res.frame_id, "resolved": True, "reason": res.reason}
     return {"selector": parsed.raw, "output": parsed.output, "metaPath": None,
             "frameId": None, "resolved": False, "reason": res.reason}
@@ -7782,6 +7811,38 @@ def _step_meta_is_stale(out_meta_file: Path, resolved_deps: list[dict[str, Any]]
     return False, "current"
 
 
+def _runtime_transform_options(unit: Mapping[str, Any], step: str, options: Mapping[str, Any]) -> dict[str, Any]:
+    result = dict(options)
+    revision = _semantic_stages.runtime_revision(unit, step)
+    if revision is not None:
+        result["semanticContextRevision"] = revision
+    return result
+
+
+def _ensure_queue_memory_destinations(unit: Mapping[str, Any], steps: Iterable[str]) -> None:
+    steps = set(steps)
+    kinds = ("shape", "object") if _semantic_stages.OBJECTS in steps else ("shape",) if _semantic_stages.GROUPING in steps else ()
+    if not kinds:
+        return
+    locations, context = _semantic_stages._memory(str(unit["workspaceId"]), unit.get("sequenceId"))
+    preferences = locations.load_preferences(context)
+    if any(preferences[kind]["saveTo"] == "memory-nowhere" or "memory-nowhere" in preferences[kind]["lookIn"]
+           for kind in kinds):
+        raise HTTPException(409, "Nowhere memory belongs to this browser's direct execution session. "
+                            "Use Run now (direct), or use persistent Shape/Object Save To and Look In locations before creating TODOs.")
+
+
+def _persist_execution_memory_defaults(unit: Mapping[str, Any], steps: Iterable[str]) -> None:
+    """Freeze unsaved effective lookups before this explicit run creates new memory locations."""
+    if not set(steps).intersection({_semantic_stages.OBJECTS, _semantic_stages.GROUPING}):
+        return
+    locations, context = _semantic_stages._memory(str(unit["workspaceId"]), unit.get("sequenceId"))
+    _, path = locations._preference_path(context)
+    if not path.is_file():
+        preferences = locations.load_preferences(context)
+        locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
+
+
 def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
                        options: dict[str, Any], *, force: bool = False,
                        depends_on: list[str] | None = None,
@@ -7797,6 +7858,10 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     step_name = f"{transformation}/{doer}"
     if runner is None:
         return {"step": step_name, "status": "error", "error": f"unknown transformation {step_name}"}
+    try:
+        options = _runtime_transform_options(unit, step_name, options)
+    except (ValueError, OSError, HTTPException) as error:
+        return {"step": step_name, "status": "error", "error": str(error)}
     sequence_root = unit.get("sequenceRoot")
     if sequence_root and unit.get("preprocessingRevision") is not None:
         current = _preprocessing_revision(_load_preprocessing_chain_at(Path(sequence_root)))
@@ -7816,7 +7881,7 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     out_meta_file = out_dir / "meta.json"
     if not force and out_meta_file.is_file():
         stale, _reason = _step_meta_is_stale(out_meta_file, resolved_deps, unit.get("inputSignature"), options)
-        if not stale:
+        if not stale and _semantic_stages.transient_output_available(unit, step_name):
             return {"step": step_name, "status": "skipped"}
     for dep in resolved_deps:
         meta_path = dep.get("metaPath")
@@ -7852,6 +7917,8 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
             handle.write(claim_body)
     started = time.perf_counter()
     try:
+        if unit.get("executionMode") == "pooler":
+            _ensure_queue_memory_destinations(unit, (step_name,))
         stats = runner(unit, out_dir, options)
     except Exception as error:  # noqa: BLE001 - reported per unit/step
         try:
@@ -7869,6 +7936,12 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         result_pl if result_pl.is_file() else None,
         producer=step_name, schema=str(stats.get("schema", "")),
     )
+    if step_name == _semantic_stages.PARTS and "semanticContextRevision" in options:
+        # Equal Prolog text does not make masks/producer attestations from a
+        # changed CV implementation interchangeable for observation identity.
+        revision = hashlib.sha256(json.dumps({
+            "factsRevision": revision, "implementationRevision": options["semanticContextRevision"],
+        }, sort_keys=True, allow_nan=False).encode()).hexdigest()
     consumed_deps: dict[str, Any] = {}
     for dep in resolved_deps:
         consumed_deps[dep["selector"]] = {
@@ -7902,6 +7975,12 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         "observationCount",
         "objectCount",
         "programCount",
+        "matchCount",
+        "ambiguityCount",
+        "eventCount",
+        "hypothesisCount",
+        "prototypeCount",
+        "candidateCount",
     ):
         if key in stats:
             entry[key] = stats[key]
@@ -7959,33 +8038,55 @@ def write_unit_todos(unit: dict[str, Any],
     for spec in pipeline:
         transformation, doer = spec["transformation"], spec["doer"]
         step_name = f"{transformation}/{doer}"
+        memory_session = spec.get("memorySessionId", unit.get("memorySessionId"))
+        options = _runtime_transform_options({**unit, "memorySessionId": memory_session},
+                                             step_name, spec.get("options") or {})
         out_dir = unit["dir"] / transformation / doer
         depends_on = spec.get("dependsOn") or []
         entry: dict[str, Any] = {
             "transformation": transformation,
             "doer": doer,
-            "options": spec.get("options") or {},
+            "options": options,
             "output": step_name,
             "dependsOn": depends_on,
             "priority": int(spec.get("priority", 100)),
         }
         if spec.get("type"):
             entry["type"] = spec["type"]
+        if spec.get("authorization"):
+            entry["authorization"] = spec["authorization"]
+        if memory_session is not None:
+            entry["memorySessionId"] = memory_session
         resolved_refs = None
         if catalog is not None:
-            try:
-                resolved_refs = _stamp_resolved_deps(unit, depends_on, catalog)
-            except Exception:  # noqa: BLE001 - invalid grammar surfaces via cycle/validate
-                resolved_refs = None
+            resolved_refs = _stamp_resolved_deps(unit, depends_on, catalog)
         if resolved_refs is None:
             resolved_refs = spec.get("dependsOnResolved")
         if resolved_refs:
             entry["dependsOnResolved"] = resolved_refs
         ran = results.get(step_name)
+        failure = None
+        if ran and ran.get("status") == "error":
+            failure = ran
+        elif not ran:
+            if spec.get("status") == "error":
+                failure = spec
+        failure_path = out_dir / ".transform-failed.json"
+        if (step_results is not None or "status" in spec) and failure_path.is_file():
+            try:
+                saved_failure = json.loads(failure_path.read_text(encoding="utf-8"))
+                failure = saved_failure if isinstance(saved_failure, dict) else {"error": "Invalid saved failure record"}
+            except (OSError, ValueError) as error:
+                failure = {"error": f"Cannot read saved failure: {error}"}
         claim = None if (out_dir / "meta.json").is_file() else _read_claim(out_dir / "claim.json")
-        if (out_dir / "meta.json").is_file():
+        if failure is not None:
+            entry["status"] = "error"
+            entry["error"] = failure.get("error")
+            entry["erroredAt"] = failure.get("erroredAt") or failure.get("failedAt") or _utc_now()
+            pending += 1
+        elif (out_dir / "meta.json").is_file():
             resolved_now = _resolve_step_deps(unit, depends_on, entry.get("dependsOnResolved"))
-            stale, stale_reason = _step_meta_is_stale(out_dir / "meta.json", resolved_now, unit.get("inputSignature"))
+            stale, stale_reason = _step_meta_is_stale(out_dir / "meta.json", resolved_now, unit.get("inputSignature"), options)
             if stale:
                 entry["status"] = "pending"
                 entry["stale"] = True
@@ -8005,11 +8106,6 @@ def write_unit_todos(unit: dict[str, Any],
             entry["status"] = "started"
             entry["startedBy"] = claim[0].get("claimedBy")
             entry["startedAt"] = claim[0].get("claimedAt")
-        elif ran and ran.get("status") == "error":
-            entry["status"] = "error"
-            entry["error"] = ran.get("error")
-            entry["erroredAt"] = _utc_now()
-            pending += 1
         else:
             entry["status"] = "pending"
             pending += 1
@@ -8023,6 +8119,8 @@ def write_unit_todos(unit: dict[str, Any],
     (unit["dir"] / "todos.json").write_text(json.dumps({
         "kind": "transformation_todos",
         "unit": str(unit["id"]),
+        "workspaceId": unit.get("workspaceId"),
+        "memorySessionId": unit.get("memorySessionId"),
         "sequenceId": unit.get("sequenceId"),
         "frameOrder": unit.get("frameOrder"),
         "frameSourceKey": unit.get("frameSourceKey"),
@@ -8174,8 +8272,11 @@ def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
             known = ", ".join(f"{t}/{k}" for t, k in sorted(_SEQUENCE_TRANSFORMS))
             raise ValueError(f"unknown transformation {transformation}/{doer}; known: {known}")
         depends = value.get("dependsOn")
+        definition = _TRANSFORM_METADATA.get((transformation, doer), {})
         if depends is None:
-            depends = [f"{steps[-1]['transformation']}/{steps[-1]['doer']}"] if steps else []
+            depends = definition.get("dependsOn")
+            if depends is None:
+                depends = [f"{steps[-1]['transformation']}/{steps[-1]['doer']}"] if steps else []
         if not isinstance(depends, list):
             raise ValueError("dependsOn must be a list of transformation/doer strings")
         try:
@@ -8184,8 +8285,8 @@ def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
             raise ValueError("priority must be an integer (lower runs first)") from error
         step: dict[str, Any] = {"transformation": transformation, "doer": doer, "options": options,
                                 "dependsOn": [str(d) for d in depends], "priority": priority}
-        if value.get("type"):
-            step["type"] = str(value["type"])
+        if value.get("type") or definition.get("type"):
+            step["type"] = str(value.get("type") or definition["type"])
         steps.append(step)
     return steps
 
@@ -8527,22 +8628,55 @@ def _llm_adoption_maker(set_base: Path):
     return adopt
 
 
-def _sequence_execution_context(root: Path, sequence_id: str) -> tuple[Path, list[dict[str, Any]], dict[str, Any]]:
+def _sequence_ordering(directory: Path, images: list[Path]) -> tuple[bool, list[dict[str, Any]]]:
+    provenances = [_read_image_provenance(image) or {} for image in images]
+    if (directory / "recording.json").is_file():
+        return True, provenances
+    if not provenances:
+        return False, provenances
+    identities, positions = [], []
+    for provenance in provenances:
+        source = provenance.get("source") or {}
+        operation = provenance.get("operation")
+        if operation == "import_arc_playback_frame":
+            identity, position = source.get("arcRecording"), source.get("frameIndex")
+            if type(position) is not int:
+                return False, provenances
+        elif operation in {"extract_video_frame", "capture_stream_scene"}:
+            identity = source.get("sourceVideo") or source.get("sourceUrl")
+            position = source.get("atSeconds")
+            if type(position) not in {int, float} or not float("-inf") < position < float("inf"):
+                return False, provenances
+        else:
+            return False, provenances
+        if not isinstance(identity, str) or not identity or position < 0:
+            return False, provenances
+        identities.append((operation, identity))
+        positions.append(position)
+    ordered = len(set(identities)) == 1 and all(left < right for left, right in zip(positions, positions[1:]))
+    return ordered, provenances
+
+
+def _sequence_execution_context(root: Path, sequence_id: str, workspace_id: str | None = None) -> tuple[Path, list[dict[str, Any]], dict[str, Any]]:
     directory = _sequence_root_for(root, sequence_id)
-    units = [_preprocessing_unit(directory, image) for image in _resolve_set_images(directory)]
+    images = _resolve_set_images(directory)
+    units = [_preprocessing_unit(directory, image) for image in images]
     if not units:
         raise HTTPException(status_code=404, detail="Visual Sequence has no input images")
-    ordered = (directory / "recording.json").is_file()
+    ordered, provenances = _sequence_ordering(directory, images)
     for order, unit in enumerate(units):
         unit.update({
+            "workspaceId": workspace_id or root.name, "workspaceRoot": root,
             "sequenceId": sequence_id, "sequenceRoot": directory, "frameOrder": order,
             "sequenceOrdered": ordered, "frameSourceKey": unit["image"].relative_to(directory).as_posix(),
+            "sourceProvenance": provenances[order],
         })
     return directory, units, {
         "frame_ids_in_order": [unit["id"] for unit in units],
         "frame_id_set": {unit["id"] for unit in units},
         "frame_dirs": {unit["id"]: unit["dir"].relative_to(directory).as_posix() for unit in units},
         "ordered": ordered,
+        "sequenceSource": provenances[0].get("source", {}) if ordered else {},
     }
 
 
@@ -8564,6 +8698,19 @@ def _direct_run_path(root: Path, job_id: str) -> Path:
     if not re.fullmatch(r"[0-9a-f]{32}", job_id):
         raise HTTPException(status_code=400, detail="Invalid direct-call ID")
     return root / "runtime" / "executions" / f"direct-{job_id}.json"
+
+
+def _attach_memory_session(units: list[dict[str, Any]], body: Mapping[str, Any]) -> None:
+    token = body.get("memorySessionId")
+    if token is not None and (not isinstance(token, str) or not re.fullmatch(r"[A-Za-z0-9_-]{16,128}", token)):
+        raise HTTPException(400, "memorySessionId must be an opaque page-session identifier")
+    try:
+        state = _semantic_stages.browser_memory(body)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+    for unit in units:
+        unit["memorySessionId"] = token
+        unit["_browserMemory"] = state
 
 
 @router.get("/direct-calls/{job_id}")
@@ -8608,7 +8755,8 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if not isinstance(options, dict):
         raise HTTPException(status_code=400, detail="options must be an object")
     root = _workspace_root(workspace_id)
-    directory, units, catalog = _sequence_execution_context(root, sequence_id)
+    directory, units, catalog = _sequence_execution_context(root, sequence_id, workspace_id)
+    _attach_memory_session(units, body)
     specs = _direct_specs(root)
     if output not in specs:
         raise HTTPException(status_code=400, detail=f"Unknown registered pair: {output}")
@@ -8629,16 +8777,52 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     model_id = body.get("modelId")
     if model_id is not None and not isinstance(model_id, str):
         raise HTTPException(status_code=400, detail="modelId must be a model/preset identifier")
+    model_provenance = None
+    if any(step in {_semantic_stages.LLM_EVENTS, _semantic_stages.LLM_RULES} for step in llm_steps):
+        try:
+            _, model_id, model_provenance = _semantic_stages._model(
+                root, workspace_id, {"modelId": model_id, "confirmModel": True},
+            )
+        except (ValueError, OSError, RuntimeError, KeyError) as error:
+            raise HTTPException(400, str(error)) from error
     if model_id:
         for step in llm_steps:
-            specs[step] = {**specs[step], "options": {**specs[step].get("options", {}), "modelId": model_id}}
+            model_options = {"modelId": model_id}
+            if model_provenance:
+                model_options["modelRevision"] = model_provenance["resolved_model_hash"]
+            specs[step] = {**specs[step], "options": {**specs[step].get("options", {}), **model_options}}
+    units_by_id = {unit["id"]: unit for unit in units}
     try:
         confirmation_key = hashlib.sha256(json.dumps({
-            "sequence": sequence_id, "frames": [unit["frameSourceKey"] for unit in selected],
+            "workspace": workspace_id, "sequence": sequence_id,
+            "memorySession": body.get("memorySessionId"),
+            "memorySnapshotHash": hashlib.sha256(body["memorySnapshot"].encode()).hexdigest()
+            if isinstance(body.get("memorySnapshot"), str) else None,
+            "frames": [(unit["frameSourceKey"], _preprocessing_source_signature(unit["image"])) for unit in selected],
+            "preprocessing": _load_preprocessing_chain_at(directory),
+            "modelRevision": model_provenance["resolved_model_hash"] if model_provenance else None,
             "output": output, "specs": {node.output: specs[node.output] for node in plan},
+            "runtimeOptions": [
+                (node.frame_id, node.output, _runtime_transform_options(
+                    units_by_id[node.frame_id], node.output, specs[node.output].get("options", {}),
+                )) for node in plan
+            ],
         }, sort_keys=True, allow_nan=False).encode()).hexdigest()
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=400, detail=f"Invalid execution options: {error}") from error
+    planned = {
+        "composite": output, "sequenceId": sequence_id, "workspaceId": workspace_id,
+        "imageCount": len(selected), "pairCount": max(0, len(selected) - 1) if catalog["ordered"] else 0,
+        "llmCallCount": sum(node.output in llm_steps for node in plan),
+        "llmSteps": llm_steps, "confirmationKey": confirmation_key,
+        "ordered": catalog["ordered"], "modelId": model_id,
+        "backendId": model_provenance["backend"] if model_provenance else None,
+        "steps": [{"frameId": node.frame_id, "output": node.output,
+                   "dependencies": [list(dependency) for dependency in node.dependencies]} for node in plan],
+        "pipeline": [specs[key] for key in dict.fromkeys(node.output for node in plan)],
+    }
+    if body.get("planOnly") is True:
+        return planned
     if (len(selected) > 800 or llm_steps) and (
         body.get("confirmed") is not True or body.get("confirmationKey") != confirmation_key
     ):
@@ -8646,8 +8830,35 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             "confirmationRequired": True, "imageCount": len(selected), "llmSteps": llm_steps,
             "confirmationKey": confirmation_key,
             "message": f"Run {output} and its dependencies for {len(selected)} inputs"
-                       + (" including model calls?" if llm_steps else "?"),
+                       + (f", including {planned['llmCallCount']} model calls using {model_id or 'the configured model'}"
+                          + (f" / {model_provenance['backend']}" if model_provenance else "")
+                          + "? Images and context may leave this application; charges may apply." if llm_steps else "?"),
         })
+    for step in llm_steps:
+        specs[step] = {**specs[step], "options": {**specs[step].get("options", {}), "confirmModel": True}}
+    browser_state = units[0].get("_browserMemory") if units else None
+    memory_steps = {node.output for node in plan} & {_semantic_stages.OBJECTS, _semantic_stages.GROUPING}
+    needs_browser = False
+    if memory_steps and selected:
+        locations, memory_context = _semantic_stages._memory(workspace_id, sequence_id)
+        preferences = locations.load_preferences(memory_context)
+        memory_kinds = ("shape", "object") if _semantic_stages.OBJECTS in memory_steps else ("shape",)
+        needs_browser = any(preferences[kind]["saveTo"] == "memory-nowhere"
+                            or "memory-nowhere" in preferences[kind]["lookIn"] for kind in memory_kinds)
+        if needs_browser and browser_state is None:
+            raise HTTPException(409, "Nowhere requires an explicit browser memory snapshot. Run in the current page.")
+    if not needs_browser:
+        # Ordinary durable execution retains its existing asynchronous behavior.
+        # Do not let an unused browser payload escape into its worker closure.
+        for item in units:
+            item.pop("_browserMemory", None)
+        browser_state = None
+    # A selected Nowhere snapshot stays strictly inside this streaming request.
+    if browser_state is not None and len(selected) > 128:
+        raise HTTPException(409, "Browser-memory execution is bounded to First N ≤ 128. "
+                            "Choose a smaller scope or durable memory destinations.")
+    if selected:
+        _persist_execution_memory_defaults(selected[0], (node.output for node in plan))
     chain = _load_preprocessing_chain_at(directory)
     index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
     chain = _validated_preprocessing_chain(chain, index)
@@ -8662,6 +8873,9 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "imageCount": len(selected), "startedAt": _utc_now(), "ownerPid": os.getpid(),
         "ownerStartedAt": psutil.Process().create_time(), "recent": [], "counts": {},
         "definitions": {node.output: specs[node.output] for node in plan},
+        "authorization": {"confirmationKey": confirmation_key, "confirmed": body.get("confirmed") is True,
+                          "imageCount": len(selected), "firstN": first_n, "modelId": model_id,
+                          "llmCallCount": planned["llmCallCount"], "llmSteps": llm_steps},
         "path": path.relative_to(root).as_posix(), "eventsPath": events_path.relative_to(root).as_posix(),
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -8670,7 +8884,10 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     _direct_jobs[job_id] = job
     by_id = {unit["id"]: unit for unit in units}
     roots = {(frame_id, output) for frame_id in selected_ids
-             if not (by_id[frame_id]["frameOrder"] == 0 and specs[output].get("skipFirstFrame"))}
+             if not (by_id[frame_id]["frameOrder"] == 0 and specs[output].get("skipFirstFrame"))
+             and not (specs[output].get("orderedOnly") and not catalog["ordered"])}
+    if not roots:
+        job["message"] = "No applicable frames: this stage requires ordering or a previous frame."
 
     def work() -> None:
         completed: dict[tuple[str, str], dict[str, Any]] = {}
@@ -8732,6 +8949,43 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                 raise
             job.update(final)
 
+    if browser_state is not None:
+        import asyncio
+        from starlette.responses import StreamingResponse
+
+        def complete_browser_execution():
+            try:
+                work()
+                try:
+                    return browser_state.to_wire()
+                except ValueError:
+                    from omega_vision.perception.memory_locations import BrowserMemory
+                    job.update(state="error", error="Browser memory exceeded its bounded snapshot. "
+                               "The previous browser snapshot was preserved; reduce First N or choose durable memory.")
+                    _atomic_json_write(path, dict(job))
+                    return body.get("memorySnapshot") or BrowserMemory(workspace_id, body["memorySessionId"]).to_wire()
+            finally:
+                for item in units:
+                    item.pop("_browserMemory", None)
+                browser_state.outputs.clear()
+                browser_state.memory.reset()
+
+        async def browser_execution():
+            task = asyncio.create_task(asyncio.to_thread(complete_browser_execution))
+            try:
+                yield json.dumps({"progress": dict(job)}, ensure_ascii=False) + "\n"
+                wire = await asyncio.shield(task)
+                yield json.dumps({**dict(job), "memorySnapshot": wire},
+                                 ensure_ascii=False, allow_nan=False) + "\n"
+            finally:
+                if not task.done():
+                    # Disconnect/reset stops at the next stage boundary. The
+                    # worker owns cleanup; never clear underneath an active stage.
+                    job["cancel"] = True
+                    task.add_done_callback(lambda completed: completed.exception() if not completed.cancelled() else None)
+
+        return StreamingResponse(browser_execution(), media_type="application/x-ndjson",
+                                 headers={"Cache-Control": "no-store"})
     threading.Thread(target=work, name=f"direct-transform-{job_id[:8]}", daemon=True).start()
     return dict(job)
 
@@ -8791,7 +9045,8 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         target = recording_rel
     else:
         target = f"data/{set_id}"
-    pooler_root, units, sequence_catalog = _sequence_execution_context(root, target)
+    pooler_root, units, sequence_catalog = _sequence_execution_context(root, target, workspace_id)
+    _attach_memory_session(units, body)
     sequence_ordered = sequence_catalog["ordered"]
     if set_id:
         adopt = _llm_adoption_maker(pooler_root)
@@ -8822,6 +9077,69 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         )
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
+    first_n = body.get("firstN", 0)
+    if type(first_n) is not int or first_n < 0:
+        raise HTTPException(400, "First N must be a nonnegative integer")
+    if first_n:
+        units = units[:first_n]
+    model_specs = [spec for spec in pipeline_specs if _TRANSFORM_METADATA.get(
+        (spec["transformation"], spec["doer"]), {}).get("type") in {"llm", "p_shot"}
+        and any(_step_for_unit(spec, unit) is not None for unit in units)]
+    for spec in model_specs:
+        if body.get("modelId"):
+            spec["options"] = {**spec.get("options", {}), "modelId": body["modelId"]}
+        if f"{spec['transformation']}/{spec['doer']}" in {_semantic_stages.LLM_EVENTS, _semantic_stages.LLM_RULES}:
+            try:
+                _, resolved_model, provenance = _semantic_stages._model(
+                    root, workspace_id, {**spec.get("options", {}), "confirmModel": True},
+                )
+            except (ValueError, OSError, RuntimeError, KeyError) as error:
+                raise HTTPException(400, str(error)) from error
+            spec["options"] = {**spec.get("options", {}), "modelId": resolved_model,
+                              "modelRevision": provenance["resolved_model_hash"]}
+    llm_call_count = sum(_step_for_unit(spec, unit) is not None for spec in model_specs for unit in units)
+    try:
+        confirmation_key = hashlib.sha256(json.dumps({
+            "workspaceId": workspace_id, "sequenceId": target, "pipeline": pipeline_specs,
+            "memorySessionId": body.get("memorySessionId"),
+            "frames": [(unit["frameSourceKey"], _preprocessing_source_signature(unit["image"])) for unit in units],
+            "preprocessing": _load_preprocessing_chain_at(pooler_root),
+            "runtimeOptions": [
+                (unit["id"], f"{spec['transformation']}/{spec['doer']}", _runtime_transform_options(
+                    unit, f"{spec['transformation']}/{spec['doer']}", spec.get("options", {}),
+                )) for unit in units for spec in pipeline_specs if _step_for_unit(spec, unit) is not None
+            ],
+        }, sort_keys=True, allow_nan=False).encode()).hexdigest()
+    except (TypeError, ValueError) as error:
+        raise HTTPException(400, f"Invalid TODO options: {error}") from error
+    if (model_specs or len(units) > 800) and (
+        body.get("confirmed") is not True or body.get("confirmationKey") != confirmation_key
+    ):
+        raise HTTPException(status_code=409, detail={
+            "confirmationRequired": True,
+            "message": f"Create TODOs for {len(units)} selected inputs"
+                       + (f", including {llm_call_count} model calls using "
+                          + ", ".join(sorted({str(spec.get("options", {}).get("modelId") or "the configured model") for spec in model_specs}))
+                          + "? Images and context may leave this application; charges may apply."
+                          if model_specs else "?"),
+            "confirmationKey": confirmation_key,
+            "imageCount": len(units),
+            "llmCallCount": llm_call_count,
+            "modelSteps": [f"{spec['transformation']}/{spec['doer']}" for spec in model_specs],
+        })
+    for spec in model_specs:
+        spec["options"] = {**spec.get("options", {}), "confirmModel": True}
+        spec["authorization"] = {"confirmed": True, "confirmationKey": confirmation_key,
+                                "firstN": first_n, "imageCount": len(units), "llmCallCount": llm_call_count,
+                                "modelId": spec["options"].get("modelId"),
+                                "modelRevision": spec["options"].get("modelRevision")}
+    if units:
+        memory_steps = {
+            f"{spec['transformation']}/{spec['doer']}" for spec in pipeline_specs
+            if any(_step_for_unit(spec, unit) is not None for unit in units)
+        }
+        _ensure_queue_memory_destinations(units[0], memory_steps)
+        _persist_execution_memory_defaults(units[0], memory_steps)
     chain = _load_preprocessing_chain_at(pooler_root)
     index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
     chain = _validated_preprocessing_chain(chain, index)
@@ -8874,14 +9192,18 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                     "priority": int(entry.get("priority", 100))}
             if entry.get("type"):
                 spec["type"] = str(entry["type"])
+            for key in ("authorization", "memorySessionId", "status", "error", "erroredAt"):
+                if key in entry:
+                    spec[key] = entry[key]
             specs.append(spec)
         return specs
 
     def apply_one(unit: dict[str, Any]) -> dict[str, Any]:
+        active_specs = [active for spec in pipeline_specs if (active := _step_for_unit(spec, unit)) is not None]
         extra_specs = adopt(unit) if adopt is not None else []
-        unit_specs = extra_specs + pipeline_specs
+        unit_specs = extra_specs + active_specs
         if fresh_todos:
-            for spec in pipeline_specs:
+            for spec in active_specs:
                 output_dir = unit["dir"] / spec["transformation"] / spec["doer"]
                 if output_dir.is_dir():
                     shutil.rmtree(output_dir)
@@ -8891,10 +9213,13 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             }
             for spec in unit_specs:
                 merged[f"{spec['transformation']}/{spec['doer']}"] = spec
-            unit_specs = sorted(merged.values(), key=lambda s: int(s.get("priority", 100)))
+            unit_specs = sorted(
+                [active for spec in merged.values() if (active := _step_for_unit(spec, unit)) is not None],
+                key=lambda s: int(s.get("priority", 100)),
+            )
         steps: list[dict[str, Any]] = []
         if not plan_only:
-            for spec in sorted(pipeline_specs, key=lambda s: s["priority"]):
+            for spec in sorted(active_specs, key=lambda s: s["priority"]):
                 depends_on = spec.get("dependsOn") or []
                 try:
                     resolved = _stamp_resolved_deps(unit, depends_on, sequence_catalog)
@@ -8937,3 +9262,206 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "moves": results,
         "pooler": pooler,
     }
+
+
+def _semantic_stage_ids() -> set[str]:
+    return {f"{transformation}/{doer}" for (transformation, doer), runner in _SEQUENCE_TRANSFORMS.items()
+            if getattr(runner, "__module__", "") == "omega_vision.services.video_import_semantics"}
+
+
+@router.get("/semantic/execution")
+def semantic_execution(workspaceId: str, sequenceId: str, response: Response, firstN: int = 0,
+                       memorySessionId: str | None = None) -> dict[str, Any]:
+    return _semantic_execution(workspaceId, sequenceId, response, firstN,
+                               {"memorySessionId": memorySessionId})
+
+
+@router.post("/semantic/execution/read")
+def semantic_execution_snapshot(response: Response, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    first_n = body.get("firstN", 0)
+    if type(first_n) is not int:
+        raise HTTPException(422, "First N must be an integer")
+    return _semantic_execution(body["workspaceId"], body["sequenceId"], response, first_n, body)
+
+
+def _semantic_execution(workspaceId: str, sequenceId: str, response: Response, firstN: int,
+                        memory_body: Mapping[str, Any]) -> dict[str, Any]:
+    """Read real stage outputs and queue records without stamping or starting work."""
+    if firstN < 0:
+        raise HTTPException(400, "First N must be nonnegative")
+    root = _workspace_root(workspaceId)
+    sequence_directory, units, catalog = _sequence_execution_context(root, sequenceId, workspaceId)
+    _attach_memory_session(units, memory_body)
+    selected = units[:firstN] if firstN else units
+    stages = _semantic_stage_ids()
+    definitions = _transform_definitions()
+    chain = _load_preprocessing_chain_at(sequence_directory)
+    registry = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
+    chain = _validated_preprocessing_chain(chain, registry)
+    versions = _preprocessing_versions(root, chain, registry)
+    frames, todos, outputs, artifacts, errors = [], [], [], [], []
+
+    def read(path: Path) -> dict[str, Any]:
+        if not path.is_file():
+            return {}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("Expected an object")
+            return payload
+        except (OSError, ValueError) as error:
+            errors.append({"path": _workspace_relative(root, path), "error": str(error)})
+            return {}
+
+    for unit in selected:
+        bundle = read(unit["dir"] / "observation_identity_0" / "content_hash" / "observations.json")
+        frame_uid = unit["id"]
+        frames.append({"id": frame_uid, "canonicalFrameId": (bundle.get("frame") or {}).get("uid"),
+                       "index": unit["frameOrder"],
+                       "label": f"{unit['frameOrder']}: {unit['frameSourceKey']}"})
+        for entry in read(unit["dir"] / "todos.json").get("todos", []):
+            if isinstance(entry, dict) and entry.get("output") in stages:
+                todos.append({**entry, "frameId": frame_uid, "composite": entry["output"]})
+        for stage in sorted(stages):
+            directory = unit["dir"].joinpath(*stage.split("/"))
+            meta = read(directory / "meta.json")
+            failure = read(directory / ".transform-failed.json")
+            if meta or failure:
+                definition = definitions[stage]
+                spec = _step_for_unit(definition, unit) or definition
+                stale, reason = _step_meta_is_stale(
+                    directory / "meta.json", _resolve_step_deps(unit, spec.get("dependsOn", []), None),
+                    _pp_chain_signature(_preprocessing_source_signature(unit["image"]), chain, registry_versions=versions),
+                    _runtime_transform_options(unit, stage, meta.get("options", {})),
+                ) if meta else (False, None)
+                outputs.append({
+                    "frameId": frame_uid, "composite": stage, "summary": read(directory / "summary.json") or meta,
+                    "path": _workspace_relative(root, directory / "meta.json"),
+                    "status": "error" if failure else "stale" if stale else "done",
+                    "staleReason": reason if stale else None, "error": failure or None, "metadata": meta,
+                })
+            if directory.is_dir():
+                for path in sorted(directory.rglob("*")):
+                    if not path.is_file() or path.suffix not in {".json", ".pl", ".txt"} or path.name == "claim.json":
+                        continue
+                    if not path.resolve().is_relative_to(unit["dir"].resolve()):
+                        continue
+                    relative = _workspace_relative(root, path)
+                    artifacts.append({
+                        "path": relative, "label": f"{unit['id']} · {stage} · {path.relative_to(directory).as_posix()}",
+                        "url": f"/workbench/workspaces/{urllib.parse.quote(workspaceId, safe='')}/asset"
+                               f"?path={urllib.parse.quote(relative, safe='')}",
+                    })
+    jobs = []
+    for path in sorted((root / "runtime" / "executions").glob("direct-*.json"),
+                       key=lambda path: path.stat().st_mtime, reverse=True):
+        record = read(path)
+        if record.get("sequenceId") == sequenceId and record.get("composite") in stages:
+            jobs.append(direct_call_status(record["id"], workspaceId))
+            if len(jobs) >= 30:
+                break
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        "ordered": catalog["ordered"], "frameCount": len(selected), "frames": frames,
+        "stages": [{"id": stage, "label": stage.replace("_0/", " / ").replace("_", " "),
+                    "description": "Explicit registered stage; dependencies stay within First N.",
+                    "llm": definitions[stage].get("type") in {"llm", "p_shot"}} for stage in sorted(stages)],
+        "todos": todos, "jobs": jobs, "outputs": outputs, "artifacts": artifacts, "errors": errors,
+    }
+
+
+@router.post("/semantic/execution/plan")
+def semantic_execution_plan(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    from omega_vision.services import video_import_semantics
+
+    stage = str(body.get("stageId") or "")
+    if stage not in _semantic_stage_ids():
+        raise HTTPException(400, "Choose a registered semantic stage")
+    request = {**body, "composite": stage, "planOnly": True}
+    raw = start_direct_call(request)
+    model, backend, model_revision = str(body.get("modelId") or ""), "", None
+    blocked = []
+    if not raw["ordered"]:
+        blocked.append("Temporal evidence requires an explicitly ordered Visual Sequence.")
+    if not raw["steps"]:
+        blocked.append("No applicable pairs in First N; the first frame cannot invoke a pair model.")
+    if raw["llmCallCount"]:
+        try:
+            _, model, provenance = video_import_semantics._model(
+                _workspace_root(body["workspaceId"]), body["workspaceId"],
+                {"modelId": model, "confirmModel": True},
+            )
+            backend = provenance["backend"]
+            model_revision = provenance["resolved_model_hash"]
+        except (ValueError, OSError, RuntimeError, KeyError) as error:
+            blocked.append(str(error))
+    confirmation = hashlib.sha256(json.dumps({
+        "direct": raw["confirmationKey"], "model": model_revision,
+    }, sort_keys=True).encode()).hexdigest()
+    return {
+        "stageId": stage, "label": stage, "frameCount": raw["imageCount"], "pairCount": raw["pairCount"],
+        "llmCallCount": raw["llmCallCount"], "modelId": model, "backendId": backend,
+        "cost": None, "blockedReasons": blocked, "confirmationKey": confirmation, "raw": raw,
+    }
+
+
+@router.post("/semantic/execution/commit")
+def semantic_execution_commit(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    current = semantic_execution_plan(body)
+    if current["blockedReasons"]:
+        raise HTTPException(409, {"message": "Stage cannot run", "blocked": current["blockedReasons"]})
+    if body.get("confirmed") is not True or body.get("confirmationKey") != current["confirmationKey"]:
+        raise HTTPException(409, {"message": "The plan changed; review it again.", "plan": current})
+    if type(body.get("run")) is not bool:
+        raise HTTPException(400, "run must explicitly select direct execution or TODO stamping")
+    raw = current["raw"]
+    if body["run"]:
+        return start_direct_call({
+            **body, "composite": current["stageId"], "planOnly": False,
+            "confirmationKey": raw["confirmationKey"],
+        })
+    root = _workspace_root(body["workspaceId"])
+    directory, units, catalog = _sequence_execution_context(root, body["sequenceId"], body["workspaceId"])
+    _attach_memory_session(units, body)
+    selected = units[:body["firstN"]] if body.get("firstN") else units
+    if selected:
+        _ensure_queue_memory_destinations(selected[0], (step["output"] for step in raw["steps"]))
+        _persist_execution_memory_defaults(selected[0], (step["output"] for step in raw["steps"]))
+    chain = _load_preprocessing_chain_at(directory)
+    index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
+    chain = _validated_preprocessing_chain(chain, index)
+    versions = _preprocessing_versions(root, chain, index)
+    specs = {f"{spec['transformation']}/{spec['doer']}": spec for spec in raw["pipeline"]}
+    planned = {(node["frameId"], node["output"]) for node in raw["steps"]}
+    counts = 0
+    for unit in selected:
+        unit["image"] = _materialize_preprocessed_image(root, unit, chain, index, registry_versions=versions)
+        path = unit["dir"] / "todos.json"
+        existing = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        merged = {entry["output"]: entry for entry in existing.get("todos", [])}
+        for output, spec in specs.items():
+            if (unit["id"], output) not in planned:
+                continue
+            spec = _step_for_unit(spec, unit)
+            if spec is None:
+                continue
+            spec = {**spec, "memorySessionId": unit.get("memorySessionId")}
+            if output in raw["llmSteps"]:
+                spec = {**spec, "options": {**spec.get("options", {}), "confirmModel": True,
+                                           "modelId": current["modelId"]},
+                        "authorization": {"confirmationKey": current["confirmationKey"], "confirmed": True,
+                                          "firstN": body.get("firstN", 0), "imageCount": len(selected),
+                                          "modelId": current["modelId"], "backendId": current["backendId"],
+                                          "llmCallCount": current["llmCallCount"]}}
+            merged[output] = spec
+        counts += write_unit_todos(unit, list(merged.values()), catalog=catalog)
+    return {
+        "state": "stamped", "stageId": current["stageId"], "imageCount": len(selected),
+        "pendingTotal": counts, "message": "TODOs merged. The pooler was not started or retargeted.",
+    }
+
+
+from omega_vision.services import video_import_semantics as _semantic_stages  # noqa: E402
+
+_semantic_stages.register_transforms(_SEQUENCE_TRANSFORMS, _TRANSFORM_METADATA)
+router.include_router(_semantic_stages.router)

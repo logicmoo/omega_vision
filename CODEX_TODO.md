@@ -14,6 +14,49 @@ values here.
 
 ## Current recovery state
 
+- Recovered semantic integration (2026-09-10): recovered the CURRENT parent
+  worktree at c2dbc8b00, not its older recovery archive; retained hash-verified
+  snapshots including every untracked source/test file before changes. The
+  inference/evidence/memory foundations are committed on main as a8738230a.
+  Active adapters and UI now wire temporal correspondence, authored multi-group
+  attached/co-moving objects, event deduction/logging, deterministic and optional
+  confirmed LLM induction/deduction, typed candidate evaluation/promotion, grouping
+  learning/deployment, and Shape/Object Memory Setup without replacing rich views.
+  Broader Visual Sequence caching remains explicitly excluded.
+  Nowhere is browser RAM only: request-local snapshot processing, no server
+  leases/global payload cache, and no full learned objects/checkpoints in new
+  Nowhere run artifacts. Those artifacts hold hashes/receipts. Reset drops the
+  browser state. Limits are shown before execution: 128 frames, 16 MiB snapshots,
+  1,024 retained outputs; overflow and offline Nowhere requests fail explicitly,
+  never truncate or fall back to disk.
+  Guarded proposals remain intact. A distinct deployment AST requires its own
+  attributed creation, independent evaluation and explicit promotion; runtime
+  revisions fingerprint effective semantics rather than proposal receipt churn.
+  Real CV producers attest only justified attachment coverage, and consumers
+  require the complete original object seal. Implementation-bound cache revisions
+  refresh stale producer/temporal prefixes instead of resealing cached objects.
+  Internal per-frame log runs verify unchanged prefixes and retain the existing
+  canonical tail; changed inputs and public replay truncation still require
+  explicit expected-generation supersession.
+  Complete candidate Python suite: 1,612 passed, 11 expected optional/permission
+  skips in two disjoint full-suite partitions (304 API + 1,308 remaining).
+  Frontend build and 45 Node tests passed; authored event/object SWI modules
+  passed seven tests each. Subsequent frontend-only checkpoint-picker additions
+  passed their focused Node suite/build.
+  Mounted candidate acceptance used the real 92-frame imported LS20 source:
+  repaired producer/event execution 14/14; Nowhere log execution and repeat
+  16/16, retaining generation 3 and all 41 canonical entries; 16 session shapes
+  and one object were readable only in browser memory and reset cleared them.
+  Both object output files contained only checkpointHash/resultHash/schemaVersion/
+  storage. A dense grouping snapshot hit the advertised size limit explicitly;
+  with the original durable destinations restored, grouping completed 12/12.
+  The active UI created a DISTINCT proposed deployment from completed checkpoint
+  frame_000001 with zero inherited evidence/evaluations; its original proposal
+  retained its guard and neither was promoted. No model calls were made.
+  The two inspected TODO files and pooler-control hash stayed unchanged.
+  Temporary memory preferences and First N were restored. Main restart/acceptance
+  follows the adapter commit; no PRs, pushes, new branches or worktrees.
+
 - Video Import UI placement update (2026-09-09): removed the entire rendered
   Completion / Export section and its dangling legacy focus target; old Finish
   routes return to Sources without recreating it. Refresh Visual Sequences is

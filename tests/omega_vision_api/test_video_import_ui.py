@@ -1207,8 +1207,10 @@ def test_sprite_and_advanced_preserved_without_completion_export_surface() -> No
     assert 'view === "spriteViewer"' not in workbench
     assert "default: module.SpriteViewerPage" not in workbench
     assert 'value === "spriteviewer"' in workbench
-    assert page.count("<SpriteViewerPage />") == 1
-    assert "export function SpriteViewerPage()" in sprite
+    assert page.count("<SpriteViewerPage ") == 1
+    assert "memorySetup={<MemorySetupHost" in page
+    assert "export function SpriteViewerPage({ memorySetup }:" in sprite
+    assert "memorySetup?: ReactNode" in sprite
     assert 'className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}' in page
     assert 'COMPLETION / EXPORT' not in page
     for removed_control in ("Call LLM · Turtle Gen", "Call LLM · Turtle PNG",

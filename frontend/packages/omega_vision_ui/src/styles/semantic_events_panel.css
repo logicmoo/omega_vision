@@ -1,0 +1,99 @@
+.semantic-events-panel {
+  margin: 4px 18px;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--line, #2a3742);
+  background: var(--panel, #10161d);
+  color: var(--text, #dce8ef);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.semantic-events-panel > summary {
+  cursor: pointer;
+  padding: 10px 12px;
+}
+
+.semantic-events-panel > summary strong { margin-right: 12px; }
+.semantic-events-panel small { display: block; color: var(--muted, #a0b4bf); }
+.semantic-events-panel > summary small { display: inline; }
+.semantic-events-body { padding: 12px; border-top: 1px solid var(--line, #2a3742); min-width: 0; }
+.semantic-events-body > * + * { margin-top: 16px; }
+.semantic-events-body h3 { margin: 0 0 8px; font-size: 15px; }
+.semantic-events-body h4 { margin: 0 0 8px; font-size: 14px; }
+.semantic-events-body p { margin: 6px 0; max-width: 85ch; }
+.semantic-events-body > details { border-top: 1px solid var(--line, #2a3742); padding-top: 12px; }
+.semantic-events-body details > summary { cursor: pointer; padding: 6px 0; }
+.semantic-events-body code { overflow-wrap: anywhere; }
+.semantic-events-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.semantic-events-toolbar > strong { overflow-wrap: anywhere; min-width: 0; }
+.semantic-events-panel label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.semantic-events-panel button,
+.semantic-events-panel input,
+.semantic-events-panel select {
+  font: inherit;
+  color: inherit;
+  min-height: 32px;
+  max-width: 100%;
+  border: 1px solid var(--line, #3d5262);
+  border-radius: 4px;
+  background: var(--panel-alt, #15232e);
+  padding: 4px 8px;
+}
+.semantic-events-panel button { cursor: pointer; }
+.semantic-events-panel button:hover:not(:disabled) { border-color: var(--cyan, #27dcc2); }
+.semantic-events-panel button:disabled { opacity: .55; cursor: not-allowed; }
+.semantic-events-panel :is(button, input, select, summary, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--cyan, #27dcc2);
+  outline-offset: 3px;
+}
+.semantic-events-panel a { color: var(--cyan, #27dcc2); text-decoration: underline; overflow-wrap: anywhere; }
+.semantic-events-panel [role="alert"] { color: #ffb8b8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.semantic-events-note { color: var(--muted, #a0b4bf); }
+.semantic-events-confirm { padding: 12px; border: 1px solid var(--cyan, #27dcc2); margin-top: 10px; }
+.semantic-events-confirm button { margin: 8px 8px 0 0; }
+.semantic-events-confirm input[type="checkbox"] { min-height: 20px; width: 20px; }
+.semantic-events-table-scroll {
+  overflow: auto;
+  max-height: 420px;
+  min-width: 0;
+  scrollbar-gutter: stable;
+  margin-top: 10px;
+}
+.semantic-events-table-scroll table { width: 100%; min-width: 720px; border-collapse: collapse; }
+.semantic-events-table-scroll caption { text-align: left; padding: 0 0 6px; color: var(--muted, #a0b4bf); }
+.semantic-events-table-scroll th {
+  position: sticky;
+  top: 0;
+  background: var(--panel, #10161d);
+  text-align: left;
+  z-index: 1;
+}
+.semantic-events-table-scroll :is(th, td) {
+  padding: 8px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line, #2a3742);
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+.semantic-events-table-scroll tr[aria-selected="true"] { background: #1a3542; }
+.semantic-output-summary { max-block-size: 8rem; overflow: auto; scrollbar-gutter: stable; }
+.semantic-events-frame-links { display: flex; flex-wrap: wrap; gap: 4px; }
+.semantic-events-frame-links button { font-family: ui-monospace, monospace; font-size: 12px; text-align: left; overflow-wrap: anywhere; }
+.semantic-events-facts { display: grid; grid-template-columns: minmax(100px, 150px) minmax(0, 1fr); gap: 8px 12px; }
+.semantic-events-facts dt { color: var(--muted, #a0b4bf); }
+.semantic-events-facts dd { margin: 0; overflow-wrap: anywhere; }
+.semantic-events-candidate { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line, #2a3742); }
+.semantic-events-source { min-width: 0; max-height: 620px; overflow: auto; margin-top: 12px; }
+.semantic-events-sources { max-height: 240px; overflow: auto; }
+.semantic-events-source .resource-source-editor { min-width: 0; }
+.semantic-events-jobs progress { max-width: 100%; width: 120px; accent-color: var(--cyan, #27dcc2); }
+.semantic-events-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px 20px; }
+.semantic-events-stage { border-top: 1px solid var(--line, #2a3742); padding-top: 10px; }
+.semantic-events-stage p { color: var(--muted, #a0b4bf); }
+@media (max-width: 640px) {
+  .semantic-events-panel { margin: 4px 0; }
+  .semantic-events-body { padding: 10px; }
+  .semantic-events-facts { grid-template-columns: 1fr; gap: 4px; }
+  .semantic-events-facts dd { margin-bottom: 8px; }
+}

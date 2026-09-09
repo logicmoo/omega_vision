@@ -2,6 +2,10 @@ import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, type M
 import { pushGlobalStatus } from "@app/lib/globalStatus";
 import { ColoredTagCombobox, type ColoredTag, type ColoredTagDescription } from "@app/components/ColoredTagCombobox";
 import { SpriteViewerPage } from "@app/components/SpriteViewerPage";
+import { memoryRequest, memorySessionId, NOWHERE_LIMITS_NOTICE } from "@app/components/MemorySession";
+import { MemorySetupHost } from "@app/components/MemorySetupHost";
+import { SemanticEventsPanel } from "./SemanticEventsPanel";
+import { createSemanticExecutionApi } from "./SemanticExecutionApi";
 import { SuperControl } from "@app/components/UniversalArtifactEditor";
 import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
@@ -5165,25 +5169,30 @@ export function VideoImportPage({
       const body = {
         workspaceId, sequenceId: preprocSequenceId, composite: directChoices[slot],
         firstN: todoPreviewCount, modelId: effectiveDescriberModel || inheritedModelId,
+        memorySessionId: memorySessionId(workspaceId),
         confirmed: false, confirmationKey: "",
       };
       for (;;) {
-        const response = await fetch(`${API}/direct-calls`, {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-        });
-        const result = await response.json();
-        if (directWorkspaceRef.current !== workspaceId) return;
-        if (response.status === 409 && result.detail?.confirmationRequired) {
-          if (!window.confirm(result.detail.message)) {
+        let result: any;
+        try {
+          result = await memoryRequest(`${API}/direct-calls`, body, undefined, (receipt) => {
+            if (directWorkspaceRef.current === workspaceId) setDirectCalls((current) => current.map((call, index) => index === slot
+              ? { jobId: String(receipt.id), active: true, note: "Running with browser-session memory", path: String(receipt.path) } : call));
+            if (directWorkspaceRef.current === workspaceId) void monitorDirectCall(slot, String(receipt.id));
+          });
+        } catch (failure) {
+          const error = failure as Error & { status?: number; detail?: { confirmationRequired?: boolean; message?: string; confirmationKey?: string } };
+          if (error.status !== 409 || !error.detail?.confirmationRequired) throw failure;
+          if (!window.confirm(error.detail.message)) {
             setDirectCalls((current) => current.map((call, index) => index === slot
               ? { jobId: "", active: false, note: "Cancelled before execution" } : call));
             return;
           }
           body.confirmed = true;
-          body.confirmationKey = result.detail.confirmationKey;
+          body.confirmationKey = error.detail.confirmationKey ?? "";
           continue;
         }
-        if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : JSON.stringify(result.detail));
+        if (directWorkspaceRef.current !== workspaceId) return;
         setDirectCalls((current) => current.map((call, index) => index === slot
           ? { jobId: result.id, active: true, note: "Running directly (pool bypassed)", path: result.path } : call));
         void monitorDirectCall(slot, result.id);
@@ -5208,22 +5217,34 @@ export function VideoImportPage({
       const moves = requested > 0
         ? allItems.slice(0, requested).map((item: any) => String(item.unitId || item.id))
         : undefined;
-      const resp = await fetch(`${API}/sequence-sets/transform`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const body = {
           workspaceId,
           set: selectedImageSet,
           planOnly: true,
+          firstN: requested,
+          modelId: effectiveDescriberModel || inheritedModelId,
+          memorySessionId: memorySessionId(workspaceId),
+          confirmed: false,
+          confirmationKey: "",
           poolerWorkers,
           mergeTodos: mode === "merge",
           freshTodos: mode === "fresh",
           ...(moves ? { moves } : {}),
-        }),
-      });
-      const data = await resp.json().catch(() => null);
-      if (!resp.ok) {
-        setSeedTodosNote(String(data?.detail || `HTTP ${resp.status}`));
-        return;
+      };
+      let data;
+      for (;;) {
+        const resp = await fetch(`${API}/sequence-sets/transform`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        data = await resp.json().catch(() => null);
+        if (resp.status === 409 && data?.detail?.confirmationRequired) {
+          if (!window.confirm(data.detail.message)) { setSeedTodosNote("Cancelled before stamping"); return; }
+          body.confirmed = true;
+          body.confirmationKey = String(data.detail.confirmationKey || "");
+          continue;
+        }
+        if (!resp.ok) { setSeedTodosNote(typeof data?.detail === "string" ? data.detail : JSON.stringify(data?.detail || `HTTP ${resp.status}`)); return; }
+        break;
       }
       const verb = mode === "merge" ? "merged" : "freshly reset";
       const scope = moves ? `first ${data.moveCount}` : `${data.moveCount}`;
@@ -5236,7 +5257,7 @@ export function VideoImportPage({
       setSeedTodosBusy(false);
     }
   }, [workspaceId, selectedImageSet, seedTodosBusy, recognitionReduce, todoPreviewCount,
-      refreshReduceManifest, refreshPooler, poolerWorkers, flushPreprocSave]);
+      refreshReduceManifest, refreshPooler, poolerWorkers, flushPreprocSave, effectiveDescriberModel, inheritedModelId]);
   // Keep the pooler chip live while the Extractions list is on screen.
   useEffect(() => {
     if (!recognitionReduce) return;
@@ -8576,6 +8597,7 @@ export function VideoImportPage({
                     <small>{todoPreviewCount > 0 ? "preview only" : "0 = all inputs"}</small>
                   </label>
                   <div className="video-import-direct-calls">
+                    <small role="note" style={{ gridColumn: "1 / -1" }}>{NOWHERE_LIMITS_NOTICE}</small>
                     {[0, 1].map((slot) => {
                       const call = directCalls[slot];
                       const available = directComposites.some((entry) => entry.id === directChoices[slot] && entry.available);
@@ -8722,7 +8744,7 @@ export function VideoImportPage({
                     );
                     if (charCollapsed) return els;
                     els.push(
-                      <div className={`video-import-reduce-listrow${open ? " is-open" : ""}`} key={it.id} role="option" aria-selected={open}>
+                      <div className={`video-import-reduce-listrow${open ? " is-open" : ""}`} key={it.id} data-frame-id={it.id} role="option" aria-selected={open}>
                         <div className="video-import-reduce-listmain" role="button" tabIndex={0}
                           onClick={() => selectExtractionNavigationRow(String(it.id), !open)}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectExtractionNavigationRow(String(it.id), !open); } }}>
@@ -9507,9 +9529,31 @@ export function VideoImportPage({
         className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}
         aria-hidden={activeSubview === "sprite-view" ? undefined : "true"}
       >
-        <SpriteViewerPage />
+        <SpriteViewerPage memorySetup={<MemorySetupHost workspaceId={workspaceId}
+          sequenceId={preprocSequenceId} active={activeSubview === "sprite-view" && visualSequenceReady} />} />
       </div>
 
+      {(activeSubview === "recognition" || activeSubview === "objects") && (
+        <SemanticEventsPanel
+          workspaceId={workspaceId} sequenceId={preprocSequenceId}
+          firstN={todoPreviewCount} visionModelId={effectiveDescriberModel || inheritedModelId}
+          contextReady={visualSequenceReady && !(activeSubview === "objects" && objectsShowLive)}
+          executionApi={createSemanticExecutionApi(flushPreprocSave)}
+          onSelectFrame={(frameId) => {
+            selectSubview("recognition");
+            setReduceListQuery("");
+            setReduceOnlyGood(false);
+            setCollapsedReduceChars(new Set());
+            selectExtractionNavigationRow(frameId, true);
+            requestAnimationFrame(() => {
+              const row = document.querySelector<HTMLElement>(`.video-import-reduce-listrow[data-frame-id="${CSS.escape(frameId)}"]`);
+              row?.scrollIntoView({ block: "nearest" });
+              row?.querySelector<HTMLElement>('[role="button"]')?.focus({ preventScroll: true });
+            });
+          }}
+          onUpdated={() => { void refreshReduceManifest(); }}
+        />
+      )}
       <Section {...section("intake", "INTAKE", `${videos.length} video(s) in the library`)}>
         <div className="vi2-body">
           <div className="video-import-row">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 /**
  * Sprite Viewer — inspect the entire symbolic object-memory registry:
@@ -38,7 +38,7 @@ function TurtleTile({ turtle, size = 46 }: { turtle?: Turtle; size?: number }) {
   );
 }
 
-export function SpriteViewerPage() {
+export function SpriteViewerPage({ memorySetup }: { memorySetup?: ReactNode } = {}) {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
@@ -90,6 +90,8 @@ export function SpriteViewerPage() {
         </span>
         <button onClick={() => setReloadKey((k) => k + 1)} style={{ marginLeft: "auto" }}>↻ Refresh</button>
       </div>
+
+      {memorySetup}
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
         <label style={{ fontSize: 12 }}>

@@ -149,6 +149,8 @@ def load_unit(todo_file: Path, *, retry_errors: bool) -> tuple[dict, list[dict],
     image_rel = payload.get("imagePath")
     unit = {
         "id": str(payload.get("unit") or unit_dir.name),
+        "workspaceId": payload.get("workspaceId"),
+        "memorySessionId": payload.get("memorySessionId"),
         "dir": unit_dir,
         "image": (unit_dir / image_rel).resolve() if image_rel else None,
         "sequenceId": payload.get("sequenceId"),
@@ -228,6 +230,8 @@ def one_pass(roots: list[Path], *, workers: int, limit: int, retry_errors: bool,
         if should_abort is not None and should_abort():
             return None
         _prio, _uid, unit, entries, todo = item
+        unit = {**unit, "memorySessionId": todo.get("memorySessionId", unit.get("memorySessionId")),
+                "executionMode": "pooler"}
         label = f"{unit['id']} · {todo['transformation']}/{todo['doer']}"
         token = id(item)
         with state_lock:
