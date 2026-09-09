@@ -24,7 +24,7 @@ values here.
   object/grouping checkpoint publication, and grouping promotion. Scope/mount/
   capability metadata is part of cache identity; selected paths and capabilities
   are reconstructed and checked at actual access. Explicit Memory Setup Refresh
-  and 60-second expiry handle external edits/deletes. Atomic publication retains
+  and five-minute expiry handle external edits/deletes. Atomic publication retains
   concurrent dirty signals and retries a rebuild invalidated while running.
   Corrupt entries log a rebuild diagnostic; access failures surface as errors,
   not a stale success. Defaults remain current-provider/current-scope selections.
