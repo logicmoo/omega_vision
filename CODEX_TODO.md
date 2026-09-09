@@ -293,6 +293,27 @@ values here.
   tracking, grouping learning, cross-sequence promotion, and expanded Object
   Memory remain deliberately deferred.
 
+- Split visual/text bands (2026-09-09): each Video Import extraction row's
+  transform strip is now two independent bands inside
+  `.video-import-transform-bands`. The top `.video-import-transform-visualband`
+  holds the visual/group content only — the input image, the V/W/G peer-group
+  tree, the grouping/turtle SVG overlays (with their visual-coupled controls),
+  and any debug/thumbnail images. The bottom `.video-import-transform-textband`
+  is a separate horizontal scroll container holding per-transform status chips
+  (name · doer · timing, honest stats/notes, started/error/waiting/missing
+  states, and the stale re-derive control); each chip opens the real source
+  inspector. The bands scroll independently and are never height- or
+  scroll-aligned. Legacy in-cell `transform-stats`/`transform-note`/inline
+  inspect buttons were removed from the visual cells; the compact
+  `G acceptance`/`Observation IDs` lines stay under Refresh unchanged, and the
+  debug card remains last. Text-band content derives from a new pure
+  `TransformTextBandModel.summarizeTransformCell` covered by
+  `TransformTextBandModel.test.mjs` (registered as `npm run
+  test:video-import-transform`). Live-verified on ls20 20260718-154544 frame 0
+  (independent visual 958px vs text 1055px scroll widths over a 636px viewport,
+  inspector opens from a text chip); tsc build clean and `git diff --check`
+  clean.
+
 - Deferred oN composition contract (2026-09-09): an oN is not a persistent
   one-to-one alias for a final gN. It is a higher-level object composed of at
   least two final G groups. When this work is explicitly resumed, Prolog may

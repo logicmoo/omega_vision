@@ -53,6 +53,7 @@ import {
   compactTransformStatus,
   type CompactMetadataKind,
 } from "./CompactTransformStatusModel";
+import { summarizeTransformCell } from "./TransformTextBandModel";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -8025,8 +8026,78 @@ export function VideoImportPage({
                   </div>
                 );
               };
+              const renderCellText = (t: any, ti: number) => {
+                const isExtractionName = String(t.name) === "parts_extraction_0";
+                const text = summarizeTransformCell(
+                  t,
+                  doneBy as ReadonlySet<string>,
+                  showAllPartsExtractors ? "__all__" : partsExtractorSel,
+                );
+                const active = Boolean(
+                  t.resultPath
+                  && prologInspector?.rowKey === rowKey
+                  && prologInspector.path === String(t.resultPath),
+                );
+                const selDone = extractionCells.some((c: any) => String(c.doer) === partsExtractorSel && c.status === "done");
+                const stateText = text.state === "started" && t.claimedAt
+                  ? `${text.stateText} · ${agoOf(t.claimedAt)}`
+                  : text.stateText;
+                const showStaleControl = (
+                  !isExtractionName
+                  && !showAllPartsExtractors
+                  && ["parts_grouping_0", "group_acceptance_0", "observation_identity_0", "turtle_programs"].includes(String(t.name))
+                  && text.stale
+                  && Boolean(selectedExtraction)
+                );
+                const body = (
+                  <>
+                    <span className="video-import-transform-textname">
+                      {text.name}
+                      {text.doer ? <em> · {text.doer}</em> : null}
+                      {text.timing ? <em> · {text.timing}</em> : null}
+                    </span>
+                    {stateText ? <span className={`video-import-transform-textstate is-${text.tone}`}>{stateText}</span> : null}
+                    {text.stats.length > 0 ? <span className="video-import-transform-textstats">{text.stats.join(" · ")}</span> : null}
+                    {text.note ? <span className="video-import-transform-textnote">{text.note}</span> : null}
+                  </>
+                );
+                return (
+                  <div key={ti} className={`video-import-transform-textitem is-${text.tone}${active ? " is-active" : ""}`}>
+                    {text.clickable ? (
+                      <button
+                        type="button"
+                        className="video-import-transform-textmain"
+                        title={`${text.title}\nClick to inspect the real result source.`}
+                        onClick={(e) => { e.stopPropagation(); selectPrologNavigation(rowKey, t); }}
+                      >
+                        {body}
+                      </button>
+                    ) : (
+                      <span className="video-import-transform-textmain" title={text.title}>{body}</span>
+                    )}
+                    {showStaleControl && (
+                      <button
+                        type="button"
+                        className="video-import-transform-textredoer"
+                        disabled={!selDone || !!stripRefreshBusy[rowKey]}
+                        title={`Re-derive W candidates, final G groups, stable observation IDs, Turtle, and the final debug comparison from ${partsExtractorSel}.`}
+                        onClick={(e) => { e.stopPropagation(); void runUnitTransformSteps(it, inputRel, [
+                          { transformation: "parts_grouping_0", doer: "group_regions_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`], priority: 30, type: "py_pl" },
+                          { transformation: "group_acceptance_0", doer: "group_acceptance_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog"], priority: 35, type: "py_pl" },
+                          { transformation: "observation_identity_0", doer: "content_hash", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog", "group_acceptance_0/group_acceptance_prolog"], priority: 37, type: "py_pl" },
+                          { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["group_acceptance_0/group_acceptance_prolog"], priority: 40, type: "py_pl" },
+                          { transformation: "parts_debug_0", doer: "python_pil", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "turtle_programs/turtle_programs_prolog"], priority: 50, type: "ui" },
+                        ], { force: true }); }}
+                      >
+                        {stripRefreshBusy[rowKey] ? "…" : `⟳ re-derive from ${partsExtractorSel.replace(/^python_/, "").replace(/^shape_finder_/, "")}`}
+                      </button>
+                    )}
+                  </div>
+                );
+              };
               return (
-                <div className="video-import-transform-strip">
+                <div className="video-import-transform-bands">
+                  <div className="video-import-transform-strip video-import-transform-visualband" aria-label="Visual and group outputs">
                   <figure className="video-import-reduce-stage is-submitted">
                     <div className="video-import-region-preview">
                       <img className="video-import-reduce-stageimg" src={asset(inputRel)} alt={it.id} loading="lazy" />
@@ -8041,7 +8112,7 @@ export function VideoImportPage({
                   </figure>
                   {displayCells.map((t: any, ti: number) => {
                     const isExtraction = String(t.name) === "parts_extraction_0";
-                    const renderCell = () => {
+                    const renderCellVisual = () => {
                     const secs = fmtMs(t.elapsedMs);
                     if (t.status === "done") {
                       const s = t.summary || {};
@@ -8053,21 +8124,6 @@ export function VideoImportPage({
                               {t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""} · {visualGroupClaims.length} v hypotheses</span>
                             </div>
                             {renderPeerGroupTree(visualGroupClaims)}
-                            <div className="video-import-transform-note">
-                              OpenCV visual hypotheses · Prolog grouping pending
-                            </div>
-                            {t.resultPath && (
-                              <button
-                                type="button"
-                                className={`video-import-prolog-open${prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? " is-active" : ""}`}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  selectPrologNavigation(rowKey, t);
-                                }}
-                              >
-                                {"{}"} {prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? "Hide Prolog data" : "Inspect Prolog data"}
-                              </button>
-                            )}
                           </div>
                         );
                       }
@@ -8140,7 +8196,6 @@ export function VideoImportPage({
                                 unavailableReason={geometryEntry?.error || "no persisted extraction geometry"}
                               />
                             </div>
-                            <div className="video-import-transform-note">compare beside Turtle · same source geometry</div>
                           </div>
                         );
                       }
@@ -8153,109 +8208,27 @@ export function VideoImportPage({
                           </figure>
                         );
                       }
-                      // Otherwise show whatever is available — summary text, debug image, or both.
+                      // Visual band: keep only the thumbnail when present. All
+                      // textual stats/groups/inspect controls move to the
+                      // independent text/status band rendered below the visuals.
+                      if (!t.debugImage) return null;
                       return (
                         <div key={ti} className="video-import-transform-cell is-done" title={t.resultPath || t.output}>
                           <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""}</span></div>
-                          {t.debugImage && <img className="video-import-transform-thumb" src={asset(t.debugImage)} alt={t.name} loading="lazy" />}
-                          {Array.isArray(t.groups) && t.groups.length > 0 ? (
-                            <div className="video-import-transform-groups">
-                              {t.groups.map((g: any) => <span key={g.id} className="video-import-transform-chip">{g.id} · {(g.members || []).length}</span>)}
-                              {Array.isArray(t.partOf) && t.partOf.length > 0 && <span className="video-import-transform-note">{t.partOf.length} part-of</span>}
-                              {Array.isArray(t.background) && t.background.length > 0 && <span className="video-import-transform-note">bg {t.background.join(",")}</span>}
-                            </div>
-                          ) : (
-                            <div className="video-import-transform-stats">
-                              {s.regionCount != null && <span>{s.regionCount} regions</span>}
-                              {s.adjacencyCount != null && <span>{s.adjacencyCount} adjacent</span>}
-                              {s.blobCount != null && <span>{s.blobCount} blobs</span>}
-                              {s.componentCount != null && <span>{s.componentCount} cv components</span>}
-                              {s.visualGroupCount != null && <span>{s.visualGroupCount} v groups</span>}
-                              {s.smallFeatureCount != null && <span>{s.smallFeatureCount} small marks</span>}
-                              {s.contourCount != null && <span>{s.contourCount} contours</span>}
-                              {s.watershedSegmentCount != null && <span>{s.watershedSegmentCount} watershed segments</span>}
-                              {s.groupCount != null && <span>{s.groupCount} groups</span>}
-                              {s.acceptedGroupCount != null && <span>{s.acceptedGroupCount} g final</span>}
-                              {s.observationCount != null && <span>{s.observationCount} stable observations</span>}
-                              {s.objectCount != null && <span>{s.objectCount} objects</span>}
-                              {s.programCount != null && <span>{s.programCount} programs</span>}
-                              {Array.isArray(s.partColors) && s.partColors.length > 0 && (
-                                <span className="video-import-transform-colors">{s.partColors.map((c: string, ci: number) => <i key={ci} style={{ background: c }} title={c} />)}</span>
-                              )}
-                            </div>
-                          )}
-                          {isExtraction && String(t.doer) === "python_opencv" && t.resultPath && (
-                            <button
-                              type="button"
-                              className={`video-import-prolog-open${prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? " is-active" : ""}`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                selectPrologNavigation(rowKey, t);
-                              }}
-                            >
-                              {"{}"} {prologInspector?.rowKey === rowKey && prologInspector.path === String(t.resultPath) ? "Hide Prolog data" : "Inspect Prolog data"}
-                            </button>
-                          )}
+                          <img className="video-import-transform-thumb" src={asset(t.debugImage)} alt={t.name} loading="lazy" />
                         </div>
                       );
                     }
-                    if (["claimed", "started", "running"].includes(String(t.status))) {
-                      return (
-                        <div key={ti} className="video-import-transform-cell is-started">
-                          <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
-                          <div className="video-import-transform-wait">⏳ started{t.claimedBy ? ` · ${t.claimedBy}` : ""}{t.claimedAt ? ` · ${agoOf(t.claimedAt)}` : ""}</div>
-                        </div>
-                      );
-                    }
-                    if (t.status === "error") {
-                      return (
-                        <div key={ti} className="video-import-transform-cell is-error" title={String(t.error || "transform failed")}>
-                          <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
-                          <div className="video-import-transform-wait">error · {String(t.error || "transform failed")}</div>
-                        </div>
-                      );
-                    }
-                    const unmet = (t.dependsOn || []).filter((d: string) => !doneBy.has(String(d))).map((d: string) => String(d).split("/")[0]);
-                    return (
-                      <div key={ti} className="video-import-transform-cell is-waiting">
-                        <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
-                        <div className="video-import-transform-wait">
-                          {t.status === "missing" ? "not stamped — use Add/Merge todos" : unmet.length ? `waiting for ${unmet.join(", ")}…` : "queued…"}
-                        </div>
-                      </div>
-                    );
+                    // Non-visual states (started / error / missing / waiting)
+                    // appear only in the text/status band below.
+                    return null;
                     };
-                    const cell = renderCell();
-                    let header: any = null;
-                    if (!isExtraction && !showAllPartsExtractors
-                        && ["parts_grouping_0", "group_acceptance_0", "observation_identity_0", "turtle_programs"].includes(String(t.name))
-                        && t.status === "done" && selectedExtraction) {
-                      const facts = String((t.summary || {}).partsFacts || "");
-                      const stale = !!facts && !facts.startsWith(`parts_extraction_0/${partsExtractorSel}/`);
-                      const selDone = extractionCells.some((c: any) => String(c.doer) === partsExtractorSel && c.status === "done");
-                      if (stale) {
-                        const from = facts.split("/")[1] || "?";
-                        header = (
-                          <span className="video-import-extractor-pick is-stale"
-                            title={`Derived from ${from}. Re-derive W candidates, final G groups, stable observation IDs, Turtle, and the final debug comparison from ${partsExtractorSel}.`}>
-                            <button type="button" disabled={!selDone || !!stripRefreshBusy[rowKey]}
-                              onClick={() => void runUnitTransformSteps(it, inputRel, [
-                                { transformation: "parts_grouping_0", doer: "group_regions_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`], priority: 30, type: "py_pl" },
-                                { transformation: "group_acceptance_0", doer: "group_acceptance_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog"], priority: 35, type: "py_pl" },
-                                { transformation: "observation_identity_0", doer: "content_hash", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog", "group_acceptance_0/group_acceptance_prolog"], priority: 37, type: "py_pl" },
-                                { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["group_acceptance_0/group_acceptance_prolog"], priority: 40, type: "py_pl" },
-                                { transformation: "parts_debug_0", doer: "python_pil", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "turtle_programs/turtle_programs_prolog"], priority: 50, type: "ui" },
-                              ], { force: true })}>
-                              {stripRefreshBusy[rowKey] ? "…" : `⟳ stale · re-derive from ${partsExtractorSel.replace(/^python_/, "").replace(/^shape_finder_/, "")}`}
-                            </button>
-                          </span>
-                        );
-                      }
-                    }
-                    return header
-                      ? <div key={`wrap-${ti}`} className="video-import-transform-wrap">{header}{cell}</div>
-                      : cell;
+                    return renderCellVisual();
                   })}
+                  </div>
+                  <div className="video-import-transform-textband" aria-label="Transform status and controls">
+                    {displayCells.map((t: any, ti: number) => renderCellText(t, ti))}
+                  </div>
                 </div>
               );
             };
