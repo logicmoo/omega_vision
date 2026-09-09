@@ -24,6 +24,7 @@ comparable across doers.
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -707,6 +708,48 @@ def visual_group_hypotheses(
     return groups
 
 
+def _attachment_evidence(info, kept, polygons, fillpoints, *, opaque: bool, policy: dict) -> dict:
+    """Attest producer coverage, not a consumer guess from nonempty fact lists.
+
+    Pruned regions and dropped/degenerate contours cannot justify absence of
+    attachments. Transparency is not modeled by the RGB segmentation, so it
+    cannot attest trusted background roles.
+    """
+    regions_complete = set(info) == kept
+    holes_complete = all(
+        gid in polygons
+        and len({tuple(point) for point in polygons[gid]["outer"]}) >= 3
+        and sum(contour["kind"] == "outer" for contour in polygons[gid]["contours"]) == 1
+        and len(polygons[gid]["holes"]) == len(polygons[gid]["contours"]) - 1
+        for gid in kept
+    )
+    probes_complete = all(bool(fillpoints.get(gid)) for gid in kept)
+    complete = {
+        "regions": regions_complete, "shared_edges": regions_complete,
+        "adjacency": regions_complete, "enclosure": regions_complete,
+        "borders": regions_complete, "holes": holes_complete,
+        "probes": probes_complete,
+    }
+    producer_files = (
+        Path(__file__), Path(__file__).with_name("pixels_to_regions.py"),
+        Path(__file__).resolve().parents[3] / "prolog" / "omega_vision" / "group_regions.pl",
+    )
+    policy = {
+        "schema": "canonical-cv-attachment-coverage-v1", **policy,
+        "implementations": {
+            path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in producer_files
+        },
+    }
+    return {
+        "schemaVersion": 1, "complete": complete,
+        "backgroundRolesTrusted": bool(opaque and all(complete.values())),
+        "extractionPolicyHash": hashlib.sha256(
+            json.dumps(policy, sort_keys=True, allow_nan=False).encode()
+        ).hexdigest(),
+    }
+
+
 def extract_region_facts_cv(
     image_path: str | Path,
     *,
@@ -724,6 +767,7 @@ def extract_region_facts_cv(
     + fill peaks), a fraction of the runtime."""
     _require_cv2()
     img = Image.open(image_path)
+    opaque = img.convert("RGBA").getextrema()[3][0] == 255
     if max_dim and max(img.size) > max_dim:
         scale = max_dim / max(img.size)
         img = img.resize((max(1, round(img.size[0] * scale)), max(1, round(img.size[1] * scale))), Image.LANCZOS)
@@ -831,6 +875,15 @@ def extract_region_facts_cv(
         "smallFeatureCount": len(small_features),
         "tolerance": tolerance,
         "filterAction": filter_action,
+        "attachmentEvidence": _attachment_evidence(
+            info, big, polygons, fillpoints, opaque=opaque,
+            policy={
+                "tolerance": tolerance, "filterMode": filter_mode,
+                "filterAction": filter_action, "maxDim": max_dim,
+                "minfrac": minfrac, "smallFeatureFloor": small_feature_floor,
+                "smallFeatureContrast": small_feature_contrast,
+            },
+        ),
         "minArea": min_area,
         "smallFeatureFloor": small_feature_floor,
         "smallFeatureContrast": small_feature_contrast,

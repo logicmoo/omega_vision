@@ -37,7 +37,7 @@ def plan_direct_call(
     for frame_id in selected_ids:
         if frame_id not in positions:
             raise ValueError(f"Unknown selected frame: {frame_id}")
-        if positions[frame_id] == 0 and specs[output].get("skipFirstFrame"):
+        if (positions[frame_id] == 0 and specs[output].get("skipFirstFrame")) or (specs[output].get("orderedOnly") and not ordered):
             continue
         stack = [((frame_id, output), False)]
         while stack:
@@ -59,6 +59,9 @@ def plan_direct_call(
                          if positions[key[0]] == 0 else spec.get("dependsOn", []))
             if positions[key[0]] == 0 and spec.get("skipFirstFrame"):
                 blocked.append(f"{key[1]}: initial frame has no predecessor")
+                selectors = []
+            if spec.get("orderedOnly") and not ordered:
+                blocked.append(f"{key[1]}: requires an ordered Visual Sequence")
                 selectors = []
             for selector in selectors:
                 parsed = parse_dependency(selector)
