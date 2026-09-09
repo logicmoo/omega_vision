@@ -804,8 +804,12 @@ def list_importables(workspaceId: str) -> dict[str, Any]:
 def get_page_state(workspaceId: str) -> dict[str, Any]:
     """The page's exact-state JSON, stored beside the image repository."""
     container = _imports_root(_workspace_root(workspaceId))
+    return _read_page_state(workspaceId, container)
+
+
+def _read_page_state(workspace_id: str, container: Path) -> dict[str, Any]:
     path = container / "page_state.json"
-    with _page_state_lock(workspaceId):
+    with _page_state_lock(workspace_id):
         if not path.is_file():
             return {"state": None}
         try:
@@ -933,12 +937,26 @@ async def pipeline_ws(websocket: WebSocket) -> None:
     def _jobs_frame(workspace_id: str) -> dict[str, Any]:
         return {"type": "jobs", "workspaceId": workspace_id, "jobs": _list_workspace_jobs(workspace_id)}
 
+    page_state_path_cache: tuple[str, Path] | None = None
+
     def _page_state_path(workspace_id: str) -> Path:
-        return _imports_root(_workspace_root(workspace_id)) / "page_state.json"
+        nonlocal page_state_path_cache
+        # The canonical write path is fixed for a subscribed workspace. Do not
+        # resolve its entire workspace graph on every 600ms WebSocket heartbeat.
+        if page_state_path_cache is None or page_state_path_cache[0] != workspace_id:
+            path = _imports_root(_workspace_root(workspace_id)) / "page_state.json"
+            page_state_path_cache = (workspace_id, path)
+        return page_state_path_cache[1]
+
+    def _page_state_mtime(workspace_id: str) -> float:
+        try:
+            return _page_state_path(workspace_id).stat().st_mtime
+        except FileNotFoundError:
+            return 0.0
 
     def _state_frame(workspace_id: str) -> dict[str, Any] | None:
         """The produced artifacts (inventories/members/scenes) for the gallery."""
-        payload = get_page_state(workspace_id)
+        payload = _read_page_state(workspace_id, _page_state_path(workspace_id).parent)
         page = payload.get("state") if isinstance(payload, dict) else None
         if not isinstance(page, dict):
             return None
@@ -976,10 +994,7 @@ async def pipeline_ws(websocket: WebSocket) -> None:
                     except Exception:  # noqa: BLE001 - client went away
                         stop_flag.set()
                         return
-                try:
-                    mtime = _page_state_path(workspace_id).stat().st_mtime
-                except OSError:
-                    mtime = 0.0
+                mtime = await asyncio.to_thread(_page_state_mtime, workspace_id)
                 if mtime != state["last_state_mtime"]:
                     state["last_state_mtime"] = mtime
                     frame = await asyncio.to_thread(_state_frame, workspace_id)

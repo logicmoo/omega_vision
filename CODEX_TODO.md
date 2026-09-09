@@ -14,6 +14,20 @@ values here.
 
 ## Current recovery state
 
+- Main-runtime blocker identified after integration (2026-09-09): the exact
+  preprocessing feature is on local main as `8ac0b2b12`, but main HTTP acceptance
+  remained blocked. Two samples of the actual API process showed its event loop
+  synchronously resolving the full workspace inside `pipeline_ws.push_loop`'s
+  page-state mtime poll. The neighboring operations were already offloaded.
+  The follow-up moves the complete path/stat operation off-loop and retains
+  the canonical page-state path for both stat and state reads until the
+  subscription changes workspace,
+  rather than re-resolving the graph every 600ms for every connected tab.
+  It does not change source identity, extend HTTP timeouts, close user tabs, or
+  silently serve an unvalidated catalog. Main-app acceptance must be repeated
+  after integrating this targeted fix; the slower cold catalog scan itself is
+  distinct from the observed event-loop blockage.
+
 - Preprocessing chain completion (2026-09-09, parent takeover): the child stopped
   writing at `9de4e1b29` and preserved its ten local commits, recovery bundle, and
   paused cache patch. The parent imported only the source baseline as `706bec23d`;
