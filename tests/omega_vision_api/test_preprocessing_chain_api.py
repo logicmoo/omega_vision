@@ -92,3 +92,27 @@ def test_get_default_when_unsaved_is_effectively_original(tmp_path: Path, monkey
     loaded = v.get_preprocessing_chain("w", "data/seq2")
     assert loaded["effectivelyOriginal"] is True
     assert [s["entryId"] for s in loaded["steps"]] == [ORIGINAL_PIXELS_ID, ORIGINAL_PIXELS_ID]
+
+
+def test_todos_record_variant_so_pooler_inherits_it(tmp_path: Path):
+    """The offline pooler rebuilds a unit from todos.json ``imagePath``; wiring
+    the unit image to the materialized variant and stamping todos must record
+    the VARIANT path so the pooler extracts from the preprocessed pixels."""
+    import json
+
+    src = _make_source(tmp_path)
+    unit = {"id": "frame0", "dir": src.parent, "image": src, "sequenceId": "data/seq"}
+    chain = [{"stepId": "s1", "entryId": "scale_3x_nearest", "params": {}}]
+    variant = v._materialize_preprocessed_image(tmp_path, unit, chain, v._filter_catalog_index(tmp_path))
+    unit["image"] = variant
+    v.write_unit_todos(unit, [{"transformation": "parts_extraction_0", "doer": "python_opencv",
+                               "options": {}, "dependsOn": [], "priority": 10}])
+    todos = json.loads((unit["dir"] / "todos.json").read_text(encoding="utf-8"))
+    assert todos["imagePath"].startswith("preprocessing/")
+    assert todos["imagePath"].endswith(".png")
+    # and the original stamping (no preprocessing) keeps the source image
+    unit2 = {"id": "frame0", "dir": src.parent, "image": src, "sequenceId": "data/seq"}
+    v.write_unit_todos(unit2, [{"transformation": "parts_extraction_0", "doer": "python_opencv",
+                                "options": {}, "dependsOn": [], "priority": 10}])
+    todos2 = json.loads((unit["dir"] / "todos.json").read_text(encoding="utf-8"))
+    assert todos2["imagePath"] == "image.png"
