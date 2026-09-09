@@ -502,7 +502,13 @@ values here.
   the catalog, and composite enumeration all work with the colormap/pilgram/skimage
   skills non-broken and under a cold-load time budget; colormap `apply()` still
   works (91 cmaps) and pilgram reports a clear error. Full omega_vision +
-  omega_vision_api suites: 403 passed.
+  omega_vision_api suites: 403 passed. Follow-up: once discovery was fast enough to
+  reach it, `list_filters` line 5268 revealed a pre-existing 500 —
+  `_skills_dir(root).relative_to(root)` raised ValueError for workspaces
+  (arc3_random_player) whose skills dir resolves to the shared/inherited data home
+  outside the workspace root; fixed to the overlay-safe `_data_rel_of(root, ...)`
+  used by the neighboring lines, with a regression test. `/filters` now returns
+  200 (~1.7s, 248 filters) with no heavy imports.
 
 - Preprocessing filter registry foundation (2026-09-09): first increment of the
   deferred Preprocessing Setup. Added `scale_3x_nearest` as a canonical built-in

@@ -101,3 +101,22 @@ def test_discovery_cold_load_is_fast_without_heavy_imports(tmp_path, heavy_block
     # With the heavy packages blocked, discovery must complete quickly (no
     # multi-second scikit-image / matplotlib cold import on the load path).
     assert elapsed < 5.0, f"discovery took {elapsed:.2f}s with heavy imports blocked"
+
+
+def test_list_filters_handles_inherited_skills_dir_outside_workspace(heavy_blocked):
+    # For workspaces whose skills dir is the shared/inherited data home, it is NOT
+    # under the workspace root, so a naive Path.relative_to(root) raised ValueError
+    # -> 500 on /filters. The overlay-safe _data_rel_of must handle it, and the
+    # endpoint must return without importing scikit-image / matplotlib.
+    try:
+        root = video_import_api._workspace_root("arc3_random_player")
+        skills = video_import_api._skills_dir(root)
+    except Exception:  # noqa: BLE001 - workspace not resolvable in this environment
+        pytest.skip("arc3_random_player workspace not resolvable")
+    if str(skills.resolve()).startswith(str(root.resolve())):
+        pytest.skip("skills dir is inside the workspace root; inheritance not exercised")
+
+    result = video_import_api.list_filters("arc3_random_player")
+    assert isinstance(result.get("filters"), list) and result["filters"]
+    assert isinstance(result.get("skillsDir"), str) and result["skillsDir"]
+    assert "matplotlib" not in sys.modules and "skimage" not in sys.modules

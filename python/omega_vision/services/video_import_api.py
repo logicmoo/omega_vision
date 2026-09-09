@@ -5265,7 +5265,7 @@ def list_filters(workspaceId: str) -> dict[str, Any]:
         "filters": _apply_filter_flags(root, [*_BUILTIN_FILTERS, *published, *luts, *_discover_skills(root)]),
         "path": _data_rel_of(root, path),
         "lutsDir": _data_rel_of(root, luts_dir),
-        "skillsDir": _skills_dir(root).relative_to(root).as_posix(),
+        "skillsDir": _data_rel_of(root, _skills_dir(root)),
         # The full vote ledger, including non-filter actors such as group
         # selectors (select:unique, select:spread, ...).
         "votes": (_load_filter_flags(root).get("votes") if isinstance(_load_filter_flags(root).get("votes"), dict) else {}),
