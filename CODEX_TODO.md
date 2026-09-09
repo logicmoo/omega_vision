@@ -25,10 +25,18 @@ values here.
   candidate, preserving its unfinished additions so later integration cannot
   restore the removed section. Local UI contracts: 26 pass; Node
   navigation/history/catalog tests: 19 pass; frontend build passes.
-  Live placement acceptance is still pending the existing slow catalog:
-  the main process sample shows an AnyIO worker in catalog_revision.scan and
-  MainThread in normal asyncio polling. No caching redesign or unvalidated
-  selector fallback was introduced.
+  Live Recognition placement was observed on the retained LS20 sequence after
+  the catalog resolved: exactly one Refresh button beside the combo; exactly one
+  computed-visible Preprocessing surface 10px below the selector; Completion /
+  Export absent. The existing disclosure expanded and, after its existing load
+  retry handled a transient 404, restored pp-original-1/2 unchanged as Saved.
+  Clicking the relocated Refresh issued the actual
+  /visual-sequences?workspaceId=arc3_random_player&refresh=true request.
+  Subsequent refresh/reload and other-subview acceptance remain delayed by the
+  existing catalog scan; do not claim every cold reload is fast or that this
+  increment fixed catalog latency. MainThread is in normal asyncio polling.
+  No caching redesign, preference mutation, or unvalidated selector fallback
+  was introduced; the original Recognition URL was restored.
 
 - Main-runtime blocker identified after integration (2026-09-09): the exact
   preprocessing feature is on local main as `8ac0b2b12`, but main HTTP acceptance
