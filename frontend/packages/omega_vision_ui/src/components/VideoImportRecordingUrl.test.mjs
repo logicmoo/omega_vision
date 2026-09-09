@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   preprocessingSequenceId,
@@ -148,6 +149,20 @@ test("provider ref falls back to data/<id> when no dir is recorded", () => {
     visualSequenceProviderRef({ id: "recordings/ls20/x", dir: "data/recordings/ls20/x" }),
     "data/recordings/ls20/x",
   );
+});
+
+test("canonical recognition keeps preprocessing, source paths and the rich matrix on its curated sequence", () => {
+  const entry = { id: "curated/recognition_reduce", dir: "data/curated/recognition_reduce", kind: "reduce" };
+  const location = visualSequenceLocationForEntry(entry);
+  assert.deepEqual(location, { recording: entry.id });
+  assert.equal(preprocessingSequenceId([entry], location, ""), entry.dir);
+  assert.equal(visualSequenceProviderRef(entry), entry.dir);
+  const page = readFileSync(new URL("./VideoImportPage.tsx", import.meta.url), "utf8");
+  assert.match(page, /DEFAULT_IMAGE_SET = "curated\/recognition_reduce"/);
+  assert.match(page, /isRecognitionMatrix = selectedImageSet === DEFAULT_IMAGE_SET \|\| selectedImageSet === "recognition_reduce"/);
+  assert.match(page, /const isCanonicalSet = isRecognitionMatrix/);
+  assert.match(page, /selectedImageSetRoot = visualSequenceProviderRef/);
+  assert.doesNotMatch(page, /`data\/recognition_reduce\/(?:sym|pool)\//);
 });
 
 test("a stale bare recording ref surfaces the correct catalog reason, not a fabricated match", () => {

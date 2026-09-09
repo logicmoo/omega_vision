@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from omega_vision.inherited_source_overlay import storage_scratch_directory
 import traceback
 import urllib.request
 from contextlib import redirect_stderr, redirect_stdout
@@ -246,7 +247,8 @@ def _prolog_source(inputs: dict[str, Any], parameters: dict[str, Any]) -> dict[s
         "workbench_main :- halt(2).\n"
         ":- initialization(workbench_main, main).\n"
     )
-    with tempfile.NamedTemporaryFile("w", suffix=".pl", encoding="utf-8", delete=False) as handle:
+    with tempfile.NamedTemporaryFile("w", suffix=".pl", encoding="utf-8", delete=False,
+                                     dir=storage_scratch_directory("workflow_providers")) as handle:
         handle.write(source_code)
         handle.write(wrapper)
         script_path = handle.name

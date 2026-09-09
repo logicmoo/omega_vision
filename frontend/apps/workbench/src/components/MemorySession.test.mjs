@@ -16,7 +16,7 @@ async function pageSession(events) {
   return import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(script) + `\n// page ${++moduleId}`).toString("base64")}`);
 }
 
-test("browser RAM owns snapshots, isolates tabs/workspaces, and resets without network access", async () => {
+test("browser RAM shares snapshots across workspaces, isolates tabs, and resets without network access", async () => {
   const originalWindow = globalThis.window;
   const originalFetch = globalThis.fetch;
   const requests = [];
@@ -38,7 +38,8 @@ test("browser RAM owns snapshots, isolates tabs/workspaces, and resets without n
     await second.memoryRequest("/read", { workspaceId: "workspace-a" });
     assert.equal(requests[0].body.memorySnapshot, null);
     assert.equal(requests[1].body.memorySnapshot, "opaque-full-learned-state");
-    assert.equal(requests[2].body.memorySnapshot, null);
+    assert.equal(requests[2].body.memorySnapshot, "opaque-full-learned-state");
+    assert.equal(requests[2].body.workspaceId, "workspace-b");
     assert.equal(requests[3].body.memorySnapshot, null);
     assert.ok(requests.every(request => request.cache === "no-store"));
     assert.equal(firstEvents.has("heartbeat"), false);
@@ -56,7 +57,7 @@ test("browser RAM owns snapshots, isolates tabs/workspaces, and resets without n
   }
 });
 
-test("concurrent operations are serialized and retired replies cannot restore cleared memory", async () => {
+test("cross-workspace operations are serialized and retired replies cannot restore cleared memory", async () => {
   const originalWindow = globalThis.window, originalFetch = globalThis.fetch;
   let release;
   const requests = [];
@@ -68,12 +69,13 @@ test("concurrent operations are serialized and retired replies cannot restore cl
   try {
     const page = await pageSession(new Map());
     const first = page.memoryRequest("/save", { workspaceId: "w" });
-    const second = page.memoryRequest("/save", { workspaceId: "w" });
+    const second = page.memoryRequest("/save", { workspaceId: "other-workspace" });
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(requests.length, 1);
     release();
     await Promise.all([first, second]);
     assert.equal(requests[1].memorySnapshot, "snapshot-1");
+    assert.equal(requests[1].workspaceId, "other-workspace");
     globalThis.fetch = async () => {
       await new Promise(resolve => { release = resolve; });
       return new Response(JSON.stringify({ memorySnapshot: "must-not-return" }));
@@ -144,6 +146,7 @@ test("an incomplete stream reports lost transfer without replacing the previous 
       { headers: { "Content-Type": "application/x-ndjson" } });
     await assert.rejects(page.memoryRequest("/run", { workspaceId: "w" }), /before returning/);
     assert.match(page.useMemoryError("w"), /previous snapshot is retained/);
+    assert.equal(page.useMemoryError("other-workspace"), page.useMemoryError("w"));
     globalThis.fetch = async () => new Response('{"memorySnapshot":"unchanged-state"}');
     await page.memoryRequest("/save", { workspaceId: "w" });
     assert.equal(page.useMemoryError("w"), null);

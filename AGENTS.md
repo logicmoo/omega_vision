@@ -4,6 +4,30 @@
 
 [Back to repository README](README.md)
 
+## Mandatory Omega Vision shared-storage contract (2026-09-10)
+
+This user-approved contract supersedes ALL earlier Omega Vision workspace/include
+data overlays, per-workspace memory/store ownership, and standalone sequence-root
+directions in this file, design documents, TODOs, and historical handoffs.
+The ordinary Workbench semantic-resource inheritance rules below remain unchanged.
+Every coordinating agent MUST relay these seven requirements verbatim to every
+active helper/descendant and include them in every future kickoff/handoff.
+
+1. ONE shared physical Omega Vision data root: <repository>\data\omega_vision. All our data, memory, rules, events, executions, preferences, cache, logs and locks must be descendants. No sibling repo\data\recordings/runtime/knowledge/etc and no workspace-root Omega data writes.
+2. ALL Visual Sequences are under ONLY omega_vision\recordings or omega_vision\curated. Retain curated spelling. importables is staging, not a sequence family. No new standalone video/arc_recordings/recognition_* sequence roots.
+3. Workspaces DO NOT divide data physically OR logically. No omega_vision\workspaces\<id> namespace, workspace-specific catalogs/ownership filters or cache namespaces that divide the shared data. Workspace provenance/editor configuration is metadata only. Same assets and stable identities are visible across workspace switches. Game/level/run areas may organize the shared store.
+4. Inspector gets real authorized areas from this shared root; area selection must not change Save To/Look In. Read-only saved-area browsing must not depend on unrelated sequence enumeration; sequence-specific actions still require valid context.
+5. Nowhere stays current-browser-RAM-only; never persist/cache its payloads or relabel full payload copies as audit.
+6. Preserve existing files/history. NO automatic migration, merge, rename or deletion of legacy data. Inventory incompatibilities and show unavailable historical settings honestly rather than silently substituting destinations.
+7. Enforce these through shared resolver/writer helpers AND regression coverage: path containment for each writer/cache, two-workspace shared visibility/identity, only two canonical sequence families for new saves, no out-of-root/hidden-workspace fallback. Reject unsafe paths; do not weaken access checks. Do not declare compliant based only on changed labels.
+
+The user chose "A only" (one shared store) and reinforced "workspaces will not
+divide data". Workspace provenance/editor configuration never divides Omega data.
+Work directly in the existing local main checkout; no PR, push, new branch or
+worktree unless subsequently explicitly requested. The coordinating implementation
+session alone owns shared Git staging/commits and server restarts. Inspector
+children own only their dedicated allowlisted files.
+
 
 \## Codex TODO ownership and recovery
 

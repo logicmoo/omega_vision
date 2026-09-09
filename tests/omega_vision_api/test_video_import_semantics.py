@@ -22,7 +22,7 @@ def write_json(path, value):
 @pytest.fixture
 def workspace(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "_workspace_root", lambda name: tmp_path if name == "test" else (_ for _ in ()).throw(KeyError(name)))
-    monkeypatch.setattr(api, "_data_homes", lambda root: [root / "data"])
+    monkeypatch.setattr(api, "_data_homes", lambda root: [root / "data" / "omega_vision"])
     registry, metadata = dict(api._SEQUENCE_TRANSFORMS), dict(api._TRANSFORM_METADATA)
     semantics.register_transforms(registry, metadata)
     monkeypatch.setattr(api, "_SEQUENCE_TRANSFORMS", registry)
@@ -34,7 +34,7 @@ def workspace(tmp_path, monkeypatch):
 
 def make_sequence(root: Path, *, name="one", count=4, seed=10, ordered=True, layout="recording", motion=2,
                   attest=True, provenance_recording=None):
-    sequence = root / "sequences" / name
+    sequence = root / "data" / "omega_vision" / "recordings" / name
     sequence.mkdir(parents=True)
     if ordered:
         write_json(sequence / "recording.json", {"game_id": "fixture-game", "level": "1", "moves": []})
@@ -73,7 +73,7 @@ def make_sequence(root: Path, *, name="one", count=4, seed=10, ordered=True, lay
                     "level": "7", "moveCount": len(moves), "moveList": moves,
                 },
             })
-    _, units = semantics._units("test", f"sequences/{name}")
+    _, units = semantics._units("test", f"data/recordings/{name}")
     for order, unit in enumerate(units):
         x = 2 + order * motion
         geometry = {"width": 48, "height": 24, "polygons": {}}
@@ -163,7 +163,7 @@ def test_registration_is_pure_and_boundaries_are_declared(workspace):
     assert metadata[tuple(semantics.LLM_EVENTS.split("/"))]["type"] == "llm"
     assert all(value["orderedOnly"] is True for value in metadata.values())
     assert f"frame[-1]@{semantics.TURTLE}" in metadata[tuple(semantics.LLM_EVENTS.split("/"))]["dependsOn"]
-    assert not (root / "runtime").exists()
+    assert not (root / "data" / "omega_vision" / "runtime").exists()
     assert not any(step["type"] == "llm" for step in api._DEFAULT_PIPELINE_TEMPLATE)
 
 
@@ -248,7 +248,7 @@ def test_runtime_revision_tracks_promoted_rule_lifecycle_without_writes(workspac
     unit = make_sequence(root, count=1)[0]
     initial = semantics.runtime_revision(unit, semantics.EVENTS)
     assert isinstance(initial, str) and semantics.runtime_revision(unit, ("unrelated", "stage")) is None
-    assert not (root / "runtime").exists()
+    assert not (root / "data" / "omega_vision" / "runtime").exists()
     store = semantics._store(root)
     candidate = store.create(
         {"body": [{"predicate": "present", "args": [{"var": "Object"}]}],
@@ -436,8 +436,8 @@ def test_actual_unit_layouts_temporal_objects_and_event_replay(workspace, layout
     root, client = workspace
     units = make_sequence(root, layout=layout)
     if layout == "recording":
-        assert units[0]["dir"] == root / "sequences" / "one" / "transforms" / "image"
-        assert units[1]["dir"] == root / "sequences" / "one" / "0"
+        assert units[0]["dir"] == root / "data" / "omega_vision" / "recordings" / "one" / "transforms" / "image"
+        assert units[1]["dir"] == root / "data" / "omega_vision" / "recordings" / "one" / "0"
     run_core(units, grouping=True)
     first = semantics._result(units[0], semantics.TEMPORAL)
     assert first["assessment"] == "initial_observation" and "pairUid" not in first
@@ -449,9 +449,9 @@ def test_actual_unit_layouts_temporal_objects_and_event_replay(workspace, layout
     assert len(objects["objects"]) == 1
     assert len(objects["objects"][0]["memberTrackUids"]) == 2
     assert objects["objects"][0]["authority"] == "authored_prolog_deduction"
-    assert list((root / "runtime" / "temporal-checkpoints").glob("*.json"))
-    assert not list((root / "sequences").rglob("debug_image.png"))
-    assert not list((root / "sequences").rglob("todos.json"))
+    assert list((root / "data" / "omega_vision" / "runtime" / "temporal-checkpoints").glob("*.json"))
+    assert not list((root / "data" / "omega_vision" / "recordings").rglob("debug_image.png"))
+    assert not list((root / "data" / "omega_vision" / "recordings").rglob("todos.json"))
     response = client.get("/semantic/events", params={"workspaceId": "test", "sequenceId": units[0]["sequenceId"]})
     assert response.status_code == 200, response.text
     assert response.headers["cache-control"] == "no-store"
@@ -481,13 +481,13 @@ def test_unordered_inputs_never_fabricate_adjacency(workspace, monkeypatch):
     for step in (semantics.TEMPORAL, semantics.OBJECTS, semantics.GROUPING, semantics.LLM_EVENTS):
         with pytest.raises(ValueError, match="Unordered"):
             invoke(units[0], step, {"confirmModel": True})
-    assert not list((root / "runtime").rglob("*.json"))
+    assert not list((root / "data" / "omega_vision" / "runtime").rglob("*.json"))
 
 
 def test_imported_arc_provenance_supplies_real_actions_timestamps_and_memory_context(workspace):
     root, client = workspace
     recording = "data/recordings/actual-game/run"
-    write_json(root / "data" / "recordings" / "actual-game" / "run" / "recording.json",
+    write_json(root / "data" / "omega_vision" / "recordings" / "actual-game" / "run" / "recording.json",
                {"game_id": "actual-game-v7", "level": "7", "moves": []})
     units = make_sequence(root, name="imported", count=2, ordered=False, layout="pool",
                           provenance_recording=recording)
@@ -546,13 +546,13 @@ def test_imported_memory_uses_declared_namespace_without_authorizing_outside_sou
     body = {"workspaceId": "test", "sequenceId": units[0]["sequenceId"]}
     response = client.get("/semantic/memory", params=body)
     assert response.status_code == 200, response.text
-    assert response.json()["catalog"]["context"]["gameId"] == "missing"
-    assert response.json()["catalog"]["context"]["levelId"] == "7"
+    assert response.json()["catalog"]["context"]["gameId"] is None
+    assert response.json()["catalog"]["context"]["levelId"] is None
     assert response.json()["catalog"]["context"]["runId"] == "data/recordings/missing/run"
-    assert not (root / "data" / "recordings" / "missing" / "run").exists()
+    assert not (root / "data" / "omega_vision" / "recordings" / "missing" / "run").exists()
     path = Path(units[0].get("sourceImage") or units[0]["image"]).with_suffix(".provenance.json")
     provenance = json.loads(path.read_text(encoding="utf-8"))
-    provenance["source"]["arcRecording"] = "archives/untyped-run"
+    provenance["source"]["arcRecording"] = "data/recordings/untyped-run"
     write_json(path, provenance)
     response = client.get("/semantic/memory", params=body)
     assert response.status_code == 200
@@ -574,6 +574,11 @@ def test_imported_memory_does_not_assign_one_level_to_mixed_level_frames(workspa
     root, client = workspace
     units = make_sequence(root, count=2, ordered=False, layout="pool",
                           provenance_recording="data/recordings/ls20/attempt")
+    for unit in units:
+        source = Path(unit["image"]).with_suffix(".provenance.json")
+        provenance = json.loads(source.read_text(encoding="utf-8"))
+        provenance["source"]["gameId"] = "ls20"
+        write_json(source, provenance)
     path = Path(units[1].get("sourceImage") or units[1]["image"]).with_suffix(".provenance.json")
     provenance = json.loads(path.read_text(encoding="utf-8"))
     provenance["source"]["level"] = "8"
@@ -757,8 +762,8 @@ def test_llm_uses_real_preprocessed_pair_and_persists_raw_before_validation(work
     assert "ACTION2" in calls[0]["prompt"] and '"direction": "incoming"' in calls[0]["prompt"]
     assert calls[0]["image"].startswith("data:image/png;base64,")
     provenance = result["parsed"]["provenance"]
-    assert (root / provenance["raw_output_ref"]).read_text() == raw
-    assert (root / provenance["prompt_ref"]).read_text() == calls[0]["prompt"]
+    assert api._safe_workspace_child(root, provenance["raw_output_ref"]).read_text() == raw
+    assert api._safe_workspace_child(root, provenance["prompt_ref"]).read_text() == calls[0]["prompt"]
     before = semantics._event_log(root, units[0]["sequenceId"]).read()
     calls = setup_model(monkeypatch, "this is not json :- shell('no').")
     with pytest.raises(ValueError):
@@ -780,7 +785,9 @@ def test_event_candidate_induction_evaluation_promotion_and_rejection(workspace)
     _, proposals = invoke(train[-1], semantics.INDUCTION)
     assert proposals["candidateIds"]
     store = semantics._store(root)
-    detector = next(item for item in store.list(kind="event_detector") if item["rule"]["head"]["predicate"] == "moved")
+    detector = next(item for item in store.list(kind="event_detector")
+                    if item["rule"]["head"]["predicate"] == "moved"
+                    and any(atom["predicate"] == "displacement_magnitude" for atom in item["rule"]["body"]))
     candidate_id = detector["candidate_id"]
     path = f"/semantic/candidates/{candidate_id}"
     rejected = client.post(path + "/promote", json={"workspaceId": "test"})
@@ -799,7 +806,7 @@ def test_event_candidate_induction_evaluation_promotion_and_rejection(workspace)
     promoted = client.post(path + "/promote", json={"workspaceId": "test"})
     assert promoted.status_code == 200, promoted.text
     assert promoted.json()["requiresReplay"]
-    assert (root / "design" / "event-rules" / f"{candidate_id}.json").is_file()
+    assert (root / "data" / "omega_vision" / "design" / "event-rules" / f"{candidate_id}.json").is_file()
     # Typed promoted rules are replayed in the real deduction adapter.
     _, replay = invoke(held[1], semantics.EVENTS)
     assert candidate_id in replay["learned_rule_replay"]["accepted_detectors"]
@@ -831,7 +838,7 @@ def test_memory_setup_explicit_refresh_rebuilds_metadata_without_saving_preferen
     assert client.post("/semantic/memory/setup", json={**body, "refresh": True}).status_code == 200
     assert len(calls) > initial
     assert client.post("/semantic/memory/setup", json={**body, "refresh": "true"}).status_code == 422
-    assert not (root / "runtime" / "memory-settings").exists()
+    assert not (root / "data" / "omega_vision" / "runtime" / "memory-settings").exists()
 
 
 def test_memory_contract_independent_destinations_and_browser_volatile(workspace):
@@ -899,7 +906,7 @@ def test_missing_resources_return_explicit_errors(workspace):
     _, client = workspace
     assert client.get("/semantic/candidates/missing", params={"workspaceId": "test"}).status_code == 404
     assert client.get("/semantic/memory", params={"workspaceId": "not-authorized"}).status_code == 404
-    assert client.get("/semantic/events", params={"workspaceId": "test", "sequenceId": "missing"}).status_code == 404
+    assert client.get("/semantic/events", params={"workspaceId": "test", "sequenceId": "data/recordings/missing"}).status_code == 404
 
 
 def test_memory_sessions_require_browser_snapshot_without_server_or_disk_retention(workspace):
@@ -934,7 +941,7 @@ def test_memory_sessions_require_browser_snapshot_without_server_or_disk_retenti
     counts = client.post("/semantic/memory/setup", json={**a, "memorySnapshot": snapshot}).json()["catalog"]["locations"]
     assert next(item for item in counts if item["memoryLocationId"] == NOWHERE)["counts"]["shape"] == 1
     assert not list(root.rglob("*.memory.json"))
-    assert not list((root / "runtime").glob("*checkpoints*"))
+    assert not list((root / "data" / "omega_vision" / "runtime").glob("*checkpoints*"))
     destination = setup.json()["preferences"]["shape"]["saveTo"]
     blocked_copy = client.post("/semantic/memory/copy", json={
         **b, "memorySnapshot": None, "kind": "shape", "sourceLocationId": NOWHERE,
@@ -1039,7 +1046,7 @@ def test_nowhere_replay_and_event_evaluation_require_browser_owned_sealed_result
             blocked = client.post(path, json={**body, **missing})
             assert blocked.status_code == 409 and "current browser snapshot" in blocked.text
         invalid = client.post(path, json={**body, **transport, "memorySessionId": "different-browser-session"})
-        assert invalid.status_code == 422 and "another workspace or page session" in invalid.text
+        assert invalid.status_code == 422 and "another page session" in invalid.text
         parsed.clear()
         attached.clear()
         accepted = client.post(path, json={**body, **transport})
@@ -1143,8 +1150,8 @@ def test_generated_nowhere_memory_is_not_a_persistent_object_or_grouping_cache(w
         assert objects["memory"]["object"]["volatile"] is True
         assert grouping["memory"]["shape"]["volatile"] is True
     assert not list(root.rglob("*.memory.json"))
-    assert not (root / "runtime" / "object-checkpoints").exists()
-    assert not (root / "runtime" / "grouping-checkpoints").exists()
+    assert not (root / "data" / "omega_vision" / "runtime" / "object-checkpoints").exists()
+    assert not (root / "data" / "omega_vision" / "runtime" / "grouping-checkpoints").exists()
     for unit in units:
         for step in (semantics.OBJECTS, semantics.GROUPING):
             assert not semantics._artifact(unit, step, "checkpoint.json").exists()
@@ -1299,19 +1306,19 @@ def test_generated_shape_and_object_destinations_stay_independent(workspace):
         })
         assert any(version["recordUid"] == reference["recordUid"] and version["revision"] == reference["revision"]
                    for item in shape.json()["records"] for version in item["versions"])
-    assert not (root / "runtime" / "object-checkpoints").exists()
+    assert not (root / "data" / "omega_vision" / "runtime" / "object-checkpoints").exists()
 
 
 def test_real_opencv_prolog_observation_outputs_feed_semantic_stages(workspace, monkeypatch):
     root, _ = workspace
-    sequence = root / "sequences" / "actual-extractor"
+    sequence = root / "data" / "omega_vision" / "recordings" / "actual-extractor"
     write_json(sequence / "recording.json", {"game_id": "measured", "moves": []})
     for index, directory in enumerate((sequence, sequence / "0")):
         directory.mkdir(parents=True, exist_ok=True)
         image = Image.new("RGB", (40, 30), "black")
         ImageDraw.Draw(image).rectangle((4 + index * 2, 5, 10 + index * 2, 15), fill="yellow")
         image.save(directory / "image.png")
-    _, units = semantics._units("test", "sequences/actual-extractor")
+    _, units = semantics._units("test", "data/recordings/actual-extractor")
     write_json(sequence / "preprocessing_chain.json", {
         "steps": [{"stepId": "scale", "entryId": "scale_3x_nearest", "params": {}}],
     })
@@ -1385,7 +1392,7 @@ def test_grouping_review_replays_actual_held_out_masks_before_promotion(workspac
     assert result.status_code == 200, result.text
     assert result.json()["promotion"]["status"] == "promoted"
     assert semantics.runtime_revision(train[-1], semantics.GROUPING) != previous_revision
-    assert list((root / "runtime" / "grouping-reviews").glob("*.json"))
+    assert list((root / "data" / "omega_vision" / "runtime" / "grouping-reviews").glob("*.json"))
     frozen = store.get(candidate["candidate_id"])
     execution_revision = semantics.runtime_revision(held[0], semantics.GROUPING)
     summary, after = invoke(held[0], semantics.GROUPING)
@@ -1524,7 +1531,7 @@ def test_llm_rule_proposals_are_stored_unevaluated_and_errors_are_audited(worksp
     units = make_sequence(root, count=3)
     run_core(units)
     proposal = {"candidates": [{
-        "kind": "event_detector", "scope": {"domain": "visual-sequence", "provider_id": "filesystem:test"},
+        "kind": "event_detector", "scope": {"domain": "visual-sequence", "provider_id": "filesystem:omega_vision"},
         "rule": {"head": {"predicate": "moved", "args": [{"var": "Object"}]},
                  "body": [{"predicate": "displacement_magnitude", "args": [{"var": "Object"}, {"var": "Distance"}]},
                           {"predicate": "greater_than", "args": [{"var": "Distance"}, 0.5]}]},
@@ -1538,12 +1545,12 @@ def test_llm_rule_proposals_are_stored_unevaluated_and_errors_are_audited(worksp
     assert candidate["status"] == "proposed" and candidate["evidence"] == [] and candidate["evaluations"] == []
     assert candidate["proposals"][0]["source"] == "llm_proposal"
     assert semantics._training(candidate)
-    assert (root / result["provenance"]["raw_output_ref"]).read_text() == raw
+    assert api._safe_workspace_child(root, result["provenance"]["raw_output_ref"]).read_text() == raw
     calls = setup_model(monkeypatch, '{"candidates":[{"kind":"event_detector","rule":"halt."}]}')
     with pytest.raises(ValueError):
         invoke(units[-1], semantics.LLM_RULES, {"confirmModel": True})
     assert calls and len(semantics._store(root).list()) == 1
-    assert any("invalid" in path.read_text() for path in (root / "runtime" / "rule-proposals").glob("*.json"))
+    assert any("invalid" in path.read_text() for path in (root / "data" / "omega_vision" / "runtime" / "rule-proposals").glob("*.json"))
 
 
 def test_nonvision_and_disabled_models_are_rejected_before_network(workspace, monkeypatch):

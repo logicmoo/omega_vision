@@ -58,6 +58,9 @@ from omega_vision.services.video_import_api import (
     member_cut,
     outline_verification,
     turtle_render,
+    _safe_workspace_child,
+    _require_sequence_write,
+    _storage_path,
 )
 
 # --------------------------------------------------------------------------- #
@@ -862,7 +865,7 @@ class PipelineRun:
         }
 
 
-# Runs are keyed by (workspace_id, lane) so independent lanes -- e.g. the prolog
+# Runs are keyed by (authorized storage root, lane) so independent lanes -- e.g. the prolog
 # reduce, the LLM reduce, and each induction -- can run SIMULTANEOUSLY for one
 # workspace. The "default" lane carries the classic single-run stages.
 _runs: dict[tuple[str, str], PipelineRun] = {}
@@ -891,14 +894,20 @@ class _Active:
             self._counts["active"] = max(0, self._counts.get("active", 0) - 1)
 
 
+def _run_store_key(workspace_id: str) -> str:
+    from omega_vision.services.video_import_api import _storage_path, _workspace_root
+    return str(_storage_path(_workspace_root(workspace_id)))
+
+
 def get_run(workspace_id: str, lane: str | None = None) -> PipelineRun | None:
-    """A run for a workspace. With `lane`, that exact lane; otherwise a
+    """A run for the authorized shared store. With `lane`, that exact lane; otherwise a
     representative run for the legacy single-run view: a running lane (highest
     _LANE_PRIORITY first), else the most recently started run."""
+    key = _run_store_key(workspace_id)
     with _runs_guard:
         if lane is not None:
-            return _runs.get((workspace_id, lane))
-        runs = [r for (ws, _ln), r in _runs.items() if ws == workspace_id]
+            return _runs.get((key, lane))
+        runs = [r for (store, _ln), r in _runs.items() if store == key]
     if not runs:
         return None
     running = [r for r in runs if r.status == "running"]
@@ -912,18 +921,20 @@ def get_run(workspace_id: str, lane: str | None = None) -> PipelineRun | None:
 
 
 def get_runs(workspace_id: str) -> list[PipelineRun]:
-    """All lane runs for a workspace (running or finished)."""
+    """All lane runs for the authorized shared store (running or finished)."""
+    key = _run_store_key(workspace_id)
     with _runs_guard:
-        return [r for (ws, _ln), r in _runs.items() if ws == workspace_id]
+        return [r for (store, _ln), r in _runs.items() if store == key]
 
 
 def stop_run(workspace_id: str, lane: str | None = None) -> bool:
-    """Stop one lane (if `lane` given) or ALL running lanes for the workspace."""
+    """Stop one lane (if `lane` given) or ALL running lanes for the authorized store."""
+    key = _run_store_key(workspace_id)
     with _runs_guard:
         if lane is not None:
-            targets = [_runs.get((workspace_id, lane))]
+            targets = [_runs.get((key, lane))]
         else:
-            targets = [r for (ws, _ln), r in _runs.items() if ws == workspace_id]
+            targets = [r for (store, _ln), r in _runs.items() if store == key]
     stopped = False
     for run in targets:
         if run and run.status == "running":
@@ -2874,15 +2885,15 @@ def run_reduce(
 
     canonical = (set_id or "recognition_reduce") == "recognition_reduce"
     if canonical:
-        bases = ["data/recognition_reduce", "data/curated/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
-        base_rel = next((b for b in bases if (root / b / "pool").is_dir()), bases[0])
+        bases = ["data/curated/recognition_reduce"]
+        base_rel = bases[0]
     else:
         parts = [p for p in str(set_id).replace("\\", "/").split("/") if p not in ("", ".")]
         if any(p == ".." for p in parts):
             raise RuntimeError(f"invalid image set: {set_id}")
         base_rel = "data/" + "/".join(parts)
         bases = [base_rel]
-    ws_dir = root / base_rel
+    ws_dir = _require_sequence_write(root, _safe_workspace_child(root, base_rel))
     stages_dir = ws_dir / "stages"
     sym_dir = ws_dir / "sym"
     stages_dir.mkdir(parents=True, exist_ok=True)
@@ -2898,7 +2909,7 @@ def run_reduce(
         import re as __re  # noqa: PLC0415
         seg = __re.sub(r"[^A-Za-z0-9_.-]", "_",
                        (str(set_id or "recognition_reduce").replace("\\", "/").rstrip("/").split("/")[-1] or "set"))
-        return str(Path(_sa_mod.memory_dir()).parent / "object_memory_video_import" / seg)
+        return str(_storage_path(root, "object_memory_video_import", seg))
 
     def _do_induction(which: str = "both") -> None:
         """Induce grounded candidate rules across the whole sequence from the
@@ -2948,7 +2959,7 @@ def run_reduce(
 
     prov: dict[str, Any] = {}
     for b in bases:
-        pp = root / b / "provenance.json"
+        pp = _safe_workspace_child(root, b) / "provenance.json"
         if pp.is_file():
             try:
                 loaded = json.loads(pp.read_text(encoding="utf-8"))
@@ -3483,7 +3494,7 @@ def start_run(
     induce_only: bool = False,
     lane: str | None = None,
 ) -> dict[str, Any]:
-    """Start a background pipeline run. Runs are keyed by (workspace, lane), so
+    """Start a background pipeline run. Runs are keyed by (shared store, lane), so
     distinct lanes run simultaneously; a lane already running is returned as-is.
     When `lane` is not given it is derived so the prolog reduce, the LLM reduce,
     and each induction get their own lane and can run at the same time."""
@@ -3499,12 +3510,13 @@ def start_run(
                     else "reduce")
         else:
             lane = "default"
+    store_key = _run_store_key(workspace_id)
     with _runs_guard:
-        current = _runs.get((workspace_id, lane))
+        current = _runs.get((store_key, lane))
         if current and current.status == "running":
             return current.snapshot()
         run = PipelineRun(workspace_id=workspace_id, stage=stage, lane=lane)
-        _runs[(workspace_id, lane)] = run
+        _runs[(store_key, lane)] = run
 
     runner = _STAGE_RUNNERS[stage]
     # Only the reduce runner is image-set aware; other stages keep their signature.

@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from ._event_journal import atomic_json, writer_lock
 from .observation_identity import content_hash
+from omega_vision.inherited_source_overlay import resolve_storage_path
 
 VERSION = 1
 MAX_AGE_SECONDS = 300
@@ -24,7 +25,11 @@ _LOCATION_KEYS = {
 
 
 def cache_directory(root: Path) -> Path:
-    return root / ".cache" / "memory-catalog"
+    boundary = resolve_storage_path(root)
+    directory = resolve_storage_path(boundary / ".cache" / "memory-catalog")
+    if not directory.is_relative_to(boundary):
+        raise PermissionError("Memory catalog cache escapes its authorized storage root")
+    return directory
 
 
 def invalidate_memory_catalog(root: Path) -> None:

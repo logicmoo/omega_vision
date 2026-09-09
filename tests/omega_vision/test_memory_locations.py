@@ -588,10 +588,11 @@ def test_volatile_wire_rejects_stale_sessions_tampering_and_unsealed_rows():
         VolatileMemory.from_wire(changed, session_id="browser-page-a")
 
 
-def test_browser_snapshot_contains_request_local_continuity_and_is_workspace_bound(tmp_path):
+def test_browser_snapshot_contains_page_local_continuity_across_workspaces(tmp_path):
     from omega_vision.perception.memory_locations import BrowserMemory
     browser = BrowserMemory("workspace-a", "browser-session-a")
-    record = browser.memory.put("shape", {"uid": "shape-a", "confidence": 1.0})
+    record = browser.memory.put("shape", {"uid": "shape-a", "confidence": 1.0},
+                                source={"providerRef": "filesystem:omega_vision", "workspaceId": "workspace-a"})
     result = {"checkpoint": {"objects": [{"uid": "object-a", "confidence": 1.0}]}}
     digest = browser.put_output("sequence-a", "frame-a", "objects/test", result)
     wire = browser.to_wire()
@@ -600,9 +601,78 @@ def test_browser_snapshot_contains_request_local_continuity_and_is_workspace_bou
     assert restored.outputs[restored.output_key("sequence-a", "frame-a", "objects/test")]["resultHash"] == digest
     assert restored.to_wire() == wire
     assert not BrowserMemory("workspace-a", "browser-session-a").outputs
-    for workspace, session in [("workspace-b", "browser-session-a"), ("workspace-a", "browser-session-b")]:
-        with pytest.raises(ValueError, match="another workspace or page"):
-            BrowserMemory(workspace, session, wire)
+    switched = BrowserMemory("workspace-b", "browser-session-a", wire)
+    assert switched.memory.records("shape") == [record]
+    assert switched.outputs == restored.outputs
+    assert switched.to_wire() == wire
+    with pytest.raises(ValueError, match="another page"):
+        BrowserMemory("workspace-a", "browser-session-b", wire)
     with pytest.raises(ValueError, match="16 MiB"):
         BrowserMemory("workspace-a", "browser-session-a", "x" * (16 * 1024 * 1024 + 1))
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("kind", ["shape", "object"])
+def test_volatile_identity_ignores_only_workspace_provenance(kind):
+    source = {"providerRef": "filesystem:omega_vision", "workspaceId": "workspace-a",
+              "context": {"gameId": "game-a", "levelId": "1", "runId": "run-a"}}
+    payload = {"uid": "shared-record", "value": 1}
+    first = VolatileMemory(session_id="same-browser-token")
+    saved = first.put(kind, payload, source=source)
+    switched_source = {**source, "workspaceId": "workspace-b"}
+    independent = VolatileMemory(session_id="same-browser-token").put(kind, payload, source=switched_source)
+    assert independent["recordUid"] == saved["recordUid"]
+    assert independent["source"]["workspaceId"] == "workspace-b"
+    restored = VolatileMemory.from_wire(first.to_wire(), session_id=first.session_id)
+    assert restored.put(kind, payload, source=switched_source) == saved
+    assert len(restored.records(kind)) == 1
+    for field in ("gameId", "levelId", "runId"):
+        changed = {**source, "context": {**source["context"], field: "other"}}
+        assert first.put(kind, payload, source=changed)["recordUid"] != saved["recordUid"]
+    assert first.put(kind, payload, source={**source, "providerRef": "other"})["recordUid"] != saved["recordUid"]
+    assert first.put(kind, {**payload, "value": 2}, source=source)["recordUid"] != saved["recordUid"]
+    other_kind = "object" if kind == "shape" else "shape"
+    assert first.put(other_kind, payload, source=source)["recordUid"] != saved["recordUid"]
+    assert VolatileMemory(session_id="other-browser-token").put(kind, payload, source=source)["recordUid"] != saved["recordUid"]
+
+
+def test_old_volatile_snapshot_keeps_ids_provenance_and_strict_validation():
+    from omega_vision.perception.memory_locations import _id
+
+    memory = VolatileMemory(session_id="same-browser-token")
+    source = {"providerRef": "filesystem:omega_vision", "workspaceId": "workspace-a"}
+    saved = memory.put("shape", {"uid": "old-shape"}, source=source)
+    old = json.loads(memory.to_wire())
+    legacy_uid = _id("volatile-memory", [
+        memory.session_id, "shape", saved["conceptUid"], saved["payload"], source,
+    ])
+    old["records"][0]["recordUid"] = legacy_uid
+    old["snapshotUid"] = _id("volatile-snapshot", {key: value for key, value in old.items() if key != "snapshotUid"})
+    restored = VolatileMemory.from_wire(json.dumps(old), session_id=memory.session_id)
+    assert restored.records("shape") == old["records"]
+    resaved = restored.put("shape", saved["payload"], source={**source, "workspaceId": "workspace-b"})
+    assert resaved["recordUid"] == legacy_uid
+    assert resaved["source"]["workspaceId"] == "workspace-a"
+    assert json.loads(restored.to_wire()) == old
+    forged = deepcopy(old)
+    forged["records"][0]["recordUid"] = "unrelated-record-id"
+    forged["snapshotUid"] = _id("volatile-snapshot", {key: value for key, value in forged.items() if key != "snapshotUid"})
+    with pytest.raises(ValueError, match="identity/revision/envelope"):
+        VolatileMemory.from_wire(json.dumps(forged), session_id=memory.session_id)
+
+
+def test_browser_snapshot_is_bound_to_provider_root_and_page_before_serialization(tmp_path):
+    from omega_vision.perception.memory_locations import BrowserMemory
+
+    browser = BrowserMemory("workspace-a", "same-browser-token", storage_root=tmp_path)
+    wire = browser.to_wire()
+    assert BrowserMemory("workspace-b", browser.session_id, wire, storage_root=tmp_path).to_wire() == wire
+    for kwargs in ({"storage_root": tmp_path / "different-root"}, {"provider_ref": "different-provider", "storage_root": tmp_path}):
+        with pytest.raises(PermissionError, match="provider or physical root"):
+            BrowserMemory("workspace-b", browser.session_id, wire, **kwargs)
+    browser.memory.put("shape", {"uid": "foreign"}, source={"providerRef": "foreign-provider"})
+    with pytest.raises(PermissionError, match="another provider"):
+        browser.to_wire()
+    browser.memory.reset()
+    with pytest.raises(ValueError, match="another page"):
+        browser.to_wire()

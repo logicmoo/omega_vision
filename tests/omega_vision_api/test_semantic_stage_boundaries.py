@@ -9,7 +9,7 @@ from omega_vision.services.transform_task_pooler import load_unit
 
 
 def test_model_todos_require_confirmation_and_skip_initial_frame(tmp_path, monkeypatch):
-    sequence = tmp_path / "data" / "recording"
+    sequence = tmp_path / "data" / "omega_vision" / "recordings" / "recording"
     (sequence / "0").mkdir(parents=True)
     (sequence / "recording.json").write_text("{}")
     Image.new("RGB", (4, 4), "red").save(sequence / "image.png")
@@ -24,7 +24,7 @@ def test_model_todos_require_confirmation_and_skip_initial_frame(tmp_path, monke
         ("pair", "model"): {"type": "llm", "orderedOnly": True, "skipFirstFrame": True,
                             "dependsOn": ["input/python", "frame[-1]@input/python"]},
     })
-    body = {"workspaceId": "w", "set": "recording", "planOnly": True,
+    body = {"workspaceId": "w", "set": "recordings/recording", "planOnly": True,
             "pipeline": [{"transformation": "input", "doer": "python", "dependsOn": []},
                          {"transformation": "pair", "doer": "model"}]}
     with pytest.raises(HTTPException) as prompt:
@@ -52,7 +52,7 @@ def test_model_todos_require_confirmation_and_skip_initial_frame(tmp_path, monke
 
 
 def test_unordered_inputs_never_receive_pair_todos(tmp_path, monkeypatch):
-    pool = tmp_path / "data" / "still" / "pool"
+    pool = tmp_path / "data" / "omega_vision" / "curated" / "still" / "pool"
     pool.mkdir(parents=True)
     Image.new("RGB", (3, 3), "red").save(pool / "a.png")
     monkeypatch.setattr(api, "_workspace_root", lambda _: tmp_path)
@@ -62,7 +62,7 @@ def test_unordered_inputs_never_receive_pair_todos(tmp_path, monkeypatch):
         ("pair", "model"): {"type": "llm", "orderedOnly": True, "skipFirstFrame": True,
                             "dependsOn": ["frame[-1]@pair/model"]},
     })
-    api.sequence_set_transform({"workspaceId": "w", "set": "still", "confirmed": True,
+    api.sequence_set_transform({"workspaceId": "w", "set": "curated/still", "confirmed": True,
                                 "planOnly": True, "pipeline": [{"transformation": "pair", "doer": "model"}]})
     payload = json.loads((pool.parent / "transforms" / "a" / "todos.json").read_text())
     assert payload["todos"] == []

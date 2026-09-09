@@ -107,6 +107,7 @@ class VolatileMemory:
             raise ValueError("volatile session ID must be an opaque nonempty printable token")
         self._session_id = session_id if session_id is not None else uuid4().hex
         self._records: dict[str, dict[str, Any]] = {}
+        self._canonical_ids: dict[str, str] = {}
 
     @property
     def session_id(self) -> str:
@@ -122,8 +123,14 @@ class VolatileMemory:
         source = {key: value for key, value in (source or {}).items()
                   if key not in {"memoryLocationId", "sessionId", "scopeKind"}}
         concept = concept_uid or _id("volatile-concept", [self._session_id, kind, payload["uid"]])
+        identity_source = {key: value for key, value in source.items() if key != "workspaceId"}
+        canonical_uid = _id("volatile-memory", [self._session_id, kind, concept, dict(payload), identity_source])
+        record_uid = self._canonical_ids.get(canonical_uid, canonical_uid)
+        existing = self._records.get(record_uid)
+        if existing and "workspaceId" in existing["source"]:
+            source["workspaceId"] = existing["source"]["workspaceId"]
         record = {
-            "recordUid": _id("volatile-memory", [self._session_id, kind, concept, dict(payload), dict(source or {})]),
+            "recordUid": record_uid,
             "conceptUid": concept,
             "revision": content_hash(dict(payload)), "memoryKind": kind,
             "recordType": "volatile", "payload": _copy(payload),
@@ -133,6 +140,7 @@ class VolatileMemory:
         if origin:
             record["origin"] = _copy(origin)
         self._records[record["recordUid"]] = record
+        self._canonical_ids.setdefault(canonical_uid, record_uid)
         return _copy(record)
 
     def records(self, kind: str) -> list[dict[str, Any]]:
@@ -142,6 +150,7 @@ class VolatileMemory:
 
     def reset(self) -> None:
         self._records.clear()
+        self._canonical_ids.clear()
         self._session_id = uuid4().hex
 
     def to_wire(self) -> str:
@@ -187,12 +196,21 @@ class VolatileMemory:
                 raise ValueError("volatile snapshot contains duplicate record IDs")
             if not isinstance(record.get("conceptUid"), str) or not record["conceptUid"]:
                 raise ValueError("volatile record requires its stable concept UID")
-            expected = store.put(
+            expected = cls(session_id=session_id).put(
                 record.get("memoryKind"), record.get("payload"),
                 concept_uid=record["conceptUid"], source=source, origin=record.get("origin"),
             )
             if record != expected:
-                raise ValueError("volatile record identity/revision/envelope is inconsistent")
+                legacy_source = {key: item for key, item in source.items()
+                                 if key not in {"memoryLocationId", "sessionId", "scopeKind"}}
+                legacy_uid = _id("volatile-memory", [
+                    session_id, record["memoryKind"], record["conceptUid"], record["payload"], legacy_source,
+                ])
+                if record != {**expected, "recordUid": legacy_uid}:
+                    raise ValueError("volatile record identity/revision/envelope is inconsistent")
+            # Existing browser snapshots retain their exact IDs and provenance.
+            store._records[record["recordUid"]] = _copy(record)
+            store._canonical_ids.setdefault(expected["recordUid"], record["recordUid"])
         return store
 
 
@@ -203,7 +221,17 @@ class BrowserMemory:
     disk. The hash detects transport corruption, not authorization.
     """
 
-    def __init__(self, workspace_id: str, session_id: str, wire: str | None = None) -> None:
+    def __init__(self, workspace_id: str, session_id: str, wire: str | None = None, *,
+                 provider_ref: str = "filesystem:omega_vision", storage_root: Path | None = None) -> None:
+        from omega_vision.inherited_source_overlay import resolve_storage_path, shared_storage_path
+
+        if not isinstance(provider_ref, str) or not provider_ref:
+            raise ValueError("Browser memory requires an authorized provider")
+        root = resolve_storage_path(storage_root if storage_root is not None else shared_storage_path())
+        self.storage_context = {
+            "providerRef": provider_ref,
+            "rootId": _id("browser-storage-root", os.path.normcase(str(root))),
+        }
         self.workspace_id = workspace_id
         self.session_id = session_id
         self.memory = VolatileMemory(session_id=session_id)
@@ -213,16 +241,24 @@ class BrowserMemory:
         if not isinstance(wire, str) or len(wire.encode("utf-8")) > MAX_BROWSER_SNAPSHOT_BYTES:
             raise ValueError("Browser memory snapshot must be an opaque string of at most 16 MiB")
         value = json.loads(wire)
+        if isinstance(value, dict) and value.get("schemaVersion") == 1:
+            raise ValueError("Browser memory snapshot lacks provider/root binding; reset page memory explicitly")
         if not isinstance(value, dict) or set(value) != {
-            "schemaVersion", "workspaceId", "sessionId", "memory", "outputs", "snapshotUid",
-        } or type(value["schemaVersion"]) is not int or value["schemaVersion"] != 1:
+            "schemaVersion", "workspaceId", "sessionId", "storageContext", "memory", "outputs", "snapshotUid",
+        } or type(value["schemaVersion"]) is not int or value["schemaVersion"] != 2:
             raise ValueError("Invalid browser memory snapshot")
-        if (value["workspaceId"], value["sessionId"]) != (workspace_id, session_id):
-            raise ValueError("Browser memory snapshot belongs to another workspace or page session")
+        if value["sessionId"] != session_id:
+            raise ValueError("Browser memory snapshot belongs to another page session")
+        if not isinstance(value["workspaceId"], str) or not value["workspaceId"]:
+            raise ValueError("Browser memory snapshot requires workspace provenance")
         payload = {key: item for key, item in value.items() if key != "snapshotUid"}
         if value["snapshotUid"] != _id("browser-snapshot", payload):
             raise ValueError("Browser memory snapshot hash mismatch")
+        if value["storageContext"] != self.storage_context:
+            raise PermissionError("Browser memory snapshot belongs to another provider or physical root")
+        self.workspace_id = value["workspaceId"]
         self.memory = VolatileMemory.from_wire(value["memory"], session_id=session_id)
+        self._validate_storage_sources()
         if not isinstance(value["outputs"], dict) or len(value["outputs"]) > 1024:
             raise ValueError("Browser memory has too many transient outputs; clear session memory")
         for key, output in value["outputs"].items():
@@ -232,8 +268,17 @@ class BrowserMemory:
                 raise ValueError("Invalid browser-owned output receipt")
         self.outputs = value["outputs"]
 
+    def _validate_storage_sources(self) -> None:
+        if self.memory.session_id != self.session_id:
+            raise ValueError("Browser memory records belong to another page session")
+        if any(record["source"].get("providerRef") != self.storage_context["providerRef"]
+               for record in self.memory._records.values()):
+            raise PermissionError("Browser memory record belongs to another provider")
+
     def to_wire(self) -> str:
-        payload = {"schemaVersion": 1, "workspaceId": self.workspace_id, "sessionId": self.session_id,
+        self._validate_storage_sources()
+        payload = {"schemaVersion": 2, "workspaceId": self.workspace_id, "sessionId": self.session_id,
+                   "storageContext": self.storage_context,
                    "memory": self.memory.to_wire(), "outputs": self.outputs}
         wire = json.dumps({**payload, "snapshotUid": _id("browser-snapshot", payload)},
                           ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))
@@ -404,16 +449,18 @@ def _legacy_records(path: Path, kind: str) -> list[dict[str, Any]]:
 
 class MemoryLocations:
     def __init__(self, roots: Iterable[AuthorizedMemoryRoot]) -> None:
-        self.roots = tuple(replace(root, root=root.root.resolve()) for root in roots)
+        from omega_vision.inherited_source_overlay import resolve_storage_path
+        self.roots = tuple(replace(root, root=resolve_storage_path(root.root)) for root in roots)
         self._boundaries = {id(root): root.root for root in self.roots}
         keys = [(root.provider_ref, root.workspace_id, str(root.root.resolve())) for root in self.roots]
         if len(set(keys)) != len(keys):
             raise ValueError("duplicate authorized memory mount")
 
     def _safe(self, root: AuthorizedMemoryRoot, path: Path) -> Path:
-        resolved = path.resolve()
+        from omega_vision.inherited_source_overlay import resolve_storage_path
+        resolved = resolve_storage_path(path)
         boundary = self._boundaries[id(root)]
-        if root.root.resolve() != boundary or not resolved.is_relative_to(boundary):
+        if resolve_storage_path(root.root) != boundary or not resolved.is_relative_to(boundary):
             raise PermissionError("memory path escapes its authorized provider root")
         return resolved
 
@@ -563,6 +610,9 @@ class MemoryLocations:
                     raise ValueError("invalid persisted memory record")
                 if source.name != f"{content_hash(payload)}.memory.json":
                     raise ValueError("persisted memory revision integrity mismatch")
+                attribution = payload.get("storageContext")
+                if attribution is not None and not isinstance(attribution, dict):
+                    raise ValueError("invalid persisted memory storage attribution")
                 output.append({"kind": kind, "type": payload["recordType"], "payload": payload["payload"],
                                "persisted": payload})
             elif kind == "shape":
@@ -593,7 +643,8 @@ class MemoryLocations:
                 "conceptUid": concept, "revision": revision, "memoryKind": raw["kind"],
                 "recordType": raw["type"], "payload": payload,
                 "source": {"memoryLocationId": location["memoryLocationId"], "providerRef": root.provider_ref,
-                           "workspaceId": root.workspace_id, "context": location["context"], "scopeKind": location["scopeKind"]},
+                           "workspaceId": (raw.get("persisted", {}).get("storageContext") or {}).get("workspaceId", root.workspace_id),
+                           "context": location["context"], "scopeKind": location["scopeKind"]},
             }
             if raw.get("persisted", {}).get("origin") is not None:
                 record["origin"] = raw["persisted"]["origin"]
@@ -789,7 +840,7 @@ class MemoryLocations:
 
     def save_record(self, kind: str, destination_id: str, payload: Mapping[str, Any], context: MemoryContext, *,
                     volatile: VolatileMemory | None = None, origin: Mapping[str, Any] | None = None,
-                    concept_uid: str | None = None) -> dict[str, Any]:
+                    concept_uid: str | None = None, provenance_workspace_id: str | None = None) -> dict[str, Any]:
         _validate_payload(kind, payload)
         if destination_id == NOWHERE:
             if volatile is None:
@@ -801,7 +852,7 @@ class MemoryLocations:
                     [context.workspace_id, context.run_id] if kind == "object" else None,
                 ])
             return volatile.put(kind, payload, concept_uid=concept, origin=origin, source={
-                "providerRef": context.provider_ref, "workspaceId": context.workspace_id,
+                "providerRef": context.provider_ref, "workspaceId": provenance_workspace_id or context.workspace_id,
                 "context": {"gameId": context.game_id, "levelId": context.level_id, "runId": context.run_id},
             })
         root, location, path = self._find(context, destination_id)
@@ -810,6 +861,7 @@ class MemoryLocations:
         record = {
             "schemaVersion": 1, "memoryKind": kind, "recordType": _record_type(kind, payload),
             "payload": _copy(payload), "origin": _copy(origin) if origin else None,
+            "storageContext": {"providerRef": root.provider_ref, "workspaceId": provenance_workspace_id or context.workspace_id},
             "conceptUid": concept_uid or _id("memory-concept", [
                 root.provider_ref, kind, _record_type(kind, payload), payload.get("shapeKey", payload["uid"]),
                 [root.workspace_id, context.run_id or destination_id] if kind == "object" else None,
@@ -834,7 +886,8 @@ class MemoryLocations:
             "conceptUid": record["conceptUid"], "revision": payload_revision, "storageRevision": revision,
             "memoryKind": kind, "recordType": record["recordType"], "payload": record["payload"],
             "source": {"memoryLocationId": destination_id, "providerRef": root.provider_ref,
-                       "workspaceId": root.workspace_id, "context": location["context"], "scopeKind": location["scopeKind"]},
+                       "workspaceId": provenance_workspace_id or root.workspace_id,
+                       "context": location["context"], "scopeKind": location["scopeKind"]},
         }
         if origin:
             result["origin"] = record["origin"]

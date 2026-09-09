@@ -14,7 +14,7 @@ from omega_vision.services import transform_task_pooler as pooler
 @pytest.fixture
 def integrated(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "_workspace_root", lambda _: tmp_path)
-    monkeypatch.setattr(api, "_data_homes", lambda root: [root / "data"])
+    monkeypatch.setattr(api, "_data_homes", lambda root: [root / "data" / "omega_vision"])
     monkeypatch.setattr(api, "_direct_jobs", {})
     monkeypatch.setattr(api, "_pooler_point_at", lambda *args: pytest.fail("Do not retarget the live pooler"))
     registry, metadata = dict(api._SEQUENCE_TRANSFORMS), dict(api._TRANSFORM_METADATA)
@@ -28,7 +28,7 @@ def integrated(tmp_path, monkeypatch):
 
 
 def sequence(root, name="seq", count=3, ordered=True):
-    directory = root / "data" / name
+    directory = root / "data" / "omega_vision" / "recordings" / name
     directory.mkdir(parents=True)
     if ordered:
         (directory / "recording.json").write_text(json.dumps({"game_id": "integration", "level": 1}))
@@ -38,7 +38,7 @@ def sequence(root, name="seq", count=3, ordered=True):
         image = Image.new("RGB", (48, 32), "black")
         ImageDraw.Draw(image).rectangle((4 + index, 5, 14 + index, 18), fill="red")
         image.save(path)
-    return "data/" + name
+    return "data/recordings/" + name
 
 
 def finish(client, job, expected="done"):
@@ -80,7 +80,7 @@ def test_first_direct_plan_resolves_default_preferences_once_without_foreign_mem
         frame.mkdir(parents=True)
         (frame / "result.json").write_text("unrelated generated payload")
     mounts = [
-        memory.AuthorizedMemoryRoot("filesystem:w", "w", root / "workspace", "Workspace", writable=True),
+        memory.AuthorizedMemoryRoot("filesystem:omega_vision", "omega_vision", root / "workspace", "Shared", writable=True),
         memory.AuthorizedMemoryRoot("external", "w", external, "External recordings"),
     ]
     mounts[0].root.mkdir()
@@ -89,7 +89,7 @@ def test_first_direct_plan_resolves_default_preferences_once_without_foreign_mem
     discover = memory.MemoryLocations._discovered
 
     def counted(self, mount, **kwargs):
-        assert mount.provider_ref == "filesystem:w", "Default planning must not traverse unrelated providers"
+        assert mount.provider_ref == "filesystem:omega_vision", "Default planning must not traverse unrelated providers"
         discoveries.append(mount.root)
         yield from discover(self, mount, **kwargs)
 
@@ -119,7 +119,7 @@ def test_real_cv_objects_events_and_inspectable_sources(integrated):
     job = finish(client, commit(client, body, preview, run=True))
     assert job["imageCount"] == 2
     assert not list(root.rglob("todos.json"))
-    assert not (root / "data" / "seq" / "1" / "event_log_0").exists()
+    assert not (root / "data" / "omega_vision" / "recordings" / "seq" / "1" / "event_log_0").exists()
     response = client.get("/video-import/semantic/execution", params={
         "workspaceId": "w", "sequenceId": sequence_id, "firstN": 2,
     })
@@ -137,7 +137,7 @@ def test_real_cv_objects_events_and_inspectable_sources(integrated):
     canonical = semantics._event_log(root, sequence_id).read()
     assert canonical["entries"][0]["assessment"] == "initial_observation"
     assert any(entry["kind"] == "transition_assessment" for entry in canonical["entries"])
-    assert list((root / "runtime" / "temporal-checkpoints").glob("*.json"))
+    assert list((root / "data" / "omega_vision" / "runtime" / "temporal-checkpoints").glob("*.json"))
 
 
 @pytest.mark.parametrize("legacy_metadata", [False, True])
@@ -169,7 +169,7 @@ def test_implementation_upgrade_refreshes_prefix_before_persistent_to_nowhere_re
     units = api._sequence_execution_context(root, sequence_id, "w")[1]
     old_temporal = [semantics._result(unit, semantics.TEMPORAL)["checkpoint"] for unit in units]
     old_parts = [api._read_output_revision(semantics._artifact(unit, semantics.PARTS, "meta.json")) for unit in units]
-    immutable = {path: path.read_bytes() for path in (root / "runtime" / "temporal-checkpoints").glob("*.json")}
+    immutable = {path: path.read_bytes() for path in (root / "data" / "omega_vision" / "runtime" / "temporal-checkpoints").glob("*.json")}
     protected = units[0]["dir"] / "todos.json"
     protected.write_text('{"todos":[],"note":"must not change during direct execution"}')
     protected_bytes = protected.read_bytes()
@@ -271,7 +271,7 @@ def test_semantic_queue_runs_real_dependencies_offline(integrated):
     units = api._sequence_execution_context(root, sequence_id, "w")[1]
     assert not (units[2]["dir"] / "todos.json").exists()
     for _ in range(10):
-        if not pooler.one_pass([root], workers=1, limit=0, retry_errors=False, only_types=None, skip_types={"llm"}):
+        if not pooler.one_pass([api._vision_data_root(root)], workers=1, limit=0, retry_errors=False, only_types=None, skip_types={"llm"}):
             break
     for unit in units[:2]:
         payload = json.loads((unit["dir"] / "todos.json").read_text())
@@ -332,7 +332,7 @@ def test_ordinary_todo_confirmation_binds_mutable_runtime_inputs(integrated, mon
     monkeypatch.setattr(semantics, "_model", lambda *_args: (
         {}, "vision-test", {"backend": "test-provider", "resolved_model_hash": "unchanged-model"},
     ))
-    body = {"workspaceId": "w", "set": "seq", "firstN": 2, "planOnly": True,
+    body = {"workspaceId": "w", "set": "recordings/seq", "firstN": 2, "planOnly": True,
             "pipeline": [{"transformation": stage.split("/")[0], "doer": stage.split("/")[1]}
                          for stage in (semantics.EVENTS, semantics.LLM_EVENTS)]}
     with pytest.raises(HTTPException) as preview:
@@ -397,7 +397,7 @@ def test_pooler_preserves_each_merged_todos_browser_session(integrated, monkeypa
         return {"step": f"{transformation}/{doer}", "status": "written", "elapsedMs": 0}
 
     monkeypatch.setattr(pooler, "run_transform_step", run)
-    assert pooler.one_pass([root], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=None) == 2
+    assert pooler.one_pass([api._vision_data_root(root)], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=None) == 2
     assert observed == {"first": "original-page-session", "second": "newer-page-session"}
     saved = json.loads((unit["dir"] / "todos.json").read_text())["todos"]
     assert {todo["transformation"]: todo["memorySessionId"] for todo in saved} == observed
@@ -439,7 +439,7 @@ def test_real_direct_model_boundary_persists_audit_and_validates_ast(integrated,
         assert hypotheses[-1]["parsed"]["authoritative"] is False
     else:
         assert any(item.get("status") == "invalid" for item in hypotheses)
-    assert not (root / "data" / "seq" / "transforms" / "image" / "llm_event_deduction_0").exists()
+    assert not (root / "data" / "omega_vision" / "recordings" / "seq" / "transforms" / "image" / "llm_event_deduction_0").exists()
 
 
 def test_promoted_rule_revision_invalidates_dependency_reuse(integrated, monkeypatch):
@@ -480,7 +480,7 @@ def test_promoted_rule_revision_invalidates_dependency_reuse(integrated, monkeyp
 
 def test_imported_arc_provenance_declares_order_without_fabricating_image_set_adjacency(integrated):
     root, client = integrated
-    directory = root / "data" / "import"
+    directory = root / "data" / "omega_vision" / "recordings" / "import"
     directory.mkdir(parents=True)
     for index in range(2):
         image = directory / f"frame_{index:06}.png"
@@ -490,17 +490,17 @@ def test_imported_arc_provenance_declares_order_without_fabricating_image_set_ad
             "source": {"arcRecording": "data/recordings/game/run", "frameIndex": index,
                        "incomingAction": "ACTION1" if index else None, "level": "7"},
         }))
-    _, units, catalog = api._sequence_execution_context(root, "data/import", "w")
+    _, units, catalog = api._sequence_execution_context(root, "data/recordings/import", "w")
     assert catalog["ordered"]
     assert units[1]["sourceProvenance"]["source"]["incomingAction"] == "ACTION1"
-    body, preview = plan(client, "data/import")
+    body, preview = plan(client, "data/recordings/import")
     assert preview["pairCount"] == 1 and not preview["blockedReasons"]
     last = directory / "frame_000001.provenance.json"
     changed = json.loads(last.read_text())
     changed["source"]["arcRecording"] = "data/recordings/game/other"
     last.write_text(json.dumps(changed))
-    assert api._sequence_execution_context(root, "data/import", "w")[2]["ordered"] is False
-    _, preview = plan(client, "data/import")
+    assert api._sequence_execution_context(root, "data/recordings/import", "w")[2]["ordered"] is False
+    _, preview = plan(client, "data/recordings/import")
     assert preview["blockedReasons"]
 
 
@@ -589,7 +589,7 @@ def test_direct_nowhere_returns_snapshot_only_on_its_request_and_binds_plan_to_p
     assert "memorySnapshot" not in status
     assert all("memorySnapshot" not in job for job in api._direct_jobs.values())
     assert result["memorySnapshot"]
-    assert not any("memorySnapshot" in path.read_text() for path in (root / "runtime" / "executions").glob("*"))
+    assert not any("memorySnapshot" in path.read_text() for path in (root / "data" / "omega_vision" / "runtime" / "executions").glob("*"))
     read = client.post("/video-import/semantic/memory/read", json={
         "workspaceId": "w", "sequenceId": sequence_id, "memorySessionId": session_id,
         "memorySnapshot": result["memorySnapshot"],
@@ -609,7 +609,7 @@ def test_direct_nowhere_returns_snapshot_only_on_its_request_and_binds_plan_to_p
         **body, "confirmed": True, "confirmationKey": preview["confirmationKey"], "run": True,
     })
     assert retired.status_code == 409 and "snapshot" in retired.json()["detail"]
-    assert len(list((root / "runtime" / "executions").glob("direct-*.json"))) == 1
+    assert len(list((root / "data" / "omega_vision" / "runtime" / "executions").glob("direct-*.json"))) == 1
     preferences = locations.load_preferences(context)
     preferences["shape"]["saveTo"] = persistent_destination
     locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
@@ -638,17 +638,17 @@ def test_failed_paid_rerun_stays_error_until_explicitly_restamped(integrated, mo
     directory.mkdir(parents=True)
     (directory / "meta.json").write_text(json.dumps({"options": {}, "inputSignature": unit.get("inputSignature")}))
     api.write_unit_todos(unit, [spec])
-    assert pooler.one_pass([root], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=set()) == 1
+    assert pooler.one_pass([api._vision_data_root(root)], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=set()) == 1
     saved = json.loads((unit["dir"] / "todos.json").read_text())["todos"]
     assert saved[0]["status"] == "error" and "Invalid typed" in saved[0]["error"]
-    assert pooler.one_pass([root], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=set()) == 0
+    assert pooler.one_pass([api._vision_data_root(root)], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=set()) == 0
 
     # Rewriting another task must not silently re-enable a failed paid task.
     api.write_unit_todos(unit, saved, [{"step": "other/local", "status": "written"}])
     assert json.loads((unit["dir"] / "todos.json").read_text())["todos"][0]["status"] == "error"
     assert calls == [True]
     api.write_unit_todos(unit, [spec])
-    assert pooler.one_pass([root], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=set()) == 1
+    assert pooler.one_pass([api._vision_data_root(root)], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=set()) == 1
     assert calls == [True, True]
 
 
@@ -664,7 +664,7 @@ def test_queued_grouping_revalidates_volatile_lookups_after_submission(integrate
     monkeypatch.setitem(api._SEQUENCE_TRANSFORMS, tuple(semantics.GROUPING.split("/")),
                         lambda *_args: pytest.fail("An offline task cannot use browser-local volatile lookup"))
     for _ in range(10):
-        if not pooler.one_pass([root], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=None):
+        if not pooler.one_pass([api._vision_data_root(root)], workers=1, limit=0, retry_errors=False, only_types=None, skip_types=None):
             break
     unit = api._sequence_execution_context(root, sequence_id, "w")[1][0]
     saved = json.loads((unit["dir"] / "todos.json").read_text())["todos"]
@@ -700,7 +700,8 @@ def test_browser_execution_disconnect_cancels_and_cleans_request_owned_payload(i
     def run(unit, transformation, doer, *_args, **_kwargs):
         state = unit["_browserMemory"]
         captured.append(state)
-        state.memory.put("shape", {"uid": "private-disconnect-shape"})
+        state.memory.put("shape", {"uid": "private-disconnect-shape"},
+                         source={"providerRef": "filesystem:omega_vision", "workspaceId": "w"})
         entered.set()
         assert release.wait(10)
         finished.set()

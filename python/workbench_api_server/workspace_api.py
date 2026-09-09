@@ -1672,8 +1672,7 @@ def read_workspace_file(workspace_id: str, path: str = Query(...)) -> dict[str, 
 
 
 def _vision_data_fallbacks(root: Path) -> list[Path]:
-    """Data homes visible to a workspace beyond its own data/ dir, in overlay
-    precedence order (see omega_vision.inherited_source_overlay)."""
+    """Compatibility helper exposing only the canonical Omega home."""
     from omega_vision.inherited_source_overlay import data_layers
 
     own = (root / "data").resolve()
@@ -1686,22 +1685,17 @@ def read_workspace_asset(workspace_id: str, path: str = Query(...)) -> FileRespo
         workspace = _resolve_workspace_without_counts(workspace_id)
         root = Path(workspace["root"]).resolve()
         requested = Path(path)
+        relative = str(path).replace("\\", "/")
+        if not requested.is_absolute() and relative.startswith("data/"):
+            from omega_vision.inherited_source_overlay import resolve_workspace_child
+            target = resolve_workspace_child(root, relative)
+            if not target.is_file():
+                raise ValueError("Omega asset unavailable in the canonical root; historical data requires explicit migration")
+            return FileResponse(target)
         target = requested.resolve() if requested.is_absolute() else _safe_child(root, path).resolve()
         if target != root and root not in target.parents:
             raise ValueError("asset path escapes workspace")
         if not target.is_file():
-            # data/... assets resolve down the workspace inheritance chain and
-            # into the shared repo vision store when absent locally.
-            rel = str(path).replace("\\", "/").lstrip("/")
-            if not requested.is_absolute() and rel.startswith("data/"):
-                tail = rel[5:]
-                for home in _vision_data_fallbacks(root):
-                    try:
-                        candidate = _safe_child(home, tail)
-                    except ValueError:
-                        continue
-                    if candidate.is_file():
-                        return FileResponse(candidate)
             raise ValueError("asset not found")
         return FileResponse(target)
     except KeyError as error:
@@ -1712,20 +1706,11 @@ def read_workspace_asset(workspace_id: str, path: str = Query(...)) -> FileRespo
 
 @router.get("/{workspace_id}/data-listing")
 def workspace_data_listing(workspace_id: str, directory: str = Query("", description="Canonical sub-path under each layer's data/ dir")) -> dict[str, Any]:
-    """Enumerate one canonical data directory across the workspace's full
-    inheritance chain.
+    """Enumerate one directory in the shared Omega home, retaining the wire schema.
 
-    Every data home follows the same exact layout under ``<root>/data/``
-    (``recordings``, ``importables``, ``curated``,
-    ``vision_frames/...``,
-    ``recognition_reduce``, ``video_import``, ``object_memory``, ...). The
-    listing walks the chain in precedence order — the workspace's own
-    ``data/``, each included workspace's ``data/`` (workspace.json includes,
-    nearest first), then the shared repo store (or its OMEGA_VISION_DATA
-    override) — and reports each layer's entries plus a merged effective view
-    where the nearest layer wins per name and farther hits are recorded as
-    ``shadows``. Entry ``rel`` values are workspace-facing ``data/...`` paths
-    usable directly with the asset route and the vision APIs."""
+    Entry ``rel`` values are logical ``data/...`` paths usable by the asset and
+    vision APIs. Historical outside-root stores are reported, never mounted.
+    """
     try:
         workspace = _resolve_workspace_without_counts(workspace_id)
         root = Path(workspace["root"]).resolve()
@@ -1733,7 +1718,7 @@ def workspace_data_listing(workspace_id: str, directory: str = Query("", descrip
         if rel and any(part in {"", ".", ".."} for part in rel.split("/")):
             raise ValueError("directory must be a plain relative path")
 
-        from omega_vision.inherited_source_overlay import data_layers
+        from omega_vision.inherited_source_overlay import data_layers, unavailable_legacy_storage
 
         seen_roots: set[Path] = set()
         payload_layers: list[dict[str, Any]] = []
@@ -1749,6 +1734,8 @@ def workspace_data_listing(workspace_id: str, directory: str = Query("", descrip
             entries: list[dict[str, Any]] = []
             if target.is_dir():
                 for child in sorted(resources.iterdir(target), key=lambda p: p.name.lower()):
+                    if not child.resolve().is_relative_to(resolved_root):
+                        continue
                     try:
                         stat = child.stat()
                     except OSError:
@@ -1779,6 +1766,7 @@ def workspace_data_listing(workspace_id: str, directory: str = Query("", descrip
             "directory": rel,
             "layers": payload_layers,
             "merged": [merged[name] for name in sorted(merged, key=str.lower)],
+            "unavailableStorage": unavailable_legacy_storage(root),
         }
     except KeyError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error

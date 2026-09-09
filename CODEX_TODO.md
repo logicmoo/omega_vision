@@ -14,6 +14,125 @@ values here.
 
 ## Current recovery state
 
+- Integrated shared-root and inspector acceptance (2026-09-10): the canonical
+  storage gate PASSED after correction and independent targeted re-review of
+  descendant transform output containment, canonical recognition executable IDs,
+  and alias-stable memory scopes/preferences. This supersedes the intermediate
+  blocked/readiness checkpoints below. The active frontend now preserves the
+  rich recognition matrix at `curated/recognition_reduce` and derives fallback
+  source paths from the selected catalog entry, not a legacy hard-coded root.
+  Final frontend bundle: 50 focused tests and production build pass.
+  Backend review regressions: 91 pass; alias/imported-memory checks: 15 pass;
+  cache checks: 7 pass; review/document-link follow-up: 21 pass.
+  Remaining Python suite: 1,285 passed; the new Markdown backlink failure was
+  corrected and rerun. The only outstanding suite failure is the pre-existing
+  installed Codex plugin's two UI pages versus the test's one-page expectation;
+  no unrelated plugin code or assertion was changed.
+  Restarted only the owned main API; current listener PID is 98228, handle
+  `shared-root-main-api`. Vite 5173 remains the existing main checkout process.
+  Actual HTTP acceptance across `arc3_random_player` and `default`: identical
+  nine areas, 534 Shape versions in each of two areas and 382/386 Object versions
+  in two areas, all identical across workspaces. Preferences remained unchanged.
+  Cold setup was 30.488s, warm second-workspace setup 0.123s; record reads
+  0.3-1.0s. Historical workspace stores and sibling recognition data are explicitly
+  unavailable/migration-required, not silently empty or auto-migrated.
+  Isolated browser page 3 exercised real area selection, shape geometry,
+  Zoom/Fit and both scroll axes, read-only CodeMirror JSON/MeTTa, filter empty/
+  restore, automatic Object kind and separate legacy constituents. Nowhere is
+  empty for both kinds; explicit reset and reload clear area/detail selection.
+  Instrumented browsing/reset issued only memory setup/read calls, no preference,
+  copy, extraction or model writes. Desktop and 900px screenshots are attached
+  to this conversation; browser tooling denied filesystem screenshot paths.
+  User page 1 and its LS20 Frames URL were preserved. The real LS20 recording
+  remains a writable canonical `recordings/ls20/20260718-154544_attempt8` entry;
+  its old `arc_recordings` entry is explicitly read-only.
+  Exact attributed multi-group reference resolution is implemented/model-covered
+  but not live-demonstrated: currently available root stores contain legacy
+  unattributed objects; the old native 16-shape/one-object store is outside the
+  root and remains untouched/unavailable. No fabricated or migrated data was used.
+  No PR, push, new branch/worktree, or protected runtime-file staging.
+
+- Canonical Omega boundary (2026-09-10, validated backend checkpoint): backend
+  storage routing now separates the actual workspace configuration root from
+  the single Omega data home. New sequence writes require recordings/curated;
+  legacy readers report read-only/migration-required state. Automatic frame,
+  ARC layout and LLM-step migrations are disabled. See
+  `docs/design/OMEGA_STORAGE_BOUNDARY.md`. Shared provider/storage identities
+  now preserve the same memory, preferences, catalog caches, sequence identities
+  and execution visibility across editor workspaces; creating workspace remains
+  provenance. Browser memory is page-bound, not workspace-bound. Canonical
+  workspace asset reads never fall back to shadowing legacy workspace data.
+  Validation: 390 passed, 1 skipped (Windows symlink privileges), 9 existing
+  deprecation warnings across Omega API, memory/cache, and relevant workbench
+  asset/resource regressions. Log: `.codex/omega-boundary-final.log`.
+  An additional 100 concurrent cache-publication rounds passed after fixing
+  Windows extended-path-prefix normalization without weakening containment.
+  No live
+  data migration, Git commit, branch operation or server lifecycle action was
+  performed for this change. Parallel frontend/runtime edits remain untouched.
+
+- Omega Vision storage decision (2026-09-10): the user selected **"A only"**
+  (one shared store) and clarified **"workspaces will not divide data"**.
+  The authoritative seven-requirement contract is now in
+  [AGENTS.md: Mandatory Omega Vision shared-storage contract](AGENTS.md#mandatory-omega-vision-shared-storage-contract-2026-09-10),
+  superseding older conflicting Omega overlay/per-workspace instructions.
+  It must be relayed verbatim to active descendants and future handoffs.
+  All Omega Vision physical data belongs below `data/omega_vision`, including
+  memory, preferences, semantic events/rules/executions, caches, locks and logs.
+  Workspace switches must expose the same catalog and stable data identities;
+  workspace provenance/configuration is metadata, not a physical or logical
+  data partition. No `workspaces/<workspaceId>` namespace is authorized.
+  Visual Sequences have exactly two canonical families: `recordings` (including
+  video and non-game captures) and `curated` (image collections). `importables`
+  is staging, not a sequence family. No new top-level `video`, `arc_recordings`
+  or `recognition_*` sequence family. Game/level/run identity remains meaningful.
+  Existing files stay untouched: no automatic migration, consolidation, rename
+  or deletion. Legacy destinations must be reported unavailable/migration-needed,
+  never silently replaced with defaults; preserve explicit legacy read-only
+  references. This does not change unrelated workbench resource inheritance.
+  Containment and configured-cache authorization remain mandatory; stale
+  workspace/root-grant cache identities must not survive the change.
+  Implementation and two-workspace/new-write regressions are in progress.
+  User stop-gate: downstream feature edits, integration and data-producing
+  acceptance are paused until the canonical-path audit passes. Backend
+  corrections have one owner. A concrete remaining frontend blocker is the
+  inspector's workspace-dependent record/area identity and reference matching
+  (`ShapeObjectInspector.model.ts`, `ShapeObjectInspectorBrowser.tsx`, and their
+  model tests). Workspace must remain provenance only; provider/location/kind/
+  record/revision matching remains exact. The parent authorized the inspector
+  owner to correct only those owned adapters/tests in parallel with the disjoint
+  backend corrections as part of this gate. Both owners received that exact
+  callback contract; no broader guard removal or historical record migration.
+  Do not mark the overall gate passed while workspace ownership predicates
+  remain or cross-workspace identity/reference regressions are unverified.
+  Frontend identity correction now passes 39 focused tests and TypeScript:
+  inspector area/record/exact-reference identities ignore workspace provenance
+  while retaining strict provider/location/kind/record/revision matching.
+  Memory Setup tree IDs and its existing source-reference guard follow the same
+  rule. Nowhere transport owns one snapshot/error/mutation queue per browser
+  page, shared across workspace requests; distinct pages remain isolated,
+  reset rejects retired replies, and read-only responses cannot replace state.
+  Caller workspace is retained only as request/configuration metadata.
+  The physical-path and backend root/provider/session validation gate remains
+  OPEN WORK; no downstream acceptance or integration has resumed.
+  Snapshot v2 now binds the server-derived root/provider and browser-page token,
+  not workspace; unbound v1 snapshots require an explicit reset/reload.
+  Backend authority/round-trip checks: 33 pass; broader follow-up: 96 pass,
+  one Windows privilege skip. The exact physical writer table and backend
+  allowlist are in [OMEGA_STORAGE_BOUNDARY.md](docs/design/OMEGA_STORAGE_BOUNDARY.md).
+  Independent gate review identified three remaining corrections: descendant
+  transform output junctions must be checked before claim/runner writes;
+  canonical curated recognition IDs must match execution targets; equivalent
+  logical `data/omega_vision/...` aliases must not split memory scopes/preferences.
+  These are assigned to the sole backend owner; restart/live acceptance waits
+  for their focused regression evidence, not another user approval.
+- Inspector host integration: workspace-only authorized catalog/read requests
+  now run without a selected or validated Visual Sequence. Sequence-specific
+  preferences and copies stay gated; independent refresh and browser-RAM reset
+  remain available. The additive inspector retains the existing rich source,
+  records/history and copy surfaces. Focused frontend tests/build pass; actual
+  browser acceptance is underway. The six inspector files remain child-owned.
+
 - Memory-location metadata JSON cache (2026-09-10, post-reboot): implemented on
   current main without replaying backups. `.cache/memory-catalog/*.json` contains
   only authorized location metadata/counts/revisions/errors; Nowhere locations
@@ -30,7 +149,10 @@ values here.
   not a stale success. Defaults remain current-provider/current-scope selections.
   Focused core/cache/first-plan validation: 52 pass, one permission skip; full
   API partition: 306 pass; frontend memory/transport tests: 21 pass and build
-  passes. The remaining complete-suite partition is still running.
+  passes. Completed full main suite: 1,643 passed, one permission skip, and one
+  unrelated local-plugin failure: `test_every_plugin_publishes_an_admin_link_the_scanner_reads_from_disk`
+  expects one Codex plugin UI page while the installed plugin exposes two.
+  No unrelated plugin implementation or assertion was changed.
   Real main data: isolated cold rebuild 21.992s, warm new-instance read 0.050s,
   preference reads 0.002-0.008s, plan preparation 1.100s. Actual HTTP setup
   rebuild 200/40.465s, direct warm 200/0.452s, Vite warm 200/0.511s; safe

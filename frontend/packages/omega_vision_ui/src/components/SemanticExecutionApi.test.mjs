@@ -25,6 +25,17 @@ test("memory refresh forces metadata rebuild while ordinary effects revalidate n
   assert.match(host, /void refresh\(\)/);
 });
 
+test("inspector workspace reads do not await a sequence but save controls do", () => {
+  assert.match(host, /sequenceId=\{sequenceReady \? props.sequenceId : ""\}/);
+  assert.match(host, /\{sequenceReady && <MemorySetup /);
+  assert.match(host, /disabled=\{!sequenceReady \|\| reading/);
+  assert.match(host, /if \(sequenceReady && preferences\) await copy/);
+  assert.match(host, /\{active && <ShapeObjectInspectorBrowser/);
+  const page = readFileSync(new URL("./VideoImportPage.tsx", import.meta.url), "utf8");
+  assert.match(page, /sequenceReady=\{visualSequenceReady && Boolean\(preprocSequenceId\)\}/);
+  assert.match(page, /active=\{activeSubview === "sprite-view"\} \/>/);
+});
+
 test("semantic transport does not execute during construction and binds scope/session to confirmed calls", async () => {
   const original = globalThis.fetch;
   const requests = [];
@@ -92,6 +103,9 @@ test("memory uses page-lifetime state, independent saved preferences and attribu
   assert.match(host, /expectedRevision/);
   assert.match(host, /preferences\[selected\.memoryKind\]\.saveTo/);
   assert.match(host, /item\.source\.providerRef === ref\.providerRef/);
+  assert.match(host, /item\.source\.memoryLocationId === ref\.memoryLocationId/);
+  assert.match(host, /item\.memoryKind === "shape"/);
+  assert.doesNotMatch(host, /item\.source\.workspaceId === ref\.workspaceId/);
   assert.match(host, /item\.revision === ref\.revision/);
   assert.match(host, /signal\.aborted \|\| current !== readGeneration\.current/);
 });

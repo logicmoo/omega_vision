@@ -4,6 +4,7 @@ import type { MemoryCatalog, MemoryKind, MemoryPreferences } from "./MemorySetup
 import { NOWHERE } from "./MemorySetupModel";
 import { memoryRequest, NOWHERE_LIMITS_NOTICE, rotateMemorySession, useMemoryError, useMemoryRevision, useMemorySessionId } from "./MemorySession";
 import { ResourceSourceEditor } from "./ResourceSourceEditor";
+import { ShapeObjectInspectorBrowser } from "./ShapeObjectInspectorBrowser";
 
 type SavedRecord = {
   recordUid: string;
@@ -15,7 +16,7 @@ type SavedRecord = {
 };
 type MemoryConcept = { conceptUid: string; preferred: SavedRecord; versions: SavedRecord[]; conflict: boolean };
 type ReadResult = { records: MemoryConcept[]; errors: Array<{ message: string }> };
-type Props = { workspaceId: string; sequenceId: string; active: boolean };
+type Props = { workspaceId: string; sequenceId: string; active: boolean; sequenceReady?: boolean };
 const endpoint = "/workbench/video-import/semantic/memory";
 
 async function request<T>(url: string, signal: AbortSignal, body?: Record<string, unknown>, method = "POST"): Promise<T> {
@@ -33,10 +34,12 @@ async function request<T>(url: string, signal: AbortSignal, body?: Record<string
 
 export function MemorySetupHost(props: Props) {
   const session = useMemorySessionId(props.workspaceId);
-  return <MemorySetupContext key={`${props.workspaceId}|${props.sequenceId}|${session}`} {...props} session={session} />;
+  const sequenceReady = props.sequenceReady ?? Boolean(props.sequenceId);
+  return <MemorySetupContext key={`${props.workspaceId}|${sequenceReady ? props.sequenceId : ""}|${session}`}
+    {...props} sequenceId={sequenceReady ? props.sequenceId : ""} sequenceReady={sequenceReady} session={session} />;
 }
 
-function MemorySetupContext({ workspaceId, sequenceId, active, session }: Props & { session: string }) {
+function MemorySetupContext({ workspaceId, sequenceId, active, sequenceReady, session }: Props & { session: string }) {
   const memoryRevision = useMemoryRevision();
   const memoryError = useMemoryError(workspaceId);
   const contextKey = `${workspaceId}|${sequenceId}|${session}`;
@@ -131,7 +134,15 @@ function MemorySetupContext({ workspaceId, sequenceId, active, session }: Props 
 
   return <>
     <p role="note">{NOWHERE_LIMITS_NOTICE}</p>
-    <MemorySetup contextKey={contextKey} catalog={catalog} preferences={preferences}
+    {active && !sequenceReady && <>
+      <p role="status">Browse authorized memory areas independently of a Visual Sequence.
+        Select and validate a sequence to edit its Save To / Look In preferences or save copies.</p>
+      <div className="memory-setup__actions">
+        <button type="button" disabled={loading || !workspaceId} onClick={() => void refresh(true)}>Refresh inspectable areas</button>
+        <button type="button" onClick={() => rotateMemorySession()}>Reset Nowhere browser memory</button>
+      </div>
+    </>}
+    {sequenceReady && <MemorySetup contextKey={contextKey} catalog={catalog} preferences={preferences}
       loading={loading} error={error || memoryError} onRefresh={() => refresh(true)}
       onSave={async (next, expectedRevision) => {
         const saved = await request<MemoryPreferences>(`${endpoint}/preferences`, controller.current.signal,
@@ -149,8 +160,22 @@ function MemorySetupContext({ workspaceId, sequenceId, active, session }: Props 
         for (const concept of result.records) for (const version of concept.versions) await copy(version, destinationId);
         await refresh();
       }}
-    />
-    {active && <details className="memory-setup" open={recordsOpen}
+    />}
+    {active && <ShapeObjectInspectorBrowser
+      contextKey={`${contextKey}|${memoryRevision}`}
+      catalog={catalog} loading={loading} error={error || memoryError}
+      onRead={(memoryKind, locationIds, signal) => request<ReadResult>(
+        `${endpoint}/read`, signal, { ...body, kind: memoryKind, locationIds },
+      )}
+      renderActions={(record) => <><button type="button"
+        disabled={!sequenceReady || reading || !preferences || preferences[record.memoryKind].saveTo === record.source.memoryLocationId}
+        onClick={() => void action(async () => {
+          if (sequenceReady && preferences) await copy(record, preferences[record.memoryKind].saveTo);
+        })}>
+        Save copy to selected {record.memoryKind} destination
+      </button>{recordError && <p role="alert">{recordError}</p>}</>}
+    />}
+    {active && sequenceReady && <details className="memory-setup" open={recordsOpen}
       onToggle={(event) => setRecordsOpen(event.currentTarget.open)}>
       <summary>Selected Shape / Object memory · records and history</summary>
       {recordsOpen && <div className="memory-setup__content">
@@ -192,7 +217,8 @@ function MemorySetupContext({ workspaceId, sequenceId, active, session }: Props 
                 });
                 const linked = result.records.flatMap((item) => item.versions).find((item) =>
                   item.recordUid === ref.recordUid && item.revision === ref.revision &&
-                  item.source.providerRef === ref.providerRef && item.source.workspaceId === ref.workspaceId);
+                  item.memoryKind === "shape" && item.source.providerRef === ref.providerRef &&
+                  item.source.memoryLocationId === ref.memoryLocationId);
                 if (!linked) throw new Error("The exact provider-attributed shape revision is unavailable.");
                 setSelected(linked);
               })}>Inspect referenced shape {ref.revision.slice(0, 10)}</button>;

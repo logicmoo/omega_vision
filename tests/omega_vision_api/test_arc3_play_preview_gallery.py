@@ -20,7 +20,7 @@ import arc_interactive_sync
 
 @pytest.fixture(autouse=True)
 def _isolated_thumbnail_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    cache_dir = tmp_path / "environment_thumbnails"
+    cache_dir = tmp_path / "data" / "omega_vision" / ".cache" / "environment_thumbnails"
     monkeypatch.setattr(arc3_play_api, "_THUMBNAIL_CACHE_DIR", cache_dir)
     monkeypatch.setattr(arc3_play_api, "_catalog_cache", None)
     return cache_dir

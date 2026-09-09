@@ -50,8 +50,11 @@ from omega_vision.services.video_import_api import (  # noqa: E402
     run_transform_step,
     write_unit_todos,
 )
+from omega_vision.inherited_source_overlay import (  # noqa: E402
+    authorize_storage_path, shared_storage_path, sequence_writable,
+)
 
-_DEFAULT_CONTROL = _REPO_ROOT / "data" / "omega_vision" / "pooler_control.json"
+_DEFAULT_CONTROL = shared_storage_path("pooler_control.json")
 _DEFAULT_WORKERS = 10
 _HEARTBEAT_STALE_S = 20.0
 
@@ -71,17 +74,19 @@ def read_control(path: Path) -> dict[str, Any]:
 
 
 def write_control(path: Path, payload: dict[str, Any]) -> None:
+    path = authorize_storage_path(path)
     payload = {"kind": "pooler_control", **payload, "updatedAt": _utc_now()}
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def _status_path(control_path: Path) -> Path:
-    return control_path.with_name("pooler_status.json")
+    return authorize_storage_path(control_path.with_name("pooler_status.json"))
 
 
 def write_status(control_path: Path, state: str, ctl: dict[str, Any],
                  extra: dict[str, Any] | None = None) -> None:
+    target = _status_path(control_path)
     payload: dict[str, Any] = {
         "kind": "pooler_status", "pid": os.getpid(), "state": state,
         "root": str(ctl.get("root") or ""), "workers": _ctl_workers(ctl),
@@ -90,7 +95,7 @@ def write_status(control_path: Path, state: str, ctl: dict[str, Any],
     if extra:
         payload.update(extra)
     try:
-        _status_path(control_path).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     except OSError:
         pass
 
@@ -109,6 +114,9 @@ def _ctl_root(ctl: dict[str, Any]) -> Path | None:
     p = Path(raw)
     if not p.is_absolute():
         p = _REPO_ROOT / p
+    p = authorize_storage_path(p)
+    if p != shared_storage_path() and not sequence_writable(shared_storage_path(), p):
+        raise PermissionError("Legacy pooler root is read-only; explicit selection or migration is required")
     return p if p.is_dir() else None
 
 
@@ -130,15 +138,21 @@ def _other_pooler_alive(control_path: Path) -> int:
 def find_todo_files(roots: list[Path]) -> list[Path]:
     files: list[Path] = []
     for root in roots:
+        root = authorize_storage_path(root)
+        if root != shared_storage_path() and not sequence_writable(shared_storage_path(), root):
+            raise PermissionError("Legacy pooler root is read-only; explicit selection or migration is required")
         if root.is_file() and root.name == "todos.json":
             files.append(root)
         elif root.is_dir():
             files.extend(root.rglob("todos.json"))
-    return files
+    return [path for path in files if sequence_writable(shared_storage_path(), path)]
 
 
 def load_unit(todo_file: Path, *, retry_errors: bool) -> tuple[dict, list[dict], list[dict]] | None:
     """Return (unit, all todo entries, workable entries) or None."""
+    todo_file = authorize_storage_path(todo_file)
+    if not sequence_writable(shared_storage_path(), todo_file):
+        raise PermissionError("Legacy sequence todos are read-only; explicit migration is required")
     try:
         payload = json.loads(todo_file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -152,7 +166,7 @@ def load_unit(todo_file: Path, *, retry_errors: bool) -> tuple[dict, list[dict],
         "workspaceId": payload.get("workspaceId"),
         "memorySessionId": payload.get("memorySessionId"),
         "dir": unit_dir,
-        "image": (unit_dir / image_rel).resolve() if image_rel else None,
+        "image": authorize_storage_path(unit_dir / image_rel) if image_rel else None,
         "sequenceId": payload.get("sequenceId"),
         "frameOrder": payload.get("frameOrder"),
         "frameSourceKey": payload.get("frameSourceKey"),
@@ -160,8 +174,8 @@ def load_unit(todo_file: Path, *, retry_errors: bool) -> tuple[dict, list[dict],
         "inputSignature": payload.get("inputSignature"),
         "sourceSignature": payload.get("sourceSignature"),
         "preprocessingRevision": payload.get("preprocessingRevision"),
-        "sourceImage": (unit_dir / payload["sourceImagePath"]).resolve() if payload.get("sourceImagePath") else None,
-        "sequenceRoot": (unit_dir / payload["sequenceRoot"]).resolve() if payload.get("sequenceRoot") else None,
+        "sourceImage": authorize_storage_path(unit_dir / payload["sourceImagePath"]) if payload.get("sourceImagePath") else None,
+        "sequenceRoot": authorize_storage_path(unit_dir / payload["sequenceRoot"]) if payload.get("sequenceRoot") else None,
     }
     entries = [t for t in payload.get("todos", []) if t.get("transformation") and t.get("doer")]
     workable_statuses = {"pending", "started"} | ({"error"} if retry_errors else set())
@@ -310,7 +324,8 @@ def control_loop(control_path: Path, *, retry_errors: bool,
     the control file, abandoning the current pass when any of them change.
     An exclusive pooler.lock (plus the status heartbeat) guarantees a single
     pooler per control file even when two spawn in the same instant."""
-    lock = control_path.with_name("pooler.lock")
+    control_path = authorize_storage_path(control_path)
+    lock = authorize_storage_path(control_path.with_name("pooler.lock"))
 
     def _try_lock() -> bool:
         try:

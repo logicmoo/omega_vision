@@ -55,7 +55,7 @@ test('virtual window is bounded for thousands of memory locations', () => {
 test('collapsed tree hides descendants but searching opens matching ancestors', () => {
   const roots = memoryTree([location('a')], 'shape');
   assert.equal(flattenMemoryTree(roots, new Set([roots[0].id])).length, 1);
-  assert.equal(flattenMemoryTree(roots, new Set([roots[0].id]), true).length, 6);
+  assert.equal(flattenMemoryTree(roots, new Set([roots[0].id]), true).length, 5);
 });
 
 test('summary exposes unavailable save/lookup state without inventing counts', () => {
@@ -83,4 +83,17 @@ test('foreign run destination summary retains provider and run identity', () => 
     locations: [other], destinations: [other], errors: [], effective: { shape: [], object: [] } };
   const summary = selectionSummary('shape', { saveTo: 'remote-run', lookIn: [], recentLookIn: [] }, catalog);
   assert.match(summary.text, /Run Memory \(run\) — Other provider/);
+});
+
+test('workspace provenance does not partition shared tree identities or destination ownership', () => {
+  const original = location('shared', { label: 'Run Memory' });
+  const other = { ...original, workspaceId: 'other-workspace' };
+  const ids = item => flattenMemoryTree(memoryTree([item], 'shape'), new Set()).map(row => row.node.id);
+  assert.deepEqual(ids(original), ids(other));
+  const catalog = { context: { providerRef: 'provider', workspaceId: 'workspace' },
+    locations: [other], destinations: [other], errors: [], effective: { shape: [], object: [] } };
+  const summary = selectionSummary('shape', { saveTo: 'shared', lookIn: ['shared'], recentLookIn: [] }, catalog);
+  assert.equal(summary.destination, 'Run Memory (run)');
+  assert.equal(summary.unavailableDestination, false);
+  assert.equal(memoryTree([other], 'shape', 'other-workspace')[0].locationIds[0], 'shared');
 });

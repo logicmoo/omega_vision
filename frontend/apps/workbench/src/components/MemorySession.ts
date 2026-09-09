@@ -5,9 +5,9 @@ export const NOWHERE_LIMITS_NOTICE = "When learned Shape or Object memory uses N
 let token = crypto.randomUUID();
 let revision = 0;
 const listeners = new Set<() => void>();
-const snapshots = new Map<string, string>();
-const errors = new Map<string, string>();
-const queues = new Map<string, Promise<unknown>>();
+let snapshot: string | null = null;
+let memoryError: string | null = null;
+let queue: Promise<unknown> | undefined;
 const controllers = new Set<AbortController>();
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
@@ -21,15 +21,15 @@ export function useMemorySessionId(_workspaceId?: string): string {
 export function useMemoryRevision(): number {
   return useSyncExternalStore(subscribe, () => revision);
 }
-export function useMemoryError(workspaceId: string): string | null {
-  return useSyncExternalStore(subscribe, () => errors.get(workspaceId) ?? null);
+export function useMemoryError(_workspaceId: string): string | null {
+  return useSyncExternalStore(subscribe, () => memoryError);
 }
 
 export function rotateMemorySession(): void {
   token = crypto.randomUUID();
-  snapshots.clear();
-  errors.clear();
-  queues.clear();
+  snapshot = null;
+  memoryError = null;
+  queue = undefined;
   controllers.forEach(controller => controller.abort());
   controllers.clear();
   revision += 1;
@@ -45,7 +45,7 @@ export async function memoryRequest<T = Record<string, unknown>>(
   const workspace = String(body.workspaceId ?? "");
   if (!workspace) throw new Error("Browser memory requires a workspace.");
   const page = token;
-  const previous = readOnly ? undefined : queues.get(workspace);
+  const previous = readOnly ? undefined : queue;
   const operation = (async () => {
     await previous?.catch(() => undefined);
     if (page !== token || signal?.aborted) throw new DOMException("Memory session ended", "AbortError");
@@ -61,7 +61,7 @@ export async function memoryRequest<T = Record<string, unknown>>(
       const response = await fetch(url, {
         method: "POST", cache: "no-store", signal: controller.signal,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...body, memorySessionId: page, memorySnapshot: snapshots.get(workspace) ?? null }),
+        body: JSON.stringify({ ...body, memorySessionId: page, memorySnapshot: snapshot }),
       });
       let result: Record<string, unknown> | undefined;
       const accept = (value: Record<string, unknown>) => {
@@ -104,17 +104,17 @@ export async function memoryRequest<T = Record<string, unknown>>(
       }
       const { memorySnapshot, ...receipt } = result;
       if (!readOnly && typeof memorySnapshot === "string"
-        && (memorySnapshot !== snapshots.get(workspace) || errors.has(workspace))) {
-        snapshots.set(workspace, memorySnapshot);
-        errors.delete(workspace);
+        && (memorySnapshot !== snapshot || memoryError !== null)) {
+        snapshot = memorySnapshot;
+        memoryError = null;
         revision += 1;
         listeners.forEach(listener => listener());
       }
       return receipt as T;
     } catch (failure) {
       if (receivedProgress && page === token && !controller.signal.aborted) {
-        errors.set(workspace, "Execution transport ended without returning session memory. "
-          + "The previous snapshot is retained; rerun dependencies in this page before continuing.");
+        memoryError = "Execution transport ended without returning session memory. "
+          + "The previous snapshot is retained; rerun dependencies in this page before continuing.";
         revision += 1;
         listeners.forEach(listener => listener());
       }
@@ -124,9 +124,9 @@ export async function memoryRequest<T = Record<string, unknown>>(
       signal?.removeEventListener("abort", abort);
     }
   })();
-  if (!readOnly) queues.set(workspace, operation);
+  if (!readOnly) queue = operation;
   try { return await operation; }
-  finally { if (queues.get(workspace) === operation) queues.delete(workspace); }
+  finally { if (queue === operation) queue = undefined; }
 }
 
 if (typeof window !== "undefined") {

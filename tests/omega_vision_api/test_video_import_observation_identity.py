@@ -166,11 +166,12 @@ def test_transform_manifest_preserves_started_and_error_details(tmp_path: Path) 
 def test_observation_identity_metadata_is_visible_in_transform_manifest(
     tmp_path: Path,
 ) -> None:
-    unit_dir = tmp_path / "frame_000003"
+    unit_dir = tmp_path / "data" / "omega_vision" / "recordings" / "frame_000003"
     _write_final_group_fixture(unit_dir)
     unit = {
         "id": "frame_000003",
         "dir": unit_dir,
+        "workspaceRoot": tmp_path,
         "image": unit_dir / "image.png",
         "sequenceId": "data/recordings/example",
         "frameOrder": 3,
@@ -250,7 +251,7 @@ def test_unordered_transform_ignores_enumeration_position(tmp_path: Path) -> Non
 def test_exact_final_group_pipeline_migrates_to_observation_identity(
     tmp_path: Path,
 ) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     previous = video_import_api._PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE
     template.write_text(json.dumps({"pipeline": previous}), encoding="utf-8")
@@ -273,7 +274,7 @@ def test_exact_final_group_pipeline_migrates_to_observation_identity(
 def test_exact_observation_pipeline_migrates_debug_after_turtle(
     tmp_path: Path,
 ) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     previous = video_import_api._PRE_DEBUG_LAST_DEFAULT_PIPELINE_TEMPLATE
     template.write_text(json.dumps({"pipeline": previous}), encoding="utf-8")
@@ -300,7 +301,7 @@ def test_exact_observation_pipeline_migrates_debug_after_turtle(
 def test_typed_legacy_default_pipeline_migrates_to_canonical_chain(
     tmp_path: Path,
 ) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     template.write_text(json.dumps({
         "pipeline": video_import_api._TYPED_LEGACY_DEFAULT_PIPELINE_TEMPLATE,
@@ -320,9 +321,10 @@ def test_typed_legacy_default_pipeline_migrates_to_canonical_chain(
 
 
 def test_transform_manifest_orders_debug_after_turtle(tmp_path: Path) -> None:
-    unit = {"id": "frame", "dir": tmp_path, "image": None}
+    unit_dir = tmp_path / "data" / "omega_vision" / "curated" / "frame"
+    unit = {"id": "frame", "dir": unit_dir, "image": None, "workspaceRoot": tmp_path}
     for step in video_import_api._DEFAULT_PIPELINE_TEMPLATE:
-        output = tmp_path / step["transformation"] / step["doer"]
+        output = unit_dir / step["transformation"] / step["doer"]
         output.mkdir(parents=True)
         (output / "meta.json").write_text(
             json.dumps({"elapsedMs": step["priority"]}),
@@ -333,7 +335,7 @@ def test_transform_manifest_orders_debug_after_turtle(tmp_path: Path) -> None:
         video_import_api._DEFAULT_PIPELINE_TEMPLATE,
     )
 
-    summary = video_import_api._unit_transforms(tmp_path, tmp_path)
+    summary = video_import_api._unit_transforms(tmp_path, unit_dir)
 
     assert summary is not None
     names = [cell["name"] for cell in summary["list"]]
@@ -342,7 +344,7 @@ def test_transform_manifest_orders_debug_after_turtle(tmp_path: Path) -> None:
 
 
 def test_customized_final_group_pipeline_is_not_migrated(tmp_path: Path) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     custom = [
         {
@@ -365,7 +367,7 @@ def test_customized_final_group_pipeline_is_not_migrated(tmp_path: Path) -> None
 
 
 def test_pipeline_lane_customization_is_not_migrated(tmp_path: Path) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     custom = [
         {
@@ -388,7 +390,7 @@ def test_pipeline_lane_customization_is_not_migrated(tmp_path: Path) -> None:
 
 
 def test_customized_observation_pipeline_keeps_debug_order(tmp_path: Path) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     custom = [
         {

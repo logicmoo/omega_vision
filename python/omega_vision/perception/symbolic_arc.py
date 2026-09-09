@@ -21,6 +21,7 @@ import itertools
 import os
 import subprocess
 import tempfile
+from omega_vision.inherited_source_overlay import authorize_storage_path, shared_storage_path, storage_scratch_directory
 import time
 from math import gcd
 from pathlib import Path
@@ -56,21 +57,21 @@ def memory_dir() -> Path:
       shape_dir/    -- the colorless shape vocabulary (regenerated, consulted)
       identity_dir/ -- persistent object identities (prov + position + shape + color)"""
     env = os.environ.get("OBJECT_MEMORY_DIR")
-    d = Path(env) if env else (_repo_root() / "data" / "omega_vision" / "object_memory")
+    d = authorize_storage_path(Path(env)) if env else shared_storage_path("object_memory")
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
 def shape_dir() -> Path:
     """Sub-store for the colorless shape vocabulary (shapes only, no identity)."""
-    d = memory_dir() / "shape_dir"
+    d = authorize_storage_path(memory_dir() / "shape_dir")
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
 def identity_dir() -> Path:
     """Sub-store for persistent object identities (prov + position + shape + color)."""
-    d = memory_dir() / "identity_dir"
+    d = authorize_storage_path(memory_dir() / "identity_dir")
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -101,7 +102,7 @@ def identity_scope(game: str, cross_game: bool | None = None) -> str:
 def identity_db_for(mem_dir: str, game: str, cross_game: bool | None = None) -> Path:
     """Persistent identity DB path for a game scope, under <mem_dir>/identity_dir/."""
     scope = identity_scope(game, cross_game)
-    p = Path(mem_dir) / "identity_dir" / scope / "identities.db.pl"
+    p = authorize_storage_path(Path(mem_dir) / "identity_dir" / scope / "identities.db.pl")
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -368,7 +369,8 @@ def _run_prolog(region_info, pairs, enclos, cols, rows) -> tuple[list[tuple[str,
         lines.append(f"adjacent(r{a}, r{b}).")
     for o, i in enclos:
         lines.append(f"encloses(r{o}, r{i}).")
-    with tempfile.NamedTemporaryFile("w", suffix=".pl", delete=False, encoding="utf-8") as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".pl", delete=False, encoding="utf-8",
+                                     dir=storage_scratch_directory("symbolic_arc")) as f:
         f.write("\n".join(lines) + "\n")
         facts = f.name
     try:
@@ -1482,7 +1484,7 @@ def write_shape_library(path: str | None = None) -> str:
     """Write the colorless shape vocabulary (shape/3 + variant/4) to a Prolog file
     in the shape_dir sub-store. Regenerated deterministically; Prolog consults
     (reads) this before recognition. Returns the file path."""
-    p = Path(path) if path else Path(shape_lib_path())
+    p = authorize_storage_path(Path(path)) if path else Path(shape_lib_path())
     p.parent.mkdir(parents=True, exist_ok=True)
     body = "\n".join(_seed_shape_facts())
     header = ("% GENERATED colorless shape vocabulary (monomino..octomino) as\n"
@@ -1497,6 +1499,7 @@ def _dump_identity_db(db_file: str) -> tuple[list, list]:
     """Read one scoped identity DB via swipl -> (identities, placements). Each
     identity is a colour-free, scale-normalized object (key/name + seen count) with
     its bound occurrence `variations` (colour + full size + how often seen)."""
+    db_file = str(authorize_storage_path(Path(db_file)))
     objs: dict = {}
     order: list = []
     plcs: list = []
@@ -1535,7 +1538,7 @@ def registry_snapshot(mem_dir: str | None = None, include_turtles: bool = True) 
     the colorless SHAPE vocabulary (key / name / turtle / composition / box) and,
     per identity SCOPE (game or `_all_games_`), the persistent identities and
     placement trajectories."""
-    mem_dir = str(mem_dir or memory_dir())
+    mem_dir = str(authorize_storage_path(Path(mem_dir)) if mem_dir else memory_dir())
     _seed_shape_facts()
     shapes: list = []
     idx = _vocab_index()
@@ -1549,7 +1552,7 @@ def registry_snapshot(mem_dir: str | None = None, include_turtles: bool = True) 
         shapes.append(entry)
     shapes.sort(key=lambda s: (s["size"], s["name"]))
     scopes: dict = {}
-    idroot = Path(mem_dir) / "identity_dir"
+    idroot = authorize_storage_path(Path(mem_dir) / "identity_dir")
     if idroot.is_dir():
         for scope_dir in sorted(p for p in idroot.iterdir() if p.is_dir()):
             dbf = scope_dir / "identities.db.pl"
@@ -1615,7 +1618,7 @@ def remember_objects(results: list[dict], char: str, mem_dir: str,
     # convergence: for each distinct shape, the -iminos it overlaps via its reduced
     # forms (resize / aspect / 45-degree), best (most-specific) way first.
     sig_overlaps: dict[str, list] = {sg: _shape_overlaps(off) for sg, off in sig_off.items()}
-    base = Path(mem_dir)
+    base = authorize_storage_path(Path(mem_dir))
     shape_lib = base / "shape_dir" / "shapes.pl"
     identity_db = identity_db_for(str(base), game or _game_of(char), cross_game)
     write_shape_library(str(shape_lib))
@@ -1637,7 +1640,8 @@ def remember_objects(results: list[dict], char: str, mem_dir: str,
             facts.append(f"place('{char}', '{iid}', '{traj_gid[iid]}', '{points}', {len(pts)}).")
     goal = "run_memory" if write else "run_recognize"
     info: dict[str, tuple[str, int, bool]] = {}
-    with tempfile.NamedTemporaryFile("w", suffix=".pl", delete=False, encoding="utf-8") as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".pl", delete=False, encoding="utf-8",
+                                     dir=storage_scratch_directory("symbolic_arc")) as f:
         f.write("\n".join(facts) + "\n")
         fpath = f.name
     try:

@@ -1,23 +1,8 @@
-"""inherited_source_overlay.py -- chain-aware resolution of workspace data.
+"""Omega storage boundary, independent of workbench configuration inheritance.
 
-Every data home follows the same exact canonical layout under ``<root>/data/``
-(``recordings/``, ``importables/``, ``curated/``,
-``vision_frames/...``, ``recognition_reduce``, ``video_import``,
-``object_memory``, ...). A workspace
-sees that layout as an overlay stacked in precedence order:
-
-1. the workspace's own ``data/`` directory,
-2. each included workspace's ``data/`` (``workspace.json`` ``includes``,
-   nearest first, recursively down the inheritance chain),
-3. the shared repo store ``<repo>/data/omega_vision``.
-
-The ``OMEGA_VISION_DATA`` environment variable replaces the whole chain with a
-single home (matching the historical single-home contract), and roots outside
-the repo ``workspaces/`` container (tests, external checkouts) see only their
-own ``root/data`` so temporary fixtures stay hermetic.
-
-Reads prefer the nearest existing hit; writes always target the canonical
-write home (:func:`vision_data_root`).
+Repository workspaces share repo/data/omega_vision. Unrecognized external roots
+are rejected; tests explicitly configure a temporary repository. No resolver migrates
+data, discovers workspace overlays, or creates directories.
 """
 from __future__ import annotations
 
@@ -25,115 +10,155 @@ import os
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-
 SHARED_WORKSPACE_ID = "shared_library_system"
-
-# (source, layer_id, data_root): source is one of
-# "workspace" | "included" | "shared" | "global".
+OMEGA_PROVIDER_ID = "filesystem:omega_vision"
+OMEGA_STORAGE_ID = "omega_vision"
 DataLayer = tuple[str, "str | None", Path]
 
 
-def _effective_layers(root: Path, workspaces_root: Path) -> list[Path]:
-    try:
-        from workspace_inheritance import effective_workspace_layers
-    except ImportError:  # pragma: no cover - fall back to the packaged twin
-        from omega_vision.services.workspace_inheritance import effective_workspace_layers
-    return effective_workspace_layers(root, workspaces_root)
+def resolve_storage_path(path: Path) -> Path:
+    """Normalize equivalent Windows device prefixes after resolving symlinks.
+
+    Windows realpath can retain the extended prefix when a concurrent writer
+    creates a previously missing directory during resolution.
+    """
+    resolved = path.resolve()
+    value = str(resolved)
+    if os.name == "nt":
+        if value.startswith("\\\\?\\UNC\\"):
+            return Path("\\\\" + value[8:])
+        if value.startswith("\\\\?\\") and len(value) >= 7 and value[5:7] == ":\\":
+            return Path(value[4:])
+    return resolved
 
 
 def vision_data_root(root: Path) -> Path:
-    """The canonical WRITE home for vision data: the env override, the shared
-    repo store for real workspaces, or the caller's own data dir (tests,
-    external roots)."""
+    """Return the one repository home; no external or fixture-layout fallback."""
+    root = resolve_storage_path(Path(root))
+    repo = resolve_storage_path(_REPO_ROOT)
+    canonical = repo / "data" / "omega_vision"
+    if resolve_storage_path(canonical) != canonical:
+        raise ValueError("Canonical Omega root cannot redirect to another physical directory")
     env = os.environ.get("OMEGA_VISION_DATA")
-    if env:
-        return Path(env)
-    try:
-        root.resolve().relative_to((_REPO_ROOT / "workspaces").resolve())
-    except ValueError:
-        return root / "data"
-    return _REPO_ROOT / "data" / "omega_vision"
+    if root in {repo, repo / "data"} or root.is_relative_to(repo / "workspaces") or root.is_relative_to(canonical):
+        if env and Path(env).resolve() != canonical.resolve():
+            raise ValueError("Configured Omega root is unavailable: repository data must remain under data/omega_vision")
+        return canonical
+    raise ValueError("Unrecognized Omega storage context; select an authorized repository workspace")
+
+
+def storage_path(root: Path, *parts: str) -> Path:
+    """Resolve an Omega-only write target, rejecting traversal and symlink escape."""
+    home = resolve_storage_path(vision_data_root(root))
+    target = resolve_storage_path(home.joinpath(*parts))
+    if not target.is_relative_to(home):
+        raise ValueError("Omega storage path escapes its canonical data root")
+    return target
+
+
+def shared_storage_path(*parts: str) -> Path:
+    return storage_path(_REPO_ROOT, *parts)
+
+
+def authorize_storage_path(path: Path) -> Path:
+    """Validate configured physical targets without inventing a fallback."""
+    home = shared_storage_path()
+    target = resolve_storage_path(path)
+    if not target.is_relative_to(home):
+        raise PermissionError("Configured Omega path is outside data/omega_vision; explicit selection or migration is required")
+    return target
+
+
+def storage_scratch_directory(family: str) -> Path:
+    directory = shared_storage_path("runtime", "scratch", family)
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
 
 
 def data_layers(root: Path) -> list[DataLayer]:
-    """Every data layer visible to this root, highest precedence first."""
-    env = os.environ.get("OMEGA_VISION_DATA")
-    if env:
-        return [("global", None, Path(env))]
-    workspaces_root = (_REPO_ROOT / "workspaces").resolve()
-    try:
-        root.resolve().relative_to(workspaces_root)
-    except ValueError:
-        return [("workspace", root.name, root / "data")]
-    layers = [root]
-    try:
-        layers = _effective_layers(root, workspaces_root)
-    except Exception:  # noqa: BLE001 - inheritance problems never hide data
-        pass
-    result: list[DataLayer] = []
-    seen: set[Path] = set()
-    resolved_root = root.resolve()
-    for layer in reversed(layers):  # workspace first, deepest include last
-        home = layer / "data"
-        key = home.resolve()
-        if key in seen:
-            continue
-        seen.add(key)
-        if layer.resolve() == resolved_root:
-            source = "workspace"
-        elif layer.name == SHARED_WORKSPACE_ID:
-            source = "shared"
-        else:
-            source = "included"
-        result.append((source, layer.name, home))
-    result.append(("global", None, _REPO_ROOT / "data" / "omega_vision"))
-    return result
+    return [("global", None, vision_data_root(root))]
 
 
 def data_homes(root: Path) -> list[Path]:
-    """Every data home visible to this root, highest precedence first."""
-    return [home for _source, _layer_id, home in data_layers(root)]
+    return [vision_data_root(root)]
 
 
 def data_rel_of(root: Path, path: Path) -> str:
-    """Workspace-facing relative path for a file in the workspace itself or
-    in any visible data home (expressed as ``data/<...>`` for data homes).
-    Raises ValueError like Path.relative_to when the path is in neither."""
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(root.resolve()).as_posix()
-    except ValueError:
-        pass
-    for home in data_homes(root):
-        try:
-            tail = resolved.relative_to(home.resolve()).as_posix()
-        except ValueError:
-            continue
+    """Use logical data/... references even when the caller is the repository."""
+    resolved = resolve_storage_path(path)
+    home = resolve_storage_path(vision_data_root(root))
+    if resolved.is_relative_to(home):
+        tail = resolved.relative_to(home).as_posix()
+        parts = tail.split("/")
+        for family in ("recordings", "curated"):
+            if Path(parts[0]) == Path(family):
+                parts[0] = family
+                tail = "/".join(parts)
         return "data" if tail == "." else f"data/{tail}"
-    raise ValueError(f"path is outside the workspace and its data homes: {path}")
+    return resolved.relative_to(root.resolve()).as_posix()
 
 
 def resolve_workspace_child(root: Path, relative: str) -> Path:
-    """Resolve a workspace-facing relative path. ``data/...`` paths resolve
-    down the overlay (nearest existing hit wins, falling back to the canonical
-    write home); other paths stay inside the workspace root."""
-    rel = str(relative).replace("\\", "/").lstrip("/")
+    """Resolve logical data URLs in one home; leave non-Omega config paths alone."""
+    rel = str(relative).replace("\\", "/")
+    if rel.startswith("/") or Path(rel).is_absolute():
+        raise ValueError("Expected a relative workspace path")
     if rel == "data" or rel.startswith("data/"):
-        tail = rel[5:] if len(rel) > 5 else ""
-        for home in data_homes(root):
-            resolved_home = home.resolve()
-            candidate = (resolved_home / tail).resolve() if tail else resolved_home
-            if candidate != resolved_home and resolved_home not in candidate.parents:
-                raise ValueError("path escapes workspace data home")
-            if candidate.exists():
-                return candidate
-        write_home = vision_data_root(root).resolve()
-        candidate = (write_home / tail).resolve() if tail else write_home
-        if candidate != write_home and write_home not in candidate.parents:
-            raise ValueError("path escapes workspace data home")
-        return candidate
+        parts = [part for part in rel[5:].split("/") if part and part != "."]
+        while parts and Path(parts[0]) == Path("omega_vision"):
+            parts.pop(0)
+        return storage_path(root, "/".join(parts))
     resolved_root = root.resolve()
-    resolved = (resolved_root / relative).resolve()
-    if resolved != resolved_root and resolved_root not in resolved.parents:
+    resolved = (resolved_root / rel).resolve()
+    if not resolved.is_relative_to(resolved_root):
         raise ValueError("path escapes workspace root")
     return resolved
+
+
+def sequence_writable(root: Path, path: Path) -> bool:
+    """Legacy families remain readable but cannot receive new sequence outputs."""
+    home = resolve_storage_path(vision_data_root(root))
+    resolved = resolve_storage_path(path)
+    return any(resolved.is_relative_to(home / family) for family in ("recordings", "curated"))
+
+
+def require_sequence_write(root: Path, path: Path) -> Path:
+    if not sequence_writable(root, path):
+        raise ValueError("Legacy sequence is read-only; explicit migration to recordings/curated is required")
+    return storage_path(root, resolve_storage_path(path).relative_to(resolve_storage_path(vision_data_root(root))).as_posix())
+
+
+def unavailable_legacy_storage(root: Path) -> list[dict[str, str]]:
+    """Inventory paths only, never mount, read payloads, or move historical stores."""
+    root = root.resolve()
+    repo = _REPO_ROOT.resolve()
+    home = vision_data_root(root).resolve()
+    families = (
+        "data", "runtime/memory-settings", "runtime/rule-candidates", "runtime/rule-proposals",
+        "runtime/events/visual-sequences", "runtime/event-hypotheses/visual-sequences",
+        "runtime/object-checkpoints", "runtime/grouping-checkpoints", "runtime/temporal-checkpoints",
+        "runtime/grouping-reviews", "runtime/executions", "design/event-rules", "design/grouping-rules",
+        "knowledge/artifacts/memory",
+    )
+    layers = [root]
+    if root.is_relative_to(_REPO_ROOT.resolve() / "workspaces"):
+        from workspace_inheritance import effective_workspace_layers
+        layers = effective_workspace_layers(root, _REPO_ROOT.resolve() / "workspaces")
+    unavailable = [
+        {"path": str(layer / family), "workspaceId": layer.name, "status": "unavailable", "migrationRequired": "true",
+         "message": "Historical Omega storage outside the canonical root requires explicit migration or selection"}
+        for layer in layers
+        for family in families
+        if (layer / family).exists() and not (layer / family).resolve().is_relative_to(home)
+        and not home.is_relative_to((layer / family).resolve())
+    ]
+    if root in {repo, repo / "data"} or root.is_relative_to(repo / "workspaces"):
+        legacy_home = repo / "data"
+        if legacy_home.is_dir():
+            known = {"recordings", "curated", "importables", "video", "video_import", "videoimports",
+                     "arc3_games", "arc_recordings", "vision_frames", "runtime", "knowledge", ".cache"}
+            unavailable.extend({
+                "path": str(path), "workspaceId": OMEGA_STORAGE_ID, "status": "unavailable", "migrationRequired": "true",
+                "message": "Historical sibling Omega storage requires explicit migration or selection",
+            } for path in legacy_home.iterdir() if path.name.lower() in known or path.name.lower().startswith("recognition_"))
+    return unavailable

@@ -19,6 +19,7 @@ import {
   visualSequenceLocationFromLegacyRef,
   visualSequenceLocationFromUrl,
   visualSequenceLocationMatchesUrl,
+  visualSequenceProviderRef,
   type VisualSequenceCatalogEntry,
   type VisualSequenceLocation,
 } from "./VideoImportRecordingUrl";
@@ -3393,7 +3394,7 @@ export function VideoImportPage({
   // the selected Visual Sequence id; persisted paths and `set=` request bodies
   // remain compatible while the active UI uses the unified domain model.
   const OBJECTS_LIVE_SET = "objects_live";
-  const DEFAULT_IMAGE_SET = "recognition_reduce";
+  const DEFAULT_IMAGE_SET = "curated/recognition_reduce";
   const [imageSetList, setImageSetList] = useState<VisualSequenceCatalogEntry[]>([]);
   const [imageSetsLoaded, setImageSetsLoaded] = useState(false);
   const [imageSetsError, setImageSetsError] = useState("");
@@ -3403,6 +3404,10 @@ export function VideoImportPage({
     try { return window.localStorage.getItem("videoImport.imageSet") || DEFAULT_IMAGE_SET; } catch { return DEFAULT_IMAGE_SET; }
   })());
   const [selectedImageSet, setSelectedImageSet] = useState("");
+  const selectedImageSetRoot = visualSequenceProviderRef(
+    imageSetList.find((entry) => entry.id === selectedImageSet) ?? { id: selectedImageSet },
+  );
+  const isRecognitionMatrix = selectedImageSet === DEFAULT_IMAGE_SET || selectedImageSet === "recognition_reduce";
   // ---- per-sequence image preprocessing chain (applies to ALL inputs) --------
   // Persisted server-side per Visual Sequence; OpenCV extraction and every LLM
   // image consumer read the materialized, content-addressed variant. Default =
@@ -5055,7 +5060,7 @@ export function VideoImportPage({
     workspaceId,
   ]);
   // Load the reduction manifest straight from the workspace filesystem
-  // (server synthesizes it from data/recognition_reduce/pool + manifest.json +
+  // (server synthesizes it from the selected sequence's pool + manifest.json +
   // provenance.json). This is fully independent of the page-state save, so the
   // Recognition reduce view works across reloads, workspace switches, and
   // multiple simultaneously-open windows without any ingest step. Re-fetched
@@ -5438,12 +5443,12 @@ export function VideoImportPage({
     const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
     for (const it of items) {
       for (const row of (it.rows || [])) {
-        const rel = row.mettaPath || (row.metta ? `data/recognition_reduce/sym/${String(row.metta).split("/").pop()}` : "");
+        const rel = row.mettaPath || (row.metta ? `${selectedImageSetRoot}/sym/${String(row.metta).split("/").pop()}` : "");
         if (rel) { loadReduceMetta(rel); loadReduceParts(rel.replace(/\.metta$/, ".parts.json")); }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recognitionReduce]);
+  }, [recognitionReduce, selectedImageSetRoot]);
   // While the server-side reduce stage is running, poll the filesystem manifest
   // so newly-reduced rows (chips/sym/agreement) appear live in the grid + list.
   useEffect(() => {
@@ -8546,7 +8551,7 @@ export function VideoImportPage({
                 ? rows.find((r: any) => r.kind === "prolog")
                 : (rows.find((r: any) => r.kind !== "prolog" && r.kind !== "oneshot") || rows.find((r: any) => r.kind !== "prolog"));
               if (!row) return null;
-              return (row.mettaPath || `data/recognition_reduce/sym/${String(row.metta || "").split("/").pop()}`).replace(/\.metta$/, ".parts.json");
+              return (row.mettaPath || `${selectedImageSetRoot}/sym/${String(row.metta || "").split("/").pop()}`).replace(/\.metta$/, ".parts.json");
             };
             const buildMaps = (kind: "prolog" | "llm"): Array<FrameMap | undefined> => list.map((it: any) => {
               const rel = partsRelOf(it, kind);
@@ -8727,7 +8732,7 @@ export function VideoImportPage({
                     const prev = idx > 0 ? list[idx - 1] : null;
                     const gk = groupKeyOf(it);
                     const newGroup = !prev || groupKeyOf(prev) !== gk;
-                    const inputRel = it.inputPath || `data/recognition_reduce/pool/${String(it.input || "").split("/").pop()}`;
+                    const inputRel = it.inputPath || `${selectedImageSetRoot}/pool/${String(it.input || "").split("/").pop()}`;
                     const web = isWeb(it);
                     const open = it.id === expandedReduceId;
                     const tiers = (it.rows || []);
@@ -8796,7 +8801,7 @@ export function VideoImportPage({
                                   const isRef = row.kind === "oneshot";
                                   const rv = row.agree?.verdict || (isRef ? "ref" : "");
                                   const rp = Math.round((row.agree?.score ?? 0) * 100);
-                                  const mettaRel = row.mettaPath || `data/recognition_reduce/sym/${String(row.metta || "").split("/").pop()}`;
+                                  const mettaRel = row.mettaPath || `${selectedImageSetRoot}/sym/${String(row.metta || "").split("/").pop()}`;
                                   const mettaText = reduceMetta[mettaRel];
                                   const { parts, groups, recognized, newCount } = parseMettaParts(mettaText || "");
                                   const bigGroups = groups.filter((g) => g.parts.length >= 2);
@@ -8935,7 +8940,7 @@ export function VideoImportPage({
                                 const nextItem = list[idx + 1];
                                 const inductionEls: any[] = [];
                                 if (nextItem) {
-                                  const nextRel = nextItem.inputPath || `data/recognition_reduce/pool/${String(nextItem.input || "").split("/").pop()}`;
+                                  const nextRel = nextItem.inputPath || `${selectedImageSetRoot}/pool/${String(nextItem.input || "").split("/").pop()}`;
                                   const manifestActLabel = actionLabel(nextItem.action || "");
                                   const actTitle = nextItem.action || "";
                                   const renderRow = (rowKey: string, label: string, cls: string, ev: IndEvent | null, loading: boolean, actLabel: string, fromText: boolean) => {
@@ -8983,7 +8988,7 @@ export function VideoImportPage({
                                   // stable id timeline (prolog parts.json cells).
                                   const prologRow = tiers.find((r: any) => r.kind === "prolog");
                                   if (prologRow) {
-                                    const pRel = prologRow.mettaPath || `data/recognition_reduce/sym/${String(prologRow.metta || "").split("/").pop()}`;
+                                    const pRel = prologRow.mettaPath || `${selectedImageSetRoot}/sym/${String(prologRow.metta || "").split("/").pop()}`;
                                     const p = parseInduction(reduceMetta[pRel] || "");
                                     const mapsReady = prologReady && (prologMaps[idx] instanceof Map) && (prologMaps[idx + 1] instanceof Map);
                                     const perm = mapsReady ? classifyPerm(prologMaps as FrameMap[], idx, new Set(p.interacted.map((x) => x.target)), occlusionHorizon, 3) : null;
@@ -9061,7 +9066,7 @@ export function VideoImportPage({
                                 const isRef = row.kind === "oneshot";
                                 const rv = row.agree?.verdict || (isRef ? "ref" : "");
                                 const rp = Math.round((row.agree?.score ?? 0) * 100);
-                                const mettaRel = row.mettaPath || `data/recognition_reduce/sym/${String(row.metta || "").split("/").pop()}`;
+                                const mettaRel = row.mettaPath || `${selectedImageSetRoot}/sym/${String(row.metta || "").split("/").pop()}`;
                                 return (
                                   <details className="video-import-reduce-row" key={ri} onToggle={(e: any) => { if (e.currentTarget.open) loadReduceMetta(mettaRel); }}>
                                     <summary>
@@ -9530,7 +9535,8 @@ export function VideoImportPage({
         aria-hidden={activeSubview === "sprite-view" ? undefined : "true"}
       >
         <SpriteViewerPage memorySetup={<MemorySetupHost workspaceId={workspaceId}
-          sequenceId={preprocSequenceId} active={activeSubview === "sprite-view" && visualSequenceReady} />} />
+          sequenceId={preprocSequenceId} sequenceReady={visualSequenceReady && Boolean(preprocSequenceId)}
+          active={activeSubview === "sprite-view"} />} />
       </div>
 
       {(activeSubview === "recognition" || activeSubview === "objects") && (
@@ -10741,7 +10747,7 @@ export function VideoImportPage({
 
           {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && (
             <div className="video-import-reduce-tabs" role="tablist" aria-label="Reduction views">
-              <button type="button" role="tab" aria-selected={reduceTab === "inputs"} className={reduceTab === "inputs" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("inputs")}>Inputs · {selectedImageSet === "recognition_reduce" ? "20 × 10" : recognitionReduce.items.length}</button>
+              <button type="button" role="tab" aria-selected={reduceTab === "inputs"} className={reduceTab === "inputs" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("inputs")}>Inputs · {isRecognitionMatrix ? "20 × 10" : recognitionReduce.items.length}</button>
               <button type="button" role="tab" aria-selected={reduceTab === "extractions"} className={reduceTab === "extractions" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("extractions")}>Extractions · {recognitionReduce.items.filter((it: any) => ((it.transformsTotal || 0) > 0 ? it.transformsDone === it.transformsTotal : (it.rows || []).length > 0)).length}/{recognitionReduce.items.length}</button>
             </div>
           )}
@@ -10785,7 +10791,7 @@ export function VideoImportPage({
             // Non-canonical image sets (ARC recordings, curated, videos) have no
             // character×condition structure — lay every name-sorted frame out
             // 10 per row (always N × 10).
-            const isCanonicalSet = selectedImageSet === "recognition_reduce";
+            const isCanonicalSet = isRecognitionMatrix;
             if (!isCanonicalSet) {
               const setMeta = imageSetList.find((s: any) => s.id === selectedImageSet);
               const sorted = recognitionReduce.items.slice().sort((a: any, b: any) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
@@ -10847,7 +10853,7 @@ export function VideoImportPage({
                         <div className="video-import-reduce-charname">{nameBySlug.get(slug) || slug}</div>
                         <div className="video-import-reduce-condstrip">
                           {conds.map((it: any) => {
-                            const inputRel = it.inputPath || `data/recognition_reduce/pool/${String(it.input || "").split("/").pop()}`;
+                            const inputRel = it.inputPath || `${selectedImageSetRoot}/pool/${String(it.input || "").split("/").pop()}`;
                             const web = isWeb(it);
                             const best = bestNshot(it);
                             const verdict = best?.agree?.verdict || "";
@@ -10887,7 +10893,7 @@ export function VideoImportPage({
                                   const isRef = row.kind === "oneshot";
                                   const verdict = row.agree?.verdict || (isRef ? "ref" : "");
                                   const pct = Math.round((row.agree?.score ?? 0) * 100);
-                                  const mettaRel = row.mettaPath || `data/recognition_reduce/sym/${String(row.metta || "").split("/").pop()}`;
+                                  const mettaRel = row.mettaPath || `${selectedImageSetRoot}/sym/${String(row.metta || "").split("/").pop()}`;
                                   return (
                                     <details className="video-import-reduce-row" key={ri} onToggle={(e: any) => { if (e.currentTarget.open) loadReduceMetta(mettaRel); }}>
                                       <summary>

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from omega_vision.inherited_source_overlay import authorize_storage_path, shared_storage_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -107,20 +108,9 @@ def environment_files_root() -> Path:
 def action_trees_root() -> Path:
     explicit = _environment("WORLD_WORKBENCH_RUN_ROOT", "ARC3_TREE_ROOT")
     if explicit:
-        root = _resolved_path(explicit, base=_launch_cwd())
+        root = authorize_storage_path(_resolved_path(explicit, base=_launch_cwd()))
     else:
-        nearest = _find_upward_directory(_launch_cwd(), "action_trees")
-        if nearest is not None:
-            root = nearest
-        else:
-            runtime_root = _runtime_root()
-            runtime_candidate = (
-                runtime_root / "action_trees" if runtime_root is not None else None
-            )
-            if runtime_candidate is not None and runtime_candidate.is_dir():
-                root = runtime_candidate.resolve()
-            else:
-                root = (PROJECT_ROOT / "action_trees").resolve()
+        root = shared_storage_path("runtime", "states", "action_trees")
     root.mkdir(parents=True, exist_ok=True)
     return root
 
@@ -136,12 +126,12 @@ def prompts_path() -> Path:
 
 
 def histories_root(level_root: str | Path) -> Path:
-    root = Path(level_root) / "histories"
+    root = authorize_storage_path(Path(level_root) / "histories")
     root.mkdir(parents=True, exist_ok=True)
     return root
 
 
 def exports_root(level_root: str | Path) -> Path:
-    root = Path(level_root) / "exports"
+    root = authorize_storage_path(Path(level_root) / "exports")
     root.mkdir(parents=True, exist_ok=True)
     return root

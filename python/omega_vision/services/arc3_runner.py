@@ -7,6 +7,8 @@ import os
 from dataclasses import asdict, dataclass, is_dataclass
 from enum import Enum
 from pathlib import Path
+from omega_vision.inherited_source_overlay import authorize_storage_path
+from omega_vision.project_paths import action_trees_root
 from typing import Any, Iterable, Mapping, Sequence
 
 import arc_agi
@@ -24,10 +26,9 @@ except ImportError:  # pragma: no cover - server environments run treeless
     StateNode = None  # type: ignore[assignment]
 
 try:
-    from project_paths import action_trees_root, prompts_root, prompts_path
+    from project_paths import prompts_root, prompts_path
 except ImportError:  # pragma: no cover - fall back to the packaged copies
     from omega_vision.project_paths import (  # type: ignore[no-redef]
-        action_trees_root,
         prompts_root,
         prompts_path,
     )
@@ -115,7 +116,7 @@ class Arc3Runner:
         self.prompts_root = prompts_root()
         self.environment_files = self.prompts_root  # compatibility alias
         self.tree_root = (
-            Path(tree_root).expanduser().resolve()
+            authorize_storage_path(Path(tree_root).expanduser())
             if tree_root is not None
             else (action_trees_root() if ActionTreeStore is not None else None)
         )
@@ -350,7 +351,7 @@ class Arc3Runner:
         return [record.as_dict() for record in self.records]
 
     def save_history(self, path: str | Path) -> Path:
-        output = Path(path)
+        output = authorize_storage_path(Path(path))
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(
             json.dumps(self.history(), indent=2, ensure_ascii=False),
@@ -559,7 +560,8 @@ class Arc3Runner:
         raise RuntimeError("No queued debugger-step API is available yet")
 
     def export_state(self, path: str | Path) -> Path:
-        output = Path(path)
+        output = authorize_storage_path(Path(path))
+        output.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "game_id": self.game_id,
             "level": self.current_level_label(),

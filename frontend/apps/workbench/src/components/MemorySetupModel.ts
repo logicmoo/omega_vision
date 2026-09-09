@@ -84,7 +84,6 @@ export function memoryTree(locations: MemoryLocation[], kind: MemoryKind, query 
     if (search && !text.includes(search)) continue;
     const segments: [string, string][] = [
       [`provider:${location.providerRef}`, location.providerLabel],
-      [`workspace:${location.workspaceId}`, location.workspaceId],
     ];
     if (context.gameId) segments.push([`game:${context.gameId}`, context.gameId]);
     if (context.levelId) segments.push([`level:${context.levelId}`, `Level ${context.levelId}`]);
@@ -138,8 +137,8 @@ export function selectionSummary(kind: MemoryKind, selection: MemorySelection, c
     selection.lookIn.includes(item.memoryLocationId) && item.memoryKinds.includes(kind));
   const unknown = selection.lookIn.filter(id => !relevant.some(item => item.memoryLocationId === id));
   const count = relevant.reduce((sum, item) => sum + item.counts[kind], 0);
-  const foreign = destination && catalog.context && (destination.providerRef !== catalog.context.providerRef
-    || destination.workspaceId !== catalog.context.workspaceId) && destination.memoryLocationId !== NOWHERE;
+  const foreign = destination && catalog.context && destination.providerRef !== catalog.context.providerRef
+    && destination.memoryLocationId !== NOWHERE;
   const name = destination ? `${destination.label}${destination.label === 'Run Memory' ? ` (${destination.context.runId})` : ''}${foreign ? ` — ${destination.providerLabel}` : ''}` : 'Unavailable';
   return {
     destination: destination ? name : 'Unavailable destination',

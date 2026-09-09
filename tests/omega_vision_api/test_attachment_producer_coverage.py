@@ -86,12 +86,14 @@ def test_api_producer_binds_preprocessing_policy_not_frame_identity(tmp_path):
 
 def test_cv_execution_revision_changes_even_when_new_implementation_emits_identical_facts(tmp_path, monkeypatch):
     from omega_vision.services import video_import_semantics as semantics
-    image = source_image(tmp_path / "source.png")
-    unit = {"image": image, "dir": tmp_path, "id": "source"}
+    unit_dir = tmp_path / "data" / "omega_vision" / "curated" / "unit"
+    unit_dir.mkdir(parents=True)
+    image = source_image(unit_dir / "source.png")
+    unit = {"image": image, "dir": unit_dir, "id": "source", "workspaceRoot": tmp_path}
     transformation, doer = semantics.PARTS.split("/")
     options = {"filter": "none"}
     assert api.run_transform_step(unit, transformation, doer, options)["status"] == "written"
-    output = tmp_path / transformation / doer
+    output = unit_dir / transformation / doer
     facts = (output / "result.pl").read_bytes()
     revision = api._read_output_revision(output / "meta.json")
     assert api.run_transform_step(unit, transformation, doer, options)["status"] == "skipped"

@@ -49,7 +49,6 @@ from arc3_play_api import (
     _import_instance_dir_name,
     _iter_recording_dirs,
     _next_ranked_saved_dir_name,
-    _safe_workspace_child,
     _utc_now,
     _workspace_root,
 )
@@ -70,12 +69,14 @@ _data_layout_lock = threading.RLock()
 _migrated_data_roots: set[Path] = set()
 
 
-def _page_state_lock(workspace_id: str) -> threading.RLock:
+def _page_state_lock(workspace_id: str, *, container: Path | None = None) -> threading.RLock:
+    key = str((container if container is not None else _imports_root(_workspace_root(workspace_id))).resolve())
     with _page_state_locks_guard:
-        return _page_state_locks.setdefault(workspace_id, threading.RLock())
+        return _page_state_locks.setdefault(key, threading.RLock())
 
 
 def _atomic_json_write(path: Path, value: Any) -> None:
+    path = _authorize_storage_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
     try:
@@ -156,14 +157,27 @@ def _job_summary(job: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _job_in_store(job: Mapping[str, Any], workspace_id: str) -> bool:
+    home = _storage_path(_workspace_root(workspace_id))
+    if job.get("storageRoot"):
+        return Path(job["storageRoot"]).resolve() == home
+    owner = job.get("workspaceId")
+    if not isinstance(owner, str) or not owner:
+        return False
+    try:
+        return _storage_path(_workspace_root(owner)) == home
+    except (HTTPException, ValueError, OSError):
+        return False
+
+
 def _list_workspace_jobs(workspace_id: str, *, include_finished: bool = True) -> list[dict[str, Any]]:
-    """All tagged jobs (extract/scenes/download/…) for a workspace, so a
+    """All tagged jobs (extract/scenes/download/…) in the authorized shared home, so a
     reconnecting browser can see and interrupt in-progress server work even
     though it lost the original jobId."""
     out: list[dict[str, Any]] = []
     for store in (_extract_jobs, _download_jobs, _direct_jobs):
         for job in list(store.values()):
-            if not isinstance(job, dict) or job.get("workspaceId") != workspace_id:
+            if not isinstance(job, dict) or not _job_in_store(job, workspace_id):
                 continue
             if not include_finished and job.get("state") not in ("running", "starting", "queued"):
                 continue
@@ -173,10 +187,10 @@ def _list_workspace_jobs(workspace_id: str, *, include_finished: bool = True) ->
 
 
 def _cancel_workspace_job(workspace_id: str, job_id: str) -> bool:
-    """Request cancellation of a job by id, scoped to the workspace."""
+    """Request cancellation of a job by id in the authorized shared home."""
     for store in (_extract_jobs, _download_jobs, _direct_jobs):
         job = store.get(job_id)
-        if isinstance(job, dict) and job.get("workspaceId") == workspace_id:
+        if isinstance(job, dict) and _job_in_store(job, workspace_id):
             job["cancel"] = True
             return True
     return False
@@ -215,6 +229,26 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 from omega_vision.inherited_source_overlay import data_homes as _data_homes  # noqa: E402
 from omega_vision.inherited_source_overlay import vision_data_root as _vision_data_root  # noqa: E402
+from omega_vision.inherited_source_overlay import (  # noqa: E402
+    storage_path as _storage_path, require_sequence_write as _storage_require_sequence_write,
+    sequence_writable as _sequence_writable, unavailable_legacy_storage,
+    resolve_workspace_child, authorize_storage_path as _authorize_storage_path,
+)
+
+
+def _require_sequence_write(root: Path, path: Path) -> Path:
+    try:
+        return _storage_require_sequence_write(root, path)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+def _safe_workspace_child(root: Path, relative: str) -> Path:
+    """Omega assets never resolve into the workbench configuration workspace."""
+    path = resolve_workspace_child(root, relative)
+    if not path.is_relative_to(_vision_data_root(root).resolve()):
+        raise ValueError("Omega asset is outside canonical storage; explicit migration is required")
+    return path
 from omega_vision.perception.image_preprocessing import (  # noqa: E402
     ORIGINAL_PIXELS_ID as _PP_ORIGINAL_ID,
     SCHEMA_VERSION as _PP_SCHEMA_VERSION,
@@ -228,81 +262,26 @@ from omega_vision.perception.image_preprocessing import (  # noqa: E402
 
 
 def _imports_root(root: Path) -> Path:
-    resolved_root = root.resolve()
-    data_home = _vision_data_root(root)
-    canonical = data_home / "video_import"
-    legacy = data_home / "VideoImports"
-    with _data_layout_lock:
-        if resolved_root in _migrated_data_roots:
-            return canonical
-        replacements = [
-            ("data/VideoImports/", "data/video_import/"),
-            ("data/Recordings/", "data/recordings/"),
-            ("data/arc3_games/recordings/", "data/recordings/"),
-            ("data/arc3_games/importables/", "data/importables/"),
-            ("data/arc3_games/curated/", "data/curated/"),
-            ("data/vision_frames/video/", "data/video/"),
-            ("data/vision_frames/arc_recordings/", "data/arc_recordings/"),
-            ("data/vision_frames/curated_data/", "data/curated_data/"),
-            ("data/vision_frames/image_archives/", "data/image_archives/"),
-            ("data/vision_frames/recognition_inputs/", "data/recognition_inputs/"),
-            ("data/vision_frames/live_streams/", "data/live_streams/"),
-        ]
-        if legacy.is_dir() and not canonical.exists():
-            legacy.rename(canonical)
-        canonical.mkdir(parents=True, exist_ok=True)
-        for child in list(canonical.iterdir()):
-            frames_dir = child / "frames"
-            video_path = next(
-                (
-                    entry
-                    for entry in child.iterdir()
-                    if entry.is_file() and entry.suffix.lower() in _VIDEO_SUFFIXES
-                ),
-                None,
-            ) if child.is_dir() else None
-            if video_path is None or not frames_dir.is_dir():
-                continue
-            destination = data_home / "video" / _video_frame_source_id(root, video_path)
-            if not destination.exists():
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                frames_dir.rename(destination)
-                replacements.append(
-                    (
-                        f"data/video_import/{child.name}/frames/",
-                        f"data/video/{destination.name}/",
-                    )
-                )
-        curated_root = _vision_data_root(root) / "curated"
-        if curated_root.is_dir():
-            replacements.extend(
-                (
-                    f"data/{child.name}/",
-                    f"data/curated/{child.name}/",
-                )
-                for child in curated_root.iterdir()
-                if child.is_dir()
-            )
-        rewrite_roots = [canonical, data_home / "vision_frames"]
-        rewrite_roots.extend(
-            data_home / family
-            for family in ("video", "arc_recordings", "curated_data", "image_archives", "recognition_inputs", "live_streams")
-        )
-        _rewrite_data_paths(rewrite_roots, replacements)
-        _migrated_data_roots.add(resolved_root)
-    return canonical
+    """Resolve new intake/settings storage without modifying historical layouts."""
+    return _storage_path(root, "video_import")
 
 
 def _vision_frames_root(root: Path) -> Path:
-    """The write home for frame-sequence families. The flat layout keeps each
-    family (video/, arc_recordings/, curated_data/, image_archives/,
-    recognition_inputs/, live_streams/) directly under the data root, so this
-    IS the data root; callers append their family segment."""
-    return _vision_data_root(root)
+    """New image collections live in curated; captures explicitly use recordings."""
+    return _storage_path(root, "curated")
 
 
 def _video_frames_dir(root: Path, video_path: Path) -> Path:
-    return _vision_frames_root(root) / "video" / _video_frame_source_id(root, video_path)
+    return _storage_path(root, "recordings", _video_frame_source_id(root, video_path))
+
+
+def _video_frames_read_dir(root: Path, video_path: Path) -> Path:
+    key = _video_frame_source_id(root, video_path)
+    candidates = [
+        _video_frames_dir(root, video_path), _storage_path(root, "video", key),
+        _storage_path(root, "vision_frames", "video", key), video_path.parent / "frames",
+    ]
+    return next((path for path in candidates if path.is_dir()), candidates[0])
 
 
 def _slug(value: str) -> str:
@@ -608,6 +587,12 @@ def _save_image_with_provenance(
     transform: dict[str, Any] | None = None,
     image_format: str | None = None,
 ) -> dict[str, Any]:
+    home = _vision_data_root(root).resolve()
+    resolved = image_path.resolve()
+    if not resolved.is_relative_to(home):
+        raise ValueError("Image output escapes canonical Omega storage")
+    if not resolved.is_relative_to(_imports_root(root) / "previews"):
+        _require_sequence_write(root, resolved)
     image_path.parent.mkdir(parents=True, exist_ok=True)
     image.save(image_path, image_format) if image_format else image.save(image_path)
     return _write_image_provenance(
@@ -810,7 +795,7 @@ def get_page_state(workspaceId: str) -> dict[str, Any]:
 
 def _read_page_state(workspace_id: str, container: Path) -> dict[str, Any]:
     path = container / "page_state.json"
-    with _page_state_lock(workspace_id):
+    with _page_state_lock(workspace_id, container=container):
         if not path.is_file():
             return {"state": None}
         try:
@@ -1176,8 +1161,11 @@ def select_degenerate(payload: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail="Pillow is not installed in the server environment") from error
     selected: list[str] = []
     for rel in images:
-        path = (root / rel).resolve()
-        if root.resolve() not in path.parents or not path.is_file():
+        try:
+            path = _safe_workspace_child(root, rel)
+        except ValueError:
+            continue
+        if not path.is_file():
             continue
         try:
             with Image.open(path) as raw:
@@ -1205,9 +1193,7 @@ def list_videos(workspaceId: str) -> dict[str, Any]:
     def collect(directory: Path) -> None:
         for entry in sorted(directory.iterdir()):
             if entry.is_file() and entry.suffix.lower() in _VIDEO_SUFFIXES:
-                canonical_frames = _video_frames_dir(root, entry)
-                legacy_frames = directory / "frames"
-                frames_dir = canonical_frames if canonical_frames.is_dir() else legacy_frames
+                frames_dir = _video_frames_read_dir(root, entry)
                 frames = sorted(frames_dir.glob("frame_*.png")) if frames_dir.is_dir() else []
                 meta_path = directory / "video.json"
                 meta: dict[str, Any] = {}
@@ -1225,6 +1211,9 @@ def list_videos(workspaceId: str) -> dict[str, Any]:
                     "importedAt": meta.get("downloaded_at") or meta.get("imported_at") or "",
                     "frameCount": len(frames),
                     "framesDir": _data_rel_of(root, frames_dir) if frames else None,
+                    "framesReadOnly": bool(frames) and not _sequence_writable(root, frames_dir),
+                    "migrationRequired": directory.is_relative_to(_vision_data_root(root) / "VideoImports")
+                    or (bool(frames) and not _sequence_writable(root, frames_dir)),
                     "lastExtract": meta.get("lastExtract"),
                     "scenes": meta.get("scenes") or [],
                     "captions": meta.get("captions") or [],
@@ -1232,7 +1221,9 @@ def list_videos(workspaceId: str) -> dict[str, Any]:
                     "segments": meta.get("segments") or [],
                 })
 
-    if container.is_dir():
+    for container in (container, _storage_path(root, "VideoImports")):
+        if not container.is_dir():
+            continue
         for directory in sorted(container.iterdir()):
             if not directory.is_dir():
                 continue
@@ -1244,7 +1235,7 @@ def list_videos(workspaceId: str) -> dict[str, Any]:
                 continue
             collect(directory)
     videos.sort(key=lambda video: str(video.get("importedAt") or ""), reverse=True)
-    return {"videos": videos}
+    return {"videos": videos, "unavailableStorage": unavailable_legacy_storage(root)}
 
 
 @router.post("/download")
@@ -2240,8 +2231,11 @@ def image_provenance(workspaceId: str, image: str) -> dict[str, Any]:
     return payload
 
 
-_CANONICAL_IMAGE_SET = "recognition_reduce"
-_IMAGE_SET_LABELS = {"recognition_reduce": "Recognition · 20×10 conditions"}
+_CANONICAL_IMAGE_SET = "curated/recognition_reduce"
+_IMAGE_SET_LABELS = {
+    _CANONICAL_IMAGE_SET: "Recognition · 20×10 conditions",
+    "recognition_reduce": "Recognition · 20×10 conditions",
+}
 _catalog_image_cache: ContextVar[dict[Path, list[Path]] | None] = ContextVar("catalog_image_cache", default=None)
 
 
@@ -2291,29 +2285,8 @@ def _scan_set_images(d: Path) -> list[Path]:
 
 
 def _resolve_set_dir(root: Path, base_rel: str) -> Path:
-    """Overlay-aware image-set dir election.
-
-    ``_safe_workspace_child`` returns the nearest EXISTING overlay hit — but a
-    workspace-local shadow dir holding only derived outputs (``stages/``,
-    ``sym/``, ``transforms/``) must not hide the deeper layer that actually
-    holds the input frames. Elect the first layer that yields images; fall
-    back to the nearest existing dir when no layer has any.
-    """
-    first = _safe_workspace_child(root, base_rel)
-    if _resolve_set_images(first):
-        return first
-    tail = base_rel[5:] if base_rel.startswith("data/") else base_rel
-    first_resolved = first.resolve()
-    for home in _data_homes(root):
-        candidate = (home / tail)
-        if not candidate.is_dir():
-            continue
-        resolved = candidate.resolve()
-        if resolved == first_resolved or home.resolve() not in (resolved, *resolved.parents):
-            continue
-        if _resolve_set_images(candidate):
-            return candidate
-    return first
+    """Resolve an image set in the one authorized home without overlay fallback."""
+    return _safe_workspace_child(root, base_rel)
 
 
 def _opencv_visual_groups_from_prolog(text: str) -> list[dict[str, Any]]:
@@ -2645,7 +2618,7 @@ def _unit_transform_fields(root: Path, unit_dir: Path, sequence_root: Path) -> d
 
 
 _FRAME_SET_FAMILIES = (
-    ("recordings", "Sequence Sets · Games", "2-arc"),
+    ("recordings", "Sequence Sets · Recordings", "2-recordings"),
     ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
     ("arc_recordings", "Sequence Sets · Games", "2-arc"),
     ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
@@ -2655,6 +2628,10 @@ _FRAME_SET_FAMILIES = (
     ("vision_frames/curated_data", "Sequence Sets · Curated", "1-curated"),  # legacy layout
     ("video", "Sequence Sets · Movies", "3-video"),
     ("vision_frames/video", "Sequence Sets · Movies", "3-video"),  # legacy layout
+    ("image_archives", "Legacy · Image archives (read-only)", "4-loaded"),
+    ("live_streams", "Legacy · Captures (read-only)", "4-loaded"),
+    ("vision_frames/image_archives", "Legacy · Image archives (read-only)", "4-loaded"),
+    ("vision_frames/live_streams", "Legacy · Captures (read-only)", "4-loaded"),
 )
 
 
@@ -2703,13 +2680,14 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
                     image_count = len([it for it in (mj.get("items") or []) if isinstance(it, dict) and it.get("id")])
             except (OSError, json.JSONDecodeError):
                 pass
-        if image_count == 0 and reduced_count == 0 and set_id != _CANONICAL_IMAGE_SET:
+        if image_count == 0 and reduced_count == 0:
             return
         seen.add(set_id)
         entry: dict[str, Any] = {
             "id": set_id,
             "visualSequenceId": set_id,
-            "label": label or _IMAGE_SET_LABELS.get(set_id, set_id.replace("_", " ")),
+            "label": (label or _IMAGE_SET_LABELS.get(set_id, set_id.replace("_", " ")))
+            + (" · Read-only; migration required" if not _sequence_writable(root, d) else ""),
             "dir": rel_dir,
             "providerRef": rel_dir,
             "imageCount": image_count,
@@ -2718,17 +2696,29 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
             "canonical": set_id == _CANONICAL_IMAGE_SET,
             "group": group,
             "groupKey": group_key,
+            "readOnly": not _sequence_writable(root, d),
+            "migrationRequired": not _sequence_writable(root, d),
         }
         if extras:
             entry.update(extras)
         sets.append(entry)
 
-    add(_CANONICAL_IMAGE_SET, "data/recognition_reduce", group="Recognition", group_key="0-recognition")
+    recognition = next((rel for rel in ("data/curated/recognition_reduce", "data/recognition_reduce")
+                        if _safe_workspace_child(root, rel).is_dir()), "data/curated/recognition_reduce")
+    add(recognition.removeprefix("data/"), recognition, group="Recognition", group_key="0-recognition")
+    for family in ("video_import", "VideoImports"):
+        container = _storage_path(root, family)
+        if container.is_dir():
+            for frames in sorted(container.glob("*/frames")):
+                add(f"{family}/{frames.parent.name}/frames", _data_rel_of(root, frames),
+                    group="Legacy · Captures (read-only)", group_key="3-video")
+    for family in ("recognition_inputs", "vision_frames/recognition_inputs"):
+        add(family, f"data/{family}", group="Legacy · Images (read-only)", group_key="4-loaded")
     for data_dir in homes:
         if not data_dir.is_dir():
             continue
         for child in sorted(data_dir.iterdir()):
-            if child.is_dir() and child.name != _CANONICAL_IMAGE_SET and ((child / "pool").is_dir() or (child / "manifest.json").is_file()):
+            if child.name not in {"importables", "video_import", "VideoImports"} and child.is_dir() and child.name != _CANONICAL_IMAGE_SET and ((child / "pool").is_dir() or (child / "manifest.json").is_file()):
                 add(child.name, f"data/{child.name}", group="Image Sets", group_key="4-loaded")
     # Frame-based source families (organised like the Objects source combobox).
     for rec_base, group, group_key in _FRAME_SET_FAMILIES:
@@ -2759,9 +2749,9 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
                         group=group,
                         group_key=group_key,
                         extras={
-                            "kind": "arc-recording",
-                            "gameId": str(manifest.get("game_id") or child.name),
-                            "game": child.name,
+                            "kind": "arc-recording" if manifest.get("game_id") else "recording",
+                            "gameId": str(manifest["game_id"]) if manifest.get("game_id") else None,
+                            "game": child.name if manifest.get("game_id") else None,
                             "recording": recording.name,
                             "level": manifest.get("level"),
                         },
@@ -2993,6 +2983,8 @@ _visual_catalog_tracker_lock = threading.Lock()
 
 def _cached_visual_catalog(workspace_id: str, request: Request, response: Response, refresh: bool) -> Any:
     root = _workspace_root(workspace_id)
+    cache_path = _storage_path(root, ".cache", "visual_sequences.json")
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
     homes = _data_homes(root)
     key = tuple(homes)
     with _visual_catalog_tracker_lock:
@@ -3003,8 +2995,8 @@ def _cached_visual_catalog(workspace_id: str, request: Request, response: Respon
         if refresh:
             tracker.invalidate()
     entries, revision, cache_state = _visual_catalog_cache.get(
-        root / ".cache" / "visual_sequences.json",
-        tracker,
+        cache_path,
+        lambda: hashlib.sha256(f"physical-sequence-ids-v2:{tracker()}".encode()).hexdigest(),
         lambda: _list_image_sets(root), refresh=refresh,
     )
     etag = f'W/"vsc-{revision}"'
@@ -3025,7 +3017,9 @@ def image_sets(workspaceId: str, request: Request = None, response: Response = N
     reduction work already done for it without recomputing.
     """
     entries = _cached_visual_catalog(workspaceId, request, response, refresh)
-    return entries if isinstance(entries, Response) else {"sets": entries}
+    return entries if isinstance(entries, Response) else {
+        "sets": entries, "unavailableStorage": unavailable_legacy_storage(_workspace_root(workspaceId)),
+    }
 
 
 @router.get("/visual-sequences")
@@ -3038,7 +3032,8 @@ def visual_sequences(workspaceId: str, request: Request = None, response: Respon
     sequences = _cached_visual_catalog(workspaceId, request, response, refresh)
     if isinstance(sequences, Response):
         return sequences
-    return {"visualSequences": sequences, "sets": sequences}
+    return {"visualSequences": sequences, "sets": sequences,
+            "unavailableStorage": unavailable_legacy_storage(_workspace_root(workspaceId))}
 
 
 @router.get("/transform-composites")
@@ -3081,14 +3076,11 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
         "c6_verybusy", "c7_withchars", "c8_typical", "c9_colorful", "c10_modality",
     ]
     transforms = {"c1_bw", "c2_flip", "c3_rot45"}
-    bases = ["data/recognition_reduce", "data/curated/recognition_reduce", "data/arc3_games/curated/recognition_reduce"]
+    bases = [f"data/{_CANONICAL_IMAGE_SET}"]
 
     def base_dir(rel: str) -> Path:
         """Chain-resolved directory for a base rel path (see _data_homes)."""
-        try:
-            return _safe_workspace_child(root, rel)
-        except ValueError:
-            return root / rel
+        return _safe_workspace_child(root, rel)
 
     default_base = next((b for b in bases if base_dir(b).is_dir()), bases[0])
 
@@ -3477,6 +3469,7 @@ def planner_visualization(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             anchor="mm",
         )
     output_dir = image_path.parent / f"{image_path.stem}_planner"
+    _require_sequence_write(root, output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     digest = hashlib.sha256(
         json.dumps(labels, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -3636,6 +3629,7 @@ def outline_verification(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         draw.text((x, y), str(planner_number), fill="white", font=font, anchor="mm")
     geometry_hash = _outline_geometry_hash(polygons, holes)
     output_dir = image_path.parent / f"{image_path.stem}_outlines"
+    _require_sequence_write(root, output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"verify_{_slug(name)[:24]}_{geometry_hash[:12]}.png"
     transform = {
@@ -3775,6 +3769,7 @@ def member_cut(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=f"polygon too small after clamping to {width}x{height}")
     x0, y0, x1, y1 = bbox
     members_dir = image_path.parent / f"{image_path.stem}_members"
+    _require_sequence_write(root, members_dir)
     members_dir.mkdir(parents=True, exist_ok=True)
     slug = _slug(name)[:24] or f"member{step}"
     # Preserve source transparency and anti-alias the traced silhouette.
@@ -4759,7 +4754,7 @@ def import_arc_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     source_images = _arc_recording_images(recording_dir)
     if not source_images:
         raise HTTPException(status_code=400, detail="ARC recording contains no image sequence")
-    output_dir = _vision_frames_root(root) / "arc_recordings" / _slug(recording_rel)
+    output_dir = _storage_path(root, "recordings", _slug(recording_rel))
     output_dir.mkdir(parents=True, exist_ok=True)
     frames: list[dict[str, Any]] = []
     for index, source_path in enumerate(source_images):
@@ -4860,7 +4855,7 @@ def detect_stream_scenes(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         label="maxSeconds",
     )
     root = _workspace_root(workspace_id)
-    output_dir = _vision_frames_root(root) / "live_streams" / stream_id
+    output_dir = _storage_path(root, "recordings", stream_id)
     output_dir.mkdir(parents=True, exist_ok=True)
     job_id = uuid.uuid4().hex[:12]
     job: dict[str, Any] = {
@@ -5829,6 +5824,7 @@ def apply_filter(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             if not source.is_file():
                 raise HTTPException(status_code=404, detail=f"frame not found: {frame_rel}")
             filtered_dir = source.parent / f"filtered_{label}"
+            _require_sequence_write(root, filtered_dir)
             filtered_dir.mkdir(parents=True, exist_ok=True)
             target = filtered_dir / source.name
             with Image.open(source) as image:
@@ -6050,11 +6046,7 @@ def _chain_step_transform_body(entry: dict[str, Any], params: Mapping[str, Any])
 
 
 def _sequence_root_for(root: Path, sequence_id: str) -> Path:
-    """The on-disk directory for a Visual Sequence, resolved the SAME way the
-    run-planning endpoint resolves ``pooler_root`` so persistence and
-    materialization always agree: a ``data/<set>`` target goes through the
-    overlay-aware set-home election; any other target is a direct workspace
-    child (recordings)."""
+    """Resolve a sequence within the shared home, excluding intake staging."""
     sid = str(sequence_id or "").strip()
     if not sid:
         raise HTTPException(status_code=400, detail="sequenceId is required")
@@ -6063,6 +6055,11 @@ def _sequence_root_for(root: Path, sequence_id: str) -> Path:
             directory = _resolve_set_dir(root, sid)
         else:
             directory = _safe_workspace_child(root, sid)
+        relative = tuple(part.lower() for part in directory.relative_to(_vision_data_root(root).resolve()).parts)
+        if relative and (relative[0] == "importables" or relative[:2] in {
+            ("arc3_games", "importables"), ("video_import", "importables"),
+        }):
+            raise HTTPException(status_code=400, detail="Importables is staging, not a Visual Sequence family")
         if not directory.is_dir():
             raise HTTPException(status_code=404, detail="Visual Sequence directory does not exist")
         return directory
@@ -6204,6 +6201,7 @@ def _materialize_preprocessed_image(
     unit["preprocessingRevision"] = _preprocessing_revision(chain)
     if _pp_is_effectively_original(chain):
         return source
+    _require_sequence_write(root, unit["dir"])
     steps = _pp_effective_steps(chain)
     out_dir = unit["dir"] / "preprocessing"
     out_path = out_dir / f"{signature.replace(':', '_')}.png"
@@ -6289,6 +6287,7 @@ def put_preprocessing_chain(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     index = _filter_catalog_index(root)
     steps = _validated_preprocessing_chain(body.get("steps"), index)
     sequence_root = _sequence_root_for(root, sequence_id)
+    _require_sequence_write(root, sequence_root)
     if not sequence_root.is_dir():
         raise HTTPException(status_code=404, detail="Visual Sequence directory does not exist")
     _atomic_json_write(_preprocessing_chain_path(sequence_root), {
@@ -7667,6 +7666,7 @@ def _claim_worker_id() -> str:
 
 def _read_claim(claim_file: Path) -> tuple[dict[str, Any], float] | None:
     """Return (claim payload, age seconds) for a live claim, else None."""
+    claim_file = _authorize_storage_path(claim_file)
     try:
         age = time.time() - claim_file.stat().st_mtime
     except OSError:
@@ -7843,6 +7843,39 @@ def _persist_execution_memory_defaults(unit: Mapping[str, Any], steps: Iterable[
         locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
 
 
+def _unit_workspace_root(unit: Mapping[str, Any]) -> Path:
+    if unit.get("workspaceRoot"):
+        return Path(unit["workspaceRoot"])
+    if unit.get("workspaceId"):
+        return _workspace_root(str(unit["workspaceId"]))
+    return _REPO_ROOT
+
+
+def _unit_output_path(unit: dict[str, Any], *parts: str) -> Path:
+    root = _unit_workspace_root(unit)
+    directory = _require_sequence_write(root, Path(unit["dir"]))
+    target = _require_sequence_write(root, directory.joinpath(*parts))
+    if not target.is_relative_to(directory):
+        raise ValueError("Transformation output escapes its unit directory")
+    return target
+
+
+def _transform_output_dir(unit: dict[str, Any], transformation: str, doer: str) -> Path:
+    """Validate the actual destination and existing descendants before any write."""
+    directory = _unit_output_path(unit, transformation, doer)
+    for name in ("claim.json", "meta.json", "result.pl", "result.json",
+                 "debug_image.png", ".transform-failed.json"):
+        target = _unit_output_path(unit, transformation, doer, name)
+        if not target.is_relative_to(directory):
+            raise ValueError("Transformation output target redirects outside its step directory")
+    for parent, dirs, files in os.walk(directory, followlinks=False):
+        for name in (*dirs, *files):
+            target = _require_sequence_write(_unit_workspace_root(unit), Path(parent) / name)
+            if not target.is_relative_to(directory):
+                raise ValueError("Transformation output descendant redirects outside its step directory")
+    return directory
+
+
 def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
                        options: dict[str, Any], *, force: bool = False,
                        depends_on: list[str] | None = None,
@@ -7859,6 +7892,7 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     if runner is None:
         return {"step": step_name, "status": "error", "error": f"unknown transformation {step_name}"}
     try:
+        out_dir = _transform_output_dir(unit, transformation, doer)
         options = _runtime_transform_options(unit, step_name, options)
     except (ValueError, OSError, HTTPException) as error:
         return {"step": step_name, "status": "error", "error": str(error)}
@@ -7872,7 +7906,6 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         if _preprocessing_source_signature(unit["sourceImage"]) != unit["sourceSignature"]:
             return {"step": step_name, "status": "blocked", "reason": "preprocessing-source-changed",
                     "error": "Source pixels changed; submit this sequence again."}
-    out_dir = unit["dir"] / transformation / doer
     resolved_deps = _resolve_step_deps(unit, depends_on, depends_on_resolved)
     live_claim = _read_claim(out_dir / "claim.json")
     if live_claim is not None:
@@ -7899,8 +7932,9 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
             if stale:
                 return {"step": step_name, "status": "blocked", "missing": dep["selector"],
                         "reason": reason, "error": "Run the dependency on the current preprocessed input first."}
+    out_dir = _transform_output_dir(unit, transformation, doer)
     out_dir.mkdir(parents=True, exist_ok=True)
-    claim_file = out_dir / "claim.json"
+    claim_file = _unit_output_path(unit, transformation, doer, "claim.json")
     claim_body = json.dumps({"kind": "transformation_claim", "step": step_name,
                              "claimedBy": _claim_worker_id(), "claimedAt": _utc_now()},
                             indent=2)
@@ -7911,27 +7945,28 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         if live is not None:
             return {"step": step_name, "status": "claimed",
                     "claimedBy": live[0].get("claimedBy"), "claimedAt": live[0].get("claimedAt")}
-        claim_file.write_text(claim_body, encoding="utf-8")  # steal stale claim
+        _unit_output_path(unit, transformation, doer, "claim.json").write_text(claim_body, encoding="utf-8")
     else:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(claim_body)
     started = time.perf_counter()
     try:
+        out_dir = _transform_output_dir(unit, transformation, doer)
         if unit.get("executionMode") == "pooler":
             _ensure_queue_memory_destinations(unit, (step_name,))
         stats = runner(unit, out_dir, options)
     except Exception as error:  # noqa: BLE001 - reported per unit/step
         try:
-            _atomic_json_write(out_dir / ".transform-failed.json", {
+            _atomic_json_write(_unit_output_path(unit, transformation, doer, ".transform-failed.json"), {
                 "kind": "sequence_transform_failure", "step": step_name,
                 "error": str(error), "failedAt": _utc_now(),
             })
         finally:
-            claim_file.unlink(missing_ok=True)
+            _unit_output_path(unit, transformation, doer, "claim.json").unlink(missing_ok=True)
         return {"step": step_name, "status": "error", "error": str(error)}
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     from omega_vision.perception.cross_frame_deps import output_revision  # noqa: PLC0415
-    result_pl = out_dir / "result.pl"
+    result_pl = _unit_output_path(unit, transformation, doer, "result.pl")
     revision = output_revision(
         result_pl if result_pl.is_file() else None,
         producer=step_name, schema=str(stats.get("schema", "")),
@@ -7964,10 +7999,10 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         **({"consumedDeps": consumed_deps} if consumed_deps else {}),
         **stats,
     }
-    (out_dir / "meta.json").write_text(
+    _unit_output_path(unit, transformation, doer, "meta.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
-    (out_dir / ".transform-failed.json").unlink(missing_ok=True)
-    claim_file.unlink(missing_ok=True)
+    _unit_output_path(unit, transformation, doer, ".transform-failed.json").unlink(missing_ok=True)
+    _unit_output_path(unit, transformation, doer, "claim.json").unlink(missing_ok=True)
     entry = {"step": step_name, "status": "written", "elapsedMs": elapsed_ms}
     for key in (
         "regionCount",
@@ -8032,6 +8067,10 @@ def write_unit_todos(unit: dict[str, Any],
     their original selector; without it, previously-persisted resolutions are
     preserved. Completed steps whose cross-frame targets changed frame or output
     revision are re-marked pending (stale) so they re-run."""
+    todo_file = _unit_output_path(unit, "todos.json")
+    outputs = {(spec["transformation"], spec["doer"]):
+               _transform_output_dir(unit, spec["transformation"], spec["doer"])
+               for spec in pipeline}
     results = {entry["step"]: entry for entry in (step_results or [])}
     todos: list[dict[str, Any]] = []
     pending = 0
@@ -8041,7 +8080,7 @@ def write_unit_todos(unit: dict[str, Any],
         memory_session = spec.get("memorySessionId", unit.get("memorySessionId"))
         options = _runtime_transform_options({**unit, "memorySessionId": memory_session},
                                              step_name, spec.get("options") or {})
-        out_dir = unit["dir"] / transformation / doer
+        out_dir = outputs[transformation, doer]
         depends_on = spec.get("dependsOn") or []
         entry: dict[str, Any] = {
             "transformation": transformation,
@@ -8115,8 +8154,9 @@ def write_unit_todos(unit: dict[str, Any],
         image_rel = image_path.relative_to(unit["dir"]).as_posix() if image_path else None
     except ValueError:
         image_rel = Path(os.path.relpath(image_path, unit["dir"])).as_posix() if image_path else None
-    unit["dir"].mkdir(parents=True, exist_ok=True)
-    (unit["dir"] / "todos.json").write_text(json.dumps({
+    todo_file = _unit_output_path(unit, "todos.json")
+    todo_file.parent.mkdir(parents=True, exist_ok=True)
+    todo_file.write_text(json.dumps({
         "kind": "transformation_todos",
         "unit": str(unit["id"]),
         "workspaceId": unit.get("workspaceId"),
@@ -8308,7 +8348,7 @@ def _pipeline_migration_signature(steps: list[dict[str, Any]]) -> list[tuple[Any
 def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
     """Read the editable initial-todo template, creating it from the built-in
     default on first use so it is always visible and editable as a file."""
-    file = root / _PIPELINE_TEMPLATE_REL
+    file = _safe_workspace_child(root, _PIPELINE_TEMPLATE_REL)
     if file.is_file():
         try:
             payload = json.loads(file.read_text(encoding="utf-8"))
@@ -8322,11 +8362,6 @@ def load_pipeline_template(root: Path) -> list[dict[str, Any]]:
                     for former_default in _FORMER_DEFAULT_PIPELINE_TEMPLATES
                 ):
                     upgraded = [dict(step) for step in _DEFAULT_PIPELINE_TEMPLATE]
-                    file.write_text(json.dumps({
-                        "kind": "transform_pipeline_template",
-                        "comment": _PIPELINE_TEMPLATE_COMMENT,
-                        "pipeline": upgraded,
-                    }, indent=2), encoding="utf-8")
                     return upgraded
                 return steps
         except (OSError, ValueError):
@@ -8360,7 +8395,7 @@ def save_pipeline_template(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     root = _workspace_root(workspace_id)
-    file = root / _PIPELINE_TEMPLATE_REL
+    file = _safe_workspace_child(root, _PIPELINE_TEMPLATE_REL)
     file.parent.mkdir(parents=True, exist_ok=True)
     file.write_text(json.dumps({
         "kind": "transform_pipeline_template",
@@ -8376,11 +8411,12 @@ def save_pipeline_template(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 # keeps re-reading (including between tasks mid-pass). Stamping a set rewrites
 # root -> the pooler abandons its pass and moves over. The pooler heartbeats
 # pooler_status.json beside the control file.
-_POOLER_CONTROL_PATH = _REPO_ROOT / "data" / "omega_vision" / "pooler_control.json"
+_POOLER_CONTROL_PATH = _storage_path(_REPO_ROOT, "pooler_control.json")
 _POOLER_DEFAULT_WORKERS = 10
 
 
 def _pooler_read(path: Path) -> dict[str, Any]:
+    path = _authorize_storage_path(path)
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(payload, dict):
@@ -8420,10 +8456,27 @@ def _pooler_write_control(updates: dict[str, Any]) -> dict[str, Any]:
         "skipTypes": ctl.get("skipTypes") if isinstance(ctl.get("skipTypes"), list) else [],
     }
     merged.update({k: v for k, v in updates.items() if v is not None})
+    if merged.get("root") and ("root" in updates or merged.get("command") == "run"):
+        merged["root"] = str(_pooler_scan_root(str(merged["root"]), logical="root" in updates))
     merged["updatedAt"] = _utc_now()
-    _POOLER_CONTROL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _POOLER_CONTROL_PATH.write_text(json.dumps(merged, indent=2), encoding="utf-8")
+    _atomic_json_write(_POOLER_CONTROL_PATH, merged)
     return merged
+
+
+def _pooler_scan_root(value: str, *, logical: bool = True) -> Path:
+    home = _vision_data_root(_authorize_storage_path(_POOLER_CONTROL_PATH).parent)
+    try:
+        if Path(value).is_absolute():
+            path = _authorize_storage_path(Path(value))
+        elif logical:
+            path = _safe_workspace_child(home, value)
+        else:
+            path = _authorize_storage_path(home.parent.parent / value)
+        if path != home and not _sequence_writable(home, path):
+            raise ValueError("Legacy pooler root is read-only; explicit selection or migration is required")
+        return path
+    except (ValueError, PermissionError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 def _pooler_spawn_if_dead() -> int:
@@ -8436,7 +8489,7 @@ def _pooler_spawn_if_dead() -> int:
         flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
                  | getattr(subprocess, "DETACHED_PROCESS", 0x00000008))
     cmd = [sys.executable, str(script), "--control", str(_POOLER_CONTROL_PATH)]
-    log = open(_POOLER_CONTROL_PATH.with_name("pooler.log"), "ab")  # noqa: SIM115
+    log = open(_authorize_storage_path(_POOLER_CONTROL_PATH.with_name("pooler.log")), "ab")  # noqa: SIM115
     try:
         # first line of every run: WHAT is being started (echo of the command)
         log.write(f"\n[spawn] {_utc_now()} $ {' '.join(cmd)}\n".encode("utf-8"))
@@ -8451,10 +8504,7 @@ def _pooler_spawn_if_dead() -> int:
 
 def _pooler_point_at(root_dir: Path, workers: Any = None) -> dict[str, Any]:
     """Retarget the pooler at the active todo set and make sure one runs."""
-    try:
-        rel = root_dir.resolve().relative_to(_REPO_ROOT).as_posix()
-    except (OSError, ValueError):
-        rel = str(root_dir)
+    rel = str(_pooler_scan_root(str(root_dir)))
     updates: dict[str, Any] = {"command": "run", "root": rel}
     if workers is not None:
         try:
@@ -8467,8 +8517,14 @@ def _pooler_point_at(root_dir: Path, workers: Any = None) -> dict[str, Any]:
 
 @router.get("/pooler")
 def pooler_state() -> dict[str, Any]:
-    return {"control": _pooler_read(_POOLER_CONTROL_PATH),
-            "status": _pooler_status_payload(), "alivePid": _pooler_alive()}
+    control = _pooler_read(_POOLER_CONTROL_PATH)
+    result = {"control": control, "status": _pooler_status_payload(), "alivePid": _pooler_alive()}
+    if control.get("root"):
+        try:
+            _pooler_scan_root(str(control["root"]), logical=False)
+        except HTTPException as error:
+            result["unavailableStorage"] = {"path": control["root"], "migrationRequired": True, "message": str(error.detail)}
+    return result
 
 
 @router.post("/pooler")
@@ -8502,117 +8558,11 @@ def pooler_command(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 
 def _llm_adoption_maker(set_base: Path):
-    """Adopt legacy LLM recognition reductions into unit transform dirs.
-
-    The canonical home of an LLM reduction is the unit's step dir
-    ``<unit>/llm_reduction_0/<doer>/`` (result.metta + meta.json + stage
-    images). Older reduces stored their outputs beside the set
-    (``sym/<id>__1shot.metta``, ``stages/<id>__t1__*.png``) — this MOVES those
-    into the step contract, deletes copy-era leftovers, and returns todo specs
-    for every step dir found, so todos.json, the Extractions cells, and the
-    pooler all account for the LLM line. Idempotent per step dir."""
-    sym_dir = set_base / "sym"
-    stages = set_base / "stages"
-    rows_by_id: dict[str, list[dict[str, Any]]] = {}
-    mp = set_base / "manifest.json"
-    if mp.is_file():
-        try:
-            mj = json.loads(mp.read_text(encoding="utf-8"))
-            for item in (mj.get("items") or []):
-                if isinstance(item, dict) and item.get("id"):
-                    rows_by_id[str(item["id"])] = [
-                        r for r in (item.get("rows") or []) if isinstance(r, dict)]
-        except (OSError, json.JSONDecodeError):
-            pass
+    """Discover existing step contracts without moving legacy reductions."""
 
     def adopt(unit: dict[str, Any]) -> list[dict[str, Any]]:
-        image = unit.get("image")
-        rel = ""
-        if image is not None:
-            try:
-                rel = image.relative_to(set_base).as_posix()
-            except ValueError:
-                rel = ""
-        stem = rel.rsplit(".", 1)[0] if rel else str(unit["id"])
-        idv = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_") or str(unit["id"])
         specs: list[dict[str, Any]] = []
         transformation = "llm_reduction_0"
-        for pos, metta_file in enumerate(sorted(sym_dir.glob(f"{idv}__*shot.metta")) if sym_dir.is_dir() else []):
-            m = re.fullmatch(rf"{re.escape(idv)}__(\d+)shot\.metta", metta_file.name)
-            if m is None:
-                continue
-            shots = m.group(1)
-            row = next((r for r in rows_by_id.get(idv, [])
-                        if str(r.get("metta") or "").split("/")[-1] == metta_file.name), None)
-            model = str((row or {}).get("model") or "llm")
-            doer = re.sub(r"[^a-z0-9]+", "_", model.lower()).strip("_") or "llm"
-            if shots != "1":
-                doer = f"{doer}_{shots}shot"
-            out_dir = unit["dir"] / transformation / doer
-            meta_path = out_dir / "meta.json"
-            legacy_files = (
-                (metta_file, out_dir / "result.metta"),
-                (sym_dir / f"{idv}__{shots}shot.parts.json", out_dir / "result.parts.json"),
-                (stages / f"{idv}__t{shots}__parts.png", out_dir / "debug_image.png"),
-                (stages / f"{idv}__t{shots}__turtle.png", out_dir / "turtle.png"),
-                (stages / f"{idv}__t{shots}__partmap.png", out_dir / "partmap.png"),
-            )
-            if meta_path.is_file():
-                # already adopted: finish the move — align the copy-era sidecar
-                # name with the step contract and drop legacy duplicates.
-                old_sidecar = out_dir / "parts.json"
-                try:
-                    if old_sidecar.is_file() and not (out_dir / "result.parts.json").is_file():
-                        old_sidecar.rename(out_dir / "result.parts.json")
-                except OSError:
-                    pass
-                for src, dst in legacy_files:
-                    try:
-                        if src.is_file() and dst.is_file():
-                            src.unlink()
-                    except OSError:
-                        pass
-                specs.append({"transformation": transformation, "doer": doer, "options": {},
-                              "type": "p_shot" if doer.endswith("shot") else "llm",
-                              "dependsOn": [], "priority": 5 + pos})
-                continue
-            out_dir.mkdir(parents=True, exist_ok=True)
-            for src, dst in legacy_files:
-                try:
-                    if src.is_file():
-                        shutil.move(str(src), str(dst))
-                except OSError:
-                    pass
-            cache_src = set_base / "cache" / f"{idv}__pair1.json"
-            try:
-                if cache_src.is_file():
-                    shutil.copy2(cache_src, out_dir / "llm_objects.json")
-            except OSError:
-                pass
-            meta: dict[str, Any] = {
-                "kind": "sequence_set_transformation",
-                "transformation": transformation,
-                "doer": doer,
-                "options": {},
-                "createdAt": _utc_now(),
-                "adoptedFrom": f"sym/{metta_file.name}",
-                "model": model,
-                "shots": int(shots),
-            }
-            if row is not None:
-                if isinstance(row.get("elapsedMs"), (int, float)):
-                    meta["elapsedMs"] = row["elapsedMs"]
-                if isinstance(row.get("nparts"), int):
-                    meta["regionCount"] = row["nparts"]
-                if isinstance(row.get("ngroups"), int):
-                    meta["groupCount"] = row["ngroups"]
-                if isinstance(row.get("nrels"), int):
-                    meta["relationCount"] = row["nrels"]
-            meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False),
-                                 encoding="utf-8")
-            specs.append({"transformation": transformation, "doer": doer, "options": {},
-                          "type": "p_shot" if doer.endswith("shot") else "llm",
-                          "dependsOn": [], "priority": 5 + pos})
         # canonical-layout steps written directly by the reduce pipeline
         known = {s["doer"] for s in specs}
         step_root = unit["dir"] / transformation
@@ -8659,6 +8609,7 @@ def _sequence_ordering(directory: Path, images: list[Path]) -> tuple[bool, list[
 
 def _sequence_execution_context(root: Path, sequence_id: str, workspace_id: str | None = None) -> tuple[Path, list[dict[str, Any]], dict[str, Any]]:
     directory = _sequence_root_for(root, sequence_id)
+    sequence_id = _data_rel_of(root, directory)
     images = _resolve_set_images(directory)
     units = [_preprocessing_unit(directory, image) for image in images]
     if not units:
@@ -8682,7 +8633,7 @@ def _sequence_execution_context(root: Path, sequence_id: str, workspace_id: str 
 
 def _direct_specs(root: Path) -> dict[str, dict[str, Any]]:
     specs = _transform_definitions()
-    template = root / _PIPELINE_TEMPLATE_REL
+    template = _safe_workspace_child(root, _PIPELINE_TEMPLATE_REL)
     if template.is_file():
         try:
             document = json.loads(template.read_text(encoding="utf-8"))
@@ -8697,7 +8648,7 @@ def _direct_specs(root: Path) -> dict[str, dict[str, Any]]:
 def _direct_run_path(root: Path, job_id: str) -> Path:
     if not re.fullmatch(r"[0-9a-f]{32}", job_id):
         raise HTTPException(status_code=400, detail="Invalid direct-call ID")
-    return root / "runtime" / "executions" / f"direct-{job_id}.json"
+    return _storage_path(root, "runtime", "executions", f"direct-{job_id}.json")
 
 
 def _attach_memory_session(units: list[dict[str, Any]], body: Mapping[str, Any]) -> None:
@@ -8716,14 +8667,14 @@ def _attach_memory_session(units: list[dict[str, Any]], body: Mapping[str, Any])
 @router.get("/direct-calls/{job_id}")
 def direct_call_status(job_id: str, workspaceId: str) -> dict[str, Any]:
     job = _direct_jobs.get(job_id)
-    if job is not None and job.get("workspaceId") == workspaceId:
+    if job is not None and _job_in_store(job, workspaceId):
         return dict(job)
     path = _direct_run_path(_workspace_root(workspaceId), job_id)
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Direct call not found")
     record = json.loads(path.read_text(encoding="utf-8"))
     if (not isinstance(record, dict) or record.get("id") != job_id
-            or record.get("workspaceId") != workspaceId or record.get("kind") != "direct-transform"):
+            or record.get("kind") != "direct-transform"):
         raise HTTPException(status_code=422, detail="Execution record identity does not match this request")
     if record.get("state") in {"running", "starting"}:
         import psutil
@@ -8733,7 +8684,6 @@ def direct_call_status(job_id: str, workspaceId: str) -> dict[str, Any]:
             owner_alive = False
         if not owner_alive:
             record.update(state="interrupted", error="The execution process stopped before completion.")
-            _atomic_json_write(path, record)
     return record
 
 
@@ -8756,6 +8706,7 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="options must be an object")
     root = _workspace_root(workspace_id)
     directory, units, catalog = _sequence_execution_context(root, sequence_id, workspace_id)
+    _require_sequence_write(root, directory)
     _attach_memory_session(units, body)
     specs = _direct_specs(root)
     if output not in specs:
@@ -8871,6 +8822,7 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     events_path = path.with_suffix(".jsonl")
     job = {
         "id": job_id, "kind": "direct-transform", "workspaceId": workspace_id,
+        "storageRoot": str(_storage_path(root)),
         "sequenceId": sequence_id, "composite": output, "firstN": first_n,
         "label": f"Direct {output}", "state": "running", "done": 0, "total": len(plan),
         "imageCount": len(selected), "startedAt": _utc_now(), "ownerPid": os.getpid(),
@@ -8879,7 +8831,7 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "authorization": {"confirmationKey": confirmation_key, "confirmed": body.get("confirmed") is True,
                           "imageCount": len(selected), "firstN": first_n, "modelId": model_id,
                           "llmCallCount": planned["llmCallCount"], "llmSteps": llm_steps},
-        "path": path.relative_to(root).as_posix(), "eventsPath": events_path.relative_to(root).as_posix(),
+        "path": _workspace_relative(root, path), "eventsPath": _workspace_relative(root, events_path),
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     events_path.touch(exist_ok=False)
@@ -9049,6 +9001,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     else:
         target = f"data/{set_id}"
     pooler_root, units, sequence_catalog = _sequence_execution_context(root, target, workspace_id)
+    _require_sequence_write(root, pooler_root)
     _attach_memory_session(units, body)
     sequence_ordered = sequence_catalog["ordered"]
     if set_id:
@@ -9136,6 +9089,10 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                                 "firstN": first_n, "imageCount": len(units), "llmCallCount": llm_call_count,
                                 "modelId": spec["options"].get("modelId"),
                                 "modelRevision": spec["options"].get("modelRevision")}
+    for unit in units:
+        for spec in pipeline_specs:
+            if _step_for_unit(spec, unit) is not None:
+                _transform_output_dir(unit, spec["transformation"], spec["doer"])
     if units:
         memory_steps = {
             f"{spec['transformation']}/{spec['doer']}" for spec in pipeline_specs
@@ -9157,10 +9114,10 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="mergeTodos and freshTodos are mutually exclusive")
     if fresh_todos:
         live_claims = [
-            unit["dir"] / spec["transformation"] / spec["doer"] / "claim.json"
+            _unit_output_path(unit, spec["transformation"], spec["doer"], "claim.json")
             for unit in units
             for spec in pipeline_specs
-            if _read_claim(unit["dir"] / spec["transformation"] / spec["doer"] / "claim.json") is not None
+            if _read_claim(_unit_output_path(unit, spec["transformation"], spec["doer"], "claim.json")) is not None
         ]
         if live_claims:
             raise HTTPException(
@@ -9207,7 +9164,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         unit_specs = extra_specs + active_specs
         if fresh_todos:
             for spec in active_specs:
-                output_dir = unit["dir"] / spec["transformation"] / spec["doer"]
+                output_dir = _transform_output_dir(unit, spec["transformation"], spec["doer"])
                 if output_dir.is_dir():
                     shutil.rmtree(output_dir)
         if merge_todos:
@@ -9356,7 +9313,7 @@ def _semantic_execution(workspaceId: str, sequenceId: str, response: Response, f
                                f"?path={urllib.parse.quote(relative, safe='')}",
                     })
     jobs = []
-    for path in sorted((root / "runtime" / "executions").glob("direct-*.json"),
+    for path in sorted(_storage_path(root, "runtime", "executions").glob("direct-*.json"),
                        key=lambda path: path.stat().st_mtime, reverse=True):
         record = read(path)
         if record.get("sequenceId") == sequenceId and record.get("composite") in stages:
@@ -9370,6 +9327,7 @@ def _semantic_execution(workspaceId: str, sequenceId: str, response: Response, f
                     "description": "Explicit registered stage; dependencies stay within First N.",
                     "llm": definitions[stage].get("type") in {"llm", "p_shot"}} for stage in sorted(stages)],
         "todos": todos, "jobs": jobs, "outputs": outputs, "artifacts": artifacts, "errors": errors,
+        "unavailableStorage": unavailable_legacy_storage(root),
     }
 
 
@@ -9425,6 +9383,7 @@ def semantic_execution_commit(body: dict[str, Any] = Body(...)) -> dict[str, Any
         })
     root = _workspace_root(body["workspaceId"])
     directory, units, catalog = _sequence_execution_context(root, body["sequenceId"], body["workspaceId"])
+    _require_sequence_write(root, directory)
     _attach_memory_session(units, body)
     selected = units[:body["firstN"]] if body.get("firstN") else units
     if selected:

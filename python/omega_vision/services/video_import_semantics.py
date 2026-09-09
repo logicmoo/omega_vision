@@ -23,6 +23,7 @@ from omega_vision.perception._event_journal import (
 )
 from omega_vision.perception.candidate_rules import CandidateRuleStore, PromotionGates, effective_promoted_semantics
 from omega_vision.perception.observation_identity import _prolog_atom, content_hash
+from omega_vision.inherited_source_overlay import OMEGA_PROVIDER_ID, OMEGA_STORAGE_ID
 
 
 router = APIRouter(prefix="/semantic", tags=["video-import-semantics"])
@@ -67,8 +68,6 @@ def _safe(root: Path, path: Path) -> Path:
 
 def _authorized_path(root: Path, path: Path) -> Path:
     resolved = path.resolve()
-    if resolved.is_relative_to(root.resolve()):
-        return resolved
     if any(resolved.is_relative_to(Path(home).resolve()) for home in _api()._data_homes(root)):
         return resolved
     raise PermissionError("Resource is outside the workspace and its server-authorized data providers")
@@ -84,6 +83,7 @@ def _workspace(workspace_id: str) -> Path:
 
 
 def _store(root: Path) -> CandidateRuleStore:
+    root = _api()._vision_data_root(root)
     for family in ("rule-candidates", "rule-proposals", "semantic-learning", "grouping-promotion-locks"):
         _safe(root, root / "runtime" / family)
     for family in ("event-rules", "grouping-rules"):
@@ -113,7 +113,7 @@ def _units(workspace_id: str, sequence_id: str) -> tuple[Path, list[dict[str, An
     directory, units, _ = _api()._sequence_execution_context(root, sequence_id, workspace_id)
     _authorized_path(root, directory)
     for unit in units:
-        unit.update(workspaceId=workspace_id, workspaceRoot=root, providerId=f"filesystem:{workspace_id}")
+        unit.update(workspaceId=workspace_id, workspaceRoot=root, providerId=OMEGA_PROVIDER_ID)
         _safe(directory, Path(unit["dir"]))
         _safe(directory, Path(unit["image"]))
     return root, units
@@ -123,8 +123,6 @@ def _consumer_units(workspace_id: str, sequence_id: str, state):
     """Attach the same request-local snapshot to each selected sequence."""
     root, units = _units(workspace_id, sequence_id)
     if state is not None:
-        if state.workspace_id != workspace_id:
-            raise ValidationError("Browser memory belongs to another workspace")
         for unit in units:
             unit.update(memorySessionId=state.session_id, _browserMemory=state)
     return root, units
@@ -257,7 +255,9 @@ def _attachment_context(unit: Mapping[str, Any], frame, objects: Mapping[str, An
 def _emit(unit: Mapping[str, Any], out_dir: Path, result: dict[str, Any], *,
           schema: str, summary: Mapping[str, Any], facts: list[str] | None = None,
           checkpoint_family: str | None = None, transient_step: str | None = None) -> dict[str, Any]:
-    root = _workspace(str(unit["workspaceId"]))
+    workspace = _workspace(str(unit["workspaceId"]))
+    root = _api()._vision_data_root(workspace)
+    _api()._require_sequence_write(workspace, out_dir)
     _safe(Path(unit["dir"]), out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     # Peer results are sealed: do not insert envelope fields into their hashes.
@@ -285,7 +285,7 @@ def _emit(unit: Mapping[str, Any], out_dir: Path, result: dict[str, Any], *,
                     path = persist_checkpoint(root / "runtime", checkpoint, family=checkpoint_family)
             else:
                 path = persist_checkpoint(root / "runtime", checkpoint, family=checkpoint_family)
-            checkpoint_ref = path.relative_to(root).as_posix()
+            checkpoint_ref = _api()._workspace_relative(workspace, path)
     lines = [
         "% Typed semantic output; LLM hypotheses and predictions are not authoritative events.",
         f"semantic_result({_prolog_atom(schema)},{_prolog_atom(content_hash(document))}).",
@@ -747,6 +747,7 @@ def _recorded_actions(units: list[dict[str, Any]], frames: list[dict[str, Any]])
 
 def _event_log(root: Path, sequence_id: str, **kwargs):
     from omega_vision.perception.visual_event_log import VisualSequenceEventLog
+    root = _api()._vision_data_root(root)
     log = VisualSequenceEventLog(root, sequence_id, **kwargs)
     _safe(root, log.path)
     _safe(root, log.hypothesis_journal.path)
@@ -932,7 +933,7 @@ def run_induction(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) 
     examples, training = _examples(root, units[:index + 1], "train")
     store = _store(root)
     scope = {"domain": "visual-sequence", "provider_id": units[index]["providerId"]}
-    with writer_lock(root / "runtime" / "semantic-learning"):
+    with writer_lock(_api()._storage_path(root, "runtime", "semantic-learning")):
         detectors = induce_detector_rules(store, examples, scope=scope)
         transitions = induce_transition_rules(store, examples, scope=scope)
         effects = induce_transition_rules(store, examples, scope=scope, kind="action_effect")
@@ -1113,7 +1114,7 @@ def run_llm_induction(unit: dict[str, Any], out_dir: Path, options: dict[str, An
                                     context=context, images=units[index - 1:index + 1])
     provenance["semanticTraining"] = [training]
     store = _store(root)
-    with writer_lock(root / "runtime" / "semantic-learning"):
+    with writer_lock(_api()._storage_path(root, "runtime", "semantic-learning")):
         candidates = ingest_llm_rule_proposals(store, raw, provenance=provenance, entity_ids=known, inducer_version=VERSION)
         _record_training(store, candidates, [training])
     return _emit(unit, out_dir, {"candidateIds": [candidate["candidate_id"] for candidate in candidates],
@@ -1268,7 +1269,9 @@ def _gates(body: Mapping[str, Any]) -> PromotionGates:
 @_http
 def candidates(workspaceId: str, response: Response, kind: str | None = None, status: str | None = None):
     response.headers["Cache-Control"] = "no-store"
-    return {"candidates": _store(_workspace(workspaceId)).list(kind=kind, status=status)}
+    root = _workspace(workspaceId)
+    return {"candidates": _store(root).list(kind=kind, status=status),
+            "unavailableStorage": _api().unavailable_legacy_storage(root)}
 
 
 @router.get("/candidates/{candidate_id}")
@@ -1305,7 +1308,7 @@ def _evaluate_grouping(store: CandidateRuleStore, candidate_id: str, body: dict[
     if not isinstance(body["labels"], list) or not body["labels"]:
         raise ValidationError("Grouping evaluation requires independent human-review labels")
     labels = []
-    review = Journal(_safe(root, root / "runtime" / "grouping-reviews"))
+    review = Journal(_api()._storage_path(root, "runtime", "grouping-reviews"))
     for raw in body["labels"]:
         _fields(raw, {"frameUid", "groupUid", "anchorUid", "expectedTemplateMatch", "reviewer", "reason"})
         if not raw["reviewer"] or not raw["reason"]:
@@ -1315,7 +1318,8 @@ def _evaluate_grouping(store: CandidateRuleStore, candidate_id: str, body: dict[
         if not any(frame.uid == raw["frameUid"] and any(group.uid == raw["groupUid"] for group in frame.groups)
                    for frame in frames):
             raise ValidationError("Review must identify an actual final group in this replay")
-        payload = {"candidateId": candidate_id, "sequenceId": body["sequenceId"], **raw}
+        payload = {"candidateId": candidate_id, "sequenceId": body["sequenceId"],
+                   "workspaceId": body["workspaceId"], "providerId": OMEGA_PROVIDER_ID, **raw}
         source_ref = "human-grouping-review-" + content_hash(payload)
         with review.transaction() as records:
             if not any(record["payload"].get("sourceRef") == source_ref for record in records):
@@ -1357,7 +1361,7 @@ def candidate_evaluate(candidate_id: str, response: Response, body: dict[str, An
             raise ValidationError("Initial observations do not provide evaluation pairs")
         examples.extend(batch)
         sources.append((selection["partition"], source))
-    with writer_lock(root / "runtime" / "semantic-learning"):
+    with writer_lock(_api()._storage_path(root, "runtime", "semantic-learning")):
         candidate = store.get(candidate_id)
         trained = _training(candidate) + [source for partition, source in sources if partition == "train"]
         if not trained:
@@ -1399,10 +1403,10 @@ def candidate_promote(candidate_id: str, body: dict[str, Any] = Body(...)):
     store = _store(root)
     if store.get(candidate_id)["kind"] == "grouping":
         from omega_vision.perception.memory_catalog_cache import memory_catalog_mutation
-        _safe(root, root / ".cache" / "memory-catalog")
-        with memory_catalog_mutation(root):
+        _api()._storage_path(root, ".cache", "memory-catalog")
+        with memory_catalog_mutation(_api()._vision_data_root(root)):
             return evaluate_grouping_promotion(store, candidate_id, gates=_gates(body), promote=True)
-    with writer_lock(root / "runtime" / "semantic-learning"):
+    with writer_lock(_api()._storage_path(root, "runtime", "semantic-learning")):
         result = store.promote(candidate_id, gates=_gates(body))
     return {"candidate": result, "activation": "Next authored_prolog deduction includes promoted typed detectors",
             "requiresReplay": True}
@@ -1465,20 +1469,15 @@ def events_replay(response: Response, body: dict[str, Any] = Body(...)):
 
 
 def authorized_memory_roots(workspace_id: str):
-    """Server integration may extend these mounts; never pass request paths here."""
+    """One authorized shared mount; editor workspace is provenance, not ownership."""
     from omega_vision.perception.memory_locations import AuthorizedMemoryRoot
     root = _workspace(workspace_id)
+    home = _api()._storage_path(root)
+    home.mkdir(parents=True, exist_ok=True)
     mounts = [AuthorizedMemoryRoot(
-        provider_ref=f"filesystem:{workspace_id}", workspace_id=workspace_id, root=root,
-        label=workspace_id, readable=True, writable=True,
+        provider_ref=OMEGA_PROVIDER_ID, workspace_id=OMEGA_STORAGE_ID, root=home,
+        label="Omega Vision Shared", readable=True, writable=True,
     )]
-    for home in _api()._data_homes(root):
-        home = Path(home).resolve()
-        if home.is_dir() and not home.is_relative_to(root) and not any(item.root == home for item in mounts):
-            mounts.append(AuthorizedMemoryRoot(
-                provider_ref="filesystem-data-" + content_hash(str(home)), workspace_id=workspace_id,
-                root=home, label="Shared filesystem data", readable=True, writable=False,
-            ))
     return mounts
 
 
@@ -1486,6 +1485,14 @@ def _memory(workspace_id: str, sequence_id: str | None):
     from omega_vision.perception.memory_locations import MemoryContext, MemoryLocations
     root = _workspace(workspace_id)
     game = level = run = None
+    run_aliases: set[str | None] = {None}
+
+    def canonical_run(reference: str) -> str:
+        try:
+            return _api()._data_rel_of(root, _api()._safe_workspace_child(root, reference))
+        except ValueError as error:
+            raise PermissionError("Run identity requires an authorized canonical source path") from error
+
     if sequence_id:
         _, units = _units(workspace_id, sequence_id)
         directory = Path(units[0]["sequenceRoot"])
@@ -1494,7 +1501,7 @@ def _memory(workspace_id: str, sequence_id: str | None):
         sources = [_imported_source(unit) for unit in units]
         source_recording = None
         if all(sources):
-            recordings = {source["arcRecording"] for source in sources}
+            recordings = {canonical_run(source["arcRecording"]) for source in sources}
             if len(recordings) == 1 and all(unit["sequenceOrdered"] for unit in units):
                 source_recording = next(iter(recordings))
         if not manifest and source_recording is not None:
@@ -1514,25 +1521,102 @@ def _memory(workspace_id: str, sequence_id: str | None):
                 raise ValidationError("Imported frames disagree on their explicit game identity")
             if games:
                 game = games[0]
-            else:
-                # This is the recording provider's declared namespace, not an arbitrary folder-name heuristic.
-                parts = source_recording.replace("\\", "/").split("/")
-                if len(parts) == 4 and parts[:2] == ["data", "recordings"] and all(
-                    part and part not in {".", ".."} for part in parts[2:]
-                ):
-                    game = parts[2]
         level = manifest.get("level") if game else None
         if game and all(sources):
             levels = {str(source["level"]) for source in sources if source.get("level") is not None}
             if levels:
                 level = next(iter(levels)) if len(levels) == 1 else None
-        run = source_recording or sequence_id
+        run = source_recording or _api()._data_rel_of(root, directory)
+        run_aliases = ({source["arcRecording"] for source in sources}
+                       if source_recording else {sequence_id})
+        run_aliases.update({run, "data/omega_vision/" + run.removeprefix("data/"),
+                            "data/omega_vision/omega_vision/" + run.removeprefix("data/")})
     context = MemoryContext(
-        provider_ref=f"filesystem:{workspace_id}", workspace_id=workspace_id,
+        provider_ref=OMEGA_PROVIDER_ID, workspace_id=OMEGA_STORAGE_ID,
         game_id=str(game) if game is not None else None,
         level_id=str(level) if level is not None else None, run_id=run,
     )
-    return MemoryLocations(authorized_memory_roots(workspace_id)), context
+    class OmegaMemoryLocations(MemoryLocations):
+        def save_record(self, *args, **kwargs):
+            return super().save_record(*args, **kwargs, provenance_workspace_id=workspace_id)
+
+        def _legacy_preferences(self, context):
+            from omega_vision.perception.memory_locations import AuthorizedMemoryRoot
+            seen = set()
+            for alias in sorted(run_aliases, key=lambda value: value or ""):
+                contexts = [(MemoryContext(
+                    f"filesystem:{workspace_id}", workspace_id, context.game_id, context.level_id, alias,
+                ), tuple(dict.fromkeys((root, self.roots[0].root))))]
+                if alias != context.run_id:
+                    contexts.append((MemoryContext(
+                        context.provider_ref, context.workspace_id, context.game_id, context.level_id, alias,
+                    ), (self.roots[0].root,)))
+                for legacy_context, roots in contexts:
+                    for legacy_root in roots:
+                        legacy = MemoryLocations([AuthorizedMemoryRoot(
+                            legacy_context.provider_ref, legacy_context.workspace_id, legacy_root,
+                            "Unavailable historical workspace or sequence alias",
+                        )])
+                        _, old = legacy._preference_path(legacy_context)
+                        if old.is_file() and old not in seen:
+                            seen.add(old)
+                            yield legacy, legacy_context, old
+
+        def _historical_alias_location(self, location):
+            identifier = location.get("context", {}).get("runId")
+            if not isinstance(identifier, str) or not identifier.startswith("data/"):
+                return False
+            try:
+                return canonical_run(identifier) != identifier
+            except (ValueError, PermissionError, HTTPException):
+                return True
+
+        def _find(self, context, location_id):
+            found = super()._find(context, location_id)
+            if self._historical_alias_location(found[1]):
+                raise ValueError("Historical sequence-alias memory location is unavailable; explicit migration is required")
+            return found
+
+        def catalog(self, context, **kwargs):
+            result = super().catalog(context, **kwargs)
+            historical = {item["memoryLocationId"]: item
+                          for item in (*result["locations"], *result["destinations"])
+                          if self._historical_alias_location(item)}
+            for key in ("locations", "destinations"):
+                result[key] = [item for item in result[key] if item["memoryLocationId"] not in historical]
+            result["effective"] = {kind: [identifier for identifier in identifiers if identifier not in historical]
+                                   for kind, identifiers in result["effective"].items()}
+            result["unavailableStorage"] = _api().unavailable_legacy_storage(root)
+            result["unavailableStorage"].extend({
+                "path": str(path), "workspaceId": workspace_id, "status": "unavailable", "migrationRequired": "true",
+                "message": "Historical workspace/sequence-alias memory preferences require explicit selection",
+            } for _, _, path in self._legacy_preferences(context) if path.is_relative_to(self.roots[0].root))
+            result["unavailableStorage"].extend({
+                "path": item["pathLabel"], "memoryLocationId": identifier, "status": "unavailable",
+                "migrationRequired": "true", "message": "Historical sequence-alias memory requires explicit migration",
+            } for identifier, item in historical.items())
+            if historical:
+                result["revision"] = content_hash({"catalog": result["revision"], "unavailableAliases": sorted(historical)})
+            result["errors"].extend({
+                "providerRef": context.provider_ref, "workspaceId": context.workspace_id,
+                "message": f"{item['message']}: {item['path']}",
+            } for item in result["unavailableStorage"])
+            return result
+
+        def load_preferences(self, context):
+            # Preserve old selection IDs as unavailable rather than silently
+            # replacing a historical Save To with a new canonical destination.
+            _, current = self._preference_path(context)
+            if not current.exists():
+                historical = [legacy.load_preferences(legacy_context)
+                              for legacy, legacy_context, _ in self._legacy_preferences(context)]
+                if len({value["revision"] for value in historical}) > 1:
+                    raise ValueError("Conflicting historical sequence/workspace preferences require explicit selection or migration")
+                if historical:
+                    return historical[0]
+            return super().load_preferences(context)
+
+    return OmegaMemoryLocations(authorized_memory_roots(workspace_id)), context
 
 
 def browser_memory(body: Mapping[str, Any]):
@@ -1544,14 +1628,14 @@ def browser_memory(body: Mapping[str, Any]):
         return None
     if token is None:
         raise ValidationError("An explicit browser memory snapshot requires memorySessionId")
-    return BrowserMemory(body["workspaceId"], token, body["memorySnapshot"])
+    root = _api()._storage_path(_workspace(body["workspaceId"]))
+    return BrowserMemory(body["workspaceId"], token, body["memorySnapshot"],
+                         provider_ref=OMEGA_PROVIDER_ID, storage_root=root)
 
 
 @contextmanager
 def _memory_access(workspace_id: str, sequence_id: str | None, state=None):
     locations, context = _memory(workspace_id, sequence_id)
-    if state is not None and state.workspace_id != workspace_id:
-        raise ValidationError("Browser memory belongs to another workspace")
     yield locations, context, state.memory if state else None
 
 

@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import json
+import os
+from pathlib import Path
 
 import pytest
 
@@ -141,6 +143,15 @@ def test_concurrent_readers_publish_once_and_reject_payload_cache(tmp_path):
     with pytest.raises(ValueError, match="payloads"):
         cache.catalog_metadata(tmp_path, tmp_path, {"key": "bad"},
                                lambda: {"locations": [], "errors": [], "payload": {"uid": "forbidden"}})
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows extended path prefix behavior")
+def test_cache_containment_normalizes_windows_concurrent_resolution_prefix(tmp_path, monkeypatch):
+    directory = tmp_path / ".cache" / "memory-catalog"
+    resolve = Path.resolve
+    monkeypatch.setattr(Path, "resolve", lambda self, *args, **kwargs:
+                        Path("\\\\?\\" + str(directory)) if self == directory else resolve(self, *args, **kwargs))
+    assert cache.cache_directory(tmp_path) == directory
 
 
 def test_selected_cached_path_is_reauthorized_before_read(tmp_path):

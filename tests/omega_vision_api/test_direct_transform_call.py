@@ -12,7 +12,7 @@ from omega_vision.services import video_import_api as api
 @pytest.fixture
 def direct_workspace(tmp_path, monkeypatch):
     root = tmp_path
-    sequence = root / "data" / "seq"
+    sequence = root / "data" / "omega_vision" / "curated" / "seq"
     pool = sequence / "pool"
     pool.mkdir(parents=True)
     for index in range(3):
@@ -64,14 +64,14 @@ def test_call_runs_dependencies_once_and_does_not_stamp_or_retarget(direct_works
     root, sequence = direct_workspace
     calls = []
     register(monkeypatch, calls)
-    body = {"workspaceId": "w", "sequenceId": "data/seq", "composite": "render/python", "firstN": 1}
+    body = {"workspaceId": "w", "sequenceId": "data/curated/seq", "composite": "render/python", "firstN": 1}
     first = wait_for_call(api.start_direct_call(body)["id"])
     assert first["state"] == "done"
     assert [entry[1] for entry in calls] == ["extract", "group", "render"]
     assert not list(sequence.rglob("todos.json"))
     assert not (sequence / "transforms" / "frame1").exists()
-    assert json.loads((root / first["path"]).read_text())["state"] == "done"
-    assert len((root / first["eventsPath"]).read_text().splitlines()) == 3
+    assert json.loads(api._safe_workspace_child(root, first["path"]).read_text())["state"] == "done"
+    assert len(api._safe_workspace_child(root, first["eventsPath"]).read_text().splitlines()) == 3
     summary = api._unit_transforms(root, sequence / "transforms" / "frame0", sequence)
     assert summary["done"] == 3
     second = wait_for_call(api.start_direct_call(body)["id"])
@@ -83,9 +83,9 @@ def test_updated_dependency_options_invalidate_derived_results(direct_workspace,
     root, _ = direct_workspace
     calls = []
     register(monkeypatch, calls)
-    body = {"workspaceId": "w", "sequenceId": "data/seq", "composite": "render/python", "firstN": 1}
+    body = {"workspaceId": "w", "sequenceId": "data/curated/seq", "composite": "render/python", "firstN": 1}
     assert wait_for_call(api.start_direct_call(body)["id"])["state"] == "done"
-    (root / api._PIPELINE_TEMPLATE_REL).write_text(json.dumps({"pipeline": [{
+    api._safe_workspace_child(root, api._PIPELINE_TEMPLATE_REL).write_text(json.dumps({"pipeline": [{
         "transformation": "extract", "doer": "python", "options": {"threshold": 2}, "dependsOn": [],
     }]}))
     assert wait_for_call(api.start_direct_call(body)["id"])["state"] == "done"
@@ -96,7 +96,7 @@ def test_failure_blocks_dependents_and_does_not_become_a_cache_hit(direct_worksp
     root, sequence = direct_workspace
     calls = []
     register(monkeypatch, calls, fail="extract")
-    body = {"workspaceId": "w", "sequenceId": "data/seq", "composite": "render/python", "firstN": 1}
+    body = {"workspaceId": "w", "sequenceId": "data/curated/seq", "composite": "render/python", "firstN": 1}
     failed = wait_for_call(api.start_direct_call(body)["id"])
     assert failed["state"] == "error"
     assert [entry[1] for entry in calls] == ["extract"]
@@ -111,7 +111,7 @@ def test_model_call_requires_confirmation_bound_to_current_plan(direct_workspace
     calls = []
     register(monkeypatch, calls)
     api._TRANSFORM_METADATA[("render", "python")]["type"] = "llm"
-    body = {"workspaceId": "w", "sequenceId": "data/seq", "composite": "render/python", "firstN": 1}
+    body = {"workspaceId": "w", "sequenceId": "data/curated/seq", "composite": "render/python", "firstN": 1}
     with pytest.raises(HTTPException) as prompt:
         api.start_direct_call(body)
     assert prompt.value.status_code == 409
@@ -129,7 +129,7 @@ def test_canonical_claims_and_cancellation_are_respected(direct_workspace, monke
     entered, release = threading.Event(), threading.Event()
     calls = []
     register(monkeypatch, calls, blocking=(entered, release))
-    body = {"workspaceId": "w", "sequenceId": "data/seq", "composite": "render/python", "firstN": 1}
+    body = {"workspaceId": "w", "sequenceId": "data/curated/seq", "composite": "render/python", "firstN": 1}
     first = api.start_direct_call(body)
     assert entered.wait(3)
     try:
@@ -146,7 +146,7 @@ def test_canonical_claims_and_cancellation_are_respected(direct_workspace, monke
 
 def test_mixed_recording_layout_resolves_previous_root_image(direct_workspace, monkeypatch):
     root, _ = direct_workspace
-    rec = root / "data" / "recording"
+    rec = root / "data" / "omega_vision" / "recordings" / "recording"
     (rec / "0").mkdir(parents=True)
     (rec / "recording.json").write_text("{}")
     Image.new("RGB", (4, 4), "red").save(rec / "image.png")
@@ -157,7 +157,7 @@ def test_mixed_recording_layout_resolves_previous_root_image(direct_workspace, m
         "dependsOn": ["extract/python", "frame[-1]@extract/python"], "skipFirstFrame": True,
     }
     job = wait_for_call(api.start_direct_call({
-        "workspaceId": "w", "sequenceId": "data/recording", "composite": "render/python", "firstN": 2,
+        "workspaceId": "w", "sequenceId": "data/recordings/recording", "composite": "render/python", "firstN": 2,
     })["id"])
     assert job["state"] == "done"
     metadata = json.loads((rec / "0" / "render" / "python" / "meta.json").read_text())
@@ -171,7 +171,7 @@ def test_invalid_scope_or_cycle_fails_before_any_execution(direct_workspace, mon
     register(monkeypatch, calls)
     api._TRANSFORM_METADATA[("extract", "python")] = {"dependsOn": ["render/python"]}
     with pytest.raises(HTTPException, match="cycle"):
-        api.start_direct_call({"workspaceId": "w", "sequenceId": "data/seq", "composite": "render/python"})
+        api.start_direct_call({"workspaceId": "w", "sequenceId": "data/curated/seq", "composite": "render/python"})
     assert not calls
     assert not (root / "runtime").exists()
     for invalid in (-1, 1.5, True):

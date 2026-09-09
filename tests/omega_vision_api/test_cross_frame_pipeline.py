@@ -28,12 +28,13 @@ def _unit(root: Path, frame_id: str, order: int) -> dict:
         "frameOrder": order,
         "sequenceOrdered": True,
         "sequenceId": "seq",
+        "workspaceRoot": root.parents[2],
     }
 
 
 @pytest.fixture()
 def two_frames(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    root = tmp_path / "rec"
+    root = tmp_path / "data" / "omega_vision" / "recordings" / "rec"
     for fid in ("0", "1"):
         _write_png(root / fid / "image.png")
 

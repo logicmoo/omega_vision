@@ -15,7 +15,7 @@ from omega_vision.services import video_import_api as v
 
 
 def _make_source(tmp_path: Path) -> Path:
-    unit_dir = tmp_path / "transforms" / "frame0"
+    unit_dir = tmp_path / "data" / "omega_vision" / "curated" / "seq" / "transforms" / "frame0"
     unit_dir.mkdir(parents=True)
     src = unit_dir / "image.png"
     Image.new("RGB", (4, 3), (10, 20, 30)).save(src)
@@ -75,21 +75,21 @@ def test_put_rejects_unknown_filter(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
 def test_put_then_get_round_trips(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(v, "_workspace_root", lambda _wid: tmp_path)
-    (tmp_path / "data" / "seq").mkdir(parents=True)
+    (tmp_path / "data" / "omega_vision" / "curated" / "seq").mkdir(parents=True)
     saved = v.put_preprocessing_chain({
-        "workspaceId": "w", "sequenceId": "data/seq",
+        "workspaceId": "w", "sequenceId": "data/curated/seq",
         "steps": [{"stepId": "keep", "entryId": "scale_3x_nearest", "params": {}}],
     })
     assert saved["errors"] == []
     assert saved["effectivelyOriginal"] is False
-    loaded = v.get_preprocessing_chain("w", "data/seq")
+    loaded = v.get_preprocessing_chain("w", "data/curated/seq")
     assert [s["entryId"] for s in loaded["steps"]] == ["scale_3x_nearest"]
     assert loaded["steps"][0]["stepId"] == "keep"
 
 
 def test_get_default_when_unsaved_is_effectively_original(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(v, "_workspace_root", lambda _wid: tmp_path)
-    (tmp_path / "data" / "seq2").mkdir(parents=True)
+    (tmp_path / "data" / "omega_vision" / "seq2").mkdir(parents=True)
     loaded = v.get_preprocessing_chain("w", "data/seq2")
     assert loaded["effectivelyOriginal"] is True
     assert [s["entryId"] for s in loaded["steps"]] == [ORIGINAL_PIXELS_ID, ORIGINAL_PIXELS_ID]
@@ -102,7 +102,7 @@ def test_todos_record_variant_so_pooler_inherits_it(tmp_path: Path):
     import json
 
     src = _make_source(tmp_path)
-    unit = {"id": "frame0", "dir": src.parent, "image": src, "sequenceId": "data/seq"}
+    unit = {"id": "frame0", "dir": src.parent, "image": src, "sequenceId": "data/curated/seq", "workspaceRoot": tmp_path}
     chain = [{"stepId": "s1", "entryId": "scale_3x_nearest", "params": {}}]
     variant = v._materialize_preprocessed_image(tmp_path, unit, chain, v._filter_catalog_index(tmp_path))
     unit["image"] = variant
@@ -112,7 +112,7 @@ def test_todos_record_variant_so_pooler_inherits_it(tmp_path: Path):
     assert todos["imagePath"].startswith("preprocessing/")
     assert todos["imagePath"].endswith(".png")
     # and the original stamping (no preprocessing) keeps the source image
-    unit2 = {"id": "frame0", "dir": src.parent, "image": src, "sequenceId": "data/seq"}
+    unit2 = {"id": "frame0", "dir": src.parent, "image": src, "sequenceId": "data/curated/seq", "workspaceRoot": tmp_path}
     v.write_unit_todos(unit2, [{"transformation": "parts_extraction_0", "doer": "python_opencv",
                                 "options": {}, "dependsOn": [], "priority": 10}])
     todos2 = json.loads((unit["dir"] / "todos.json").read_text(encoding="utf-8"))
@@ -121,9 +121,9 @@ def test_todos_record_variant_so_pooler_inherits_it(tmp_path: Path):
 
 def test_saved_empty_chain_stays_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(v, "_workspace_root", lambda _: tmp_path)
-    (tmp_path / "data" / "seq").mkdir(parents=True)
-    v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/seq", "steps": []})
-    assert v.get_preprocessing_chain("w", "data/seq")["steps"] == []
+    (tmp_path / "data" / "omega_vision" / "curated" / "seq").mkdir(parents=True)
+    v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/curated/seq", "steps": []})
+    assert v.get_preprocessing_chain("w", "data/curated/seq")["steps"] == []
 
 
 @pytest.mark.parametrize("raw", ["{", '{"steps": null}', '{"steps": [null]}', '{"schemaVersion": 999, "steps": []}'])
@@ -137,12 +137,12 @@ def test_corrupt_chain_is_not_silently_original(tmp_path, raw):
 @pytest.mark.parametrize("steps", [None, {}, [None], [{"entryId": "downscale", "params": {"scale": "bad"}}]])
 def test_invalid_save_preserves_previous_chain(tmp_path, monkeypatch, steps):
     monkeypatch.setattr(v, "_workspace_root", lambda _: tmp_path)
-    directory = tmp_path / "data" / "seq"
+    directory = tmp_path / "data" / "omega_vision" / "curated" / "seq"
     directory.mkdir(parents=True)
     path = directory / "preprocessing_chain.json"
     path.write_text('{"steps": []}')
     with pytest.raises(HTTPException):
-        v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/seq", "steps": steps})
+        v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/curated/seq", "steps": steps})
     assert path.read_text() == '{"steps": []}'
 
 
@@ -186,12 +186,12 @@ def test_source_change_invalidates_variant(tmp_path):
 
 def test_preview_is_sequence_bound_and_creates_no_todos(tmp_path, monkeypatch):
     monkeypatch.setattr(v, "_workspace_root", lambda _: tmp_path)
-    pool = tmp_path / "data" / "seq" / "pool"
+    pool = tmp_path / "data" / "omega_vision" / "curated" / "seq" / "pool"
     pool.mkdir(parents=True)
     Image.new("RGB", (3, 2), "blue").save(pool / "one.png")
-    frames = v.preprocessing_frames("w", "data/seq")
+    frames = v.preprocessing_frames("w", "data/curated/seq")
     assert frames["total"] == 1
-    body = {"workspaceId": "w", "sequenceId": "data/seq", "image": "data/seq/pool/one.png",
+    body = {"workspaceId": "w", "sequenceId": "data/curated/seq", "image": "data/curated/seq/pool/one.png",
             "steps": [{"entryId": "scale_3x_nearest", "params": {}}]}
     result = v.preprocessing_preview(body)
     assert result["before"] == body["image"]
@@ -203,11 +203,13 @@ def test_preview_is_sequence_bound_and_creates_no_todos(tmp_path, monkeypatch):
 
 def test_stale_pipeline_and_offline_pooler_use_same_input(tmp_path, monkeypatch):
     from omega_vision.services.transform_task_pooler import load_unit
+    monkeypatch.setattr(v, "_workspace_root", lambda _: tmp_path)
     src = _make_source(tmp_path)
     sequence_root = src.parent.parent
     chain = [{"entryId": "scale_3x_nearest", "params": {}}]
     (sequence_root / "preprocessing_chain.json").write_text(json.dumps({"steps": chain}))
-    unit = {"id": "frame0", "dir": src.parent, "image": src, "sequenceRoot": sequence_root}
+    unit = {"id": "frame0", "dir": src.parent, "image": src, "sequenceRoot": sequence_root,
+            "workspaceRoot": tmp_path, "workspaceId": "fixture"}
     index = v._filter_catalog_index(tmp_path)
     unit["image"] = v._materialize_preprocessed_image(tmp_path, unit, chain, index)
     spec = {"transformation": "test", "doer": "test", "dependsOn": [], "options": {}}
@@ -232,13 +234,13 @@ def test_headless_model_input_and_coordinates_match_final_variant(tmp_path):
     import base64
     import io
     from omega_vision.services.video_import_pipeline import image_dimensions, image_to_data_url
-    pool = tmp_path / "data" / "seq" / "pool"
+    pool = tmp_path / "data" / "omega_vision" / "curated" / "seq" / "pool"
     pool.mkdir(parents=True)
     Image.new("RGBA", (3, 2), (30, 50, 70, 100)).save(pool / "frame.png")
     (pool.parent / "preprocessing_chain.json").write_text(json.dumps({
         "steps": [{"entryId": "scale_3x_nearest", "params": {}}],
     }))
-    image_path = "data/seq/pool/frame.png"
+    image_path = "data/curated/seq/pool/frame.png"
     final = v._preprocessed_model_image(tmp_path, image_path)
     assert image_dimensions(tmp_path, image_path) == (9, 6)
     data = base64.b64decode(image_to_data_url(tmp_path, image_path).split(",", 1)[1])
@@ -250,7 +252,7 @@ def test_headless_model_input_and_coordinates_match_final_variant(tmp_path):
 
 
 def test_frame_ids_cover_named_steps_and_manifest_selection(tmp_path):
-    sequence = tmp_path / "data" / "recordings" / "game" / "attempt"
+    sequence = tmp_path / "data" / "omega_vision" / "recordings" / "game" / "attempt"
     (sequence / "named").mkdir(parents=True)
     (sequence / "recording.json").write_text("{}")
     image = sequence / "named" / "image.png"
@@ -263,25 +265,25 @@ def test_frame_ids_cover_named_steps_and_manifest_selection(tmp_path):
 def test_full_extraction_endpoint_preprocesses_only_selected_frames(tmp_path, monkeypatch):
     monkeypatch.setattr(v, "_workspace_root", lambda _: tmp_path)
     monkeypatch.setattr(v, "_pooler_point_at", lambda *args: {"pid": 0})
-    sequence = tmp_path / "data" / "seq"
+    sequence = tmp_path / "data" / "omega_vision" / "curated" / "seq"
     pool = sequence / "pool"
     pool.mkdir(parents=True)
     for name in ("frame0", "frame1"):
         Image.new("RGB", (16, 12), "blue").save(pool / f"{name}.png")
     steps = [{"entryId": "scale_3x_nearest", "params": {}}]
-    v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/seq", "steps": steps})
+    v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/curated/seq", "steps": steps})
     preview = v.preprocessing_preview({
-        "workspaceId": "w", "sequenceId": "data/seq", "steps": steps, "image": "data/seq/pool/frame0.png",
+        "workspaceId": "w", "sequenceId": "data/curated/seq", "steps": steps, "image": "data/curated/seq/pool/frame0.png",
     })
     result = v.sequence_set_transform({
-        "workspaceId": "w", "set": "seq", "moves": ["frame0"],
+        "workspaceId": "w", "set": "curated/seq", "moves": ["frame0"],
         "pipeline": [{"transformation": "parts_extraction_0", "doer": "python_opencv"}],
     })
     assert result["moveCount"] == 1
     assert result["counts"]["parts_extraction_0/python_opencv"] == {"written": 1}
     unit = sequence / "transforms" / "frame0"
     todo = json.loads((unit / "todos.json").read_text())
-    assert (unit / todo["imagePath"]).resolve() == (tmp_path / preview["after"]).resolve()
+    assert (unit / todo["imagePath"]).resolve() == v._safe_workspace_child(tmp_path, preview["after"])
     metadata = json.loads((unit / "parts_extraction_0" / "python_opencv" / "meta.json").read_text())
     assert (metadata["width"], metadata["height"]) == (48, 36)
     assert metadata["inputSignature"] == todo["inputSignature"]
@@ -289,12 +291,13 @@ def test_full_extraction_endpoint_preprocesses_only_selected_frames(tmp_path, mo
 
 
 def test_dependency_must_use_current_preprocessed_input(tmp_path, monkeypatch):
-    dependency = tmp_path / "extract" / "test"
+    unit_dir = tmp_path / "data" / "omega_vision" / "curated" / "unit"
+    dependency = unit_dir / "extract" / "test"
     dependency.mkdir(parents=True)
     (dependency / "meta.json").write_text('{"inputSignature": "chain:old"}')
     called = []
     monkeypatch.setitem(v._SEQUENCE_TRANSFORMS, ("group", "test"), lambda *args: called.append(1) or {})
-    unit = {"id": "x", "dir": tmp_path, "inputSignature": "chain:new"}
+    unit = {"id": "x", "dir": unit_dir, "inputSignature": "chain:new", "workspaceRoot": tmp_path}
     result = v.run_transform_step(unit, "group", "test", {}, depends_on=["extract/test"])
     assert result["status"] == "blocked"
     assert result["reason"] == "preprocessing-input-changed"
@@ -303,16 +306,16 @@ def test_dependency_must_use_current_preprocessed_input(tmp_path, monkeypatch):
 
 def test_preprocessing_has_no_small_step_limit(tmp_path, monkeypatch):
     monkeypatch.setattr(v, "_workspace_root", lambda _: tmp_path)
-    (tmp_path / "data" / "seq").mkdir(parents=True)
+    (tmp_path / "data" / "omega_vision" / "curated" / "seq").mkdir(parents=True)
     steps = [{"stepId": f"step-{index}", "entryId": ORIGINAL_PIXELS_ID, "params": {}} for index in range(300)]
-    saved = v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/seq", "steps": steps})
+    saved = v.put_preprocessing_chain({"workspaceId": "w", "sequenceId": "data/curated/seq", "steps": steps})
     assert saved["steps"] == steps
-    assert v.get_preprocessing_chain("w", "data/seq")["steps"] == steps
+    assert v.get_preprocessing_chain("w", "data/curated/seq")["steps"] == steps
 
 
 def test_preprocessing_outputs_never_become_collection_inputs(tmp_path):
     from omega_vision.perception.visual_sequence_cache import catalog_revision
-    sequence = tmp_path / "curated" / "collection"
+    sequence = tmp_path / "data" / "omega_vision" / "curated" / "collection"
     nested = sequence / "source"
     nested.mkdir(parents=True)
     source = nested / "portrait.png"
@@ -349,7 +352,7 @@ def test_skill_source_revision_changes_cached_pixels_even_with_same_mtime(tmp_pa
 
 
 def test_legacy_outputs_are_visibly_stale_without_deleting_their_artifacts(tmp_path):
-    sequence = tmp_path / "data" / "seq"
+    sequence = tmp_path / "data" / "omega_vision" / "seq"
     unit = sequence / "transforms" / "frame0"
     output = unit / "extract" / "test"
     output.mkdir(parents=True)
@@ -370,13 +373,13 @@ def test_legacy_outputs_are_visibly_stale_without_deleting_their_artifacts(tmp_p
 
 def test_scaling_keeps_cut_and_outline_on_the_same_variant(tmp_path, monkeypatch):
     monkeypatch.setattr(v, "_workspace_root", lambda _: tmp_path)
-    pool = tmp_path / "data" / "seq" / "pool"
+    pool = tmp_path / "data" / "omega_vision" / "curated" / "seq" / "pool"
     pool.mkdir(parents=True)
     Image.new("RGB", (8, 8), "red").save(pool / "frame.png")
     chain = [{"entryId": "scale_3x_nearest", "params": {}}]
     (pool.parent / "preprocessing_chain.json").write_text(json.dumps({"steps": chain}))
-    body = {"workspaceId": "w", "image": "data/seq/pool/frame.png", "name": "part", "fill": "hole",
-            "box": [3, 3, 15, 15], "outlineSourceImage": "data/seq/pool/frame.png",
+    body = {"workspaceId": "w", "image": "data/curated/seq/pool/frame.png", "name": "part", "fill": "hole",
+            "box": [3, 3, 15, 15], "outlineSourceImage": "data/curated/seq/pool/frame.png",
             "outlineSourceDimensions": {"width": 24, "height": 24}, "enlargeForNextPass": False}
     cut = v.member_cut(body)
     assert cut["outlineAlignment"]["verified"]

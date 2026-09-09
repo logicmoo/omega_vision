@@ -40,7 +40,7 @@ def test_visual_sequence_catalog_exposes_stable_selection_metadata(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    data_root = tmp_path / "data"
+    data_root = tmp_path / "data" / "omega_vision"
     recording = data_root / "recordings" / "ls20" / "20260718-154544"
     frame = recording / "0"
     frame.mkdir(parents=True)
@@ -83,13 +83,13 @@ def test_visual_sequence_route_and_image_set_adapter_share_one_catalog(
     unified = video_import_api.visual_sequences("demo")
     legacy = video_import_api.image_sets("demo")
 
-    assert unified == {"visualSequences": catalog, "sets": catalog}
-    assert legacy == {"sets": catalog}
+    assert unified == {"visualSequences": catalog, "sets": catalog, "unavailableStorage": []}
+    assert legacy == {"sets": catalog, "unavailableStorage": []}
     assert unified["visualSequences"] is unified["sets"]
 
 
 def test_transform_manifest_exposes_visual_group_hypotheses(tmp_path: Path) -> None:
-    unit = tmp_path / "data" / "recordings" / "demo" / "run" / "0"
+    unit = tmp_path / "data" / "omega_vision" / "recordings" / "demo" / "run" / "0"
     output = unit / "parts_extraction_0" / "python_opencv"
     output.mkdir(parents=True)
     (unit / "todos.json").write_text(json.dumps({
@@ -164,7 +164,7 @@ def test_legacy_opencv_evidence_adapts_to_visual_group_peers() -> None:
 def test_legacy_group_aliases_normalize_to_w_without_rewriting_source(
     tmp_path: Path,
 ) -> None:
-    unit = tmp_path / "data" / "legacy" / "frame_000000"
+    unit = tmp_path / "data" / "omega_vision" / "legacy" / "frame_000000"
     output = unit / "parts_grouping_0" / "group_regions_prolog"
     output.mkdir(parents=True)
     legacy_source = (
@@ -284,7 +284,7 @@ def test_group_acceptance_transform_writes_distinct_final_g_facts(
 
 
 def test_transform_manifest_exposes_final_group_acceptance(tmp_path: Path) -> None:
-    unit = tmp_path / "data" / "final" / "frame_000000"
+    unit = tmp_path / "data" / "omega_vision" / "final" / "frame_000000"
     output = unit / "group_acceptance_0" / "group_acceptance_prolog"
     output.mkdir(parents=True)
     accepted = [{
@@ -362,7 +362,7 @@ def test_former_builtin_pipeline_templates_upgrade_to_opencv_only(
     tmp_path: Path,
     pipeline: list[dict],
 ) -> None:
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     template.write_text(json.dumps({
         "pipeline": pipeline,
@@ -407,13 +407,13 @@ def test_former_builtin_pipeline_templates_upgrade_to_opencv_only(
         step["transformation"] == "parts_debug_0"
         for step in upgraded
     ) == 1
-    assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == upgraded
+    assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == pipeline
 
 
 def test_customized_same_key_pipeline_is_not_migrated(tmp_path: Path) -> None:
     custom = video_import_api._former_default_pipeline([("python_opencv", 10)])
     custom[2]["options"] = {"strongEdgeMin": 99}
-    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template = video_import_api._safe_workspace_child(tmp_path, video_import_api._PIPELINE_TEMPLATE_REL)
     template.parent.mkdir(parents=True)
     template.write_text(json.dumps({"pipeline": custom}), encoding="utf-8")
 
@@ -427,7 +427,7 @@ def test_merge_todos_removes_manual_extractors_and_retargets_dependencies(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    set_dir = tmp_path / "image_set"
+    set_dir = tmp_path / "data" / "omega_vision" / "curated" / "image_set"
     pool = set_dir / "pool"
     pool.mkdir(parents=True)
     Image.new("RGB", (2, 2), "white").save(pool / "a.png")
@@ -517,7 +517,7 @@ def test_fresh_todos_reset_only_requested_preview_units(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    set_dir = tmp_path / "image_set"
+    set_dir = tmp_path / "data" / "omega_vision" / "curated" / "image_set"
     pool = set_dir / "pool"
     pool.mkdir(parents=True)
     for stem in ("a", "b"):
@@ -602,7 +602,7 @@ def test_page_state_shards_heavy_collections_and_hydrates_them(
     )
 
     manifest = json.loads(Path(saved["path"]).read_text(encoding="utf-8"))
-    assert Path(saved["path"]).parent == tmp_path / "data" / "video_import"
+    assert Path(saved["path"]).parent == tmp_path / "data" / "omega_vision" / "video_import"
     assert "memberInventories" not in manifest
     assert "modelResponseCache" not in manifest
     assert manifest["stateShards"] == video_import_api._PAGE_STATE_SHARDS
@@ -727,14 +727,14 @@ def test_planner_number_preview_and_outliner_trace_verification(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
-    source_path = tmp_path / "data" / "input.png"
+    source_path = tmp_path / "data" / "omega_vision" / "curated" / "input.png"
     source_path.parent.mkdir(parents=True)
     Image.new("RGB", (100, 100), "white").save(source_path)
 
     planner = video_import_api.planner_visualization(
         {
             "workspaceId": "test",
-            "image": "data/input.png",
+            "image": "data/curated/input.png",
             "labels": [
                 {"object": "square", "number": 1, "point": [50, 50]},
                 {"object": "corner", "number": 2, "point": [10, 10]},
@@ -742,8 +742,8 @@ def test_planner_number_preview_and_outliner_trace_verification(
         }
     )
     assert planner["labels"][0]["number"] == 1
-    assert (tmp_path / planner["visualizationImage"]).is_file()
-    assert (tmp_path / planner["provenance"]).is_file()
+    assert video_import_api._safe_workspace_child(tmp_path, planner["visualizationImage"]).is_file()
+    assert video_import_api._safe_workspace_child(tmp_path, planner["provenance"]).is_file()
 
     polygon = [[20, 20], [80, 20], [80, 80], [20, 80]]
     trace = [
@@ -756,7 +756,7 @@ def test_planner_number_preview_and_outliner_trace_verification(
     verification = video_import_api.outline_verification(
         {
             "workspaceId": "test",
-            "image": "data/input.png",
+            "image": "data/curated/input.png",
             "name": "square",
             "polygons": [polygon],
             "holes": [],
@@ -767,16 +767,16 @@ def test_planner_number_preview_and_outliner_trace_verification(
     assert verification["verified"] is True
     assert verification["traceAgreement"] >= 0.7
     assert verification["boundaryCoverage"] >= 0.45
-    assert (tmp_path / verification["verificationImage"]).is_file()
+    assert video_import_api._safe_workspace_child(tmp_path, verification["verificationImage"]).is_file()
 
     cut = video_import_api.member_cut(
         {
             "workspaceId": "test",
-            "image": "data/input.png",
+            "image": "data/curated/input.png",
             "name": "square",
             "step": 1,
             "polygons": [polygon],
-            "outlineSourceImage": "data/input.png",
+            "outlineSourceImage": "data/curated/input.png",
             "outlineSourceDimensions": {"width": 100, "height": 100},
             "outlineVerificationImage": verification["verificationImage"],
             "outlineGeometryHash": verification["geometryHash"],
@@ -789,7 +789,7 @@ def test_planner_number_preview_and_outliner_trace_verification(
         video_import_api.outline_verification(
             {
                 "workspaceId": "test",
-                "image": "data/input.png",
+                "image": "data/curated/input.png",
                 "name": "wrong",
                 "polygons": [polygon],
                 "traceTurtle": [
@@ -815,7 +815,7 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
     with pytest.raises(video_import_api.HTTPException, match="sourceUrl must use"):
         video_import_api._stream_source_url("file:///private/video.mp4")
 
-    recording = tmp_path / "data" / "Recordings" / "game-one" / "saved_001"
+    recording = tmp_path / "data" / "omega_vision" / "Recordings" / "game-one" / "saved_001"
     (recording / "0").mkdir(parents=True)
     (recording / "1").mkdir()
     moves = [
@@ -841,14 +841,14 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
             ),
             encoding="utf-8",
         )
-    curated = tmp_path / "data" / "curated" / "curated_game"
+    curated = tmp_path / "data" / "omega_vision" / "curated" / "curated_game"
     curated.mkdir(parents=True)
     Image.new("RGB", (10, 10), "green").save(curated / "frame_10.png")
     Image.new("RGB", (10, 10), "yellow").save(curated / "frame_2.png")
 
     listing = video_import_api.list_arc_recordings("test")["recordings"]
     assert listing[0]["frames"] == 3
-    assert listing[0]["path"].startswith("data/recordings/")
+    assert listing[0]["path"].lower().startswith("data/recordings/")
     imported = video_import_api.import_arc_recording(
         {
             "workspaceId": "test",
@@ -856,15 +856,15 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
         }
     )
     assert len(imported["frames"]) == 3
-    assert imported["frames"][0]["path"].startswith("data/arc_recordings/")
+    assert imported["frames"][0]["path"].startswith("data/recordings/")
     root_provenance = json.loads(
-        (tmp_path / imported["frames"][0]["provenance"]).read_text(encoding="utf-8")
+        video_import_api._safe_workspace_child(tmp_path, imported["frames"][0]["provenance"]).read_text(encoding="utf-8")
     )
     first_move_provenance = json.loads(
-        (tmp_path / imported["frames"][1]["provenance"]).read_text(encoding="utf-8")
+        video_import_api._safe_workspace_child(tmp_path, imported["frames"][1]["provenance"]).read_text(encoding="utf-8")
     )
     second_move_provenance = json.loads(
-        (tmp_path / imported["frames"][2]["provenance"]).read_text(encoding="utf-8")
+        video_import_api._safe_workspace_child(tmp_path, imported["frames"][2]["provenance"]).read_text(encoding="utf-8")
     )
     assert root_provenance["source"]["moveList"] == []
     assert first_move_provenance["source"]["moveList"] == moves[:1]
@@ -883,7 +883,7 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
         {"workspaceId": "test", "source": curated_sources[0]["path"]}
     )
     assert len(curated_import["frames"]) == 2
-    assert curated_import["frames"][0]["path"].startswith("data/curated_data/")
+    assert curated_import["frames"][0]["path"].startswith("data/curated/curated_data/")
 
     archive_buffer = io.BytesIO()
     with zipfile.ZipFile(archive_buffer, "w") as archive:
@@ -898,9 +898,9 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
         archive_buffer,
     )
     assert len(archive_import["frames"]) == 2
-    assert archive_import["frames"][0]["path"].startswith("data/image_archives/")
+    assert archive_import["frames"][0]["path"].startswith("data/curated/image_archives/")
     archive_provenance = json.loads(
-        (tmp_path / archive_import["frames"][0]["provenance"]).read_text(encoding="utf-8")
+        video_import_api._safe_workspace_child(tmp_path, archive_import["frames"][0]["provenance"]).read_text(encoding="utf-8")
     )
     assert archive_provenance["source"]["archiveName"] == "sequence.zip"
     assert archive_provenance["source"]["archiveEntry"] == "frames/001.png"
@@ -911,14 +911,14 @@ def test_turtle_leaf_program_is_safely_rendered_and_linked_to_provenance(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(video_import_api, "_workspace_root", lambda _: tmp_path)
-    source_path = tmp_path / "data" / "leaf.png"
+    source_path = tmp_path / "data" / "omega_vision" / "curated" / "leaf.png"
     source_path.parent.mkdir(parents=True)
     Image.new("RGBA", (40, 20), (0, 0, 0, 0)).save(source_path)
 
     result = video_import_api.turtle_render(
         {
             "workspaceId": "test",
-            "sourceImage": "data/leaf.png",
+            "sourceImage": "data/curated/leaf.png",
             "subjectName": "red leaf",
             "modelId": "test-model",
             "prompt": "draw it",
@@ -934,19 +934,19 @@ def test_turtle_leaf_program_is_safely_rendered_and_linked_to_provenance(
         }
     )
 
-    assert result["programPath"] == "data/leaf.turtle.json"
-    assert result["renderedImage"] == "data/leaf.turtle.png"
-    rendered = Image.open(tmp_path / result["renderedImage"]).convert("RGBA")
+    assert result["programPath"] == "data/curated/leaf.turtle.json"
+    assert result["renderedImage"] == "data/curated/leaf.turtle.png"
+    rendered = Image.open(video_import_api._safe_workspace_child(tmp_path, result["renderedImage"])).convert("RGBA")
     assert rendered.size == (40, 20)
     assert rendered.getpixel((20, 10))[3] == 255
-    program = json.loads((tmp_path / result["programPath"]).read_text(encoding="utf-8"))
+    program = json.loads(video_import_api._safe_workspace_child(tmp_path, result["programPath"]).read_text(encoding="utf-8"))
     assert program["kind"] == "turtle_program"
-    assert program["sourceImage"] == "data/leaf.png"
-    source_provenance = json.loads((tmp_path / "data" / "leaf.provenance.json").read_text(encoding="utf-8"))
+    assert program["sourceImage"] == "data/curated/leaf.png"
+    source_provenance = json.loads((tmp_path / "data" / "omega_vision" / "curated" / "leaf.provenance.json").read_text(encoding="utf-8"))
     assert source_provenance["terminal"]["renderedImage"] == result["renderedImage"]
-    render_provenance = json.loads((tmp_path / result["provenance"]).read_text(encoding="utf-8"))
+    render_provenance = json.loads(video_import_api._safe_workspace_child(tmp_path, result["provenance"]).read_text(encoding="utf-8"))
     assert render_provenance["operation"] == "render_turtle_program"
-    assert render_provenance["parent"]["image"] == "data/leaf.png"
+    assert render_provenance["parent"]["image"] == "data/curated/leaf.png"
 
 
 def test_member_cut_preserves_precise_multipart_alpha_and_holes(
@@ -954,7 +954,7 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(video_import_api, "_workspace_root", lambda _: tmp_path)
-    image_path = tmp_path / "data" / "input.png"
+    image_path = tmp_path / "data" / "omega_vision" / "curated" / "input.png"
     image_path.parent.mkdir(parents=True)
     image = Image.new("RGB", (40, 40), "white")
     draw = ImageDraw.Draw(image)
@@ -965,7 +965,7 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
     result = video_import_api.member_cut(
         {
             "workspaceId": "test",
-            "image": "data/input.png",
+            "image": "data/curated/input.png",
             "name": "multipart",
             "step": 1,
             "fill": "hole",
@@ -988,14 +988,14 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
     assert result["nextPassProvenance"].endswith(".provenance.json")
     assert result["sceneProvenance"].endswith(".provenance.json")
 
-    cutout_provenance = json.loads((tmp_path / result["cutoutProvenance"]).read_text(encoding="utf-8"))
+    cutout_provenance = json.loads(video_import_api._safe_workspace_child(tmp_path, result["cutoutProvenance"]).read_text(encoding="utf-8"))
     assert cutout_provenance["operation"] == "extract_object_cutout"
-    assert cutout_provenance["root"]["firstSeenImage"] == "data/input.png"
+    assert cutout_provenance["root"]["firstSeenImage"] == "data/curated/input.png"
     assert cutout_provenance["originalDimensions"] == {"width": 40, "height": 40}
-    assert cutout_provenance["parent"]["image"] == "data/input.png"
+    assert cutout_provenance["parent"]["image"] == "data/curated/input.png"
     assert cutout_provenance["transform"]["cropBox"] == result["box"]
 
-    next_pass_provenance = json.loads((tmp_path / result["nextPassProvenance"]).read_text(encoding="utf-8"))
+    next_pass_provenance = json.loads(video_import_api._safe_workspace_child(tmp_path, result["nextPassProvenance"]).read_text(encoding="utf-8"))
     assert next_pass_provenance["parent"]["image"] == result["cutout"]
     assert next_pass_provenance["transform"]["sourceDimensions"] == {
         "width": cutout_provenance["dimensions"]["width"],
@@ -1004,27 +1004,27 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
     assert next_pass_provenance["transform"]["scale"] == result["nextPassScale"]
     assert len(next_pass_provenance["lineage"]) == 3
 
-    source_provenance = tmp_path / "data" / "input.provenance.json"
+    source_provenance = tmp_path / "data" / "omega_vision" / "curated" / "input.provenance.json"
     assert source_provenance.is_file()
 
     x0, y0, _, _ = result["box"]
-    cutout = Image.open(tmp_path / result["cutout"]).convert("RGBA")
+    cutout = Image.open(video_import_api._safe_workspace_child(tmp_path, result["cutout"])).convert("RGBA")
     alpha = cutout.getchannel("A")
     assert alpha.getpixel((7 - x0, 7 - y0)) >= 250
     assert alpha.getpixel((12 - x0, 12 - y0)) <= 5
     assert alpha.getpixel((30 - x0, 15 - y0)) >= 250
     assert any(0 < value < 255 for value in alpha.getdata())
-    next_pass = Image.open(tmp_path / result["nextPassImage"]).convert("RGBA")
+    next_pass = Image.open(video_import_api._safe_workspace_child(tmp_path, result["nextPassImage"])).convert("RGBA")
     assert max(next_pass.size) > 640
 
-    scene = Image.open(tmp_path / result["scene"]).convert("RGBA")
+    scene = Image.open(video_import_api._safe_workspace_child(tmp_path, result["scene"])).convert("RGBA")
     assert scene.getpixel((7, 7))[3] == 0
     assert scene.getpixel((12, 12))[3] == 255
 
     compact = video_import_api.member_cut(
         {
             "workspaceId": "test",
-            "image": "data/input.png",
+            "image": "data/curated/input.png",
             "name": "compact",
             "step": 2,
             "fill": "hole",
@@ -1040,12 +1040,12 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
     inpainted = video_import_api.member_cut(
         {
             "workspaceId": "test",
-            "image": "data/input.png",
+            "image": "data/curated/input.png",
             "name": "red rectangle",
             "step": 3,
             "fill": "inpaint",
             "box": [5, 5, 20, 30],
-            "outlineSourceImage": "data/input.png",
+            "outlineSourceImage": "data/curated/input.png",
             "outlineSourceDimensions": {"width": 40, "height": 40},
             "fillInstructions": {
                 "description": "continue the surrounding white background",
@@ -1053,11 +1053,11 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
             },
         }
     )
-    inpainted_scene = Image.open(tmp_path / inpainted["scene"]).convert("RGB")
+    inpainted_scene = Image.open(video_import_api._safe_workspace_child(tmp_path, inpainted["scene"])).convert("RGB")
     assert all(channel >= 240 for channel in inpainted_scene.getpixel((10, 15)))
     assert inpainted["fillInstructions"]["description"] == "continue the surrounding white background"
     assert inpainted["outlineAlignment"]["verified"] is True
-    inpainted_provenance = json.loads((tmp_path / inpainted["sceneProvenance"]).read_text(encoding="utf-8"))
+    inpainted_provenance = json.loads(video_import_api._safe_workspace_child(tmp_path, inpainted["sceneProvenance"]).read_text(encoding="utf-8"))
     assert inpainted_provenance["transform"]["fill"] == "inpaint"
     assert inpainted_provenance["transform"]["fillInstructions"]["colors"] == ["#ffffff"]
 
@@ -1077,7 +1077,7 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
     generated = video_import_api.member_cut(
         {
             "workspaceId": "test",
-            "image": "data/input.png",
+            "image": "data/curated/input.png",
             "name": "generated background",
             "step": 4,
             "fill": "inpaint",
@@ -1086,12 +1086,12 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
             "fillInstructions": {"description": "continue the scene"},
         }
     )
-    generated_scene = Image.open(tmp_path / generated["scene"]).convert("RGB")
+    generated_scene = Image.open(video_import_api._safe_workspace_child(tmp_path, generated["scene"])).convert("RGB")
     assert generated_scene.getpixel((10, 15)) == (0, 255, 0)
     assert generated_scene.getpixel((0, 0)) == (255, 255, 255)
     assert generated["fillRenderer"] == "model_image_edit"
     assert generated["imageGeneration"]["modelId"] == "generic-image-model"
-    generated_provenance = json.loads((tmp_path / generated["sceneProvenance"]).read_text(encoding="utf-8"))
+    generated_provenance = json.loads(video_import_api._safe_workspace_child(tmp_path, generated["sceneProvenance"]).read_text(encoding="utf-8"))
     assert generated_provenance["transform"]["imageGeneration"]["renderer"] == "model_image_edit"
 
     descendant = video_import_api.member_cut(
@@ -1102,24 +1102,24 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
             "step": 5,
             "fill": "median",
             "box": [25, 10, 35, 20],
-            "outlineSourceImage": "data/input.png",
+            "outlineSourceImage": "data/curated/input.png",
             "outlineSourceDimensions": {"width": 40, "height": 40},
         }
     )
     assert descendant["outlineAlignment"]["verified"] is True
-    assert descendant["outlineAlignment"]["outlineSourceImage"] == "data/input.png"
+    assert descendant["outlineAlignment"]["outlineSourceImage"] == "data/curated/input.png"
 
-    wrong_size_path = tmp_path / "data" / "wrong-size.png"
+    wrong_size_path = tmp_path / "data" / "omega_vision" / "curated" / "wrong-size.png"
     Image.new("RGB", (20, 20), "white").save(wrong_size_path)
     with pytest.raises(video_import_api.HTTPException, match="Outliner coordinate space is 20x20") as mismatch:
         video_import_api.member_cut(
             {
                 "workspaceId": "test",
-                "image": "data/input.png",
+                "image": "data/curated/input.png",
                 "name": "misaligned",
                 "step": 6,
                 "box": [5, 5, 20, 20],
-                "outlineSourceImage": "data/wrong-size.png",
+                "outlineSourceImage": "data/curated/wrong-size.png",
                 "outlineSourceDimensions": {"width": 20, "height": 20},
             }
         )
@@ -1129,11 +1129,11 @@ def test_member_cut_preserves_precise_multipart_alpha_and_holes(
         video_import_api.member_cut(
             {
                 "workspaceId": "test",
-                "image": "data/input.png",
+                "image": "data/curated/input.png",
                 "name": "outside",
                 "step": 7,
                 "polygon": [[5, 5], [41, 5], [5, 20]],
-                "outlineSourceImage": "data/input.png",
+                "outlineSourceImage": "data/curated/input.png",
                 "outlineSourceDimensions": {"width": 40, "height": 40},
             }
         )

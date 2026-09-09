@@ -41,7 +41,11 @@ def test_concurrent_pooler_never_runs_debug_before_turtle(
         ("parts_debug_0", "python_pil"),
         debug_runner,
     )
-    unit = {"id": "frame", "dir": tmp_path, "image": None}
+    workspace = tmp_path
+    tmp_path = workspace / "data" / "omega_vision" / "curated" / "frame"
+    tmp_path.mkdir(parents=True)
+    monkeypatch.setattr(video_import_api, "_workspace_root", lambda _: workspace)
+    unit = {"id": "frame", "dir": tmp_path, "image": None, "workspaceId": "fixture"}
     pipeline = [
         {
             "transformation": "turtle_programs",

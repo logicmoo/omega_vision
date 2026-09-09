@@ -48,11 +48,29 @@ _PYTHON_ROOT = _REPO_ROOT / "python"
 from omega_vision.inherited_source_overlay import (  # noqa: E402
     data_homes as _data_homes,
     data_rel_of as _data_rel_of,
-    resolve_workspace_child as _safe_workspace_child,
+    resolve_workspace_child as _resolve_workspace_child,
     vision_data_root as _vision_data_root,
+    storage_path as _storage_path, shared_storage_path as _shared_storage_path,
+    authorize_storage_path as _authorize_storage_path,
+    require_sequence_write as _require_sequence_write, sequence_writable as _sequence_writable,
 )
 
-_THUMBNAIL_CACHE_DIR = Path(__file__).resolve().parent / "environment_thumbnails"
+_THUMBNAIL_CACHE_DIR: Path | None = None
+
+
+def _safe_workspace_child(root: Path, relative: str) -> Path:
+    try:
+        return _authorize_storage_path(_resolve_workspace_child(root, relative))
+    except PermissionError as error:
+        raise ValueError(str(error)) from error
+
+
+def _writable_game_dirs(root: Path, game_id: str | None) -> list[Path]:
+    directories = _game_dirs_for(root, _game_slug(game_id)) if game_id else _all_game_dirs(root)
+    try:
+        return [_require_sequence_write(root, directory) for directory in directories]
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 _THUMBNAIL_SCALE = 4
 
 _engine_lock = threading.Lock()
@@ -170,62 +188,9 @@ def _is_same_dir(a: Path, b: Path) -> bool:
 
 
 def _migrate_arc3_games_root(root: Path) -> Path:
-    """Merge every legacy container up into the flat data layout.
-
-    Canonical layout is flat under the vision data root: recordings/,
-    importables/, curated/, video/, arc_recordings/, curated_data/, ...
-    Legacy layouts (arc3_games/{recordings,importables,curated}, Recordings/,
-    vision_frames/*) are merged into their flat successors on first touch,
-    then stale path tokens inside manifests are rewritten."""
-    resolved_root = root.resolve()
-    data_root = _vision_data_root(root)
-    recordings = data_root / "recordings"
-    with _data_layout_lock:
-        if resolved_root in _migrated_arc3_roots:
-            return recordings
-        moves = (
-            (data_root / "Recordings", recordings),
-            (data_root / "arc3_games" / "recordings", recordings),
-            (data_root / "arc3_games" / "importables", data_root / "importables"),
-            (data_root / "arc3_games" / "curated", data_root / "curated"),
-            (data_root / "vision_frames" / "video", data_root / "video"),
-            (data_root / "vision_frames" / "arc_recordings", data_root / "arc_recordings"),
-            (data_root / "vision_frames" / "curated_data", data_root / "curated_data"),
-            (data_root / "vision_frames" / "image_archives", data_root / "image_archives"),
-            (data_root / "vision_frames" / "recognition_inputs", data_root / "recognition_inputs"),
-            (data_root / "vision_frames" / "live_streams", data_root / "live_streams"),
-        )
-        for source, destination in moves:
-            if not source.is_dir():
-                continue
-            if _is_same_dir(source, destination):
-                # Case-insensitive filesystems: the legacy spelling (e.g.
-                # Recordings) IS the canonical dir -- fix the case in place.
-                if source.resolve().name != destination.name:
-                    source.rename(destination)
-                continue
-            if destination.exists():
-                _merge_legacy_tree(source, destination)
-            else:
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                source.rename(destination)
-        for container in (data_root / "arc3_games", data_root / "vision_frames"):
-            if container.is_dir() and not any(container.iterdir()):
-                container.rmdir()
-        recordings.mkdir(parents=True, exist_ok=True)
-        for pattern in ("recording.json", "savepoints.json", "state.json"):
-            for base in (recordings, data_root / "importables", data_root / "curated"):
-                if not base.is_dir():
-                    continue
-                for path in base.rglob(pattern):
-                    source = path.read_text(encoding="utf-8")
-                    migrated = source
-                    for old, new in _LEGACY_PATH_REWRITES:
-                        migrated = migrated.replace(old, new)
-                    if migrated != source:
-                        path.write_text(migrated, encoding="utf-8")
-        _migrated_arc3_roots.add(resolved_root)
-    return recordings
+    """Compatibility name only: layout lookup must never migrate operator data."""
+    from omega_vision.inherited_source_overlay import storage_path
+    return storage_path(root, "recordings")
 
 
 def _importables_container(root: Path) -> Path:
@@ -275,7 +240,7 @@ def _games_container(root: Path) -> Path:
 def _game_write_dir(root: Path, game_dir: str) -> Path:
     """Where a specific game's new recordings/savepoints are written."""
     _migrate_arc3_games_root(root)
-    return _games_container(root) / game_dir
+    return _storage_path(root, "recordings", game_dir)
 
 
 def _game_dirs_for(root: Path, game_dir: str) -> list[Path]:
@@ -527,7 +492,7 @@ class PlaySession:
                 game_id=self.game_id,
                 render_mode=None,
                 capture_terminal=True,
-                tree_root=workspace_root / "runtime" / "states" / "play_action_trees",
+                tree_root=_storage_path(workspace_root, "runtime", "states", "play_action_trees"),
             )
         self.level_dirs: list[Path] = []
         self.moves: list[dict[str, Any]] = []
@@ -551,7 +516,8 @@ class PlaySession:
         the custom override if one was set, else the default
         data/recordings/<game>/ location."""
         if self.recordings_root is not None:
-            return self.recordings_root
+            from omega_vision.inherited_source_overlay import require_sequence_write
+            return require_sequence_write(self.workspace_root, self.recordings_root)
         return _game_write_dir(self.workspace_root, self.game_dir)
 
     def set_recordings_path(self, relative_path: str | None) -> None:
@@ -563,6 +529,8 @@ class PlaySession:
             self.recordings_root = None
             return
         resolved = _safe_workspace_child(self.workspace_root, relative_path.strip())
+        from omega_vision.inherited_source_overlay import require_sequence_write
+        require_sequence_write(self.workspace_root, resolved)
         resolved.mkdir(parents=True, exist_ok=True)
         self.recordings_root = resolved
 
@@ -1017,7 +985,8 @@ def _find_game(game_id: str) -> dict[str, Any] | None:
 
 def _thumbnail_path(short_id: str) -> Path:
     safe = re.sub(r"[^A-Za-z0-9_.-]", "_", short_id) or "unknown"
-    return _THUMBNAIL_CACHE_DIR / f"{safe}.png"
+    directory = _THUMBNAIL_CACHE_DIR or _shared_storage_path(".cache", "environment_thumbnails")
+    return _authorize_storage_path(directory / f"{safe}.png")
 
 
 def _render_game_preview_png(full_game_id: str) -> bytes:
@@ -1144,7 +1113,7 @@ def list_savepoints(workspaceId: str, gameId: str | None = None) -> dict[str, An
                 )
                 level_directory = entry.get("level_directory")
                 summary["absolute_directory"] = (
-                    str(root / str(level_directory)) if level_directory else str(directory / "savepoints.json")
+                    str(_safe_workspace_child(root, str(level_directory))) if level_directory else str(directory / "savepoints.json")
                 )
                 entries.append(summary)
     entries.sort(key=lambda entry: str(entry.get("created_at") or ""), reverse=True)
@@ -1182,7 +1151,7 @@ def _dedupe_savepoints_in(path: Path) -> int:
 @router.post("/savepoints/dedupe")
 def dedupe_savepoints(workspaceId: str, gameId: str | None = None) -> dict[str, Any]:
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     removed = 0
     with _savepoints_lock:
         for directory in directories:
@@ -1204,7 +1173,7 @@ def read_savepoint(savepoint_id: str, workspaceId: str, gameId: str | None = Non
 @router.delete("/savepoints/{savepoint_id}")
 def delete_savepoint(savepoint_id: str, workspaceId: str, gameId: str | None = None) -> dict[str, Any]:
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     with _savepoints_lock:
         for directory in directories:
             path = directory / "savepoints.json"
@@ -1222,7 +1191,7 @@ def delete_savepoint(savepoint_id: str, workspaceId: str, gameId: str | None = N
 @router.post("/savepoints/{savepoint_id}/duplicate", status_code=201)
 def duplicate_savepoint(savepoint_id: str, workspaceId: str, gameId: str | None = None) -> dict[str, Any]:
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     with _savepoints_lock:
         for directory in directories:
             path = directory / "savepoints.json"
@@ -2335,6 +2304,11 @@ def list_recording_dirs(workspaceId: str, gameId: str | None = None) -> dict[str
                             "avgMoveDirFiles": stats["avgMoveDirFiles"],
                         }
                     )
+    for item in entries:
+        readonly = not _sequence_writable(root, Path(item["absolutePath"]))
+        item.update(readOnly=readonly, migrationRequired=readonly)
+        if readonly:
+            item["name"] += " (read-only; migration required)"
     entries.sort(key=lambda item: (str(item.get("gameDirectory") or ""), str(item.get("name") or "")))
     return {"recordingDirs": entries, "count": len(entries)}
 
@@ -2346,7 +2320,10 @@ def _recording_dir_of(root: Path, rel_path: str) -> Path:
         raise HTTPException(status_code=400, detail="path must live inside the workspace") from error
     if not target.is_dir() or not _looks_like_image_set_dir(target):
         raise HTTPException(status_code=404, detail="not a recording/image-set directory")
-    return target
+    try:
+        return _require_sequence_write(root, target)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
 
 
 @router.post("/recording-dirs/movelist")
@@ -2507,7 +2484,7 @@ def _rewrite_recording_references(root: Path, game_root: Path, rename_map: dict[
     matching level_directory/replay_log[].directory in that game's
     savepoints.json."""
     for new_rel in rename_map.values():
-        manifest_path = root / new_rel / "recording.json"
+        manifest_path = _require_sequence_write(root, _safe_workspace_child(root, new_rel) / "recording.json")
         if not manifest_path.is_file():
             continue
         try:
@@ -2591,7 +2568,7 @@ def _sort_recordings_by_size_in(root: Path, game_root: Path) -> list[tuple[str, 
 @router.post("/recordings/sort-by-size")
 def sort_recordings_by_size(workspaceId: str, gameId: str | None = None) -> dict[str, Any]:
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     renamed: list[dict[str, str]] = []
     for directory in directories:
         if directory.is_dir():
@@ -2609,7 +2586,7 @@ def retain_largest_recordings(workspaceId: str, keep: int, gameId: str | None = 
     if keep < 0:
         raise HTTPException(status_code=400, detail="keep must be >= 0")
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     removed: list[str] = []
     for game_root in directories:
         if not game_root.is_dir():
@@ -2631,7 +2608,7 @@ def clear_recordings(workspaceId: str, gameId: str | None = None) -> dict[str, A
     switch turns off) so cleared dirs are not immediately recreated; the
     Begin-recording control re-attaches it."""
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     removed: list[str] = []
     for game_root in directories:
         if not game_root.is_dir():
@@ -2644,7 +2621,7 @@ def clear_recordings(workspaceId: str, gameId: str | None = None) -> dict[str, A
     detached: list[str] = []
     wanted_dir = _game_slug(gameId) if gameId else None
     for session in sessions:
-        if session.closed or session.workspace_id != workspaceId:
+        if session.closed or _vision_data_root(session.workspace_root) != _vision_data_root(root):
             continue
         if wanted_dir and session.game_dir != wanted_dir:
             continue
@@ -2658,7 +2635,7 @@ def clear_savepoints(workspaceId: str, gameId: str | None = None) -> dict[str, A
     """Delete EVERY MOVE-LIST (savepoint) for the targeted game(s). Does not
     touch Recording directories; see /recordings/clear for that."""
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     removed = 0
     for game_root in directories:
         savepoints_path = game_root / "savepoints.json"
@@ -2743,7 +2720,7 @@ def import_movelists_from_recordings(workspaceId: str, gameId: str | None = None
     """MOVE-LISTS panel's "Import All Recordings' Moves": scan every Recording
     directory and create a MOVE-LIST for any that doesn't already have one."""
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     created = 0
     for directory in directories:
         if directory.is_dir():
@@ -2766,7 +2743,7 @@ def materialize_movelists(workspaceId: str, gameId: str | None = None, maxMoves:
     "remaining" count is >0 when there's more to do -- call again to
     continue) instead of one request blocking for an unbounded time."""
     root = _workspace_root(workspaceId)
-    directories = _game_dirs_for(root, _game_slug(gameId)) if gameId else _all_game_dirs(root)
+    directories = _writable_game_dirs(root, gameId)
     materialized: list[dict[str, str]] = []
     budget = max(1, maxMoves)
     remaining = 0
@@ -2778,7 +2755,7 @@ def materialize_movelists(workspaceId: str, gameId: str | None = None, maxMoves:
             entries = _load_savepoints(savepoints_path)
         for entry in entries:
             level_directory = entry.get("level_directory")
-            if level_directory and (root / level_directory).is_dir():
+            if level_directory and _safe_workspace_child(root, level_directory).is_dir():
                 continue  # already materialized on disk
             replay_log = entry.get("replay_log") or []
             if not replay_log:
@@ -2929,11 +2906,11 @@ def silo_write(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="content must be a string")
     root = _workspace_root(workspace_id)
     try:
-        directory = _safe_workspace_child(root, directory_rel)
+        directory = _require_sequence_write(root, _safe_workspace_child(root, directory_rel))
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     directory.mkdir(parents=True, exist_ok=True)
-    target = directory / name
+    target = _require_sequence_write(root, directory / name)
     target.write_text(content, encoding="utf-8")
     return {"path": _data_rel_of(root, target), "bytes": len(content.encode("utf-8"))}
 
