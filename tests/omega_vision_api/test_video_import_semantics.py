@@ -811,6 +811,29 @@ def test_event_candidate_induction_evaluation_promotion_and_rejection(workspace)
     assert candidate_id not in replay["learned_rule_replay"]["accepted_detectors"]
 
 
+def test_memory_setup_explicit_refresh_rebuilds_metadata_without_saving_preferences(workspace, monkeypatch):
+    from omega_vision.perception.memory_locations import MemoryLocations
+    root, client = workspace
+    units = make_sequence(root, count=1)
+    calls = []
+    original = MemoryLocations._discovered
+
+    def track(self, mount, **kwargs):
+        calls.append(mount.root)
+        yield from original(self, mount, **kwargs)
+
+    monkeypatch.setattr(MemoryLocations, "_discovered", track)
+    body = {"workspaceId": "test", "sequenceId": units[0]["sequenceId"]}
+    assert client.post("/semantic/memory/setup", json=body).status_code == 200
+    initial = len(calls)
+    assert client.post("/semantic/memory/setup", json=body).status_code == 200
+    assert len(calls) == initial
+    assert client.post("/semantic/memory/setup", json={**body, "refresh": True}).status_code == 200
+    assert len(calls) > initial
+    assert client.post("/semantic/memory/setup", json={**body, "refresh": "true"}).status_code == 422
+    assert not (root / "runtime" / "memory-settings").exists()
+
+
 def test_memory_contract_independent_destinations_and_browser_volatile(workspace):
     root, client = workspace
     units = make_sequence(root, count=1)

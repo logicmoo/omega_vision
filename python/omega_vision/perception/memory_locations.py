@@ -33,6 +33,7 @@ from uuid import uuid4
 
 from omega_vision.perception._event_journal import atomic_json, writer_lock
 from omega_vision.perception.observation_identity import content_hash
+from omega_vision.perception.memory_catalog_cache import catalog_metadata, invalidate_memory_catalog
 
 
 NOWHERE = "memory-nowhere"
@@ -472,7 +473,7 @@ class MemoryLocations:
         self._safe(root, root.root)
         for directory, children, files in os.walk(root.root, followlinks=False, onerror=failed):
             path = Path(directory)
-            children[:] = sorted(name for name in children if name not in {".git", "node_modules", ".venv", "__pycache__"}
+            children[:] = sorted(name for name in children if name not in {".git", ".cache", "node_modules", ".venv", "__pycache__"}
                                  and not (path / name).is_symlink() and not (path / name).is_junction())
             parts = path.relative_to(root.root).parts
             if effective_context is not None and len(parts) % 2 == 0 and parts[:3] == (
@@ -527,6 +528,10 @@ class MemoryLocations:
                         if index + 1 < len(parts):
                             context[key] = unquote(parts[index + 1])
             if kind:
+                if any(bound is not None and bound != context.get(field) for field, bound in (
+                    ("gameId", root.game_id), ("levelId", root.level_id), ("runId", root.run_id),
+                )):
+                    continue
                 if effective_context is not None and not self._effective({
                     "providerRef": root.provider_ref, "workspaceId": root.workspace_id,
                     "scopeKind": _scope(context), "context": context,
@@ -599,7 +604,54 @@ class MemoryLocations:
             records[record["recordUid"]] = record
         return list(records.values())
 
-    def catalog(self, context: MemoryContext, *, volatile: VolatileMemory | None = None) -> dict[str, Any]:
+    def _catalog_metadata(self, root: AuthorizedMemoryRoot, context: MemoryContext, *,
+                          scoped: bool = False, refresh: bool = False) -> dict[str, Any]:
+        owners = [mount for mount in self.roots if mount.readable and mount.writable
+                  and (mount.provider_ref, mount.workspace_id) == (context.provider_ref, context.workspace_id)
+                  and mount.root.is_dir()]
+        identity = {
+            "root": {**asdict(root), "root": str(root.root)},
+            "scope": asdict(context) if scoped else None,
+            "available": root.root.is_dir(), "readable": os.access(root.root, os.R_OK),
+            "writable": os.access(root.root, os.W_OK),
+        }
+
+        def build():
+            locations, errors = [], []
+            try:
+                for location, path in self._discovered(root, effective_context=context if scoped else None):
+                    try:
+                        records = self._records(root, location, path)
+                    except (OSError, ValueError) as error:
+                        errors.append({"memoryLocationId": location["memoryLocationId"],
+                                       "message": f"Memory records could not be read: {str(error) if isinstance(error, ValueError) else type(error).__name__}"})
+                        continue
+                    kind = location["memoryKinds"][0]
+                    location["counts"][kind] = len({record["conceptUid"] for record in records})
+                    location["versionCount"] = len(records)
+                    location["revision"] = content_hash(sorted(record["revision"] for record in records))
+                    locations.append(location)
+            except (OSError, ValueError) as error:
+                errors.append({"providerRef": root.provider_ref, "workspaceId": root.workspace_id,
+                               "message": f"Memory catalog incomplete: {type(error).__name__}"})
+            return {"locations": locations, "errors": errors}
+
+        if not owners:
+            return build()  # An entirely read-only context cannot publish a cache.
+        owner = owners[0]
+        self._safe(owner, owner.root / ".cache" / "memory-catalog")
+        self._safe(root, root.root / ".cache" / "memory-catalog")
+        return catalog_metadata(owner.root, root.root, identity, build, refresh=refresh)
+
+    def catalog(self, context: MemoryContext, *, volatile: VolatileMemory | None = None,
+                refresh: bool = False) -> dict[str, Any]:
+        if refresh:
+            for root in self.roots:
+                if root.writable and root.readable and root.root.is_dir() and (
+                    root.provider_ref, root.workspace_id
+                ) == (context.provider_ref, context.workspace_id):
+                    self._safe(root, root.root / ".cache" / "memory-catalog")
+                    invalidate_memory_catalog(root.root)
         locations, destinations, errors = {}, {}, []
         for root in self.roots:
             if not root.readable:
@@ -614,23 +666,16 @@ class MemoryLocations:
                 if (root.provider_ref, root.workspace_id) == (context.provider_ref, context.workspace_id):
                     for location, _ in self._destinations(root, context):
                         destinations[location["memoryLocationId"]] = location
-                for location, path in self._discovered(root):
+                metadata = self._catalog_metadata(root, context, refresh=refresh)
+                errors.extend(metadata["errors"])
+                for location in metadata["locations"]:
+                    location = _copy(location)
                     if location["scopeKind"] == "run" and not self._effective(location, context):
                         location["label"] = "Run Memory"
                     if location["format"] == "memory_json":
                         destinations[location["memoryLocationId"]] = location
-                    try:
-                        records = self._records(root, location, path)
-                    except (OSError, ValueError) as error:
-                        errors.append({"memoryLocationId": location["memoryLocationId"],
-                                       "message": f"Memory records could not be read: {str(error) if isinstance(error, ValueError) else type(error).__name__}"})
+                    if not location.get("versionCount"):
                         continue
-                    if not records:
-                        continue
-                    kind = location["memoryKinds"][0]
-                    location["counts"][kind] = len({record["conceptUid"] for record in records})
-                    location["versionCount"] = len(records)
-                    location["revision"] = content_hash(sorted(record["revision"] for record in records))
                     locations[location["memoryLocationId"]] = location
             except (OSError, ValueError) as error:
                 errors.append({"providerRef": root.provider_ref, "workspaceId": root.workspace_id,
@@ -687,9 +732,27 @@ class MemoryLocations:
         for root in self.roots:
             if not root.readable or not root.root.is_dir():
                 continue
-            for location, path in self._discovered(root):
-                if location["memoryLocationId"] == location_id:
-                    return root, location, self._safe(root, path)
+            for cached in self._catalog_metadata(root, context)["locations"]:
+                if cached["memoryLocationId"] != location_id:
+                    continue
+                if any(bound is not None and bound != cached["context"].get(field) for field, bound in (
+                    ("gameId", root.game_id), ("levelId", root.level_id), ("runId", root.run_id),
+                )):
+                    raise PermissionError("cached memory location is outside the authorized scope")
+                path = self._safe(root, Path(cached["pathLabel"]))
+                # Cached discovery is a hint, not authorization. Reconstruct the
+                # ID/capabilities from the current mount before any record access.
+                location = self._location(root, path, cached["memoryKinds"][0],
+                                          cached["context"], cached["format"])
+                if cached.get("recordSelector"):
+                    selector = cached["recordSelector"]
+                    location["memoryLocationId"] = _id("memory-location", [
+                        location["memoryLocationId"], selector["sequenceId"],
+                    ])
+                    location["recordSelector"] = selector
+                if location["memoryLocationId"] != location_id:
+                    raise PermissionError("cached memory location does not match its authorized identity")
+                return root, location, path
         raise PermissionError("memory location is unavailable or not authorized")
 
     def read_selected(self, kind: str, location_ids: Iterable[str], context: MemoryContext, *,
@@ -759,7 +822,12 @@ class MemoryLocations:
             if target.exists() and json.loads(target.read_text(encoding="utf-8")) != record:
                 raise ValueError("immutable memory revision collision")
             if not target.exists():
-                atomic_json(target, record)
+                self._safe(root, root.root / ".cache" / "memory-catalog")
+                invalidate_memory_catalog(root.root)
+                try:
+                    atomic_json(target, record)
+                finally:
+                    invalidate_memory_catalog(root.root)
         payload_revision = content_hash(record["payload"])
         result = {
             "recordUid": _id("memory-record", [destination_id, record["conceptUid"], payload_revision]),
@@ -820,13 +888,9 @@ class MemoryLocations:
             try:
                 for location, _ in self._destinations(mount, context):
                     destinations[location["memoryLocationId"]] = location
-                for location, directory in self._discovered(mount, effective_context=context):
-                    try:
-                        if self._records(mount, location, directory):
-                            effective[location["memoryLocationId"]] = location
-                    except (OSError, ValueError):
-                        # Catalog/explicit reads surface these same errors.
-                        continue
+                for location in self._catalog_metadata(mount, context, scoped=True)["locations"]:
+                    if location.get("versionCount"):
+                        effective[location["memoryLocationId"]] = location
             except (OSError, ValueError):
                 continue
         ordered = sorted(effective.values(), key=lambda item: (

@@ -14,6 +14,33 @@ values here.
 
 ## Current recovery state
 
+- Memory-location metadata JSON cache (2026-09-10, post-reboot): implemented on
+  current main without replaying backups. `.cache/memory-catalog/*.json` contains
+  only authorized location metadata/counts/revisions/errors; Nowhere locations
+  and session counts are added only to each live response. No records, shapes,
+  object payloads, checkpoints or browser snapshots enter this cache.
+  Clean catalog/default-preference reads reuse disk metadata without a tree
+  signature walk. Dirty tokens surround managed memory saves/copies, persistent
+  object/grouping checkpoint publication, and grouping promotion. Scope/mount/
+  capability metadata is part of cache identity; selected paths and capabilities
+  are reconstructed and checked at actual access. Explicit Memory Setup Refresh
+  and 60-second expiry handle external edits/deletes. Atomic publication retains
+  concurrent dirty signals and retries a rebuild invalidated while running.
+  Corrupt entries log a rebuild diagnostic; access failures surface as errors,
+  not a stale success. Defaults remain current-provider/current-scope selections.
+  Focused core/cache/first-plan validation: 52 pass, one permission skip; full
+  API partition: 306 pass; frontend memory/transport tests: 21 pass and build
+  passes. The remaining complete-suite partition is still running.
+  Real main data: isolated cold rebuild 21.992s, warm new-instance read 0.050s,
+  preference reads 0.002-0.008s, plan preparation 1.100s. Actual HTTP setup
+  rebuild 200/40.465s, direct warm 200/0.452s, Vite warm 200/0.511s; safe
+  First-N-2 run preparation 200/1.531s, seven real locations, no catalog errors,
+  unchanged preferences, zero model calls. Actual main LOG repeat completed
+  16/16 (14 dependency reuses, two writes), with protected TODO/control hashes
+  unchanged. Broader Visual Sequence caching remains skipped.
+  A separately coordinated Shape/Object inspector child owns only its new
+  component/model/test/style files; they are excluded from this cache commit.
+
 ### Reboot checkpoint — paused at user request (2026-09-10)
 
 - Main implementation HEAD before this ledger checkpoint:

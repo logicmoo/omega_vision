@@ -126,7 +126,8 @@ def test_default_preference_snapshot_is_immutable_request_local_metadata(tmp_pat
         assert all(set(value) == {"schemaVersion", "expanded", "shape", "object", "revision"}
                    for value in cached.values())
     assert cached == {} and memory._DEFAULT_PREFERENCE_READS.get() is None
-    assert not list(tmp_path.iterdir())
+    assert {path.name for path in tmp_path.iterdir()} == {".cache"}
+    assert not (tmp_path / "runtime" / "memory-settings").exists()
     store.save_record("shape", repeated["shape"]["saveTo"], {"uid": "new-shape"}, context)
     assert store.load_preferences(context)["shape"]["lookIn"] == [repeated["shape"]["saveTo"]]
     assert len(discoveries) == 2

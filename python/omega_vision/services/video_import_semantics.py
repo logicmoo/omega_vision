@@ -278,7 +278,13 @@ def _emit(unit: Mapping[str, Any], out_dir: Path, result: dict[str, Any], *,
         if checkpoint_family:
             from omega_vision.perception.temporal_correspondence import persist_checkpoint
             _safe(root, root / "runtime" / checkpoint_family)
-            path = persist_checkpoint(root / "runtime", checkpoint, family=checkpoint_family)
+            if checkpoint_family in {"object-checkpoints", "grouping-checkpoints"}:
+                from omega_vision.perception.memory_catalog_cache import memory_catalog_mutation
+                _safe(root, root / ".cache" / "memory-catalog")
+                with memory_catalog_mutation(root):
+                    path = persist_checkpoint(root / "runtime", checkpoint, family=checkpoint_family)
+            else:
+                path = persist_checkpoint(root / "runtime", checkpoint, family=checkpoint_family)
             checkpoint_ref = path.relative_to(root).as_posix()
     lines = [
         "% Typed semantic output; LLM hypotheses and predictions are not authoritative events.",
@@ -1392,7 +1398,10 @@ def candidate_promote(candidate_id: str, body: dict[str, Any] = Body(...)):
     root = _workspace(body["workspaceId"])
     store = _store(root)
     if store.get(candidate_id)["kind"] == "grouping":
-        return evaluate_grouping_promotion(store, candidate_id, gates=_gates(body), promote=True)
+        from omega_vision.perception.memory_catalog_cache import memory_catalog_mutation
+        _safe(root, root / ".cache" / "memory-catalog")
+        with memory_catalog_mutation(root):
+            return evaluate_grouping_promotion(store, candidate_id, gates=_gates(body), promote=True)
     with writer_lock(root / "runtime" / "semantic-learning"):
         result = store.promote(candidate_id, gates=_gates(body))
     return {"candidate": result, "activation": "Next authored_prolog deduction includes promoted typed detectors",
@@ -1616,11 +1625,11 @@ def _memory_write_summary(preferences: Mapping[str, Any], kind: str, records) ->
 @router.get("/memory")
 @_http
 def memory_setup(workspaceId: str, response: Response, sequenceId: str | None = None,
-                 memorySessionId: str | None = None):
+                 memorySessionId: str | None = None, refresh: bool = False):
     response.headers["Cache-Control"] = "no-store"
     browser_memory({"workspaceId": workspaceId, "memorySessionId": memorySessionId})
     with _memory_access(workspaceId, sequenceId) as (locations, context, volatile):
-        return {"catalog": locations.catalog(context, volatile=volatile),
+        return {"catalog": locations.catalog(context, volatile=volatile, refresh=refresh),
                 "preferences": locations.load_preferences(context), "context": asdict(context),
                 "volatileLifetime": "browser_page", "memorySessionId": memorySessionId}
 
@@ -1628,11 +1637,13 @@ def memory_setup(workspaceId: str, response: Response, sequenceId: str | None = 
 @router.post("/memory/setup")
 @_http
 def memory_setup_snapshot(response: Response, body: dict[str, Any] = Body(...)):
-    _fields(body, {"workspaceId"}, {"sequenceId", "memorySessionId", "memorySnapshot"})
+    _fields(body, {"workspaceId"}, {"sequenceId", "memorySessionId", "memorySnapshot", "refresh"})
+    if type(body.get("refresh", False)) is not bool:
+        raise ValidationError("refresh must be boolean")
     state = browser_memory(body)
     response.headers["Cache-Control"] = "no-store"
     with _memory_access(body["workspaceId"], body.get("sequenceId"), state) as (locations, context, volatile):
-        return {"catalog": locations.catalog(context, volatile=volatile),
+        return {"catalog": locations.catalog(context, volatile=volatile, refresh=body.get("refresh", False)),
                 "preferences": locations.load_preferences(context), "context": asdict(context),
                 "volatileLifetime": "browser_page"}
 

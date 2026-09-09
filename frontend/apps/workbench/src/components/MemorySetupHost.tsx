@@ -55,7 +55,7 @@ function MemorySetupContext({ workspaceId, sequenceId, active, session }: Props 
   const [recordsOpen, setRecordsOpen] = useState(false);
   const body = { workspaceId, sequenceId: sequenceId || undefined, memorySessionId: session };
 
-  async function refresh() {
+  async function refresh(force = false) {
     if (!active || !workspaceId) return;
     const signal = controller.current.signal;
     const current = ++generation.current;
@@ -63,7 +63,7 @@ function MemorySetupContext({ workspaceId, sequenceId, active, session }: Props 
     setError(null);
     try {
       const value = await request<{ catalog: MemoryCatalog; preferences: MemoryPreferences }>(
-        `${endpoint}/setup`, signal, body,
+        `${endpoint}/setup`, signal, { ...body, refresh: force },
       );
       if (current !== generation.current || signal.aborted) return;
       setCatalog(value.catalog);
@@ -132,7 +132,7 @@ function MemorySetupContext({ workspaceId, sequenceId, active, session }: Props 
   return <>
     <p role="note">{NOWHERE_LIMITS_NOTICE}</p>
     <MemorySetup contextKey={contextKey} catalog={catalog} preferences={preferences}
-      loading={loading} error={error || memoryError} onRefresh={refresh}
+      loading={loading} error={error || memoryError} onRefresh={() => refresh(true)}
       onSave={async (next, expectedRevision) => {
         const saved = await request<MemoryPreferences>(`${endpoint}/preferences`, controller.current.signal,
           { ...body, preferences: next, expectedRevision }, "PUT");

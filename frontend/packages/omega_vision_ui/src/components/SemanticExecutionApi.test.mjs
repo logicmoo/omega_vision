@@ -18,6 +18,13 @@ const { createSemanticExecutionApi, postSemanticMemoryAction } = await import(`d
 )}`);
 delete globalThis.semanticTransportTest;
 
+test("memory refresh forces metadata rebuild while ordinary effects revalidate normally", () => {
+  assert.match(host, /async function refresh\(force = false\)/);
+  assert.match(host, /refresh: force/);
+  assert.match(host, /onRefresh=\{\(\) => refresh\(true\)\}/);
+  assert.match(host, /void refresh\(\)/);
+});
+
 test("semantic transport does not execute during construction and binds scope/session to confirmed calls", async () => {
   const original = globalThis.fetch;
   const requests = [];
