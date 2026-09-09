@@ -38,6 +38,17 @@ import {
   type GroupLayerFilter,
   type VisualGroupClaim,
 } from "./VisualGroupTreeModel";
+import {
+  RegionHighlightLayer,
+  VisualRegionHighlightOverlay,
+  type RegionGeometryStatus,
+} from "./VisualRegionHighlightOverlay";
+import {
+  activeHighlightMembers,
+  sanitizePinnedHighlights,
+  togglePinnedMembers,
+  type ExtractionRegionGeometry,
+} from "./VisualRegionHighlightModel";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -3490,6 +3501,11 @@ export function VideoImportPage({
   const [reduceOnlyGood, setReduceOnlyGood] = useState(false);
   const [reduceMetta, setReduceMetta] = useState<Record<string, string>>({});
   const [reduceParts, setReduceParts] = useState<Record<string, any[]>>({});
+  const [reduceGeometry, setReduceGeometry] = useState<Record<string, {
+    status: RegionGeometryStatus;
+    data: ExtractionRegionGeometry | null;
+    error?: string;
+  }>>({});
   // parts_extraction_0 previews: per input image, the transform's
   // debug_image.png (shown to the LEFT of the input) + the parts list from
   // meta.json. Keyed by input rel path; loaded lazily from the filesystem
@@ -3509,7 +3525,7 @@ export function VideoImportPage({
   // which part/group ids are selected in the grouping tree (empty = render ALL),
   // which stroke kinds the turtle cell draws, and which tree nodes are open.
   const [stripSel, setStripSel] = useState<Record<string, string[]>>({});
-  const [stripHoverMember, setStripHoverMember] = useState<{ rowKey: string; member: string } | null>(null);
+  const [stripHoverMembers, setStripHoverMembers] = useState<{ rowKey: string; members: string[] } | null>(null);
   const [stripStrokes, setStripStrokes] = useState<Record<string, { outer: boolean; inner: boolean; medial: boolean }>>({});
   // Which active parts_extraction_0 doer every transform strip displays.
   // "__all__" expands every active path side by side for each input image.
@@ -4727,6 +4743,93 @@ export function VideoImportPage({
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduceParts]);
+  const loadReduceGeometry = useCallback((
+    geometryRel: string,
+    revision = "",
+    retryUnavailable = false,
+  ) => {
+    if (!geometryRel) return;
+    const cacheKey = `${geometryRel}#${revision}`;
+    const existing = reduceGeometry[cacheKey];
+    if (
+      existing
+      && (!retryUnavailable || existing.status !== "unavailable")
+    ) return;
+    const protectedGeometryKeys = new Set<string>();
+    for (const item of (recognitionReduce?.items || [])) {
+      const rowKey = String(item.id || item.inputPath || "");
+      if (!(stripSel[rowKey] || []).length) continue;
+      for (const transform of (item.transforms || [])) {
+        if (
+          transform?.geometryPath
+          && String(transform.name) === "parts_extraction_0"
+          && (showAllPartsExtractors || String(transform.doer) === partsExtractorSel)
+        ) {
+          protectedGeometryKeys.add(
+            `${String(transform.geometryPath)}#${String(transform.geometryRevision || "")}`,
+          );
+        }
+      }
+    }
+    const store = (entry: {
+      status: RegionGeometryStatus;
+      data: ExtractionRegionGeometry | null;
+      error?: string;
+    }) => setReduceGeometry((current) => {
+      const entries = Object.entries(current).filter(([key]) => key !== cacheKey);
+      const protectedEntries = entries.filter(([key, value]) => (
+        protectedGeometryKeys.has(key) || value.status === "loading"
+      ));
+      const unprotectedEntries = entries.filter(([key, value]) => (
+        !protectedGeometryKeys.has(key) && value.status !== "loading"
+      ));
+      const available = Math.max(0, 11 - protectedEntries.length);
+      return Object.fromEntries([
+        ...protectedEntries,
+        ...(available ? unprotectedEntries.slice(-available) : []),
+        [cacheKey, entry],
+      ]);
+    });
+    store({ status: "loading", data: null });
+    void (async () => {
+      try {
+        const url = `/workbench/workspaces/${encodeURIComponent(workspaceId)}/asset?path=${encodeURIComponent(geometryRel)}`;
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        if (
+          !data
+          || typeof data !== "object"
+          || !Number.isFinite(Number(data.width))
+          || !Number.isFinite(Number(data.height))
+          || Number(data.width) <= 0
+          || Number(data.height) <= 0
+        ) {
+          throw new Error("geometry artifact is missing image dimensions");
+        }
+        store({
+          status: "ready",
+          data: data as ExtractionRegionGeometry,
+        });
+      } catch (error) {
+        store({
+          status: "unavailable",
+          data: null,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    partsExtractorSel,
+    recognitionReduce,
+    reduceGeometry,
+    showAllPartsExtractors,
+    stripSel,
+    workspaceId,
+  ]);
   // Load the reduction manifest straight from the workspace filesystem
   // (server synthesizes it from data/recognition_reduce/pool + manifest.json +
   // provenance.json). This is fully independent of the page-state save, so the
@@ -4859,6 +4962,64 @@ export function VideoImportPage({
       }
     }
   }, [recognitionReduce, loadReduceMetta]);
+  useEffect(() => {
+    const items = recognitionReduce && Array.isArray(recognitionReduce.items)
+      ? recognitionReduce.items
+      : [];
+    const item = items.find((candidate: any) => String(candidate.id) === expandedReduceId);
+    if (!item) return;
+    const geometries = (item.transforms || []).filter((transform: any) => (
+      transform
+      && transform.status === "done"
+      && transform.geometryPath
+      && String(transform.name) === "parts_extraction_0"
+      && (showAllPartsExtractors || String(transform.doer) === partsExtractorSel)
+    ));
+    for (const transform of geometries) {
+      loadReduceGeometry(
+        String(transform.geometryPath),
+        String(transform.geometryRevision || ""),
+      );
+    }
+  }, [
+    expandedReduceId,
+    loadReduceGeometry,
+    partsExtractorSel,
+    recognitionReduce,
+    showAllPartsExtractors,
+  ]);
+  useEffect(() => {
+    setStripSel({});
+    setStripHoverMembers(null);
+  }, [selectedImageSet, workspaceId]);
+  useEffect(() => {
+    setReduceGeometry({});
+  }, [workspaceId]);
+  useEffect(() => {
+    setStripHoverMembers(null);
+  }, [expandedReduceId]);
+  useEffect(() => {
+    if (!recognitionReduce || !Array.isArray(recognitionReduce.items)) return;
+    const validByRow: Record<string, string[]> = {};
+    for (const item of recognitionReduce.items) {
+      const rowKey = String(item.id || item.inputPath || "");
+      const ids = (item.transforms || [])
+        .flatMap((transform: any) => Array.isArray(transform.parts) ? transform.parts : [])
+        .map((part: any) => String(part.id || ""))
+        .filter(Boolean);
+      validByRow[rowKey] = [...new Set<string>(ids)];
+    }
+    setStripSel((current) => {
+      const sanitized = sanitizePinnedHighlights(current, validByRow);
+      return JSON.stringify(sanitized) === JSON.stringify(current) ? current : sanitized;
+    });
+    setStripHoverMembers((current) => {
+      if (!current) return current;
+      const valid = new Set(validByRow[current.rowKey] || []);
+      const members = current.members.filter((member) => valid.has(member));
+      return members.length ? { ...current, members } : null;
+    });
+  }, [recognitionReduce]);
   // Discover the image sets available on disk for the shared selector. Purely
   // filesystem-derived, so it reflects real reusable work per set.
   useEffect(() => {
@@ -7586,9 +7747,23 @@ export function VideoImportPage({
               const strokes = turtleText ? parseTurtleStrokes(turtleText) : [];
               const selArr = stripSel[rowKey] || [];
               const sel = selArr.length ? new Set(selArr) : null; // null = render ALL parts
+              const hoveredArr = stripHoverMembers?.rowKey === rowKey
+                ? stripHoverMembers.members
+                : [];
+              const highlightMembers = activeHighlightMembers(selArr, hoveredArr);
+              const geometryPath = String(primaryExtraction?.geometryPath || "");
+              const geometryRevision = String(primaryExtraction?.geometryRevision || "");
+              const geometryEntry = geometryPath
+                ? reduceGeometry[`${geometryPath}#${geometryRevision}`]
+                : undefined;
+              const rowGeometry = geometryEntry?.data || null;
+              const geometryStatus: RegionGeometryStatus = !geometryPath
+                ? "unavailable"
+                : geometryEntry?.status || "loading";
               const sk = stripStrokes[rowKey] || { outer: true, inner: true, medial: true };
               let dims: [number, number] = [640, 640];
               for (const c of cells) { const cs = c && c.summary; if (cs && cs.width && cs.height) { dims = [Number(cs.width), Number(cs.height)]; break; } }
+              if (rowGeometry) dims = [Number(rowGeometry.width), Number(rowGeometry.height)];
               const groupColorOf = new Map<string, string>();
               const finalGroupColorOf = new Map<string, string>();
               const partGroup = new Map<string, string>();
@@ -7621,16 +7796,28 @@ export function VideoImportPage({
                 const arr = childrenOf.get(b) || []; arr.push(a); childrenOf.set(b, arr);
                 parentOf.set(a, b);
               });
-              const setSel = (ids: string[], additive: boolean) => setStripSel((prev) => {
-                const cur = new Set(prev[rowKey] || []);
-                if (additive) {
-                  const allIn = ids.every((i) => cur.has(i));
-                  if (allIn) ids.forEach((i) => cur.delete(i)); else ids.forEach((i) => cur.add(i));
-                  return { ...prev, [rowKey]: [...cur] };
+              const ensureHighlightGeometry = () => {
+                if (geometryPath) {
+                  loadReduceGeometry(geometryPath, geometryRevision, true);
                 }
-                const same = ids.length === cur.size && ids.every((i) => cur.has(i));
-                return { ...prev, [rowKey]: same ? [] : ids };
-              });
+              };
+              const setSel = (ids: string[], additive: boolean) => {
+                ensureHighlightGeometry();
+                setStripSel((previous) => ({
+                  ...previous,
+                  [rowKey]: togglePinnedMembers(previous[rowKey] || [], ids, additive),
+                }));
+              };
+              const setHover = (members: string[]) => {
+                ensureHighlightGeometry();
+                setStripHoverMembers({
+                  rowKey,
+                  members: [...new Set(members)],
+                });
+              };
+              const clearHover = () => setStripHoverMembers((current) =>
+                current?.rowKey === rowKey ? null : current
+              );
               const strokeColor = (st: TurtleStroke, byGroup: boolean) =>
                 (byGroup ? activeGroupColorOf.get(partGroup.get(st.id) || "") : undefined) || partColor.get(st.id) || "#8a8f98";
               const strokeEl = (st: TurtleStroke, key: string, col: string) => {
@@ -7644,7 +7831,7 @@ export function VideoImportPage({
               };
               const renderPartNode = (pid: string, depth: number, allowNesting = true): any => {
                 const isSel = !!sel && sel.has(pid);
-                const isHovered = stripHoverMember?.rowKey === rowKey && stripHoverMember.member === pid;
+                const isHovered = hoveredArr.includes(pid);
                 const kids = allowNesting
                   ? (childrenOf.get(pid) || []).filter((k) => partGroup.get(k) === partGroup.get(pid))
                   : [];
@@ -7654,10 +7841,8 @@ export function VideoImportPage({
                       type="button"
                       className={`${isSel ? "is-sel" : ""}${isHovered ? " is-hover" : ""}`}
                       title={`${pid} · click to highlight this region in every peer claim`}
-                      onMouseEnter={() => setStripHoverMember({ rowKey, member: pid })}
-                      onMouseLeave={() => setStripHoverMember((current) =>
-                        current?.rowKey === rowKey && current.member === pid ? null : current
-                      )}
+                      onMouseEnter={() => setHover([pid])}
+                      onMouseLeave={clearHover}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSel([pid], e.shiftKey);
@@ -7744,6 +7929,8 @@ export function VideoImportPage({
                           className={claimSelected ? "is-sel" : ""}
                           style={{ color }}
                           title={`${detail}\n${rowClaims.length > 1 ? "Exact-equality aliases share this display row; underlying V/W/G facts remain independent." : "Independent peer claim; overlap ordering is display-only."}`}
+                          onMouseEnter={() => setHover(members)}
+                          onMouseLeave={clearHover}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -7782,7 +7969,15 @@ export function VideoImportPage({
               return (
                 <div className="video-import-transform-strip">
                   <figure className="video-import-reduce-stage is-submitted">
-                    <img className="video-import-reduce-stageimg" src={asset(inputRel)} alt={it.id} loading="lazy" />
+                    <div className="video-import-region-preview">
+                      <img className="video-import-reduce-stageimg" src={asset(inputRel)} alt={it.id} loading="lazy" />
+                      <VisualRegionHighlightOverlay
+                        geometry={rowGeometry}
+                        status={geometryStatus}
+                        members={highlightMembers}
+                        unavailableReason={geometryEntry?.error || "no persisted extraction geometry"}
+                      />
+                    </div>
                     <figcaption>input</figcaption>
                   </figure>
                   {displayCells.map((t: any, ti: number) => {
@@ -7836,6 +8031,7 @@ export function VideoImportPage({
                               <svg viewBox={`0 0 ${dims[0]} ${dims[1]}`} className="video-import-reduce-svg is-strip" preserveAspectRatio="xMidYMid meet">
                                 <image href={asset(inputRel)} x="0" y="0" width={dims[0]} height={dims[1]} preserveAspectRatio="xMidYMid meet" opacity={sel ? 0.12 : 0.3} />
                                 {shown.map((st, si) => strokeEl(st, `g${si}`, strokeColor(st, true)))}
+                                {rowGeometry && <RegionHighlightLayer geometry={rowGeometry} members={highlightMembers} />}
                               </svg>
                             </div>
                             <div className="video-import-transform-note">
@@ -7863,6 +8059,7 @@ export function VideoImportPage({
                               <svg viewBox={`0 0 ${dims[0]} ${dims[1]}`} className="video-import-reduce-svg is-strip" preserveAspectRatio="xMidYMid meet">
                                 <image href={asset(inputRel)} x="0" y="0" width={dims[0]} height={dims[1]} preserveAspectRatio="xMidYMid meet" opacity={0.08} />
                                 {shown.map((st, si) => strokeEl(st, `t${si}`, strokeColor(st, false)))}
+                                {rowGeometry && <RegionHighlightLayer geometry={rowGeometry} members={highlightMembers} />}
                               </svg>
                             </div>
                             <div className="video-import-transform-note">

@@ -241,6 +241,24 @@ values here.
   end-to-end output created no debug image. Focused validation passed 86
   extraction/group/acceptance/observation/API/UI regressions and the frontend
   production build.
+  Region highlighting now uses those real persisted extraction geometries.
+  The prior tree hover changed only a button class, group rows had no hover
+  handler, the input image had no overlay, and the grouping SVG filtered only
+  pinned turtle strokes. The manifest now exposes `geometryPath` plus a file
+  revision; the active row loads it on demand through a bounded no-store cache
+  and retries unavailable entries on interaction. A shared SVG layer renders
+  legacy polygon/hole geometry and exact small-feature pixel runs directly over
+  the 150x150 actual input, grouping, and turtle previews with matching
+  aspect-ratio-preserving viewBoxes and no pointer interception.
+  rN hover is temporary, click pins/unpins, and V/W/G hover or click uses the
+  canonical union of member rN IDs, so exact-equality aliases share one
+  selection. Pinned highlights survive hover leave; stale frame/sequence IDs
+  are removed, and missing geometry reports an explicit unavailable state.
+  Focused validation passed 57 API/UI regressions, 12 executable highlight/group
+  model tests, `git diff --check`, and the frontend production build. Live LS20
+  frame 000000 showed r13, r14, and r15 individually across all three previews,
+  a four-member w5 union, exact 150px image/overlay alignment, pinned restoration
+  after hover leave, and collapsed-row lazy loading.
   Final-G temporal correspondence, Prolog frame events, and event-backed rule
   induction remain paused at this clean post-UID boundary for inspection. oN
   tracking, grouping learning, cross-sequence promotion, and expanded Object
