@@ -24,9 +24,22 @@ values here.
   subscription changes workspace,
   rather than re-resolving the graph every 600ms for every connected tab.
   It does not change source identity, extend HTTP timeouts, close user tabs, or
-  silently serve an unvalidated catalog. Main-app acceptance must be repeated
-  after integrating this targeted fix; the slower cold catalog scan itself is
-  distinct from the observed event-loop blockage.
+  silently serve an unvalidated catalog. The exact fix `4dd3aaf02` was integrated
+  on local main as `a7cf57390`; only the owned API on port 8000 was restarted,
+  leaving Vite on 5173 and the parent's 8001/5175 servers untouched.
+  Actual main HTTP acceptance then succeeded: direct catalog cold 200 in
+  41.991s, direct warm 200 in 7.041s, proxied catalog 200 in 6.669s; direct chain
+  200 in 0.262s and proxied chain 200 in 0.114s. Initial startup health exceeded
+  10s; settled health was 200 in 0.004s. Cold catalog latency remains slow and is
+  distinct from the resolved event-loop blockage.
+  The retained Recognition URL (arc3_random_player, ls20,
+  20260718-154544_attempt8, nav=extractions) was reloaded without changing its
+  selection. The real catalog resolved 92 frames. Computed visibility and a
+  viewport screenshot confirmed exactly one Preprocessing section: 44.38px
+  collapsed, 261.21px expanded. The disclosure worked and displayed Saved with
+  pp-original-1/pp-original-2 both selecting Original Pixels; the chain API
+  returned errors=[], effectivelyOriginal=true, revision=original:.
+  No chain preference changes, LLM calls, or extraction runs were made.
 
 - Preprocessing chain completion (2026-09-09, parent takeover): the child stopped
   writing at `9de4e1b29` and preserved its ten local commits, recovery bundle, and
@@ -46,12 +59,16 @@ values here.
   covered 640x640 -> 1920x1920 preview, 3x + DeNoise, add/remove/reorder/parameters,
   a 45px collapsed banner, per-sequence isolation, Back/Forward, and saved-ID
   restoration after reload. API/UI ports here are 8001/5175, not the main app.
-  The initial full suite reached 1212 passes and 10 skips; its one imported
-  TEMPORAL_EVENTS README-link failure was repaired. Focused regression runs and
-  the frontend build pass, including the final review's cutout-alignment and
-  republished-filter cache fixes. Final full-suite/restart acceptance and
-  application of the feature-only follow-up to local main are pending; never
-  cherry-pick the baseline-import commit or include runtime state in that handoff.
+  The parent reports the final feature suite passed 1221 tests with 10
+  optional-plugin skips, and the final WebSocket-fix suite passed 1222 with
+  the same 10 skips. The feature-only commit `67b41b56d` was integrated on
+  local main as `8ac0b2b12`; the baseline-import commit was never picked.
+  Local integration validation passed 71 focused Python tests, 14 Node
+  URL/history/catalog/load-guard tests, and the frontend build; the subsequent
+  WebSocket-fix integration passed 39 focused Python regressions.
+  Main restart/live acceptance is recorded above. Every prior local commit,
+  runtime file, and recovery artifact was preserved. All new commits remain
+  local and unpushed; no PRs or follow-on backlog work were performed.
 
 - Python CI repair (2026-09-08): the workflow installs SWI-Prolog and the
   documented `.[test]` extra covers every package imported during collection.
