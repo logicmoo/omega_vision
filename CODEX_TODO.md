@@ -479,6 +479,31 @@ values here.
   Documentation only; no predicate is emitted until its status row reads
   implemented.
 
+- Heavy skill-discovery cold-import fix (2026-09-09): opening Video Import (any
+  subview) fetches `/filters` in a `[workspaceId]` effect
+  (VideoImportPage.tsx:2451), which calls `_discover_skills` (video_import_api.py)
+  and loaded every skill module top level. `colormap_gradients.py` imported
+  matplotlib and built its colormap list from `matplotlib.colormaps` at module
+  load, so ENUMERATION alone triggered a multi-second matplotlib cold import — the
+  dev-proxy 502/timeout — even though the colormap effect is INVOKED only on
+  explicit selection. Root-cause audit: scikit-image was already function-local in
+  `skimage_effects.py` (and the sole `python/` skimage import at
+  pixels_to_regions.py:254 is function-local); there are zero matplotlib imports
+  under `python/`; and colormap is in no template/TODO/_SEQUENCE_TRANSFORMS. Fix:
+  `colormap_gradients.py` now uses a static 91-name colormap list for
+  SKILL.paramChoices and imports numpy+matplotlib lazily inside `apply()`;
+  `pilgram_filter.py` likewise (static style list + lazy import with a clear
+  not-installed error). Added a lightweight `_registered_transform_composites()`
+  + `GET /transform-composites` endpoint that enumerates only the in-memory
+  `_SEQUENCE_TRANSFORMS` registry (no skill discovery/heavy imports) for the future
+  direct-runner combos. Tests
+  (`tests/omega_vision_api/test_skill_discovery_cold_import.py`) block
+  skimage+matplotlib imports and prove discovery, `/filters`-shaped enumeration,
+  the catalog, and composite enumeration all work with the colormap/pilgram/skimage
+  skills non-broken and under a cold-load time budget; colormap `apply()` still
+  works (91 cmaps) and pilgram reports a clear error. Full omega_vision +
+  omega_vision_api suites: 403 passed.
+
 - Preprocessing filter registry foundation (2026-09-09): first increment of the
   deferred Preprocessing Setup. Added `scale_3x_nearest` as a canonical built-in
   filter (`_BUILTIN_FILTERS` + `_apply_prepass_filter` + `_resolve_transform`):
