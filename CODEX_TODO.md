@@ -359,7 +359,56 @@ values here.
   stale/deleted content; offline shows read-only cached data while
   mutations/processing require live validation. Tests per the coordinator spec.
 
- It is a higher-level object composed of at
+- Queued Sprite View memory scope (2026-09-09, deferred until memory data exists;
+  after Visual Sequence caching). Shape Memory and Object Memory are separate
+  surfaces; EACH has two independent controls. `Save to` is a single-select
+  destination for NEW writes only (This Run default, Level Shared, Game Shared,
+  Global Shared, Nowhere); `Nowhere` is explicit ephemeral/session-only and warns
+  reload loses it; changing Save to never moves/promotes existing records and
+  lists only valid writable destinations (browse-only disabled with an exact
+  reason, no silent fallback). `Look in` is a hierarchical MULTI-SELECT CHECKLIST
+  (reads only; never affects Save to/writes) over a dynamic, searchable Memory
+  Location Catalog covering every populated accessible Shape/Object store across
+  providers/workspaces (provider/workspace -> game -> level -> run/Visual Sequence
+  -> memory area), showing only locations with records (plus the ephemeral session
+  store) with record counts, memory kinds, last revision, scope badge, concise
+  labels (full paths in tooltips). `Effective` is a preset that checks the current
+  hierarchy's This Run + Level Shared + Game Shared + Global Shared in precedence
+  This Run -> Level -> Game -> Global (not an opaque store); provide tri-state
+  parent checkboxes, Select effective/all visible, Clear, search, counts, recent
+  selections, and a compact collapsed summary. `Look in: Nowhere` is always
+  available per surface (the one exception to populated-only filtering; shown even
+  at count 0), labeled ephemeral with lifetime/reset status, cleared on
+  reload/restart, never restored from cache or auto-promoted, excluded from
+  Effective unless explicitly checked, with an explicit Promote/Save Copy to a
+  writable scope that preserves provenance. Shape and Object selectors are fully
+  independent and may point to different locations. Merge/deduplicate displayed
+  records by stable concept identity while retaining every selected source badge,
+  conflict, and provenance; more-specific overlays may override presentation but
+  never erase inherited records/history; object identities are run-namespaced so
+  promoted concepts never claim two run-local oN IDs are the same individual;
+  promotion copies/references evidence into a new scoped version preserving the
+  source and is separate from changing Save to. Backend enumerates/indexes real
+  provider-backed memory locations with stable `memoryLocationId`,
+  providerRef/workspace/context IDs, scope kind, supported memory kinds,
+  revision/content signature, and read/write capabilities; enforces access control
+  and provider boundaries (never expose inaccessible paths, no silent fallback),
+  updates the index atomically on write/promote/remove, reuses the
+  caching/revalidation patterns, and avoids client-side recursive filesystem
+  scans. Persist stable memoryLocationIds (not raw paths) in UI/workspace state;
+  URL/nav restoration encodes multiple stable IDs without triggering writes;
+  filtering/search must not clear hidden checked locations; virtualize large
+  catalogs; handle unavailable/deleted/permission-lost checked locations visibly.
+  No mocks. Eventual tests: independent Shape/Object checksets, effective preset
+  expansion, defaults, multi-workspace/provider selection, tri-state parents,
+  search-hidden selections, Nowhere combination/empty visibility/reload loss and
+  no cache persistence, dedup/conflicts, remote Effective ancestry, unavailable
+  write/read-only, permission loss, revision refresh, no automatic migration,
+  promotion provenance, run-local oN namespace safety, URL restoration, duplicate
+  labels/stable IDs, and no path leakage.
+
+- Deferred oN composition contract (2026-09-09): an oN is not a persistent
+  one-to-one alias for a final gN. It is a higher-level object composed of at
   least two final G groups. When this work is explicitly resumed, Prolog may
   infer an oN only when attributable evidence proves both (1) coherent
   cross-frame co-motion with compatible displacement/transform and stable
