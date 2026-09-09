@@ -411,7 +411,18 @@ values here.
   no cache persistence, dedup/conflicts, remote Effective ancestry, unavailable
   write/read-only, permission loss, revision refresh, no automatic migration,
   promotion provenance, run-local oN namespace safety, URL restoration, duplicate
-  labels/stable IDs, and no path leakage.
+  labels/stable IDs, and no path leakage. All memory destination/browse controls
+  live in a collapsible `Memory Setup` section whose disclosure state is
+  remembered in UI/workspace state (default collapsed on first use); the collapsed
+  banner truthfully summarizes both independent configs without exposing full
+  controls (e.g. `Shape: Save to This Run · Look in 4 locations`; `Object: Save to
+  Game Shared · Look in Effective + Nowhere`) plus dirty/error/unavailable
+  indicators and compact record/location counts, action-required errors stay
+  visible in the banner, expanding reveals the separate Shape/Object Save-to combos
+  and Look-in checklists, collapsing removes detail from layout height while
+  preserving selections/search/check state, and disclosure/focus is accessible
+  (tests: default/remembered state, summaries, independent values, hidden layout
+  height, dirty/errors, and state preservation).
 
 - Deferred oN composition contract (2026-09-09): an oN is not a persistent
   one-to-one alias for a final gN. It is a higher-level object composed of at
