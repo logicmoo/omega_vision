@@ -23,6 +23,10 @@ VISUAL_SEQUENCE_LOAD_GATE = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.
 VISUAL_SEQUENCE_LOAD_GATE_TEST = VIDEO_IMPORT_PAGE.with_name("VisualSequenceLoadGate.test.mjs")
 VISUAL_GROUP_TREE_MODEL = VIDEO_IMPORT_PAGE.with_name("VisualGroupTreeModel.ts")
 VISUAL_GROUP_TREE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("VisualGroupTreeModel.test.mjs")
+VISUAL_REGION_HIGHLIGHT_MODEL = VIDEO_IMPORT_PAGE.with_name("VisualRegionHighlightModel.ts")
+VISUAL_REGION_HIGHLIGHT_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("VisualRegionHighlightModel.test.mjs")
+VISUAL_REGION_HIGHLIGHT_OVERLAY = VIDEO_IMPORT_PAGE.with_name("VisualRegionHighlightOverlay.tsx")
+VIDEO_IMPORT_API = ROOT / "python" / "omega_vision" / "services" / "video_import_api.py"
 VIDEO_IMPORT_STYLES = (
     ROOT
     / "frontend"
@@ -252,7 +256,7 @@ def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
     assert "renderPeerGroupTree(visualGroupClaims)" in page
     assert "renderPeerGroupTree(peerGroupClaims)" in page
     assert "Independent peer claim; overlap ordering is display-only." in page
-    assert "setStripHoverMember({ rowKey, member: pid })" in page
+    assert "setHover([pid])" in page
     assert "mapsTo" not in page
     assert ".video-import-reduce-groupnode.is-v" in styles
     assert ".video-import-reduce-groupnode.is-w" in styles
@@ -266,6 +270,47 @@ def test_visual_and_symbolic_groups_are_independent_interleaved_peers() -> None:
     assert 'window.localStorage.setItem("videoImport.groupLayerFilter", groupLayerFilter)' in page
     assert "G · final groups pending" in page
     assert "layer filters keep only anchors while retaining exact equality aliases" in executable_test
+
+
+def test_region_highlights_use_persisted_geometry_on_real_images() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    model = VISUAL_REGION_HIGHLIGHT_MODEL.read_text(encoding="utf-8")
+    model_test = VISUAL_REGION_HIGHLIGHT_MODEL_TEST.read_text(encoding="utf-8")
+    overlay = VISUAL_REGION_HIGHLIGHT_OVERLAY.read_text(encoding="utf-8")
+    api = VIDEO_IMPORT_API.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert 'cell["geometryPath"] = _data_rel_of(root, geometry)' in api
+    assert 'cell["geometryRevision"]' in api
+    assert "String(transform.geometryRevision || \"\")" in page
+    assert 'fetch(url, { cache: "no-store" })' in page
+    assert "protectedGeometryKeys.has(key)" in page
+    assert "Math.max(0, 11 - protectedEntries.length)" in page
+    assert "String(candidate.id) === expandedReduceId" in page
+    assert "loadReduceGeometry(geometryPath, geometryRevision, true)" in page
+    assert 'existing.status !== "unavailable"' in page
+    assert "<VisualRegionHighlightOverlay" in page
+    assert "<RegionHighlightLayer" in page
+    assert "activeHighlightMembers(selArr, hoveredArr)" in page
+    assert "togglePinnedMembers(previous[rowKey] || [], ids, additive)" in page
+    assert "sanitizePinnedHighlights(current, validByRow)" in page
+    assert "onMouseEnter={() => setHover(members)}" in page
+    assert "onMouseLeave={clearHover}" in page
+    assert "export function resolveRegionHighlight" in model
+    assert "details?.smallFeature?.pixelRuns" in model
+    assert "geometry?.smallFeatures?.[featureKey]?.pixelRuns" in model
+    assert "single region resolves legacy numeric polygon keys" in model_test
+    assert "group union resolves every V W or G member" in model_test
+    assert "equal aliases toggle the same underlying pinned member set" in model_test
+    assert "hover is ephemeral while pinned selection survives hover leave" in model_test
+    assert "frame changes remove stale region selections" in model_test
+    assert "source coordinates stay aligned" in model_test
+    assert 'pointerEvents="none"' in overlay
+    assert ".video-import-region-highlight-overlay" in styles
+    assert ".video-import-region-highlight-halo" in styles
+    assert ".video-import-region-highlight-unavailable" in styles
+    assert ".video-import-reduce-stage.is-submitted .video-import-region-preview .video-import-reduce-stageimg" in styles
+    assert "width: 100%;" in styles
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:

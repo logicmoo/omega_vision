@@ -102,6 +102,29 @@ def test_observation_identity_transform_is_replayable_and_creates_no_image(
     assert "object_at(" not in (first / "result.pl").read_text(encoding="utf-8")
 
 
+def test_extraction_manifest_exposes_persisted_geometry(tmp_path: Path) -> None:
+    unit_dir = tmp_path / "frame"
+    _write_final_group_fixture(unit_dir)
+    (unit_dir / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "todos": [{
+            "transformation": "parts_extraction_0",
+            "doer": "python_opencv",
+            "output": "parts_extraction_0/python_opencv",
+            "status": "done",
+            "dependsOn": [],
+        }],
+    }), encoding="utf-8")
+
+    summary = video_import_api._unit_transforms(tmp_path, unit_dir)
+
+    assert summary is not None
+    assert summary["list"][0]["geometryPath"].endswith(
+        "parts_extraction_0/python_opencv/geometry.json"
+    )
+    assert summary["list"][0]["geometryRevision"]
+
+
 def test_observation_identity_metadata_is_visible_in_transform_manifest(
     tmp_path: Path,
 ) -> None:

@@ -2405,6 +2405,13 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
             di = out_dir / "debug_image.png"
             if di.is_file():
                 cell["debugImage"] = _data_rel_of(root, di)
+            geometry = out_dir / "geometry.json"
+            if geometry.is_file():
+                cell["geometryPath"] = _data_rel_of(root, geometry)
+                geometry_stat = geometry.stat()
+                cell["geometryRevision"] = (
+                    f"{geometry_stat.st_mtime_ns}:{geometry_stat.st_size}"
+                )
             mp = out_dir / "meta.json"
             if mp.is_file():
                 try:

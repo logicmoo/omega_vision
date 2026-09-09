@@ -3138,6 +3138,68 @@
 .video-import-reduce-indchip.is-new { color: #7c9cff; border-color: rgba(124,156,255,0.45); }
 .video-import-reduce-stage { margin: 0; display: flex; flex-direction: column; gap: 2px; }
 .video-import-reduce-stage figcaption { font-size: 9.5px; letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.6; text-align: center; }
+.video-import-region-preview {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  flex: 0 0 auto;
+}
+.video-import-reduce-stage.is-submitted .video-import-region-preview .video-import-reduce-stageimg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.video-import-region-highlight-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  pointer-events: none;
+}
+.video-import-region-highlight-layer { pointer-events: none; }
+.video-import-region-highlight-shape.is-pinned { color: #00f5ff; }
+.video-import-region-highlight-shape.is-hovered { color: #ffe45e; }
+.video-import-region-highlight-pixels {
+  fill: currentColor;
+  fill-opacity: 0.38;
+  stroke: none;
+}
+.video-import-region-highlight-halo {
+  fill: none;
+  stroke: #05070a;
+  stroke-width: 7;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.video-import-region-highlight-path {
+  fill: currentColor;
+  fill-opacity: 0.28;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.video-import-region-highlight-shape.is-hovered .video-import-region-highlight-path {
+  fill-opacity: 0.4;
+  stroke-width: 4;
+}
+.video-import-region-highlight-unavailable {
+  position: absolute;
+  z-index: 3;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  padding: 2px 4px;
+  border: 1px solid rgba(255,228,94,0.75);
+  border-radius: 4px;
+  background: rgba(5,7,10,0.9);
+  color: #ffe45e;
+  font: 700 8px/1.25 ui-monospace, monospace;
+  text-align: center;
+  pointer-events: none;
+}
 .video-import-reduce-svg { width: 130px; height: 130px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); background: #fff; }
 .video-import-reduce-svg.is-map { background: #ffffff; }
 .video-import-reduce-stage.is-treecol { width: 160px; }
