@@ -274,6 +274,20 @@ values here.
   LS20 frame 000000 showed both honest `not available` lines under Refresh,
   while the remaining extraction/debug/grouping/turtle cards moved together
   with no acceptance or observation card.
+  The built-in `parts_debug_0/python_pil` stage now runs and displays last,
+  immediately after `turtle_programs`. In both tracked built-in templates
+  (default and arc3_random_player) it has priority 50 and explicitly depends on
+  `parts_extraction_0/python_opencv` and `turtle_programs/turtle_programs_prolog`
+  so concurrent pooler workers cannot render it before Turtle; a dependency-gated
+  worker leaves it pending and a later pass runs it once Turtle's meta.json
+  exists. Only exact historical built-in templates migrate (including the exact
+  typed legacy default that previously placed debug at priority 20); customized
+  pipelines and legacy completed outputs are untouched. The horizontal visual
+  strip sorts the single debug card last so Turtle and the debug overlay sit
+  adjacent at identical 150px previews sharing the region-highlight overlay, and
+  a running/error transform now shows an explicit state instead of a silent gap.
+  Validation passed 65 API/pipeline regressions including a two-worker ordering
+  test, 16 executable model tests, and the frontend build.
   Final-G temporal correspondence, Prolog frame events, and event-backed rule
   induction remain paused at this clean post-UID boundary for inspection. oN
   tracking, grouping learning, cross-sequence promotion, and expanded Object

@@ -6564,9 +6564,9 @@ def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, A
 # transform output folder follows one contract: result.pl (the facts),
 # meta.json (attribution + stats; records the exact module behind the
 # doer), and optionally debug_image.png. The default pipeline runs
-# parts_extraction_0, parts_grouping_0, group_acceptance_0, then
-# turtle_programs, so one call takes a raw frame all the way to accepted
-# final groups with redraw programs.
+# parts_extraction_0, parts_grouping_0, group_acceptance_0, observation identity,
+# turtle_programs, then parts_debug_0 last so its visual can be compared beside
+# the completed Turtle result.
 
 _TRANSFORM_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 _MANUAL_ONLY_PARTS_EXTRACTORS = frozenset({
@@ -7212,7 +7212,7 @@ _PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
     {"transformation": "turtle_programs", "doer": "turtle_programs_prolog", "options": {},
      "priority": 40, "type": "py_pl", "dependsOn": ["group_acceptance_0/group_acceptance_prolog"]},
 ]
-_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
+_PRE_DEBUG_LAST_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
     *_PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE[:-1],
     {"transformation": "observation_identity_0", "doer": "content_hash", "options": {},
      "priority": 37, "type": "py_pl",
@@ -7222,6 +7222,24 @@ _DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
          "group_acceptance_0/group_acceptance_prolog",
      ]},
     _PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE[-1],
+]
+_DEFAULT_PIPELINE_TEMPLATE: list[dict[str, Any]] = [
+    *[
+        step
+        for step in _PRE_DEBUG_LAST_DEFAULT_PIPELINE_TEMPLATE
+        if step["transformation"] != "parts_debug_0"
+    ],
+    {
+        "transformation": "parts_debug_0",
+        "doer": "python_pil",
+        "options": {},
+        "priority": 50,
+        "type": "ui",
+        "dependsOn": [
+            "parts_extraction_0/python_opencv",
+            "turtle_programs/turtle_programs_prolog",
+        ],
+    },
 ]
 
 
@@ -7262,6 +7280,13 @@ def _former_default_pipeline(extractors: list[tuple[str, int]]) -> list[dict[str
     ]
 
 
+_TYPED_LEGACY_DEFAULT_PIPELINE_TEMPLATE = [
+    {
+        **step,
+        "type": "ui" if step["transformation"] == "parts_debug_0" else "py_pl",
+    }
+    for step in _former_default_pipeline([("python_opencv", 10)])
+]
 _FORMER_DEFAULT_PIPELINE_TEMPLATES = (
     _former_default_pipeline([("python_scikit", 10)]),
     _former_default_pipeline([
@@ -7274,14 +7299,17 @@ _FORMER_DEFAULT_PIPELINE_TEMPLATES = (
         ("shape_finder_prolog", 14),
     ]),
     _former_default_pipeline([("python_opencv", 10)]),
+    _TYPED_LEGACY_DEFAULT_PIPELINE_TEMPLATE,
     _PRE_OBSERVATION_DEFAULT_PIPELINE_TEMPLATE,
+    _PRE_DEBUG_LAST_DEFAULT_PIPELINE_TEMPLATE,
 )
 _PIPELINE_TEMPLATE_REL = "data/transform_pipeline.json"
 _PIPELINE_TEMPLATE_COMMENT = ("Initial todo template: stamped onto every unit as todos.json. "
                               "priority: lower runs first; dependsOn gates on finished steps; "
                               "type marks task kinds: ui (debug/preview renders), llm (1-shot "
                               "LLM reductions), p_shot (N-shot LLM passes), py_pl (the "
-                              "OpenCV + Prolog workflow).")
+                              "OpenCV + Prolog workflow). The built-in parts_debug_0 waits "
+                              "for turtle_programs and renders last for visual comparison.")
 
 
 def _normalize_pipeline(raw: Any) -> list[dict[str, Any]]:
@@ -7668,7 +7696,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     recordings, ``data/<set>/transforms/<image>/<transformation>/<doer>/...``
     for image sets. By default the full pipeline runs OpenCV parts extraction,
     then parts_grouping_0, final group acceptance, observation identity, and
-    turtle_programs. Pass
+    turtle_programs before rendering parts_debug_0 last. Pass
     ``transformation``/``doer`` for a single step or ``pipeline`` for an
     explicit list. Already-transformed units are skipped unless ``force``;
     ``moves`` limits the run to specific ordinals/stems.

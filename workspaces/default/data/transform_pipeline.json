@@ -1,6 +1,6 @@
 {
   "kind": "transform_pipeline_template",
-  "comment": "Initial todo template: stamped onto every unit as todos.json. priority: lower runs first; dependsOn gates on finished steps; type marks task kinds: ui (debug/preview renders), llm (1-shot LLM reductions), p_shot (N-shot LLM passes), py_pl (the OpenCV + Prolog workflow).",
+  "comment": "Initial todo template: stamped onto every unit as todos.json. priority: lower runs first; dependsOn gates on finished steps; type marks task kinds: ui (debug/preview renders), llm (1-shot LLM reductions), p_shot (N-shot LLM passes), py_pl (the OpenCV + Prolog workflow). The built-in parts_debug_0 waits for turtle_programs and renders last for visual comparison.",
   "pipeline": [
     {
       "transformation": "parts_extraction_0",
@@ -9,16 +9,6 @@
       "priority": 10,
       "type": "py_pl",
       "dependsOn": []
-    },
-    {
-      "transformation": "parts_debug_0",
-      "doer": "python_pil",
-      "options": {},
-      "priority": 20,
-      "type": "ui",
-      "dependsOn": [
-        "parts_extraction_0/python_opencv"
-      ]
     },
     {
       "transformation": "parts_grouping_0",
@@ -31,13 +21,47 @@
       ]
     },
     {
+      "transformation": "group_acceptance_0",
+      "doer": "group_acceptance_prolog",
+      "options": {},
+      "priority": 35,
+      "type": "py_pl",
+      "dependsOn": [
+        "parts_extraction_0/python_opencv",
+        "parts_grouping_0/group_regions_prolog"
+      ]
+    },
+    {
+      "transformation": "observation_identity_0",
+      "doer": "content_hash",
+      "options": {},
+      "priority": 37,
+      "type": "py_pl",
+      "dependsOn": [
+        "parts_extraction_0/python_opencv",
+        "parts_grouping_0/group_regions_prolog",
+        "group_acceptance_0/group_acceptance_prolog"
+      ]
+    },
+    {
       "transformation": "turtle_programs",
       "doer": "turtle_programs_prolog",
       "options": {},
       "priority": 40,
       "type": "py_pl",
       "dependsOn": [
-        "parts_grouping_0/group_regions_prolog"
+        "group_acceptance_0/group_acceptance_prolog"
+      ]
+    },
+    {
+      "transformation": "parts_debug_0",
+      "doer": "python_pil",
+      "options": {},
+      "priority": 50,
+      "type": "ui",
+      "dependsOn": [
+        "parts_extraction_0/python_opencv",
+        "turtle_programs/turtle_programs_prolog"
       ]
     }
   ]
