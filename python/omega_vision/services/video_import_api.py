@@ -128,6 +128,7 @@ _CURATED_DATA_EXCLUDES = {"videoimports", "recordings", "importables"}
 _extract_jobs: dict[str, dict[str, Any]] = {}
 # Running/finished download (import) jobs, polled for the import progress bar.
 _download_jobs: dict[str, dict[str, Any]] = {}
+_direct_jobs: dict[str, dict[str, Any]] = {}
 
 
 def _job_summary(job: dict[str, Any]) -> dict[str, Any]:
@@ -160,7 +161,7 @@ def _list_workspace_jobs(workspace_id: str, *, include_finished: bool = True) ->
     reconnecting browser can see and interrupt in-progress server work even
     though it lost the original jobId."""
     out: list[dict[str, Any]] = []
-    for store in (_extract_jobs, _download_jobs):
+    for store in (_extract_jobs, _download_jobs, _direct_jobs):
         for job in list(store.values()):
             if not isinstance(job, dict) or job.get("workspaceId") != workspace_id:
                 continue
@@ -173,7 +174,7 @@ def _list_workspace_jobs(workspace_id: str, *, include_finished: bool = True) ->
 
 def _cancel_workspace_job(workspace_id: str, job_id: str) -> bool:
     """Request cancellation of a job by id, scoped to the workspace."""
-    for store in (_extract_jobs, _download_jobs):
+    for store in (_extract_jobs, _download_jobs, _direct_jobs):
         job = store.get(job_id)
         if isinstance(job, dict) and job.get("workspaceId") == workspace_id:
             job["cancel"] = True
@@ -2386,14 +2387,38 @@ def _unit_transforms(root: Path, unit_dir: Path, sequence_root: Path | None = No
     lazily by the UI (grouping facts are the exception — tiny, parsed for chips).
     """
     tj = unit_dir / "todos.json"
-    if not tj.is_file():
-        return None
-    try:
-        payload = json.loads(tj.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
+    payload: dict[str, Any] = {}
+    if tj.is_file():
+        try:
+            payload = json.loads(tj.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            payload = {}
     entries = [t for t in (payload.get("todos") or [])
                if isinstance(t, dict) and t.get("transformation") and t.get("output")]
+    known_outputs = {str(entry["output"]) for entry in entries}
+    metadata: dict[str, dict[str, Any]] = {}
+    for path in unit_dir.glob("*/*/meta.json"):
+        output = path.parent.relative_to(unit_dir).as_posix()
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            if output in known_outputs or tuple(output.split("/")) in _SEQUENCE_TRANSFORMS:
+                record = {"kind": "sequence_set_transformation", "metadataError": f"Unreadable output metadata: {error}"}
+            else:
+                import logging
+                logging.getLogger(__name__).warning("Unreadable non-transform metadata %s: %s", path, error)
+                continue
+        if not isinstance(record, dict) or record.get("kind") != "sequence_set_transformation":
+            continue
+        metadata[output] = record
+        if output not in known_outputs:
+            entries.append({
+                "transformation": path.parent.parent.name, "doer": path.parent.name,
+                "output": output, "status": "done", "dependsOn": record.get("dependsOn", []),
+                "type": record.get("type", "py_pl"), "elapsedMs": record.get("elapsedMs"),
+                "completedAt": record.get("createdAt"),
+            })
+            known_outputs.add(output)
     if not entries:
         return None
     # Topological order (dependsOn refers to output keys), priority tiebreak,
@@ -2416,20 +2441,37 @@ def _unit_transforms(root: Path, unit_dir: Path, sequence_root: Path | None = No
             break
     cells: list[dict[str, Any]] = []
     done = 0
-    preprocessing_stale = False
+    current_preprocessing_revision = None
     if sequence_root is None and payload.get("sequenceRoot"):
         sequence_root = (unit_dir / payload["sequenceRoot"]).resolve()
     if sequence_root is not None:
-        preprocessing_stale = (
-            _preprocessing_revision(_load_preprocessing_chain_at(sequence_root))
-            != (payload.get("preprocessingRevision") or _preprocessing_revision([]))
-        )
+        current_preprocessing_revision = _preprocessing_revision(_load_preprocessing_chain_at(sequence_root))
     for t in placed:
         output = str(t.get("output"))
         out_dir = unit_dir / output
         status = str(t.get("status") or "pending")
+        record = metadata.get(output) or {}
+        if record:
+            status = "done"
+        preprocessing_stale = current_preprocessing_revision is not None and (
+            current_preprocessing_revision
+            != (record.get("preprocessingRevision") or payload.get("preprocessingRevision") or _preprocessing_revision([]))
+        )
         if preprocessing_stale:
             status = "stale"
+        if record.get("metadataError"):
+            status = "error"
+        failure = out_dir / ".transform-failed.json"
+        failure_message = ""
+        if failure.is_file():
+            try:
+                failure_message = str(json.loads(failure.read_text(encoding="utf-8")).get("error") or "Transform failed")
+            except (OSError, ValueError):
+                failure_message = "Could not read the failed transform's error record"
+            status = "error"
+        live_claim = _read_claim(out_dir / "claim.json")
+        if live_claim is not None:
+            status = "started"
         if status == "done":
             done += 1
         cell: dict[str, Any] = {
@@ -2438,14 +2480,14 @@ def _unit_transforms(root: Path, unit_dir: Path, sequence_root: Path | None = No
             "output": output,
             "status": status,
             "priority": t.get("priority"),
-            "dependsOn": [d for d in (t.get("dependsOn") or [])],
-            "type": t.get("type") or "",
-            "elapsedMs": t.get("elapsedMs"),
-            "completedAt": t.get("completedAt") or "",
+            "dependsOn": list(record.get("dependsOn", t.get("dependsOn") or [])),
+            "type": record.get("type") or t.get("type") or "",
+            "elapsedMs": record.get("elapsedMs", t.get("elapsedMs")),
+            "completedAt": record.get("createdAt") or t.get("completedAt") or "",
             "claimedBy": t.get("claimedBy") or t.get("startedBy") or "",
             "claimedAt": t.get("claimedAt") or t.get("startedAt") or "",
             "startedAt": t.get("startedAt") or t.get("claimedAt") or "",
-            "error": "Preprocessing changed; submit the sequence again." if preprocessing_stale else t.get("error") or "",
+            "error": failure_message or record.get("metadataError") or ("Preprocessing changed; submit the sequence again." if preprocessing_stale else t.get("error") or ""),
             "erroredAt": t.get("erroredAt") or "",
         }
         if status in {"done", "stale"}:
@@ -7546,6 +7588,7 @@ _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
     ("observation_identity_0", "content_hash"): _transform_observation_identity,
     ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
 }
+_TRANSFORM_METADATA: dict[tuple[str, str], dict[str, Any]] = {}
 
 
 _CLAIM_STALE_SECONDS = 30 * 60
@@ -7559,17 +7602,39 @@ def _registered_transform_composites() -> list[dict[str, Any]]:
     matplotlib) — so the direct-runner composite combos populate instantly and
     deterministically. Each entry is a canonical ``transformation/doer`` id with
     availability derived from the registered runner."""
+    definitions = _transform_definitions()
     composites = [
         {
             "id": f"{transformation}/{doer}",
             "transformation": transformation,
             "doer": doer,
             "available": callable(runner),
+            "type": definitions[f"{transformation}/{doer}"].get("type", "py_pl"),
+            "dependsOn": definitions[f"{transformation}/{doer}"].get("dependsOn", []),
         }
         for (transformation, doer), runner in _SEQUENCE_TRANSFORMS.items()
     ]
     composites.sort(key=lambda entry: entry["id"])
     return composites
+
+
+def _transform_definitions() -> dict[str, dict[str, Any]]:
+    definitions = {
+        f"{transformation}/{doer}": {
+            "transformation": transformation, "doer": doer, "options": {},
+            "dependsOn": [], "priority": 100, "type": "py_pl",
+        }
+        for transformation, doer in _SEQUENCE_TRANSFORMS
+    }
+    for spec in _DEFAULT_PIPELINE_TEMPLATE:
+        key = f"{spec['transformation']}/{spec['doer']}"
+        if key in definitions:
+            definitions[key].update(spec)
+    for (transformation, doer), metadata in _TRANSFORM_METADATA.items():
+        key = f"{transformation}/{doer}"
+        if key in definitions:
+            definitions[key].update(metadata)
+    return definitions
 
 
 def _claim_worker_id() -> str:
@@ -7663,8 +7728,14 @@ def _resolve_step_deps(unit: dict[str, Any],
         pref = persisted.get(selector)
         if pref is not None:
             if pref.get("resolved") and pref.get("frameId") is not None:
+                target_dir = root / str(pref["frameId"])
+                if pref.get("unitPath") is not None and unit.get("sequenceRoot"):
+                    sequence_root = Path(unit["sequenceRoot"]).resolve()
+                    target_dir = (sequence_root / str(pref["unitPath"])).resolve()
+                    if target_dir != sequence_root and sequence_root not in target_dir.parents:
+                        raise ValueError("Resolved dependency path escapes the Visual Sequence")
                 resolved.append({"selector": selector, "output": parsed.output,
-                                 "metaPath": root / str(pref["frameId"]) / parsed.output / "meta.json",
+                                 "metaPath": target_dir / parsed.output / "meta.json",
                                  "frameId": pref.get("frameId"), "resolved": True,
                                  "reason": str(pref.get("reason") or "resolved")})
             else:
@@ -7677,7 +7748,8 @@ def _resolve_step_deps(unit: dict[str, Any],
 
 
 def _step_meta_is_stale(out_meta_file: Path, resolved_deps: list[dict[str, Any]],
-                        input_signature: str | None = None) -> tuple[bool, str]:
+                        input_signature: str | None = None,
+                        options: Mapping[str, Any] | None = None) -> tuple[bool, str]:
     """A completed cross-frame-dependent step is stale when a resolved cross-frame
     target changed frame or output revision since it was produced. Same-frame
     dependencies keep the historical presence-only behavior."""
@@ -7687,19 +7759,25 @@ def _step_meta_is_stale(out_meta_file: Path, resolved_deps: list[dict[str, Any]]
         return True, "unreadable-metadata"
     if not isinstance(meta, dict):
         return True, "invalid-metadata"
+    if (out_meta_file.parent / ".transform-failed.json").is_file():
+        return True, "previous-attempt-failed"
+    if options is not None and meta.get("options", {}) != options:
+        return True, "options-changed"
     previous_input = meta.get("inputSignature")
     if input_signature and previous_input != input_signature:
         if previous_input is not None or not input_signature.startswith("original:"):
             return True, "preprocessing-input-changed"
     consumed = meta.get("consumedDeps") or {}
     for dep in resolved_deps:
-        if dep.get("reason") == "same-frame":
-            continue
         record = consumed.get(dep["selector"]) or {}
+        if dep.get("reason") == "same-frame" and not record:
+            if _read_output_revision(dep.get("metaPath")) is None:
+                continue
+            return True, "dependency-revision-unrecorded"
         if record.get("frameId") != dep.get("frameId"):
             return True, "resolved-frame-changed"
         current_rev = _read_output_revision(dep.get("metaPath")) if dep.get("metaPath") else None
-        if current_rev is None or record.get("revision") != current_rev:
+        if (current_rev is None and dep.get("reason") != "same-frame") or record.get("revision") != current_rev:
             return True, "revision-changed"
     return False, "current"
 
@@ -7731,9 +7809,13 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
                     "error": "Source pixels changed; submit this sequence again."}
     out_dir = unit["dir"] / transformation / doer
     resolved_deps = _resolve_step_deps(unit, depends_on, depends_on_resolved)
+    live_claim = _read_claim(out_dir / "claim.json")
+    if live_claim is not None:
+        return {"step": step_name, "status": "claimed",
+                "claimedBy": live_claim[0].get("claimedBy"), "claimedAt": live_claim[0].get("claimedAt")}
     out_meta_file = out_dir / "meta.json"
     if not force and out_meta_file.is_file():
-        stale, _reason = _step_meta_is_stale(out_meta_file, resolved_deps, unit.get("inputSignature"))
+        stale, _reason = _step_meta_is_stale(out_meta_file, resolved_deps, unit.get("inputSignature"), options)
         if not stale:
             return {"step": step_name, "status": "skipped"}
     for dep in resolved_deps:
@@ -7744,6 +7826,9 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         if not meta_path.is_file():
             return {"step": step_name, "status": "blocked",
                     "missing": dep["selector"], "reason": dep.get("reason", "pending")}
+        if _read_claim(meta_path.parent / "claim.json") is not None:
+            return {"step": step_name, "status": "blocked", "missing": dep["selector"],
+                    "reason": "dependency-running"}
         if dep.get("reason") == "same-frame":
             stale, reason = _step_meta_is_stale(meta_path, [], unit.get("inputSignature"))
             if stale:
@@ -7769,7 +7854,13 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     try:
         stats = runner(unit, out_dir, options)
     except Exception as error:  # noqa: BLE001 - reported per unit/step
-        claim_file.unlink(missing_ok=True)
+        try:
+            _atomic_json_write(out_dir / ".transform-failed.json", {
+                "kind": "sequence_transform_failure", "step": step_name,
+                "error": str(error), "failedAt": _utc_now(),
+            })
+        finally:
+            claim_file.unlink(missing_ok=True)
         return {"step": step_name, "status": "error", "error": str(error)}
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     from omega_vision.perception.cross_frame_deps import output_revision  # noqa: PLC0415
@@ -7780,8 +7871,6 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     )
     consumed_deps: dict[str, Any] = {}
     for dep in resolved_deps:
-        if dep.get("reason") == "same-frame":
-            continue
         consumed_deps[dep["selector"]] = {
             "frameId": dep.get("frameId"),
             "output": dep.get("output"),
@@ -7792,6 +7881,9 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         "transformation": transformation,
         "doer": doer,
         "options": options,
+        "dependsOn": depends_on or [],
+        "type": _transform_definitions().get(step_name, {}).get("type", "py_pl"),
+        "preprocessingRevision": unit.get("preprocessingRevision"),
         "createdAt": _utc_now(),
         "elapsedMs": elapsed_ms,
         "outputRevision": revision,
@@ -7801,6 +7893,7 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     }
     (out_dir / "meta.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    (out_dir / ".transform-failed.json").unlink(missing_ok=True)
     claim_file.unlink(missing_ok=True)
     entry = {"step": step_name, "status": "written", "elapsedMs": elapsed_ms}
     for key in (
@@ -7840,6 +7933,8 @@ def _stamp_resolved_deps(unit: dict[str, Any], depends_on: list[str] | None,
             "selector": parsed.raw, "output": parsed.output,
             "resolved": res.resolved, "frameId": res.frame_id,
             "frameOrder": res.frame_order, "reason": res.reason,
+            **({"unitPath": catalog["frame_dirs"][res.frame_id]}
+               if res.resolved and res.frame_id in catalog.get("frame_dirs", {}) else {}),
         })
     return records
 
@@ -8432,6 +8527,215 @@ def _llm_adoption_maker(set_base: Path):
     return adopt
 
 
+def _sequence_execution_context(root: Path, sequence_id: str) -> tuple[Path, list[dict[str, Any]], dict[str, Any]]:
+    directory = _sequence_root_for(root, sequence_id)
+    units = [_preprocessing_unit(directory, image) for image in _resolve_set_images(directory)]
+    if not units:
+        raise HTTPException(status_code=404, detail="Visual Sequence has no input images")
+    ordered = (directory / "recording.json").is_file()
+    for order, unit in enumerate(units):
+        unit.update({
+            "sequenceId": sequence_id, "sequenceRoot": directory, "frameOrder": order,
+            "sequenceOrdered": ordered, "frameSourceKey": unit["image"].relative_to(directory).as_posix(),
+        })
+    return directory, units, {
+        "frame_ids_in_order": [unit["id"] for unit in units],
+        "frame_id_set": {unit["id"] for unit in units},
+        "frame_dirs": {unit["id"]: unit["dir"].relative_to(directory).as_posix() for unit in units},
+        "ordered": ordered,
+    }
+
+
+def _direct_specs(root: Path) -> dict[str, dict[str, Any]]:
+    specs = _transform_definitions()
+    template = root / _PIPELINE_TEMPLATE_REL
+    if template.is_file():
+        try:
+            document = json.loads(template.read_text(encoding="utf-8"))
+            raw = document.get("pipeline") if isinstance(document, dict) else document
+            for spec in _normalize_pipeline(raw):
+                specs[f"{spec['transformation']}/{spec['doer']}"].update(spec)
+        except (ValueError, TypeError) as error:
+            raise HTTPException(status_code=400, detail=f"Invalid transform template: {error}") from error
+    return specs
+
+
+def _direct_run_path(root: Path, job_id: str) -> Path:
+    if not re.fullmatch(r"[0-9a-f]{32}", job_id):
+        raise HTTPException(status_code=400, detail="Invalid direct-call ID")
+    return root / "runtime" / "executions" / f"direct-{job_id}.json"
+
+
+@router.get("/direct-calls/{job_id}")
+def direct_call_status(job_id: str, workspaceId: str) -> dict[str, Any]:
+    job = _direct_jobs.get(job_id)
+    if job is not None and job.get("workspaceId") == workspaceId:
+        return dict(job)
+    path = _direct_run_path(_workspace_root(workspaceId), job_id)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Direct call not found")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if (not isinstance(record, dict) or record.get("id") != job_id
+            or record.get("workspaceId") != workspaceId or record.get("kind") != "direct-transform"):
+        raise HTTPException(status_code=422, detail="Execution record identity does not match this request")
+    if record.get("state") in {"running", "starting"}:
+        import psutil
+        try:
+            owner_alive = psutil.Process(record["ownerPid"]).create_time() == record["ownerStartedAt"]
+        except (psutil.NoSuchProcess, KeyError):
+            owner_alive = False
+        if not owner_alive:
+            record.update(state="interrupted", error="The execution process stopped before completion.")
+            _atomic_json_write(path, record)
+    return record
+
+
+@router.post("/direct-calls")
+def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Execute one registered pair and unmet dependencies, without touching the pool or todos."""
+    from omega_vision.perception.direct_transform_plan import plan_direct_call
+    import psutil
+
+    workspace_id = str(body.get("workspaceId") or "")
+    sequence_id = str(body.get("sequenceId") or "")
+    output = str(body.get("composite") or "")
+    first_n = body.get("firstN", 0)
+    options = body.get("options", {})
+    if not workspace_id or not sequence_id:
+        raise HTTPException(status_code=400, detail="workspaceId and sequenceId are required")
+    if isinstance(first_n, bool) or not isinstance(first_n, int) or first_n < 0:
+        raise HTTPException(status_code=400, detail="First N must be a nonnegative integer")
+    if not isinstance(options, dict):
+        raise HTTPException(status_code=400, detail="options must be an object")
+    root = _workspace_root(workspace_id)
+    directory, units, catalog = _sequence_execution_context(root, sequence_id)
+    specs = _direct_specs(root)
+    if output not in specs:
+        raise HTTPException(status_code=400, detail=f"Unknown registered pair: {output}")
+    specs[output] = {**specs[output], "options": {**specs[output].get("options", {}), **options}}
+    selected = units[:first_n] if first_n else units
+    selected_ids = [unit["id"] for unit in selected]
+    try:
+        plan = plan_direct_call(output, specs, catalog["frame_ids_in_order"], selected_ids, ordered=catalog["ordered"])
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    blocked = [f"{node.frame_id}: {reason}" for node in plan for reason in node.blocked]
+    if blocked:
+        raise HTTPException(status_code=409, detail={"message": "Dependencies cannot run in this selection", "blocked": blocked})
+    definitions = _transform_definitions()
+    llm_steps = sorted({node.output for node in plan
+                        if definitions[node.output].get("type") in {"llm", "p_shot"}
+                        or specs[node.output].get("type") in {"llm", "p_shot"}})
+    model_id = body.get("modelId")
+    if model_id is not None and not isinstance(model_id, str):
+        raise HTTPException(status_code=400, detail="modelId must be a model/preset identifier")
+    if model_id:
+        for step in llm_steps:
+            specs[step] = {**specs[step], "options": {**specs[step].get("options", {}), "modelId": model_id}}
+    try:
+        confirmation_key = hashlib.sha256(json.dumps({
+            "sequence": sequence_id, "frames": [unit["frameSourceKey"] for unit in selected],
+            "output": output, "specs": {node.output: specs[node.output] for node in plan},
+        }, sort_keys=True, allow_nan=False).encode()).hexdigest()
+    except (TypeError, ValueError) as error:
+        raise HTTPException(status_code=400, detail=f"Invalid execution options: {error}") from error
+    if (len(selected) > 800 or llm_steps) and (
+        body.get("confirmed") is not True or body.get("confirmationKey") != confirmation_key
+    ):
+        raise HTTPException(status_code=409, detail={
+            "confirmationRequired": True, "imageCount": len(selected), "llmSteps": llm_steps,
+            "confirmationKey": confirmation_key,
+            "message": f"Run {output} and its dependencies for {len(selected)} inputs"
+                       + (" including model calls?" if llm_steps else "?"),
+        })
+    chain = _load_preprocessing_chain_at(directory)
+    index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
+    chain = _validated_preprocessing_chain(chain, index)
+    versions = _preprocessing_versions(root, chain, index)
+    job_id = uuid.uuid4().hex
+    path = _direct_run_path(root, job_id)
+    events_path = path.with_suffix(".jsonl")
+    job = {
+        "id": job_id, "kind": "direct-transform", "workspaceId": workspace_id,
+        "sequenceId": sequence_id, "composite": output, "firstN": first_n,
+        "label": f"Direct {output}", "state": "running", "done": 0, "total": len(plan),
+        "imageCount": len(selected), "startedAt": _utc_now(), "ownerPid": os.getpid(),
+        "ownerStartedAt": psutil.Process().create_time(), "recent": [], "counts": {},
+        "definitions": {node.output: specs[node.output] for node in plan},
+        "path": path.relative_to(root).as_posix(), "eventsPath": events_path.relative_to(root).as_posix(),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    events_path.touch(exist_ok=False)
+    _atomic_json_write(path, job)
+    _direct_jobs[job_id] = job
+    by_id = {unit["id"]: unit for unit in units}
+    roots = {(frame_id, output) for frame_id in selected_ids
+             if not (by_id[frame_id]["frameOrder"] == 0 and specs[output].get("skipFirstFrame"))}
+
+    def work() -> None:
+        completed: dict[tuple[str, str], dict[str, Any]] = {}
+        prepared: set[str] = set()
+        last_saved = time.monotonic()
+        final_state = "error"
+        final_error: str | None = "Execution worker stopped unexpectedly."
+        try:
+            for node in plan:
+                if job.get("cancel"):
+                    final_state, final_error = "cancelled", None
+                    break
+                unit = by_id[node.frame_id]
+                failed = [dependency for dependency in node.dependencies
+                          if completed[dependency]["status"] not in {"written", "skipped"}]
+                if failed:
+                    result = {"step": node.output, "status": "blocked",
+                              "reason": f"Dependency did not complete: {failed[0][0]}:{failed[0][1]}"}
+                else:
+                    if node.frame_id not in prepared:
+                        unit["image"] = _materialize_preprocessed_image(
+                            root, unit, chain, index, registry_versions=versions,
+                        )
+                        prepared.add(node.frame_id)
+                    spec = specs[node.output]
+                    depends_on = (spec.get("firstFrameDependsOn", spec.get("dependsOn", []))
+                                  if unit["frameOrder"] == 0 else spec.get("dependsOn", []))
+                    refs = _stamp_resolved_deps(unit, depends_on, catalog)
+                    result = run_transform_step(
+                        unit, spec["transformation"], spec["doer"], spec.get("options", {}),
+                        force=(node.frame_id, node.output) in roots,
+                        depends_on=depends_on, depends_on_resolved=refs,
+                    )
+                result = {**result, "frameId": node.frame_id}
+                completed[(node.frame_id, node.output)] = result
+                with events_path.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(result, ensure_ascii=False) + "\n")
+                job.update(
+                    done=job["done"] + 1,
+                    counts={**job["counts"], result["status"]: job["counts"].get(result["status"], 0) + 1},
+                    recent=[*job["recent"][-29:], result],
+                    message=f"{node.frame_id}: {node.output} - {result['status']}",
+                )
+                if time.monotonic() - last_saved >= 0.5:
+                    _atomic_json_write(path, dict(job))
+                    last_saved = time.monotonic()
+            else:
+                statuses = [completed[key]["status"] for key in roots]
+                final_state = "done" if all(value in {"written", "skipped"} for value in statuses) else "error"
+                final_error = None if final_state == "done" else "Some requested steps failed or were blocked; inspect the execution events."
+        except (HTTPException, OSError, ValueError, TypeError, RuntimeError) as error:
+            final_error = str(getattr(error, "detail", error))
+        finally:
+            final = {**dict(job), "state": final_state, "error": final_error, "finishedAt": _utc_now()}
+            try:
+                _atomic_json_write(path, final)
+            except OSError as error:
+                job.update(state="error", error=f"Could not persist execution result: {error}")
+                raise
+            job.update(final)
+
+    threading.Thread(target=work, name=f"direct-transform-{job_id[:8]}", daemon=True).start()
+    return dict(job)
+
+
 @router.post("/sequence-sets/transform")
 def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Apply transformations to the moves of a Sequence Set recording, or to
@@ -8476,7 +8780,6 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail="moves must be a list of move ordinals/stems") from error
 
     root = _workspace_root(workspace_id)
-    units: list[dict[str, Any]] = []
     adopt = None  # set-branch: adopts pre-existing LLM reductions per unit
     if recording_rel:
         try:
@@ -8485,36 +8788,13 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=str(error)) from error
         if not (recording_dir / "recording.json").is_file():
             raise HTTPException(status_code=404, detail=f"not a recording (no recording.json): {recording_rel}")
-        units = [_preprocessing_unit(recording_dir, image) for image in _arc_recording_images(recording_dir)]
         target = recording_rel
-        pooler_root = recording_dir
-        sequence_ordered = True
     else:
-        try:
-            set_base = _resolve_set_dir(root, f"data/{set_id}")
-        except ValueError as error:
-            raise HTTPException(status_code=400, detail=str(error)) from error
-        units = [_preprocessing_unit(set_base, image) for image in _resolve_set_images(set_base)]
-        if not units:
-            raise HTTPException(status_code=404, detail=f"image set has no images: {set_id}")
-        adopt = _llm_adoption_maker(set_base)
         target = f"data/{set_id}"
-        pooler_root = set_base
-        sequence_ordered = (set_base / "recording.json").is_file()
-    for frame_order, unit in enumerate(units):
-        unit["sequenceId"] = target
-        unit["frameOrder"] = frame_order
-        unit["sequenceOrdered"] = sequence_ordered
-        image = unit.get("image")
-        try:
-            unit["frameSourceKey"] = image.relative_to(pooler_root).as_posix()
-        except (AttributeError, ValueError):
-            unit["frameSourceKey"] = str(unit["id"])
-    sequence_catalog = {
-        "frame_ids_in_order": [str(unit["id"]) for unit in units],
-        "ordered": sequence_ordered,
-        "frame_id_set": {str(unit["id"]) for unit in units},
-    }
+    pooler_root, units, sequence_catalog = _sequence_execution_context(root, target)
+    sequence_ordered = sequence_catalog["ordered"]
+    if set_id:
+        adopt = _llm_adoption_maker(pooler_root)
     from omega_vision.perception.cross_frame_deps import (  # noqa: PLC0415
         DependencyGrammarError as _DepGrammarError,
         detect_dependency_cycles as _detect_dependency_cycles,

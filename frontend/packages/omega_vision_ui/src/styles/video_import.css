@@ -3447,3 +3447,44 @@ button.video-import-compact-metadata-line::after { content: " ↗"; opacity: 0.6
 .vi2-section[data-section="preprocessing"] .video-import-chain-step select {
   max-width: 100%;
 }
+.video-import-direct-calls,
+.video-import-todo-pooler-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.video-import-direct-call {
+  display: flex;
+  flex: 1 1 420px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.video-import-direct-call label {
+  display: flex;
+  flex: 1 1 260px;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.video-import-direct-call select {
+  width: 100%;
+}
+
+.video-import-direct-call small {
+  flex-basis: 100%;
+}
+
+.video-import-direct-call a {
+  color: inherit;
+}
+
+.video-import-todo-pooler-row > .video-import-reduce-partsbar-note {
+  order: 1;
+  flex-basis: 100%;
+}

@@ -108,6 +108,8 @@ type FilterEntry = {
 };
 type FilterSpec = Record<string, unknown>;
 type ChainStep = { entryId: string; params: Record<string, string>; stepId?: string };
+type DirectComposite = { id: string; available: boolean; type?: string };
+type DirectCallState = { jobId: string; active: boolean; note: string; error?: string; retry?: boolean; path?: string };
 type JobState = {
   id: string; kind: string; state: "running" | "done" | "error";
   done: number; total: number; elapsedSeconds: number; etaSeconds: number;
@@ -3906,6 +3908,41 @@ export function VideoImportPage({
   const effectiveCaptionModel = automaticAudioModelId(models, captionModel);
   const effectiveTurtleModel = turtleModel || allCallsModel;
   const effectiveTurtlePngModel = turtlePngModel || allCallsModel;
+  const [directComposites, setDirectComposites] = useState<DirectComposite[]>([]);
+  const [directCatalogError, setDirectCatalogError] = useState("");
+  const [directChoices, setDirectChoices] = useState<string[]>([
+    "parts_extraction_0/python_opencv", "turtle_programs/turtle_programs_prolog",
+  ]);
+  const [directCalls, setDirectCalls] = useState<DirectCallState[]>([
+    { jobId: "", active: false, note: "" }, { jobId: "", active: false, note: "" },
+  ]);
+  const directPollers = useRef<Array<AbortController | null>>([null, null]);
+  const directWorkspaceRef = useRef(workspaceId);
+  directWorkspaceRef.current = workspaceId;
+  useEffect(() => {
+    let cancelled = false;
+    setDirectComposites([]);
+    setDirectCatalogError("");
+    setDirectCalls([{ jobId: "", active: false, note: "" }, { jobId: "", active: false, note: "" }]);
+    setDirectChoices(["parts_extraction_0/python_opencv", "turtle_programs/turtle_programs_prolog"]);
+    try {
+      const saved = JSON.parse(localStorage.getItem(`videoImport.directChoices:${workspaceId}`) || "null");
+      if (Array.isArray(saved) && saved.length === 2 && saved.every((value) => typeof value === "string")) setDirectChoices(saved);
+    } catch { /* browser preferences are optional */ }
+    void api(`transform-composites?workspaceId=${encodeURIComponent(workspaceId)}`)
+      .then((payload) => { if (!cancelled) setDirectComposites(payload.composites); })
+      .catch((reason) => { if (!cancelled) setDirectCatalogError(String(reason)); });
+    return () => {
+      cancelled = true;
+      directPollers.current.forEach((controller) => controller?.abort());
+    };
+  }, [workspaceId]);
+  const chooseDirectComposite = (slot: number, value: string) => {
+    const next = directChoices.map((choice, index) => index === slot ? value : choice);
+    setDirectChoices(next);
+    try { localStorage.setItem(`videoImport.directChoices:${workspaceId}`, JSON.stringify(next)); }
+    catch { /* browser preferences are optional */ }
+  };
   const selectedDescriptionPrompt = describerPromptSelection === "default" ? DEFAULT_MEMBER_DESCRIPTION_PROMPT : memberDescriptionPrompt;
   const selectedPlannerPrompt = plannerPromptSelection === "default" ? DEFAULT_MEMBER_ORDER_PROMPT : memberOrderPrompt;
   const selectedOutlinerPrompt = outlinerPromptSelection === "default" ? DEFAULT_MEMBER_OUTLINER_PROMPT : memberOutlinerPrompt;
@@ -5074,9 +5111,88 @@ export function VideoImportPage({
     if (!workspaceId) return;
     try {
       const resp = await fetch(`${API}/reduce-manifest?workspaceId=${encodeURIComponent(workspaceId)}&set=${encodeURIComponent(selectedImageSet)}`, { cache: "no-store" });
-      if (resp.ok) { const mf = await resp.json(); if (mf && Array.isArray(mf.items)) setRecognitionReduce(mf); }
+      if (resp.ok) {
+        const mf = await resp.json();
+        if (preprocContextRef.current === `${workspaceId}|data/${selectedImageSet}` && mf && Array.isArray(mf.items)) setRecognitionReduce(mf);
+      }
     } catch { /* ignore */ }
   }, [workspaceId, selectedImageSet]);
+  const monitorDirectCall = async (slot: number, jobId: string) => {
+    directPollers.current[slot]?.abort();
+    const controller = new AbortController();
+    directPollers.current[slot] = controller;
+    try {
+      while (!controller.signal.aborted) {
+        const result = await api(`direct-calls/${jobId}?workspaceId=${encodeURIComponent(workspaceId)}`, undefined, controller.signal);
+        if (controller.signal.aborted || directWorkspaceRef.current !== workspaceId) return;
+        if (!["running", "starting", "done", "error", "cancelled", "interrupted"].includes(result.state)) {
+          throw new Error(`Unexpected execution state: ${String(result.state)}`);
+        }
+        const active = result.state === "running" || result.state === "starting";
+        setDirectCalls((current) => current.map((call, index) => index === slot ? {
+          jobId, active, path: result.path, error: result.error || undefined,
+          note: `${active && result.cancel ? "Stopping after current step" : result.state}: ${result.done}/${result.total} steps · ${result.sequenceId}`,
+        } : call));
+        if (!active) {
+          if (preprocContextRef.current === `${workspaceId}|${result.sequenceId}`) await refreshReduceManifest();
+          return;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 700));
+      }
+    } catch (reason) {
+      if (!controller.signal.aborted && directWorkspaceRef.current === workspaceId) setDirectCalls((current) => current.map((call, index) => index === slot
+        ? { ...call, jobId, active: false, retry: true, error: String(reason), note: "Execution status unavailable" } : call));
+    }
+  };
+  const callDirect = async (slot: number) => {
+    if (directCalls[slot].active) {
+      try {
+        const result = await api("jobs/cancel", { workspaceId, jobId: directCalls[slot].jobId });
+        if (!result.cancelling) setError("The direct call is no longer running on this server.");
+      } catch (reason) {
+        if (directWorkspaceRef.current === workspaceId) setError(`Could not stop the direct call: ${String(reason)}`);
+      }
+      return;
+    }
+    if (directCalls[slot].retry) {
+      void monitorDirectCall(slot, directCalls[slot].jobId);
+      return;
+    }
+    setDirectCalls((current) => current.map((call, index) => index === slot ? { jobId: "", active: true, note: "Starting direct call..." } : call));
+    try {
+      await flushPreprocSave();
+      const body = {
+        workspaceId, sequenceId: preprocSequenceId, composite: directChoices[slot],
+        firstN: todoPreviewCount, modelId: effectiveDescriberModel || inheritedModelId,
+        confirmed: false, confirmationKey: "",
+      };
+      for (;;) {
+        const response = await fetch(`${API}/direct-calls`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        const result = await response.json();
+        if (directWorkspaceRef.current !== workspaceId) return;
+        if (response.status === 409 && result.detail?.confirmationRequired) {
+          if (!window.confirm(result.detail.message)) {
+            setDirectCalls((current) => current.map((call, index) => index === slot
+              ? { jobId: "", active: false, note: "Cancelled before execution" } : call));
+            return;
+          }
+          body.confirmed = true;
+          body.confirmationKey = result.detail.confirmationKey;
+          continue;
+        }
+        if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : JSON.stringify(result.detail));
+        setDirectCalls((current) => current.map((call, index) => index === slot
+          ? { jobId: result.id, active: true, note: "Running directly (pool bypassed)", path: result.path } : call));
+        void monitorDirectCall(slot, result.id);
+        return;
+      }
+    } catch (reason) {
+      if (directWorkspaceRef.current === workspaceId) setDirectCalls((current) => current.map((call, index) => index === slot
+        ? { jobId: "", active: false, note: "Direct call failed", error: String(reason) } : call));
+    }
+  };
   // Stamp todos.json across every unit of the visible image set (planOnly =
   // write the queue, run nothing) so the offline transform_task_pooler picks
   // the work up on its next scan pass.
@@ -8467,25 +8583,41 @@ export function VideoImportPage({
                   );
                 })()}
                 <div className="video-import-reduce-listctrls">
-                  <label className="video-import-global-extractor"
-                    title="One selection controls the parts_extraction_0 column for every input image. Choose All to compare every active extractor path per image.">
-                    <span>PARTS EXTRACTOR · ALL INPUTS</span>
-                    <select value={partsExtractorSel} onChange={(e) => setPartsExtractorSel(e.target.value)}>
-                      <option value="__all__">All extractors (compare)</option>
-                      {PARTS_EXTRACTOR_DOERS.map((doer) => <option key={doer} value={doer}>{doer}</option>)}
-                    </select>
-                    <small>parts_extraction_0</small>
-                  </label>
                   <label className="video-import-todo-preview-count"
-                    title="Limit todo stamping to the first N input images for a quick preview. Use 0 for every image.">
+                    title="Limit direct calls and todo stamping to the first N input images. Use 0 for every image.">
                     <span>FIRST N</span>
                     <input type="number" min={0} max={recognitionReduce.items.length} value={todoPreviewCount}
                       onChange={(e) => setTodoPreviewCount(Math.max(0, Math.trunc(Number(e.target.value) || 0)))} />
                     <small>{todoPreviewCount > 0 ? "preview only" : "0 = all inputs"}</small>
                   </label>
-                  <LaneReduceButton primary label={`▶ Reduce all ${recognitionReduce.items.length} · all impls`}
-                    title="Run ALL implementations (LLM 1-shot + 2-shot tiers AND the SWI-Prolog symbolic line + registry) for every pool image, server-side."
-                    laneRun={laneRuns["reduce"]} onStart={() => startServerStage("reduce")} onStop={() => void stopServerPipeline("reduce")} />
+                  <div className="video-import-direct-calls">
+                    {[0, 1].map((slot) => {
+                      const call = directCalls[slot];
+                      const available = directComposites.some((entry) => entry.id === directChoices[slot] && entry.available);
+                      return (
+                      <div key={slot} className="video-import-direct-call" data-direct-slot={slot}>
+                        <label>Process / doer {slot + 1}
+                          <select aria-label={`Direct process/doer ${slot + 1}`} value={directChoices[slot]}
+                            disabled={directCalls[slot].active} onChange={(event) => chooseDirectComposite(slot, event.target.value)}>
+                            {!directComposites.length && <option value={directChoices[slot]}>Loading registered pairs...</option>}
+                            {directComposites.length > 0 && !directComposites.some((entry) => entry.id === directChoices[slot])
+                              && <option value={directChoices[slot]} disabled>Unavailable: {directChoices[slot]}</option>}
+                            {directComposites.map((entry) => <option key={entry.id} value={entry.id} disabled={!entry.available}>{entry.id}</option>)}
+                          </select>
+                        </label>
+                        <button type="button" disabled={call.active ? !call.jobId : !call.retry && (!visualSequenceReady || !preprocContextReady || !available)}
+                          onClick={() => void callDirect(slot)}
+                          title="Run this registered pair now, executing unmet dependencies first. No todo stamping or pooler changes.">
+                          {directCalls[slot].active ? (directCalls[slot].jobId ? "Stop" : "Starting...") : directCalls[slot].retry ? "Retry status" : "Call"}
+                        </button>
+                        <small role={directCalls[slot].error ? "alert" : "status"}>{directCalls[slot].error || directCalls[slot].note}</small>
+                        {call.path && <a href={asset(call.path)} target="_blank" rel="noreferrer">Run record</a>}
+                      </div>
+                      );
+                    })}
+                    {directCatalogError && <span role="alert">{directCatalogError}</span>}
+                  </div>
+                  <div className="video-import-todo-pooler-row">
                   <button type="button" className="video-import-btn" disabled={seedTodosBusy} onClick={() => void seedTodos("merge")}
                     title="Add/update the current template steps while preserving every existing todo and completed output. The pooler runs pending work.">
                     {seedTodosBusy ? "stamping todos…" : "⊕ Add/Merge todos"}
@@ -8531,6 +8663,7 @@ export function VideoImportPage({
                       </span>
                     );
                   })()}
+                  </div>
                   <LaneReduceButton label={`⟳ (prolog)${recognizeOnly ? " recog" : ""}`}
                     title="Run ONLY the SWI-Prolog symbolic line + canonical registry pass for every frame — no LLM / no models. Runs simultaneously with the LLM lane."
                     laneRun={laneRuns["prolog"]} onStart={() => startServerStage("reduce", { prologOnly: true })} onStop={() => void stopServerPipeline("prolog")} />

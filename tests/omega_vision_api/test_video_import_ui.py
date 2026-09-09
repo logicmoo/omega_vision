@@ -102,11 +102,16 @@ def test_user_preview_picker_has_no_number_parameter() -> None:
     assert user_picker < numbered_picker
 
 
-def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> None:
+def test_direct_controls_replace_extractor_reduce_buttons_and_keep_scoped_todos() -> None:
     source = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
 
-    assert 'className="video-import-global-extractor"' in source
-    assert '<option value="__all__">All extractors (compare)</option>' in source
+    assert 'className="video-import-global-extractor"' not in source
+    assert "▶ Reduce all" not in source
+    assert 'className="video-import-direct-calls"' in source
+    assert "{[0, 1].map((slot)" in source
+    assert 'aria-label={`Direct process/doer ${slot + 1}`}' in source
+    assert "`${API}/direct-calls`" in source
+    assert 'className="video-import-todo-pooler-row"' in source
     assert 'const PARTS_EXTRACTOR_DOERS = ["python_opencv"]' in source
     assert "parts_extraction_0/python_scikit" not in source
     assert "parts_extraction_0/shape_finder_prolog" not in source

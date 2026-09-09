@@ -41,6 +41,54 @@ values here.
   returned errors=[], effectivelyOriginal=true, revision=original:.
   No chain preference changes, LLM calls, or extraction runs were made.
 
+- Direct-call/control increment (2026-09-09): two independent registered
+  process/doer + Call slots now start direct, interruptible backend executions
+  with durable run records, First N scope, dependency DAG validation, current
+  dependency reuse, canonical claims, and plan-bound large/LLM confirmation.
+  No TODO stamping, result adoption, or pooler retargeting occurs. Direct outputs
+  appear through read-only metadata discovery, including current errors and
+  staleness. The old Parts Extractor and Reduce All controls are removed; First N
+  remains, and Add/Merge/Fresh controls share the pooler row. Parent live
+  acceptance ran real OpenCV and Turtle calls on one of the actual 92 LS20
+  inputs; both completed, while hashes of todos.json and pooler_control.json
+  stayed unchanged. Focused direct/pipeline tests and the frontend build pass.
+  Main integration is pending for this increment; temporal/event/memory core
+  work is separate and must not be declared complete before active wiring.
+
+- Remaining-task authorization (2026-09-09): the user explicitly said to skip
+  task 1 (broader Visual Sequence caching) and do every other remaining task,
+  confirming that previously deferred temporal correspondence, persistent
+  attached/co-moving objects, and adaptive grouping are resumed too. This
+  supersedes their older paused/deferred markers below. Caching stays deferred,
+  not completed; its performance-only dependency must not block the other work.
+  Implementation proceeds here in coherent increments: direct process/doer
+  calls and control cleanup, event/rule persistence and LLM stages, resumed
+  temporal/object/grouping evidence, promotion, memory browsing, and integrated
+  regression coverage. Independent core work may run in this same workspace;
+  the existing main session remains integration-only. Preserve all runtime
+  data and prior commits. No new PRs, pushes, branches, or worktrees.
+
+- Preprocessing is live on local main (2026-09-09): exact feature commit
+  `8ac0b2b120af7ea5dc1a838213319097ce449d07` and event-loop fix
+  `a7cf57390c389251360d75e23875614283c0635d` are integrated and unpushed.
+  Main's ledger-only acceptance receipt is `d052d42a7e40a1503b743d8f14476288e60ebdd8`.
+  This supersedes the earlier pending-integration checkpoints below.
+  Two actual-process samples identified synchronous workspace resolution in
+  the WebSocket heartbeat; path/stat work is now off-loop and the canonical
+  path is reused for state reads until the subscription changes workspace.
+  Following the API-only restart, the retained main Recognition URL resolved
+  the real LS20 level-7 sequence with 92 frames. Exactly one visible Preprocessing
+  section expanded successfully from 44.38px to 261.21px, showed Saved, retained
+  pp-original-1/2 as Original Pixels, and exposed the row controls and Preview.
+  Direct/proxied chain HTTP returned 200 in 262ms/114ms. Catalog HTTP also
+  returned 200, but remains slow: 41.99s cold, 7.04s warm, 6.67s through Vite.
+  That remaining latency belongs to the broader Visual Sequence caching task,
+  not an unresolved preprocessing integration blocker.
+  Parent final suite: 1222 passed, 10 optional-plugin skips. Main ran 39 focused
+  tests after the fix; its previous feature integration also passed the build
+  and client tests. No PR, push, runtime cleanup, chain preference mutation,
+  LLM/extraction run, or parent-baseline import was part of main integration.
+
 - Preprocessing chain completion (2026-09-09, parent takeover): the child stopped
   writing at `9de4e1b29` and preserved its ten local commits, recovery bundle, and
   paused cache patch. The parent imported only the source baseline as `706bec23d`;
