@@ -35,6 +35,21 @@ resources = get_filesystem_provider()
 _LAUNCH_LOCK = RLock()
 _PENDING_LAUNCHES: dict[str, tuple[int, float]] = {}
 
+# The process viewer polls GET /system/services continuously. Building each
+# response shells out to tasklist (per service) and a full `Get-CimInstance
+# Win32_Process` enumeration, so uncached rapid polling saturates the machine
+# with transient tasklist/powershell children. Cache the assembled snapshot for
+# a short TTL so bursts of polls reuse one enumeration; mutating actions
+# invalidate it so the UI still reflects launches/stops promptly.
+_SERVICES_CACHE_TTL_SECONDS = 2.5
+_SERVICES_CACHE_LOCK = RLock()
+_SERVICES_CACHE: dict[tuple[bool, int], tuple[float, dict[str, Any]]] = {}
+
+
+def _invalidate_services_cache() -> None:
+    with _SERVICES_CACHE_LOCK:
+        _SERVICES_CACHE.clear()
+
 
 @dataclass(frozen=True)
 class ServiceDefinition:
@@ -441,13 +456,22 @@ def update_startup_policy(request: Request, body: dict[str, Any] = Body(...)) ->
 @router.get("/system/services")
 def list_services(request: Request, include_hidden: bool = False) -> dict[str, Any]:
     api_port = request.url.port or 8000
+    cache_key = (bool(include_hidden), int(api_port))
+    now = time.monotonic()
+    with _SERVICES_CACHE_LOCK:
+        cached = _SERVICES_CACHE.get(cache_key)
+        if cached is not None and (now - cached[0]) < _SERVICES_CACHE_TTL_SECONDS:
+            return cached[1]
     listeners = _listener_pids()
     processes = _system_processes()
     services = [_service_payload(item, listeners, processes) for item in _definitions(api_port)]
     if not include_hidden:
         policy = _startup_policy()
         services = [item for item in services if not policy.get(item["id"], {}).get("hideFromProcessViewer")]
-    return {"services": services, "running": sum(1 for item in services if item["running"])}
+    payload = {"services": services, "running": sum(1 for item in services if item["running"])}
+    with _SERVICES_CACHE_LOCK:
+        _SERVICES_CACHE[cache_key] = (time.monotonic(), payload)
+    return payload
 
 
 def _managed(service_id: str) -> ServiceDefinition:
@@ -643,6 +667,7 @@ def control_service(service_id: str, action: str, request: Request) -> dict[str,
         _start(definition)
     else:
         raise HTTPException(status_code=400, detail="Action must be start, stop, or restart")
+    _invalidate_services_cache()
     return {"status": action, "serviceId": service_id}
 
 
@@ -660,4 +685,5 @@ def control_matching_process(service_id: str, pid: int, action: str, request: Re
     _kill_pid(pid)
     if action == "relaunch":
         _start(definition)
+    _invalidate_services_cache()
     return {"status": action, "serviceId": service_id, "pid": pid, "terminationScope": "selected-pid-only"}
