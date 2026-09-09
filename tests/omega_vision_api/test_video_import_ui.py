@@ -28,6 +28,7 @@ VISUAL_REGION_HIGHLIGHT_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("VisualRegionHi
 VISUAL_REGION_HIGHLIGHT_OVERLAY = VIDEO_IMPORT_PAGE.with_name("VisualRegionHighlightOverlay.tsx")
 COMPACT_TRANSFORM_STATUS_MODEL = VIDEO_IMPORT_PAGE.with_name("CompactTransformStatusModel.ts")
 COMPACT_TRANSFORM_STATUS_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("CompactTransformStatusModel.test.mjs")
+TRANSFORM_TEXT_BAND_MODEL = VIDEO_IMPORT_PAGE.with_name("TransformTextBandModel.ts")
 VIDEO_IMPORT_API = ROOT / "python" / "omega_vision" / "services" / "video_import_api.py"
 VIDEO_IMPORT_STYLES = (
     ROOT
@@ -101,17 +102,19 @@ def test_parts_extractor_controls_apply_globally_and_support_preview_todos() -> 
     assert '"↻ Fresh todos"' in source
     assert 'mergeTodos: mode === "merge"' in source
     assert 'freshTodos: mode === "fresh"' in source
-    assert "s.visualGroupCount != null" in source
-    assert "v groups" in source
-    assert "s.smallFeatureCount != null" in source
-    assert "small marks" in source
+    # Per-transform stats moved to the independent bottom text band, whose honest
+    # labels live in the pure TransformTextBandModel.
+    text_band_model = TRANSFORM_TEXT_BAND_MODEL.read_text(encoding="utf-8")
+    assert "summarizeTransformCell(" in source
+    assert 'className="video-import-transform-textband"' in source
+    assert '["visualGroupCount", "v groups"]' in text_band_model
+    assert '["smallFeatureCount", "small marks"]' in text_band_model
+    assert '["observationCount", "stable observations"]' in text_band_model
     assert '"group_acceptance_0"' in source
     assert '"group_acceptance_prolog"' in source
     assert '"observation_identity_0"' in source
     assert '"content_hash"' in source
     assert 'dependsOn: ["group_acceptance_0/group_acceptance_prolog"]' in source
-    assert "s.observationCount != null" in source
-    assert "stable observations" in source
 
 
 def test_prolog_inspector_loads_real_sources_into_reusable_clause_explorer() -> None:
@@ -355,10 +358,13 @@ def test_debug_visual_runs_and_displays_immediately_after_turtle() -> None:
     assert 'String(t.name) === "parts_debug_0" && t.debugImage' in page
     assert 'className="video-import-region-preview is-debug-comparison"' in page
     assert "<VisualRegionHighlightOverlay" in page
-    assert "compare beside Turtle · same source geometry" in page
+    # The debug note and non-visual state text moved to the bottom text band model.
+    text_band_model = TRANSFORM_TEXT_BAND_MODEL.read_text(encoding="utf-8")
+    assert "compare beside Turtle · same source geometry" in text_band_model
+    assert 'error · ${String(transform.error || "transform failed")}' in text_band_model
+    assert 'className="video-import-transform-textband"' in page
     assert 'dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "turtle_programs/turtle_programs_prolog"]' in page
     assert 'priority: 50, type: "ui"' in page
-    assert "error · {String(t.error || \"transform failed\")}" in page
     assert ".video-import-debug-comparison-image" in styles
     assert "width: 150px;" in styles
     assert "height: 150px;" in styles
