@@ -3622,6 +3622,7 @@ export function VideoImportPage({
     }
     setPendingVisualSequence(null);
     setSelectedImageSet(entry.id);
+    setObjectsShowLive(false);
     selectedRecordingRef.current = "";
     setSelectedRecording("");
     setVisualSequenceReady(true);
@@ -8589,7 +8590,7 @@ export function VideoImportPage({
                             {directComposites.map((entry) => <option key={entry.id} value={entry.id} disabled={!entry.available}>{entry.id}</option>)}
                           </select>
                         </label>
-                        <button type="button" disabled={call.active ? !call.jobId : !call.retry && (!visualSequenceReady || !preprocContextReady || !available)}
+                        <button type="button" disabled={call.active ? !call.jobId : !call.retry && (!visualSequenceReady || !preprocContextReady || !available || (activeSubview === "objects" && objectsShowLive))}
                           onClick={() => void callDirect(slot)}
                           title="Run this registered pair now, executing unmet dependencies first. No todo stamping or pooler changes.">
                           {directCalls[slot].active ? (directCalls[slot].jobId ? "Stop" : "Starting...") : directCalls[slot].retry ? "Retry status" : "Call"}
@@ -8602,11 +8603,11 @@ export function VideoImportPage({
                     {directCatalogError && <span role="alert">{directCatalogError}</span>}
                   </div>
                   <div className="video-import-todo-pooler-row">
-                  <button type="button" className="video-import-btn" disabled={seedTodosBusy} onClick={() => void seedTodos("merge")}
+                  <button type="button" className="video-import-btn" disabled={seedTodosBusy || !visualSequenceReady || (activeSubview === "objects" && objectsShowLive)} onClick={() => void seedTodos("merge")}
                     title="Add/update the current template steps while preserving every existing todo and completed output. The pooler runs pending work.">
                     {seedTodosBusy ? "stamping todos…" : "⊕ Add/Merge todos"}
                   </button>
-                  <button type="button" className="video-import-btn video-import-fresh-todos" disabled={seedTodosBusy}
+                  <button type="button" className="video-import-btn video-import-fresh-todos" disabled={seedTodosBusy || !visualSequenceReady || (activeSubview === "objects" && objectsShowLive)}
                     onClick={() => void seedTodos("fresh")}
                     title="Fresh start: replace todos with the current template and remove those steps' existing outputs so the pooler recomputes them. Respects First N.">
                     {seedTodosBusy ? "stamping todos…" : "↻ Fresh todos"}
@@ -9226,7 +9227,7 @@ export function VideoImportPage({
   // component state. preprocSequenceId is derived from the catalog-resolved
   // selection (see selectVisualSequence), so it survives a cold reload of a
   // valid game=/recording= URL.
-  const preprocessingSection = preprocSequenceId && visualSequenceReady ? (
+  const preprocessingSection = preprocSequenceId && visualSequenceReady && !(activeSubview === "objects" && objectsShowLive) ? (
     <Section {...section("preprocessing", "PREPROCESSING · ALL INPUTS",
       preprocError ? "Unsaved / error" : !preprocContextReady ? "Loading..." : preprocSaving ? "Saving changes..." : "Saved",
       <div className="vi2-preprocessing-chips" aria-label="Ordered preprocessing chain">

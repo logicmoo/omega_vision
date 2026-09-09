@@ -1242,6 +1242,9 @@ def test_catalog_refresh_lives_beside_shared_visual_sequence_selector() -> None:
     assert page.count("{preprocessingSection}") == 1
     assert page.count("{renderImageSetSelector(") == 1
     assert '["recognition", "objects", "frames"].includes(activeSubview)' in page
+    selection = page[page.index("const commitVisualSequence"):page.index("const selectVisualSequence")]
+    assert "setObjectsShowLive(false)" in selection
+    assert 'preprocSequenceId && visualSequenceReady && !(activeSubview === "objects" && objectsShowLive)' in page
 
 
 def test_alt_hover_gives_image_and_context_separate_half_page_panes() -> None:

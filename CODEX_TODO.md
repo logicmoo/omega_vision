@@ -37,6 +37,12 @@ values here.
   increment fixed catalog latency. MainThread is in normal asyncio polling.
   No caching redesign, preference mutation, or unvalidated selector fallback
   was introduced; the original Recognition URL was restored.
+  Follow-up context guard: committing a real Visual Sequence also exits the
+  legacy Objects live-display mode. If the user explicitly selects live objects,
+  sequence-scoped preprocessing, direct calls and TODO stamping cannot operate
+  against a different previously selected recording. The semantic candidate
+  applies the same guard to its semantic panel. Main and candidate UI contracts
+  (26 each) and builds pass.
 
 - Main-runtime blocker identified after integration (2026-09-09): the exact
   preprocessing feature is on local main as `8ac0b2b12`, but main HTTP acceptance
