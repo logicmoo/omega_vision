@@ -7,6 +7,7 @@ a prepass before asking a model to write a small redraw (turtle) program.
 from PIL import Image, ImageFilter, ImageOps
 
 SKILL = {
+    "preprocessing": {"geometry": "identity"},
     "title": "Edge sketch (line art)",
     "description": "White background, dark edge lines; params.threshold tunes line density (0-255).",
     "params": {"threshold": 40},

@@ -80,3 +80,31 @@ def test_catalog_etag_and_refresh_keep_guard_counts(tmp_path, monkeypatch):
         assert len(calls) == 1
         assert client.get(url + "&refresh=true").status_code == 200
         assert len(calls) == 2
+
+
+def test_catalog_does_not_wait_for_a_watcher_to_yield(tmp_path, monkeypatch):
+    import threading
+    import watchfiles
+    from omega_vision.perception.visual_sequence_cache import CatalogRevisionTracker
+    watching = threading.Event()
+
+    def busy_watcher(*roots, watch_filter, stop_event, **kwargs):
+        # watchfiles can keep receiving filtered-out runtime events without
+        # yielding. An HTTP request must never advance this generator itself.
+        watch_filter(None, str(tmp_path / "pooler_status.json"))
+        watching.set()
+        stop_event.wait(10)
+        yield set()
+
+    monkeypatch.setattr(watchfiles, "watch", busy_watcher)
+    tracker = CatalogRevisionTracker([tmp_path], ["recordings"])
+    try:
+        assert watching.wait(2)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(tracker)
+            assert future.result(timeout=1) == catalog_revision([tmp_path], ["recordings"])
+        (tmp_path / "recordings").mkdir()
+        tracker._changed(None, str(tmp_path / "recordings"))
+        assert tracker() == catalog_revision([tmp_path], ["recordings"])
+    finally:
+        tracker.close()

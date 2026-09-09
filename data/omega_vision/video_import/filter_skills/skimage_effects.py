@@ -204,6 +204,9 @@ EFFECTS = {
 }
 
 SKILL = {
+    "preprocessing": {"geometry": "identity", "excludeParams": {
+        "effect": [name for name in EFFECTS if name.startswith("swirl")],
+    }},
     "title": "scikit-image effect",
     "description": "One of ~50 scikit-image transforms: edge/ridge detectors, gabor banks, exposure ladders, swirls, noise, morphology, TV denoise painting, superpixel looks, entropy texture.",
     "params": {"effect": "superpixels_150"},

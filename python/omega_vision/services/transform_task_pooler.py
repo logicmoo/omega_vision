@@ -155,6 +155,11 @@ def load_unit(todo_file: Path, *, retry_errors: bool) -> tuple[dict, list[dict],
         "frameOrder": payload.get("frameOrder"),
         "frameSourceKey": payload.get("frameSourceKey"),
         "sequenceOrdered": bool(payload.get("sequenceOrdered", False)),
+        "inputSignature": payload.get("inputSignature"),
+        "sourceSignature": payload.get("sourceSignature"),
+        "preprocessingRevision": payload.get("preprocessingRevision"),
+        "sourceImage": (unit_dir / payload["sourceImagePath"]).resolve() if payload.get("sourceImagePath") else None,
+        "sequenceRoot": (unit_dir / payload["sequenceRoot"]).resolve() if payload.get("sequenceRoot") else None,
     }
     entries = [t for t in payload.get("todos", []) if t.get("transformation") and t.get("doer")]
     workable_statuses = {"pending", "started"} | ({"error"} if retry_errors else set())

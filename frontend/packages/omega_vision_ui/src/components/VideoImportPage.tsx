@@ -14,6 +14,7 @@ import {
   visualSequenceLocationForEntry,
   visualSequenceLocationFromLegacyRef,
   visualSequenceLocationFromUrl,
+  visualSequenceLocationMatchesUrl,
   type VisualSequenceCatalogEntry,
   type VisualSequenceLocation,
 } from "./VideoImportRecordingUrl";
@@ -103,6 +104,7 @@ type FilterEntry = {
   params?: Record<string, unknown>; paramChoices?: Record<string, string[]>;
   lutPath?: string; skillPath?: string; broken?: boolean; excluded?: boolean; votes?: number;
   skill?: boolean; lut?: boolean;
+  preprocessing?: { geometry: string; excludeParams?: Record<string, string[]> };
 };
 type FilterSpec = Record<string, unknown>;
 type ChainStep = { entryId: string; params: Record<string, string>; stepId?: string };
@@ -1900,7 +1902,7 @@ function Section({ id, title, meta, extra, open, pinned, autoCollapse, onToggle,
   return (
     <section ref={ref} className={`vi2-section${open ? "" : " is-collapsed"}`} data-section={id}>
       <div className="vi2-section-head">
-        <button className="vi2-section-toggle" onClick={onToggle}>{open ? "▾" : "▸"} <b>{title}</b></button>
+        <button className="vi2-section-toggle" aria-expanded={open} onClick={onToggle}>{open ? "▾" : "▸"} <b>{title}</b></button>
         {meta && <small>{meta}</small>}
         <button className={`vi2-section-pin${pinned ? " is-pinned" : ""}`} title={pinned ? "Unpin" : "Pin: never auto-collapse"} onClick={onPin}>📌</button>
         {extra}
@@ -3399,13 +3401,16 @@ export function VideoImportPage({
   // Persisted server-side per Visual Sequence; OpenCV extraction and every LLM
   // image consumer read the materialized, content-addressed variant. Default =
   // two Original Pixels no-op rows, which resolves to the original pixels.
-  const preprocSequenceId = preprocessingSequenceId(
+  const resolvedPreprocSequenceId = preprocessingSequenceId(
     imageSetList, visualSequenceLocation, selectedImageSet,
   );
+  const preprocSequenceId = visualSequenceReady && resolvedPreprocSequenceId === `data/${selectedImageSet}`
+    ? resolvedPreprocSequenceId : "";
   const [preprocChain, setPreprocChain] = useState<ChainStep[]>([]);
   const [preprocEffectivelyOriginal, setPreprocEffectivelyOriginal] = useState(true);
   const [preprocError, setPreprocError] = useState("");
   const [preprocLoaded, setPreprocLoaded] = useState(false);
+  const [preprocLoadRetry, setPreprocLoadRetry] = useState(0);
   const [preprocSaving, setPreprocSaving] = useState(false);
   const preprocSaveTimer = useRef<number | null>(null);
   const preprocPendingSave = useRef<(() => void) | null>(null);
@@ -3415,6 +3420,10 @@ export function VideoImportPage({
   const preprocContextRef = useRef(preprocContext);
   preprocContextRef.current = preprocContext;
   const preprocEditRevision = useRef(0);
+  const preprocSavedRevision = useRef(0);
+  const preprocLoadedContext = useRef("");
+  const preprocContextReady = preprocLoaded && preprocLoadedContext.current === preprocContext;
+  const preprocDrafts = useRef(new Map<string, ChainStep[]>());
   const asChainSteps = (raw: unknown): ChainStep[] =>
     (Array.isArray(raw) ? raw : []).map((step: any) => ({
       stepId: typeof step?.stepId === "string" ? step.stepId : undefined,
@@ -3431,12 +3440,18 @@ export function VideoImportPage({
     let cancelled = false;
     void (async () => {
       try {
+        await preprocSaveQueue.current;
         const payload = await api(`preprocessing-chain?workspaceId=${encodeURIComponent(workspaceId)}&sequenceId=${encodeURIComponent(preprocSequenceId)}`);
         if (cancelled) return;
-        const steps = asChainSteps(payload.steps);
+        const draft = preprocDrafts.current.get(preprocContext);
+        const steps = draft || asChainSteps(payload.steps);
         preprocChainRef.current = steps;
         setPreprocChain(steps);
         setPreprocEffectivelyOriginal(Boolean(payload.effectivelyOriginal));
+        preprocLoadedContext.current = preprocContext;
+        preprocSavedRevision.current = draft ? preprocEditRevision.current - 1 : preprocEditRevision.current;
+        if (draft) setPreprocError("Unsaved draft restored. Retry saving this chain.");
+        else if (payload.errors?.length) setPreprocError(payload.errors.join("; "));
         setPreprocLoaded(true);
       } catch (reason) {
         if (!cancelled) setPreprocError(`Could not load preprocessing: ${reason instanceof Error ? reason.message : String(reason)}`);
@@ -3450,7 +3465,7 @@ export function VideoImportPage({
       preprocPendingSave.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, preprocSequenceId]);
+  }, [workspaceId, preprocSequenceId, preprocLoadRetry]);
   const savePreprocChain = useCallback((steps: ChainStep[]) => {
     if (!workspaceId || !preprocSequenceId) return;
     const context = `${workspaceId}|${preprocSequenceId}`;
@@ -3462,8 +3477,10 @@ export function VideoImportPage({
       preprocSaveQueue.current = preprocSaveQueue.current.then(async () => {
         try {
           const payload = await api("preprocessing-chain", { workspaceId, sequenceId: preprocSequenceId, steps });
+          if (preprocDrafts.current.get(context) === steps) preprocDrafts.current.delete(context);
           if (preprocContextRef.current !== context || preprocEditRevision.current !== revision) return;
           setPreprocEffectivelyOriginal(Boolean(payload.effectivelyOriginal));
+          preprocSavedRevision.current = revision;
           setPreprocError("");
         } catch (reason) {
           say(`✗ preprocessing save failed: ${reason instanceof Error ? reason.message : String(reason)}`);
@@ -3478,57 +3495,99 @@ export function VideoImportPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, preprocSequenceId]);
   const editPreprocChain = useCallback((update: (current: ChainStep[]) => ChainStep[]) => {
-    if (!preprocLoaded) return;
+    if (!preprocLoaded || preprocLoadedContext.current !== preprocContextRef.current) return;
     const next = update(preprocChainRef.current).map((step) => ({
       ...step, stepId: step.stepId || `pp-${crypto.randomUUID()}`,
     }));
     preprocEditRevision.current += 1;
     preprocChainRef.current = next;
+    preprocDrafts.current.set(preprocContextRef.current, next);
     setPreprocChain(next);
     setPreprocEffectivelyOriginal(next.every((step) => step.entryId === "select:original"));
     savePreprocChain(next);
   }, [preprocLoaded, savePreprocChain]);
-  // Lazy, cached, cancelable Original-vs-Final preview of the draft chain on ONE
-  // frame — reuses /filter-preview so it has no full-run side effects.
-  const [preprocPreview, setPreprocPreview] = useState<{ before: string; after: string; label: string } | null>(null);
+  const flushPreprocSave = useCallback(async () => {
+    if (!preprocSequenceId) return;
+    if (!preprocLoaded || preprocLoadedContext.current !== preprocContextRef.current) {
+      throw new Error("Wait for this Visual Sequence's preprocessing chain to load.");
+    }
+    if (preprocSaveTimer.current !== null) window.clearTimeout(preprocSaveTimer.current);
+    preprocPendingSave.current?.();
+    await preprocSaveQueue.current;
+    if (preprocDrafts.current.has(preprocContextRef.current)) {
+      throw new Error("Preprocessing has unsaved changes. Retry saving before running.");
+    }
+  }, [preprocSequenceId, preprocLoaded]);
+  useEffect(() => {
+    const guard = (event: BeforeUnloadEvent) => {
+      if (preprocDrafts.current.size === 0) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, []);
+  type PreprocFrame = { path: string; label: string };
+  const [preprocFrames, setPreprocFrames] = useState<PreprocFrame[]>([]);
+  const [preprocFramePath, setPreprocFramePath] = useState("");
+  const [preprocFrameOffset, setPreprocFrameOffset] = useState(0);
+  const [preprocFrameTotal, setPreprocFrameTotal] = useState(0);
+  const [preprocFramesBusy, setPreprocFramesBusy] = useState(false);
+  const [preprocPreviewError, setPreprocPreviewError] = useState("");
+  const [preprocPreview, setPreprocPreview] = useState<{ before: string; after: string; label: string; sourceSignature: string } | null>(null);
   const [preprocPreviewBusy, setPreprocPreviewBusy] = useState(false);
   const preprocPreviewAbort = useRef<AbortController | null>(null);
-  const preprocPreviewCache = useRef<Map<string, { before: string; after: string; label: string }>>(new Map());
-  const preprocSpecs = (): FilterSpec[] => preprocChain
-    .filter((step) => step.entryId && step.entryId !== "select:original")
-    .map((step) => { const entry = filters.find((candidate) => candidate.id === step.entryId); return entry ? specFor(entry, step.params) : null; })
-    .filter((spec): spec is FilterSpec => spec !== null);
+  useEffect(() => {
+    setPreprocFrameOffset(0);
+    setPreprocFramePath("");
+    setPreprocFrames([]);
+    setPreprocFrameTotal(0);
+  }, [preprocContext]);
+  useEffect(() => {
+    if (!preprocSequenceId || !visualSequenceReady || collapsedMap.preprocessing !== false) return;
+    const controller = new AbortController();
+    setPreprocFramesBusy(true);
+    setPreprocPreviewError("");
+    void api(`preprocessing-frames?workspaceId=${encodeURIComponent(workspaceId)}&sequenceId=${encodeURIComponent(preprocSequenceId)}&offset=${preprocFrameOffset}`, undefined, controller.signal)
+      .then((payload) => {
+        if (controller.signal.aborted) return;
+        const next: PreprocFrame[] = payload.frames;
+        setPreprocFrames(next);
+        setPreprocFrameTotal(Number(payload.total));
+        setPreprocFramePath((current) => next.some((frame) => frame.path === current) ? current : next[0]?.path || "");
+      })
+      .catch((reason) => {
+        if (!controller.signal.aborted) setPreprocPreviewError(`Could not load frames: ${String(reason)}`);
+      })
+      .finally(() => { if (!controller.signal.aborted) setPreprocFramesBusy(false); });
+    return () => controller.abort();
+  }, [workspaceId, preprocSequenceId, preprocFrameOffset, visualSequenceReady, collapsedMap.preprocessing]);
   const previewPreprocFrame = useCallback(async () => {
-    const source = selectedPath
-      || frames[0]?.path
-      || (Array.isArray(recognitionReduce?.items) ? recognitionReduce.items.map((item: any) => item?.inputPath).find(Boolean) : "")
-      || "";
-    if (!source) { say("no frame available to preview"); return; }
-    const specs = preprocSpecs();
-    const key = `${source}|${JSON.stringify(specs)}`;
-    const cached = preprocPreviewCache.current.get(key);
-    if (cached) { setPreprocPreview(cached); return; }
+    if (!preprocFramePath) { setPreprocPreviewError("Select a frame from this Visual Sequence."); return; }
     if (preprocPreviewAbort.current) preprocPreviewAbort.current.abort();
     const controller = new AbortController();
     preprocPreviewAbort.current = controller;
     setPreprocPreviewBusy(true);
+    setPreprocPreviewError("");
     try {
-      const payload = specs.length
-        ? await api("filter-preview", { workspaceId, image: source, chain: specs }, controller.signal)
-        : { before: source, after: source, filter: "original (no-op)" };
-      const result = { before: String(payload.before), after: String(payload.after), label: String(payload.filter || "original") };
-      preprocPreviewCache.current.set(key, result);
+      const payload = await api("preprocessing-preview", {
+        workspaceId, sequenceId: preprocSequenceId, image: preprocFramePath, steps: preprocChain,
+      }, controller.signal);
+      const result = { before: String(payload.before), after: String(payload.after),
+        label: String(payload.label), sourceSignature: String(payload.sourceSignature) };
       if (!controller.signal.aborted) setPreprocPreview(result);
     } catch (reason) {
-      if (!(reason instanceof DOMException && reason.name === "AbortError")) {
-        say(`✗ preview failed: ${reason instanceof Error ? reason.message : String(reason)}`);
-      }
+      if (!controller.signal.aborted) setPreprocPreviewError(`Preview failed: ${String(reason)}`);
     } finally {
-      setPreprocPreviewBusy(false);
+      if (!controller.signal.aborted) setPreprocPreviewBusy(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, preprocChain, filters, selectedPath, frames, recognitionReduce]);
-  useEffect(() => { setPreprocPreview(null); }, [preprocChain]);
+  }, [workspaceId, preprocSequenceId, preprocChain, preprocFramePath]);
+  useEffect(() => {
+    preprocPreviewAbort.current?.abort();
+    setPreprocPreviewBusy(false);
+    setPreprocPreview(null);
+    return () => { preprocPreviewAbort.current?.abort(); };
+  }, [preprocChain, preprocContext, preprocFramePath, collapsedMap.preprocessing]);
   const [pendingVisualSequence, setPendingVisualSequence] = useState<{
     entry: VisualSequenceCatalogEntry;
     historyMode: RecordingHistoryMode;
@@ -5026,10 +5085,11 @@ export function VideoImportPage({
     setSeedTodosBusy(true);
     setSeedTodosNote("");
     try {
+      await flushPreprocSave();
       const allItems = Array.isArray(recognitionReduce?.items) ? recognitionReduce.items : [];
       const requested = Math.max(0, Math.trunc(todoPreviewCount));
       const moves = requested > 0
-        ? allItems.slice(0, requested).map((item: any) => String(item.id))
+        ? allItems.slice(0, requested).map((item: any) => String(item.unitId || item.id))
         : undefined;
       const resp = await fetch(`${API}/sequence-sets/transform`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -5059,7 +5119,7 @@ export function VideoImportPage({
       setSeedTodosBusy(false);
     }
   }, [workspaceId, selectedImageSet, seedTodosBusy, recognitionReduce, todoPreviewCount,
-      refreshReduceManifest, refreshPooler, poolerWorkers]);
+      refreshReduceManifest, refreshPooler, poolerWorkers, flushPreprocSave]);
   // Keep the pooler chip live while the Extractions list is on screen.
   useEffect(() => {
     if (!recognitionReduce) return;
@@ -5069,7 +5129,7 @@ export function VideoImportPage({
   }, [recognitionReduce != null, refreshPooler]);
   useEffect(() => {
     const items = recognitionReduce && Array.isArray(recognitionReduce.items) ? recognitionReduce.items : [];
-    const pending = items.some((it: any) => Array.isArray(it.transforms) && it.transforms.some((t: any) => t.status !== "done"));
+    const pending = items.some((it: any) => Array.isArray(it.transforms) && it.transforms.some((t: any) => t.status === "pending" || t.status === "started"));
     if (!pending) return;
     const id = window.setInterval(() => { void refreshReduceManifest(); }, 8000);
     return () => window.clearInterval(id);
@@ -5173,6 +5233,9 @@ export function VideoImportPage({
   }, [workspaceId, imageSetsReload]);
   useEffect(() => {
     if (!imageSetsLoaded || pendingVisualSequence) return;
+    // A pending effect can run after Back/Forward has already moved the URL,
+    // but before React applies the new location. Never replace that new entry.
+    if (!visualSequenceLocationMatchesUrl(window.location.href, visualSequenceLocation)) return;
     if (visualSequenceLocation) {
       const resolved = resolveVisualSequenceLocation(imageSetList, visualSequenceLocation);
       if (!resolved.entry) {
@@ -5490,7 +5553,9 @@ export function VideoImportPage({
   const isRunnableVisionModel = (modelId: string) => models.some((model) => model.id === modelId && model.enabled && model.vision);
   const asDataUrl = async (path: string): Promise<string | null> => {
     try {
-      const response = await fetch(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/asset?path=${encodeURIComponent(path)}`, { cache: "no-store" });
+      await flushPreprocSave();
+      const prepared = await api("preprocessing-input", { workspaceId, sequenceId: preprocSequenceId, image: path });
+      const response = await fetch(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/asset?path=${encodeURIComponent(prepared.imagePath)}`, { cache: "no-store" });
       if (!response.ok) return null;
       const blob = await response.blob();
       return await new Promise<string>((resolve, reject) => {
@@ -5499,8 +5564,9 @@ export function VideoImportPage({
         reader.onerror = () => reject(new Error("could not read frame"));
         reader.readAsDataURL(blob);
       });
-    } catch {
-      return null;
+    } catch (reason) {
+      say(`Could not load model image: ${String(reason)}`);
+      throw reason;
     }
   };
   const invokeCachedModel = async (
@@ -5658,13 +5724,10 @@ export function VideoImportPage({
     if (partsRunBusy || !recognitionReduce || !Array.isArray(recognitionReduce.items) || recognitionReduce.items.length === 0) return;
     const first = recognitionReduce.items.find((it: any) => it.inputPath);
     if (!first) return;
-    const rel = String(first.inputPath);
-    const payload: any = { workspaceId };
-    const move = rel.match(/^(.*)\/(\d+)\/image\.png$/);
-    if (move) payload.recording = move[1];
-    else payload.set = selectedImageSet;
+    const payload: any = { workspaceId, set: selectedImageSet };
     setPartsRunBusy(true);
     try {
+      await flushPreprocSave();
       const resp = await fetch(`${API}/sequence-sets/transform`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       });
@@ -5683,15 +5746,17 @@ export function VideoImportPage({
     if (stripRefreshBusy[key]) return;
     setStripRefreshBusy((c) => ({ ...c, [key]: true }));
     try {
-      const payload: any = { workspaceId, moves: [String(it.id)], pipeline, mergeTodos: true,
+      await flushPreprocSave();
+      const payload: any = { workspaceId, set: selectedImageSet, moves: [String(it.unitId || it.id)], pipeline, mergeTodos: true,
                              force: !!opts.force, planOnly: !!opts.planOnly };
-      const move = String(inputRel).match(/^(.*)\/([^/]+)\/image\.png$/);
-      if (move) payload.recording = move[1]; else payload.set = selectedImageSet;
-      await fetch(`${API}/sequence-sets/transform`, {
+      const response = await fetch(`${API}/sequence-sets/transform`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
       });
+      if (!response.ok) throw new Error(String((await response.json()).detail || `HTTP ${response.status}`));
       setPartsPreviews({});
       await refreshReduceManifest();
+    } catch (reason) {
+      setError(String(reason));
     } finally {
       setStripRefreshBusy((c) => ({ ...c, [key]: false }));
     }
@@ -5726,10 +5791,8 @@ export function VideoImportPage({
       // re-stamp todos.json across the visible recording/set, then reload cards
       const first = recognitionReduce?.items?.find((it: any) => it.inputPath);
       if (first) {
-        const rel = String(first.inputPath);
-        const payload: any = { workspaceId, planOnly: true };
-        const move = rel.match(/^(.*)\/(\d+)\/image\.png$/);
-        if (move) payload.recording = move[1]; else payload.set = selectedImageSet;
+        await flushPreprocSave();
+        const payload: any = { workspaceId, set: selectedImageSet, planOnly: true };
         await fetch(`${API}/sequence-sets/transform`, {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
         });
@@ -6254,14 +6317,14 @@ export function VideoImportPage({
        traceTurtle,
        plannerNumber: position + 1,
      });
-     if (verification.verified !== true || !verification.verificationImage || !verification.geometryHash) {
+     if (verification.verified !== true || !verification.verificationImage || !verification.geometryHash || !verification.sourceImage) {
        throw new Error("Outliner verification did not produce a verified trace preview.");
      }
      updateInventoryThing(inventory.id, thingIndex, {
        status: "outlined",
        outlinePrompt,
        outlineOutput,
-       outlineImage: scenePath,
+       outlineImage: String(verification.sourceImage),
        outlineDimensions,
        outlinePolygons: polygons,
        outlineHoles: holes,
@@ -9042,24 +9105,40 @@ export function VideoImportPage({
   // component state. preprocSequenceId is derived from the catalog-resolved
   // selection (see selectVisualSequence), so it survives a cold reload of a
   // valid game=/recording= URL.
-  const preprocessingSection = preprocSequenceId ? (
-    <Section {...section("preprocessing", "PREPROCESSING · ALL INPUTS", preprocEffectivelyOriginal ? "original pixels (no preprocessing)" : `${preprocChain.filter((step) => step.entryId && step.entryId !== "select:original").length} step(s) · feeds OpenCV + LLM`)}>
+  const preprocessingSection = preprocSequenceId && visualSequenceReady ? (
+    <Section {...section("preprocessing", "PREPROCESSING · ALL INPUTS",
+      preprocError ? "Unsaved / error" : !preprocContextReady ? "Loading..." : preprocSaving ? "Saving changes..." : "Saved",
+      <div className="vi2-preprocessing-chips" aria-label="Ordered preprocessing chain">
+        {(preprocContextReady ? preprocChain : []).map((step, index) => (
+          <button key={step.stepId} title={JSON.stringify(step.params)}
+            onClick={() => {
+              setCollapsedMap((current) => ({ ...current, preprocessing: false }));
+              window.setTimeout(() => document.getElementById(`preproc-${step.stepId}`)?.focus(), 0);
+            }}>
+            {index + 1}. {step.entryId === "select:original" ? "Original Pixels" : filters.find((entry) => entry.id === step.entryId)?.title || step.entryId}
+            {Object.entries(step.params).map(([key, value]) => ` ${key}=${value}`).join(",")}
+          </button>
+        ))}
+        {!preprocContextReady ? <span>Loading chain...</span> : !preprocChain.length && <span>Original Pixels (empty chain)</span>}
+      </div>,
+    )}>
       <div className="vi2-body">
         {preprocError && <div role="alert">{preprocError}</div>}
-        <div role="status">{!preprocLoaded ? "Loading saved chain..." : preprocSaving ? "Saving..." : preprocError ? "Not saved" : "Saved"}</div>
+        {preprocError && !preprocLoaded && <button onClick={() => setPreprocLoadRetry((value) => value + 1)}>Retry loading chain</button>}
+        <div role="status">{preprocError ? "Not saved" : !preprocContextReady ? "Loading saved chain..." : preprocSaving ? "Saving..." : "Saved"}</div>
         <div className="video-import-chain-none">
-          Applied to every frame of this Visual Sequence before OpenCV extraction and any LLM image input, keyed to <code>{preprocSequenceId}</code>. An empty stack — or only Original Pixels — resolves to the original pixels.
+          {preprocEffectivelyOriginal ? "Original pixels" : "Final preprocessed pixels"} feed OpenCV and LLM inputs for <code>{preprocSequenceId}</code>. Existing results are not rerun automatically; submit the sequence again to use a changed chain.
         </div>
-        <fieldset disabled={busy || !preprocLoaded} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+        <fieldset disabled={busy || !preprocContextReady} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
         <div className="video-import-chain" role="list">
-          {preprocChain.map((step, index) => {
+          {(preprocContextReady ? preprocChain : []).map((step, index) => {
             const entry = filters.find((candidate) => candidate.id === step.entryId) || null;
             const isOriginal = !step.entryId || step.entryId === "select:original";
             return (
               <div key={step.stepId} data-step-id={step.stepId} className="video-import-chain-step" role="listitem">
                 <b>{index + 1}.</b>
                 <select
-                  aria-label={`Preprocessing filter ${index + 1}`}
+                  id={`preproc-${step.stepId}`} aria-label={`Preprocessing filter ${index + 1}`}
                   value={step.entryId || "select:original"}
                   disabled={busy}
                   onChange={(event) => {
@@ -9071,11 +9150,19 @@ export function VideoImportPage({
                   }}
                 >
                   <option value="select:original">Original Pixels (no-op)</option>
-                  {filters.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id} disabled={candidate.broken || candidate.excluded}>
+                  {!isOriginal && !entry && <option value={step.entryId}>Unavailable filter: {step.entryId}</option>}
+                  {filters.map((candidate) => {
+                    const supported = candidate.preprocessing && ["identity", "scale"].includes(candidate.preprocessing.geometry);
+                    const reason = candidate.broken ? "implementation could not load"
+                      : !supported ? "no deterministic coordinate-map contract"
+                      : candidate.excluded ? "excluded in Filters" : "";
+                    return (
+                    <option key={candidate.id} value={candidate.id} disabled={Boolean(reason)} title={reason}>
                       {candidate.excluded ? "🚫 " : candidate.skill ? "🛠 " : candidate.lut ? "🎨 " : ""}{candidate.title}
+                      {!supported ? " (not available for preprocessing)" : ""}
                     </option>
-                  ))}
+                    );
+                  })}
                 </select>
                 {isOriginal && <span className="video-import-chain-none">passes pixels through unchanged</span>}
                 {entry && Object.entries(step.params).map(([key, value]) => {
@@ -9083,7 +9170,7 @@ export function VideoImportPage({
                   return (
                     <label key={key}>{key}
                       {choices?.length
-                        ? <select className="video-import-param" value={value} disabled={busy} onChange={(event) => editPreprocChain((current) => current.map((existing, at) => (at === index ? { ...existing, params: { ...existing.params, [key]: event.target.value } } : existing)))}>{choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}</select>
+                        ? <select className="video-import-param" value={value} disabled={busy} onChange={(event) => editPreprocChain((current) => current.map((existing, at) => (at === index ? { ...existing, params: { ...existing.params, [key]: event.target.value } } : existing)))}>{choices.map((choice) => <option key={choice} value={choice} disabled={entry.preprocessing?.excludeParams?.[key]?.includes(choice)}>{choice}</option>)}</select>
                         : <input className="video-import-param" value={value} disabled={busy} onChange={(event) => editPreprocChain((current) => current.map((existing, at) => (at === index ? { ...existing, params: { ...existing.params, [key]: event.target.value } } : existing)))} />}
                     </label>
                   );
@@ -9100,13 +9187,26 @@ export function VideoImportPage({
         </div>
         <div className="vi2-body">
           <button disabled={busy} onClick={() => editPreprocChain((current) => [...current, { entryId: "select:original", params: {} }])}>＋ Add step</button>
-          <button disabled={busy || !preprocChain.length} onClick={() => editPreprocChain(() => [{ entryId: "select:original", params: {} }, { entryId: "select:original", params: {} }])}>Reset to Original</button>
-          <button disabled={busy || preprocPreviewBusy} onClick={() => void previewPreprocFrame()}>{preprocPreviewBusy ? "⏳ Previewing…" : "👁 Preview frame"}</button>
+          <button disabled={busy} onClick={() => editPreprocChain(() => [{ entryId: "select:original", params: {} }, { entryId: "select:original", params: {} }])}>Reset to Original</button>
+          {preprocError && <button onClick={() => savePreprocChain(preprocChainRef.current)}>Retry save</button>}
+          <label>Preview frame
+            <select aria-label="Preprocessing preview frame" disabled={preprocFramesBusy} value={preprocFramePath}
+              onChange={(event) => setPreprocFramePath(event.target.value)}>
+              {!preprocFrames.length && <option value="">{preprocFramesBusy ? "Loading frames..." : "No frames available"}</option>}
+              {preprocFrames.map((frame) => <option key={frame.path} value={frame.path}>{frame.label}</option>)}
+            </select>
+          </label>
+          <button disabled={preprocFramesBusy || preprocFrameOffset === 0} onClick={() => setPreprocFrameOffset((offset) => Math.max(0, offset - 100))}>Previous frames</button>
+          <button disabled={preprocFramesBusy || preprocFrameOffset + 100 >= preprocFrameTotal} onClick={() => setPreprocFrameOffset((offset) => offset + 100)}>Next frames</button>
+          <small>{preprocFrameTotal} frames</small>
+          <button disabled={busy || preprocPreviewBusy || preprocFramesBusy || !preprocFramePath} onClick={() => void previewPreprocFrame()}>{preprocPreviewBusy ? "Previewing..." : "Preview frame"}</button>
+          {preprocPreviewBusy && <button onClick={() => { preprocPreviewAbort.current?.abort(); setPreprocPreviewBusy(false); }}>Cancel preview</button>}
         </div>
         </fieldset>
+        {preprocPreviewError && <div role="alert">{preprocPreviewError}</div>}
         {preprocPreview && (
           <div className="video-import-preview">
-            <figure><img src={asset(preprocPreview.before)} alt="original" /><figcaption>original</figcaption></figure>
+            <figure><img src={`${asset(preprocPreview.before)}&revision=${preprocPreview.sourceSignature}`} alt="original" /><figcaption>Original</figcaption></figure>
             <span className="video-import-preview-arrow">→</span>
             <figure><img src={asset(preprocPreview.after)} alt="final" /><figcaption>final · {preprocPreview.label}</figcaption></figure>
             <button onClick={() => setPreprocPreview(null)}>×</button>

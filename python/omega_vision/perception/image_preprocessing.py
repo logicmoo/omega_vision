@@ -57,7 +57,7 @@ def default_chain() -> list[dict[str, Any]]:
 
 
 def normalize_chain(
-    raw: Any, *, id_factory: Callable[[], str] = _new_step_id,
+    raw: Any, *, id_factory: Callable[[], str] = _new_step_id, strict: bool = False,
 ) -> list[dict[str, Any]]:
     """Coerce arbitrary input into a well-formed chain.
 
@@ -66,12 +66,22 @@ def normalize_chain(
     dropped; params default to an empty dict. A non-list input yields the default
     chain."""
     if not isinstance(raw, list):
+        if strict:
+            raise ValueError("steps must be an array (an empty array is allowed)")
         return default_chain()
     steps: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     for item in raw:
         if not isinstance(item, dict):
+            if strict:
+                raise ValueError("each preprocessing step must be an object")
             continue
+        if strict:
+            if not isinstance(item.get("entryId"), str) or not item["entryId"].strip():
+                raise ValueError("each preprocessing step needs an entryId")
+            if not isinstance(item.get("params", {}), dict):
+                raise ValueError("step params must be an object")
+            json.dumps(item.get("params", {}), allow_nan=False)
         entry_id = str(item.get("entryId") or ORIGINAL_PIXELS_ID)
         step_id = str(item.get("stepId") or "").strip() or id_factory()
         if step_id in seen_ids:

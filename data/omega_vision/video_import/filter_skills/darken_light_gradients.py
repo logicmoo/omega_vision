@@ -17,6 +17,7 @@ import numpy as np
 from PIL import Image
 
 SKILL = {
+    "preprocessing": {"geometry": "identity"},
     "title": "Darken Slight Gradients",
     "description": (
         "For each pixel, replace it with the darkest 8-neighbour that is only "

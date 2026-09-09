@@ -1,3 +1,5 @@
+[Back to repository README](../../README.md)
+
 # Temporal Events, Deduction, and Two-Band Induction
 
 Design reference for how the Omega Vision Visual Sequence pipeline reasons about
@@ -705,14 +707,26 @@ normalization.
 | `event_detector_induction_0` (FrameEvidence->Event) | deferred |
 | `event_transition_induction` (Event->Event) | deferred |
 | Grouping learning / cross-sequence promotion | deferred |
-| Preprocessing step stack (§8.1) | deferred |
+| Preprocessing step stack (§8.1) | implemented in the takeover workspace; integration recorded in CODEX_TODO.md |
 
-### 8.1 Deferred integration note: preprocessing step stack
+### 8.1 Preprocessing step stack
 
-Not implemented; recorded so temporal/LLM stages consume the correct input. The
-Video Import extraction controls will gain a compact **ordered stack of
+The Video Import extraction controls provide a compact **ordered stack of
 preprocessing step rows** with schema-driven parameter editors, scoped to all
 submitted items in the current Visual Sequence. Key points:
+
+The implementation uses `/preprocessing-chain` for atomic per-sequence saves,
+`/preprocessing-frames` for paged input references, `/preprocessing-preview` for
+the selected frame's draft chain, and `/preprocessing-input` for browser model
+inputs. Original and intermediate pixels are preserved. Final variants include
+`image_preprocessing_0` provenance, implementation/dependency versions, and
+bidirectional pixel-edge coordinate maps. Native source watching runs outside
+HTTP workers so unrelated runtime writes cannot stall catalog requests.
+Filter skills opt into preprocessing with a deterministic `preprocessing`
+metadata contract (`geometry: identity` or `scale`); unsupported geometric
+effects remain unavailable rather than claiming an incorrect coordinate map.
+Changes mark queued/completed results stale without starting a new run.
+The original-image path remains separate from the effective input signature.
 
 - **Unlimited** step count (no maximum, no silent truncation); rows stay
   compact/collapsible and virtualize/scroll as needed.

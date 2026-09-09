@@ -63,9 +63,12 @@ def test_preprocessing_shared_shell_is_visible_in_primary_subviews() -> None:
     for subview in ("recognition", "objects", "frames"):
         assert f'[data-subview="{subview}"] > [data-section="preprocessing"]' in styles
     assert "preprocessingSequenceId(" in page
+    assert 'visualSequenceReady && resolvedPreprocSequenceId === `data/${selectedImageSet}`' in page
     assert 'title="add step before"' in page
     assert 'data-step-id={step.stepId}' in page
     assert "preprocPendingSave.current?.()" in page
+    assert "if (!visualSequenceLocationMatchesUrl(window.location.href, visualSequenceLocation)) return" in page
+    assert 'disabled={busy || !preprocContextReady}' in page
 
 
 def test_colored_combobox_is_shared_by_chat_and_video_models() -> None:
@@ -188,8 +191,10 @@ def test_visual_sequence_selection_round_trips_through_recording_url_state() -> 
     assert "legacy full-path recording links resolve then canonicalize" in executable_test
     assert "catalog resolution rejects unknown, ambiguous, and unsafe locations" in executable_test
     assert "visualSequenceLocationFromUrl(window.location.href)" in page
-    assert "`${API}/visual-sequences?workspaceId=" in page
-    assert "Array.isArray(data?.visualSequences)" in page
+    catalog = VIDEO_IMPORT_PAGE.with_name("VisualSequenceCatalog.ts").read_text(encoding="utf-8")
+    assert "loadVisualSequenceCatalog(workspaceId" in page
+    assert "/visual-sequences?workspaceId=" in catalog
+    assert "data.visualSequences ?? data.sets" in catalog
     assert "A Visual Sequence may contain one image or many" in page
     assert 'type RecordingHistoryMode = "none" | "push" | "replace"' in page
     assert 'selectRecording(recording, "push")' in page

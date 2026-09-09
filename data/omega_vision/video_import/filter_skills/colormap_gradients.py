@@ -26,6 +26,7 @@ _CMAPS = [
 ]
 
 SKILL = {
+    "preprocessing": {"geometry": "identity"},
     "title": "Colormap gradient map",
     "description": "Applies one of matplotlib's ~85 colormaps as a gradient map over luminance (viridis, inferno, jet, ocean, terrain, twilight, ...).",
     "params": {"cmap": "viridis"},

@@ -6,6 +6,7 @@ import {
   urlWithVisualSequence,
   visualSequenceLocationForEntry,
   visualSequenceLocationFromUrl,
+  visualSequenceLocationMatchesUrl,
   visualSequenceProviderRef,
 } from "./VideoImportRecordingUrl.ts";
 
@@ -23,6 +24,19 @@ const stillSequence = {
   dir: "data/curated/single-image",
   kind: "curated",
 };
+
+test("stale selection effects cannot rewrite a newer browser history location", () => {
+  const first = { recording: "curated/first" };
+  const second = { recording: "curated/second" };
+  const firstUrl = "http://localhost/?recording=curated%2Ffirst";
+  const secondUrl = "http://localhost/?recording=curated%2Fsecond";
+  assert.equal(visualSequenceLocationMatchesUrl(firstUrl, first), true);
+  assert.equal(visualSequenceLocationMatchesUrl(secondUrl, first), false);
+  assert.equal(visualSequenceLocationMatchesUrl(firstUrl, second), false);
+  assert.equal(visualSequenceLocationMatchesUrl(secondUrl, second), true);
+  assert.equal(visualSequenceLocationMatchesUrl("http://localhost/?game=missing-recording", null), false);
+  assert.equal(visualSequenceLocationMatchesUrl("http://localhost/", null), true);
+});
 
 test("preprocessing cold reload and back-forward use only the validated current URL", () => {
   const game = visualSequenceLocationFromUrl("http://localhost/?game=ls20&recording=20260718-154544").location;

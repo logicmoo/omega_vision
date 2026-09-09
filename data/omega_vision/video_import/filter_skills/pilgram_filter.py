@@ -20,6 +20,7 @@ _STYLES = [
 ]
 
 SKILL = {
+    "preprocessing": {"geometry": "identity"},
     "title": "Pilgram color filter (downloaded)",
     "description": "Instagram-style filters from the MIT pilgram library; params.style picks which one.",
     "params": {"style": "lofi"},

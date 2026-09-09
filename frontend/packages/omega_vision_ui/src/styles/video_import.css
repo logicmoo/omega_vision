@@ -3427,3 +3427,23 @@ button.video-import-compact-metadata-line::after { content: " ↗"; opacity: 0.6
 .video-import-job-label { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .video-import-job-progress { font-variant-numeric: tabular-nums; opacity: 0.85; }
 .video-import-job button { font-size: 11px; padding: 1px 6px; }
+.vi2-preprocessing-chips {
+  display: flex;
+  flex: 1 1 200px;
+  min-width: 0;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.vi2-preprocessing-chips > * {
+  flex: 0 0 auto;
+}
+
+.vi2-section[data-section="preprocessing"] .video-import-chain-step {
+  flex-wrap: wrap;
+}
+
+.vi2-section[data-section="preprocessing"] .video-import-chain-step select {
+  max-width: 100%;
+}

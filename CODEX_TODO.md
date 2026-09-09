@@ -14,6 +14,31 @@ values here.
 
 ## Current recovery state
 
+- Preprocessing chain completion (2026-09-09, parent takeover): the child stopped
+  writing at `9de4e1b29` and preserved its ten local commits, recovery bundle, and
+  paused cache patch. The parent imported only the source baseline as `706bec23d`;
+  runtime files were not reset or included. The follow-up now provides strict,
+  atomic per-sequence saves (including an empty chain), stable unbounded rows,
+  context-safe autosave and history restoration, a horizontal collapsible banner,
+  and a paged sequence-specific frame picker. Preview and extraction share
+  content-addressed intermediate/final pixels with alpha, implementation
+  fingerprints, and inverse coordinate lineage. Browser/headless LLM inputs,
+  paired reduction, outline verification, cutouts, and the offline pooler use
+  the same effective input. Changed inputs/dependencies and legacy results are
+  explicitly stale; editing the chain does not start an extraction run.
+  Catalog watching no longer advances a potentially non-yielding filesystem
+  generator on an HTTP worker, and generated variants never become new inputs.
+  Live parent-workspace acceptance on the real 92-frame imported LS20 sequence
+  covered 640x640 -> 1920x1920 preview, 3x + DeNoise, add/remove/reorder/parameters,
+  a 45px collapsed banner, per-sequence isolation, Back/Forward, and saved-ID
+  restoration after reload. API/UI ports here are 8001/5175, not the main app.
+  The initial full suite reached 1212 passes and 10 skips; its one imported
+  TEMPORAL_EVENTS README-link failure was repaired. Focused regression runs and
+  the frontend build pass, including the final review's cutout-alignment and
+  republished-filter cache fixes. Final full-suite/restart acceptance and
+  application of the feature-only follow-up to local main are pending; never
+  cherry-pick the baseline-import commit or include runtime state in that handoff.
+
 - Python CI repair (2026-09-08): the workflow installs SWI-Prolog and the
   documented `.[test]` extra covers every package imported during collection.
   Suite startup pins ARC resource selectors to the current checkout before

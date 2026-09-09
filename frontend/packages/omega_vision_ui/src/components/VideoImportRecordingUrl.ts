@@ -150,6 +150,16 @@ export function urlWithVisualSequence(
   return url.toString();
 }
 
+export function visualSequenceLocationMatchesUrl(
+  href: string,
+  location: VisualSequenceLocation | null,
+): boolean {
+  const parsed = visualSequenceLocationFromUrl(href);
+  return !parsed.error
+    && (parsed.location?.recording || "") === (location?.recording || "")
+    && (parsed.location?.game || "") === (location?.game || "");
+}
+
 export function preprocessingSequenceId(
   entries: readonly VisualSequenceCatalogEntry[],
   location: VisualSequenceLocation | null,

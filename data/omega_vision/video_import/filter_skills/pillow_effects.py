@@ -131,6 +131,7 @@ EFFECTS = {
 }
 
 SKILL = {
+    "preprocessing": {"geometry": "identity", "excludeParams": {"effect": ["mirror", "flip"]}},
     "title": "Pillow effect",
     "description": "One of ~70 pure-PIL effects (filters, ops, enhancements, channel swaps, duotones, quantize/threshold ladders); params.effect picks which.",
     "params": {"effect": "posterize_4"},

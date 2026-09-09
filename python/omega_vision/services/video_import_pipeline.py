@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import mimetypes
 import os
@@ -478,13 +479,8 @@ def active_outline_group_names(inventory: dict[str, Any]) -> set[str] | None:
 
 
 def image_dimensions(root: Path, rel_path: str) -> tuple[int, int] | None:
-    candidate = (root / rel_path).resolve()
-    try:
-        candidate.relative_to(root.resolve())
-    except ValueError:
-        return None
-    if not candidate.is_file():
-        return None
+    from omega_vision.services.video_import_api import _preprocessed_model_image
+    candidate = _preprocessed_model_image(root, rel_path)
     try:
         from PIL import Image  # noqa: PLC0415
 
@@ -657,13 +653,8 @@ def clamp_geometry(geometry: dict[str, Any], width: int, height: int) -> dict[st
 
 
 def image_to_data_url(root: Path, rel_path: str) -> str | None:
-    candidate = (root / rel_path).resolve()
-    try:
-        candidate.relative_to(root.resolve())
-    except ValueError:
-        return None
-    if not candidate.is_file():
-        return None
+    from omega_vision.services.video_import_api import _preprocessed_model_image
+    candidate = _preprocessed_model_image(root, rel_path)
     mime, _ = mimetypes.guess_type(str(candidate))
     mime = mime or "image/png"
     data = base64.b64encode(candidate.read_bytes()).decode("ascii")
@@ -1281,7 +1272,7 @@ def run_outline(
         update_thing(workspace_id, inventory_id, name, {
             "status": "outlined",
             "outlineOutput": raw,
-            "outlineImage": scene_path,
+            "outlineImage": verification["sourceImage"],
             "outlineDimensions": verification.get("dimensions") or {"width": width, "height": height},
             "outlinePolygons": polygons,
             "outlineHoles": geometry.get("holes") or [],
@@ -2349,13 +2340,8 @@ def _load_thumb(root: Path, rel: str, size: int) -> Any:
     from PIL import Image  # noqa: PLC0415
     if not rel:
         return None
-    p = (root / rel).resolve()
-    try:
-        p.relative_to(root.resolve())
-    except ValueError:
-        return None
-    if not p.is_file():
-        return None
+    from omega_vision.services.video_import_api import _preprocessed_model_image
+    p = _preprocessed_model_image(root, rel)
     try:
         im = Image.open(p).convert("RGBA")
     except Exception:  # noqa: BLE001
@@ -3168,6 +3154,22 @@ def run_reduce(
             pass
 
     nocache = os.environ.get("REDUCE_NOCACHE") == "1"
+    from omega_vision.services.video_import_api import (
+        _load_preprocessing_chain_at, _filter_catalog_index, _preprocessing_unit,
+        _materialize_preprocessed_image, _preprocessing_versions, _validated_preprocessing_chain,
+    )
+    preprocessing_chain = _load_preprocessing_chain_at(ws_dir)
+    preprocessing_index = _filter_catalog_index(root) if preprocessing_chain else {}
+    preprocessing_chain = _validated_preprocessing_chain(preprocessing_chain, preprocessing_index)
+    preprocessing_versions = _preprocessing_versions(root, preprocessing_chain, preprocessing_index)
+
+    def prepare_input(source: Path) -> tuple[Path, str]:
+        unit = _preprocessing_unit(ws_dir, source)
+        image = _materialize_preprocessed_image(
+            root, unit, preprocessing_chain, preprocessing_index, registry_versions=preprocessing_versions,
+        )
+        return image, unit["inputSignature"]
+
     counts["stage"] = "reduce"
     counts["total"] = len(entries)
     counts["done"] = 0
@@ -3190,10 +3192,27 @@ def run_reduce(
         if stop_event is not None and stop_event.is_set():
             return
         idv, slug, cond = entry["id"], entry["slug"], entry["cond"]
-        src_path = entry.get("src") or (pool_dir / f"{idv}.jpg")
+        original_path = entry.get("src") or (pool_dir / f"{idv}.jpg")
+        src_path, input_signature = prepare_input(original_path)
+        partner = partner_by_id.get(idv) if pair_mode else None
+        context_signature = None
+        if partner is not None:
+            partner, context_signature = prepare_input(partner)
+        cache_hash = hashlib.sha256(f"{input_signature}|{context_signature}".encode()).hexdigest()[:24]
+        cache_id = f"{idv}__pp_{cache_hash}"
 
         def _tier_done(t: dict[str, Any]) -> bool:
-            sd = _llm_step_dir(ws_dir, pool_dir, src_path, t["model"], t["shots"])
+            sd = _llm_step_dir(ws_dir, pool_dir, original_path, t["model"], t["shots"])
+            meta_path = sd / "meta.json"
+            if meta_path.is_file():
+                metadata = json.loads(meta_path.read_text(encoding="utf-8"))
+                if metadata.get("contextInputSignature") != context_signature:
+                    return False
+                if metadata.get("inputSignature") != input_signature:
+                    if metadata.get("inputSignature") or not input_signature.startswith("original:"):
+                        return False
+            elif not input_signature.startswith("original:"):
+                return False
             if (sd / "result.metta").is_file() and all((sd / f).is_file() for f in _LLM_STEP_FILES.values()):
                 return True
             return ((sym_dir / f"{idv}__{t['shots']}shot.metta").is_file()
@@ -3212,18 +3231,17 @@ def run_reduce(
                 # prolog_only skips every LLM tier (no models required) and runs
                 # only the SWI-Prolog symbolic line + registry pass below.
                 tiers = [] if prolog_only else _tier_specs()
-                partner = partner_by_id.get(idv) if pair_mode else None
                 for ti, tier in enumerate(tiers):
                     _tms = time.monotonic()
                     if partner is not None and tier["kind"] == "oneshot" and ti == 0:
                         inv_text = _inventory_text() if carry_mode else ""
-                        tier["data"] = _extract_pair(src_path, partner, idv, tier["model"], inv_text, use_cache=not carry_mode)
+                        tier["data"] = _extract_pair(src_path, partner, cache_id, tier["model"], inv_text, use_cache=not carry_mode)
                         tier["facts"] = rp.build_facts(slug, tier["data"].get("one_objs", []))
                         tier["_partof"] = _partof_map(tier["data"].get("one_objs", []), tier["facts"])
                         if carry_mode:
                             _merge_inventory(tier["data"].get("one_objs", []))
                     else:
-                        tier["data"] = _extract_tier_with_retry(rp, src_path, tier, idv, scene, stop_event, emit)
+                        tier["data"] = _extract_tier_with_retry(rp, src_path, tier, cache_id, scene, stop_event, emit)
                         tier["facts"] = rp._tier_facts(slug, tier)
                     tier["_ms"] = int((time.monotonic() - _tms) * 1000)
                 ref = tiers[0]["facts"] if tiers else None
@@ -3238,7 +3256,7 @@ def run_reduce(
                     # (llm_reduction_0/<doer>/) under the standard contract, so the
                     # todos/pooler system and the Extractions cells see the LLM
                     # line without any adoption pass. meta.json is written LAST.
-                    step_dir = _llm_step_dir(ws_dir, pool_dir, src_path, rp._short(tier["model"]), shots)
+                    step_dir = _llm_step_dir(ws_dir, pool_dir, original_path, rp._short(tier["model"]), shots)
                     step_dir.mkdir(parents=True, exist_ok=True)
                     step_rel = step_dir.relative_to(ws_dir).as_posix()
                     stage_imgs = {"parts": panels[1], "turtle": panels[2], "partmap": panels[3]}
@@ -3272,7 +3290,7 @@ def run_reduce(
                         pass
                     # cached raw LLM pair objects travel with the step; the pair
                     # cache itself stays in cache/ (pipeline-internal).
-                    cache_f = pair_cache_dir / f"{idv}__pair1.json"
+                    cache_f = pair_cache_dir / f"{cache_id}__pair1.json"
                     if cache_f.is_file():
                         try:
                             shutil.copy2(cache_f, step_dir / "llm_objects.json")
@@ -3283,6 +3301,9 @@ def run_reduce(
                         "transformation": "llm_reduction_0",
                         "doer": step_dir.name,
                         "options": {},
+                        "inputSignature": input_signature,
+                        "contextInputSignature": context_signature,
+                        "inputImage": str(src_path),
                         "createdAt": datetime.now(timezone.utc).isoformat(),
                         "model": rp._short(tier["model"]),
                         "shots": shots,
@@ -3390,6 +3411,7 @@ def run_reduce(
                 idv = e["id"]
                 sp = e.get("src") or (pool_dir / f"{idv}.jpg")
                 if os.path.isfile(str(sp)):
+                    sp, _ = prepare_input(sp)
                     groups.setdefault(e.get("slug", ""), []).append((idv, str(sp)))
             mem_dir = _recog_mem(_sa)
             for sl, lst in groups.items():

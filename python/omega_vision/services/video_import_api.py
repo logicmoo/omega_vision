@@ -2251,7 +2251,10 @@ def _scan_set_images(d: Path) -> list[Path]:
         return []
     pool = d / "pool"
     if pool.is_dir():
-        return sorted(p for p in pool.iterdir() if p.suffix.lower() in {".jpg", ".jpeg", ".png"})
+        with os.scandir(pool) as entries:
+            return sorted(Path(entry.path) for entry in entries
+                          if Path(entry.name).suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
+                          and entry.is_file())
     if (d / "recording.json").is_file():
         return _arc_recording_images(d)
     flat = sorted(list(d.glob("frame_*.png")) + list(d.glob("frame_*.jpg")))
@@ -2263,11 +2266,11 @@ def _scan_set_images(d: Path) -> list[Path]:
         for recording in recordings:
             images.extend(_resolve_set_images(recording))
         return images
-    images = [
-        path
-        for path in d.rglob("*")
-        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
-    ]
+    images: list[Path] = []
+    for directory, children, files in os.walk(d):
+        children[:] = [name for name in children if name not in {"transforms", "preprocessing"}]
+        images.extend(Path(directory) / name for name in files
+                      if Path(name).suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"})
     return sorted(images, key=lambda path: _natural_path_key(path.relative_to(d)))
 
 
@@ -2355,7 +2358,7 @@ def _normalize_symbolic_group_alias(alias: str) -> tuple[str, str | None]:
     return f"w{match.group(1)}", alias
 
 
-def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
+def _unit_transforms(root: Path, unit_dir: Path, sequence_root: Path | None = None) -> dict[str, Any] | None:
     """Summarise a unit's offline transformation todos for the manifest.
 
     Frame units under a sequence set may carry a ``todos.json`` work queue
@@ -2398,10 +2401,20 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
             break
     cells: list[dict[str, Any]] = []
     done = 0
+    preprocessing_stale = False
+    if sequence_root is None and payload.get("sequenceRoot"):
+        sequence_root = (unit_dir / payload["sequenceRoot"]).resolve()
+    if sequence_root is not None:
+        preprocessing_stale = (
+            _preprocessing_revision(_load_preprocessing_chain_at(sequence_root))
+            != (payload.get("preprocessingRevision") or _preprocessing_revision([]))
+        )
     for t in placed:
         output = str(t.get("output"))
         out_dir = unit_dir / output
         status = str(t.get("status") or "pending")
+        if preprocessing_stale:
+            status = "stale"
         if status == "done":
             done += 1
         cell: dict[str, Any] = {
@@ -2417,10 +2430,10 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
             "claimedBy": t.get("claimedBy") or t.get("startedBy") or "",
             "claimedAt": t.get("claimedAt") or t.get("startedAt") or "",
             "startedAt": t.get("startedAt") or t.get("claimedAt") or "",
-            "error": t.get("error") or "",
+            "error": "Preprocessing changed; submit the sequence again." if preprocessing_stale else t.get("error") or "",
             "erroredAt": t.get("erroredAt") or "",
         }
-        if status == "done":
+        if status in {"done", "stale"}:
             rp = out_dir / "result.pl"
             if not rp.is_file():
                 rp = out_dir / "result.metta"  # adopted LLM reductions are metta
@@ -2565,6 +2578,12 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
 # vision_frames dumps are a legacy layout readers still accept. Groups
 # mirror the Objects page's source combobox (describeFrameSource) so both
 # pages organise identically.
+def _unit_transform_fields(root: Path, unit_dir: Path, sequence_root: Path) -> dict[str, Any]:
+    summary = _unit_transforms(root, unit_dir, sequence_root)
+    return ({"transforms": summary["list"], "transformsDone": summary["done"],
+             "transformsTotal": summary["total"]} if summary else {})
+
+
 _FRAME_SET_FAMILIES = (
     ("recordings", "Sequence Sets · Games", "2-arc"),
     ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
@@ -2779,12 +2798,13 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
             ext = input_ext.get(idv) or ".jpg"
             input_name = base_name(m.get("input")) or f"{idv}{ext}"
             items.append({
-                "id": idv, "slug": idv, "cond": "",
+                "id": idv, "unitId": idv, "slug": idv, "cond": "",
                 "label": m.get("label") or idv.replace("_", " "),
                 "input": input_name, "inputPath": f"{base}/pool/{input_name}",
                 "source": m.get("source") or "set", "source_url": m.get("source_url") or "",
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
                 "rows": normalize_rows(m.get("rows"), f"transforms/{idv}"),
+                **_unit_transform_fields(root, d / "transforms" / idv, d),
             })
     else:
         # Frame-based recording set: one item per frame, all grouped under the
@@ -2848,14 +2868,13 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
                         pass
             unit_dir = img.parent if img.parent != d else d / "transforms" / img.stem
             return {
-                "id": idv, "slug": set_leaf, "cond": stem,
+                "id": idv, "unitId": _preprocessing_unit(d, img)["id"], "slug": set_leaf, "cond": stem,
                 "label": set_leaf.replace("_", " ").replace("-", " "),
                 "input": img.name, "inputPath": _data_rel_of(root, img),
                 "source": "recording", "source_url": "", "action": action, "level": level, "provenance": prov,
                 "scene": True, "startedAt": m.get("startedAt"), "elapsedMs": m.get("elapsedMs"),
                 "rows": normalize_rows(m.get("rows"), unit_dir.relative_to(d).as_posix()),
-                **({"transforms": tr["list"], "transformsDone": tr["done"], "transformsTotal": tr["total"]}
-                   if (tr := _unit_transforms(root, unit_dir)) else {}),
+                **_unit_transform_fields(root, unit_dir, d),
             }
 
         images = _resolve_set_images(d)
@@ -2921,7 +2940,7 @@ def _cached_visual_catalog(workspace_id: str, request: Request, response: Respon
             tracker = CatalogRevisionTracker(homes, [family[0] for family in _FRAME_SET_FAMILIES])
             _visual_catalog_trackers[key] = tracker
         if refresh:
-            tracker.signature = None
+            tracker.invalidate()
     entries, revision, cache_state = _visual_catalog_cache.get(
         root / ".cache" / "visual_sequences.json",
         tracker,
@@ -3110,6 +3129,10 @@ def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, 
                     }
                 rows.append(normalized)
             item["rows"] = rows
+            source_image = _safe_workspace_child(root, item["inputPath"])
+            sequence_root = source_image.parent.parent
+            item["unitId"] = idv
+            item.update(_unit_transform_fields(root, sequence_root / "transforms" / idv, sequence_root))
             items.append(item)
 
     return {"tiers": tiers, "count": len(items), "items": items}
@@ -3329,7 +3352,7 @@ def planner_visualization(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         )
     root = _workspace_root(workspace_id)
     try:
-        image_path = _safe_workspace_child(root, image_rel)
+        image_path = _preprocessed_model_image(root, image_rel)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     if not image_path.is_file():
@@ -3430,7 +3453,7 @@ def outline_verification(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         )
     root = _workspace_root(workspace_id)
     try:
-        image_path = _safe_workspace_child(root, image_rel)
+        image_path = _preprocessed_model_image(root, image_rel)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     if not image_path.is_file():
@@ -3573,6 +3596,7 @@ def outline_verification(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     )
     return {
         "verificationImage": _data_rel_of(root, output_path),
+        "sourceImage": _data_rel_of(root, image_path),
         "provenance": provenance["provenance"],
         "geometryHash": geometry_hash,
         "dimensions": {"width": width, "height": height},
@@ -3598,7 +3622,7 @@ def member_cut(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="workspaceId and image are required")
     root = _workspace_root(workspace_id)
     try:
-        image_path = _safe_workspace_child(root, image_rel)
+        image_path = _preprocessed_model_image(root, image_rel)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     if not image_path.is_file():
@@ -3612,15 +3636,16 @@ def member_cut(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     image = Image.new("RGB", source_rgba.size, (0, 0, 0))
     image.paste(source_rgba, mask=source_rgba.getchannel("A"))
     width, height = source_rgba.size
+    effective_image_rel = _data_rel_of(root, image_path)
     alignment = {
-        "cutImage": image_rel,
-        "outlineSourceImage": outline_source_rel or image_rel,
+        "cutImage": effective_image_rel,
+        "outlineSourceImage": outline_source_rel or effective_image_rel,
         "dimensions": {"width": width, "height": height},
         "verified": False,
     }
     if outline_source_rel:
         try:
-            outline_source_path = _safe_workspace_child(root, outline_source_rel)
+            outline_source_path = _preprocessed_model_image(root, outline_source_rel)
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
         if not outline_source_path.is_file():
@@ -3644,14 +3669,16 @@ def member_cut(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                     status_code=409,
                     detail=f"Stored Outliner dimensions {expected[0]}x{expected[1]} do not match cut image {width}x{height}",
                 )
-        if outline_source_rel != image_rel:
+        effective_outline_rel = _data_rel_of(root, outline_source_path)
+        alignment["outlineSourceImage"] = effective_outline_rel
+        if outline_source_path != image_path:
             current_provenance = _read_image_provenance(image_path)
             lineage_images = {
                 str(step_record.get("image") or "")
                 for step_record in (current_provenance or {}).get("lineage") or []
                 if isinstance(step_record, dict)
             }
-            if outline_source_rel not in lineage_images:
+            if effective_outline_rel not in lineage_images:
                 raise HTTPException(
                     status_code=409,
                     detail=f"Cut image is not a provenance descendant of Outliner source: {outline_source_rel}",
@@ -4476,11 +4503,9 @@ def _recording_step_dirs(recording_dir: Path) -> list[Path]:
     <step>/detect_edges_0/scikit_python/) are never steps themselves."""
     if not recording_dir.is_dir():
         return []
-    steps = [
-        child
-        for child in recording_dir.iterdir()
-        if child.is_dir() and (child / "image.png").is_file()
-    ]
+    with os.scandir(recording_dir) as entries:
+        steps = [Path(child.path) for child in entries
+                 if child.is_dir() and os.path.isfile(os.path.join(child.path, "image.png"))]
     return sorted(
         steps,
         key=lambda p: (0, int(p.name), "") if p.name.isdigit() else (1, 0, p.name.lower()),
@@ -5302,29 +5327,9 @@ def list_filters(workspaceId: str) -> dict[str, Any]:
     .cube LUTs dropped into data/video_import/luts/ (e.g. from LUT sites)."""
     root = _workspace_root(workspaceId)
     path = _filters_path(root)
-    published: list[dict[str, Any]] = []
-    if path.is_file():
-        try:
-            loaded = json.loads(path.read_text(encoding="utf-8"))
-            published = loaded if isinstance(loaded, list) else []
-        except (OSError, json.JSONDecodeError) as error:
-            raise HTTPException(status_code=400, detail=f"filter_catalog.json is not valid JSON: {error}") from error
     luts_dir = _luts_dir(root)
-    luts_dir.mkdir(parents=True, exist_ok=True)
-    luts = [
-        {
-            "id": f"lut:{entry.stem}",
-            "title": f"LUT · {entry.stem}",
-            "filter": "lut",
-            "lutPath": _data_rel_of(root, entry),
-            "params": {},
-            "description": f".cube color LUT ({entry.name})",
-            "lut": True,
-        }
-        for entry in sorted(luts_dir.glob("*.cube"))
-    ]
     return {
-        "filters": _apply_filter_flags(root, [*_BUILTIN_FILTERS, *published, *luts, *_discover_skills(root)]),
+        "filters": _apply_filter_flags(root, _filter_catalog_entries(root)),
         "path": _data_rel_of(root, path),
         "lutsDir": _data_rel_of(root, luts_dir),
         "skillsDir": _data_rel_of(root, _skills_dir(root)),
@@ -5626,6 +5631,7 @@ and returns a PIL Image. Drop more .py files beside this one to publish them.
 from PIL import Image, ImageOps
 
 SKILL = {
+    "preprocessing": {"geometry": "identity"},
     "title": "Grayscale posterize",
     "description": "Grayscale the frame, then posterize to a few tone bands.",
     "params": {"bits": 3},
@@ -5668,6 +5674,7 @@ def _discover_skills(root: Path) -> list[dict[str, Any]]:
             "paramGrid": meta.get("paramGrid") if isinstance(meta.get("paramGrid"), dict) else {},
             "description": str(meta.get("description") or f"Python skill ({entry.name})"),
             "skill": True,
+            "preprocessing": meta.get("preprocessing"),
             **({"broken": True} if meta.get("broken") else {}),
         })
     # A skill whose params have exactly one choice-list also expands into one
@@ -5694,7 +5701,9 @@ def _load_skill_module(path: Path) -> Any:
     if spec is None or spec.loader is None:
         raise ValueError(f"cannot load skill: {path.name}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # Filter revisions use source hashes, not Python's second-granularity pyc
+    # timestamp check. Execute those current bytes even after a same-size edit.
+    exec(compile(path.read_bytes(), str(path), "exec"), module.__dict__)
     return module
 
 
@@ -5893,7 +5902,16 @@ def _resolve_chain(root: Path, body: dict[str, Any]) -> tuple[str, Any]:
 
     def composed(image: "Any") -> "Any":
         for _, transform in steps:
-            image = transform(image.convert("RGB") if hasattr(image, "convert") else image)
+            original = image
+            preserve_alpha = bool(body.get("preserveAlpha"))
+            image = transform(image if preserve_alpha else image.convert("RGB"))
+            if preserve_alpha and "A" in original.getbands() and "A" not in image.getbands():
+                from PIL import Image
+                alpha = original.getchannel("A")
+                if alpha.size != image.size:
+                    alpha = alpha.resize(image.size, Image.Resampling.NEAREST)
+                image = image.convert("RGBA")
+                image.putalpha(alpha)
         return image
 
     label = "+".join(label for label, _ in steps)
@@ -5921,15 +5939,27 @@ def _filter_catalog_entries(root: Path) -> list[dict[str, Any]]:
         try:
             loaded = json.loads(path.read_text(encoding="utf-8"))
             published = loaded if isinstance(loaded, list) else []
-        except (OSError, json.JSONDecodeError):
-            published = []
+        except json.JSONDecodeError as error:
+            raise HTTPException(status_code=422, detail=f"Invalid filter catalog: {error}") from error
+        if not isinstance(loaded, list) or not all(isinstance(entry, dict) for entry in loaded):
+            raise HTTPException(status_code=422, detail="filter_catalog.json must contain an array of filters")
     luts_dir = _luts_dir(root)
     luts = [
         {"id": f"lut:{entry.stem}", "title": f"LUT · {entry.stem}", "filter": "lut",
-         "lutPath": _data_rel_of(root, entry), "params": {}, "lut": True}
+         "lutPath": _data_rel_of(root, entry), "params": {}, "lut": True,
+         "description": f".cube color LUT ({entry.name})"}
         for entry in sorted(luts_dir.glob("*.cube"))
     ] if luts_dir.is_dir() else []
-    return [*_BUILTIN_FILTERS, *published, *luts, *_discover_skills(root)]
+    entries = [*_BUILTIN_FILTERS, *published, *luts, *_discover_skills(root)]
+    for raw in entries:
+        entry = dict(raw)
+        kind = entry.get("filter")
+        if kind in {"cartoon", "pixelate", "lut"}:
+            entry["preprocessing"] = {"geometry": "identity"}
+        elif kind in {"downscale", "scale_3x_nearest"}:
+            entry["preprocessing"] = {"geometry": "scale"}
+        raw.update(entry)
+    return entries
 
 
 def _filter_catalog_index(root: Path) -> dict[str, dict[str, Any]]:
@@ -5945,6 +5975,7 @@ def _chain_step_transform_body(entry: dict[str, Any], params: Mapping[str, Any])
             coerced[key] = float(value) if "." in value else int(value)
         else:
             coerced[key] = value
+    coerced = {**(entry.get("params") or {}), **coerced}
     body: dict[str, Any] = {"filter": str(entry.get("filter") or ""), "params": coerced}
     if "colors" in coerced:
         body["colors"] = coerced["colors"]
@@ -5968,8 +5999,12 @@ def _sequence_root_for(root: Path, sequence_id: str) -> Path:
         raise HTTPException(status_code=400, detail="sequenceId is required")
     try:
         if sid.startswith("data/"):
-            return _resolve_set_dir(root, sid)
-        return _safe_workspace_child(root, sid)
+            directory = _resolve_set_dir(root, sid)
+        else:
+            directory = _safe_workspace_child(root, sid)
+        if not directory.is_dir():
+            raise HTTPException(status_code=404, detail="Visual Sequence directory does not exist")
+        return directory
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
 
@@ -5979,23 +6014,106 @@ def _preprocessing_chain_path(sequence_root: Path) -> Path:
 
 
 def _load_preprocessing_chain_at(sequence_root: Path) -> list[dict[str, Any]]:
-    """Load the persisted chain for a resolved sequence dir, or an empty
-    (effectively-original) chain when none is saved. Never raises."""
+    """Missing means original pixels; corrupt persisted configuration is an error."""
     path = _preprocessing_chain_path(sequence_root)
     if not path.is_file():
         return []
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return []
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=f"Malformed preprocessing chain at {path.name}: {error}") from error
+    if isinstance(data, dict) and data.get("schemaVersion", _PP_SCHEMA_VERSION) != _PP_SCHEMA_VERSION:
+        raise HTTPException(status_code=422, detail="Unsupported preprocessing chain schemaVersion")
     steps = data.get("steps") if isinstance(data, dict) else data
-    if not isinstance(steps, list):
-        return []
-    return _pp_normalize_chain(steps)
+    try:
+        return _pp_normalize_chain(steps, strict=True)
+    except (ValueError, TypeError) as error:
+        raise HTTPException(status_code=422, detail=f"Malformed preprocessing chain: {error}") from error
 
 
-def _preprocessing_source_signature(image_path: Path) -> str:
-    return hashlib.sha256(image_path.read_bytes()).hexdigest()[:24]
+def _validated_preprocessing_chain(raw: Any, index: Mapping[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    try:
+        steps = _pp_normalize_chain(raw, strict=True)
+    except (ValueError, TypeError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    errors = _pp_validate_chain(
+        steps, valid_entry_ids=index,
+        materializable_entry_ids=[
+            key for key, entry in index.items()
+            if isinstance(entry.get("preprocessing"), dict)
+            and entry["preprocessing"].get("geometry") in {"identity", "scale"}
+            and not entry.get("broken")
+        ],
+    )
+    for number, step in enumerate(steps, 1):
+        if step["entryId"] == _PP_ORIGINAL_ID or step["entryId"] not in index:
+            continue
+        entry = index[step["entryId"]]
+        defaults = entry.get("params") or {}
+        params = _chain_step_transform_body(entry, step["params"])["params"]
+        for key, value in params.items():
+            if key not in defaults:
+                errors.append(f"step {number}: unknown parameter {key}")
+                continue
+            choices = (entry.get("paramChoices") or {}).get(key)
+            if choices and value not in choices:
+                errors.append(f"step {number}: invalid {key} choice")
+            default = defaults[key]
+            if isinstance(default, (int, float)) and not isinstance(default, bool):
+                if not isinstance(value, (int, float)) or isinstance(value, bool):
+                    errors.append(f"step {number}: {key} must be a number")
+                elif isinstance(default, int) and int(value) != value:
+                    errors.append(f"step {number}: {key} must be an integer")
+                elif key in {"scale", "colors"} and entry.get("filter") in {"downscale", "pixelate", "cartoon"}:
+                    maximum = 32 if key == "scale" else 64
+                    if not 2 <= value <= maximum:
+                        errors.append(f"step {number}: {key} must be between 2 and {maximum}")
+            excluded = (entry.get("preprocessing") or {}).get("excludeParams", {}).get(key, [])
+            if value in excluded:
+                errors.append(f"step {number}: {value} has no supported coordinate mapping")
+        step["params"] = params
+    if errors:
+        raise HTTPException(status_code=400, detail="preprocessing chain invalid: " + "; ".join(errors))
+    return steps
+
+
+def _preprocessing_versions(root: Path, chain: Sequence[Mapping[str, Any]],
+                            index: Mapping[str, dict[str, Any]]) -> dict[str, str]:
+    if _pp_is_effectively_original(chain):
+        return {}
+    from importlib.metadata import PackageNotFoundError, version
+    dependencies: list[str] = []
+    for name in ("Pillow", "numpy", "scikit-image", "scipy", "matplotlib", "pilgram"):
+        try:
+            dependencies.append(f"{name}:{version(name)}")
+        except PackageNotFoundError:
+            dependencies.append(f"{name}:not-installed")
+    runtime = "|".join(dependencies)
+    implementation = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    versions: dict[str, str] = {}
+    for step in _pp_effective_steps(chain):
+        entry = index[str(step["entryId"])]
+        source = str(entry.get("skillPath") or entry.get("lutPath") or "")
+        content = _safe_workspace_child(root, source).read_bytes() if source else b""
+        resolved = json.dumps({
+            "transform": _chain_step_transform_body(entry, step.get("params") or {}),
+            "preprocessing": entry.get("preprocessing"),
+        }, sort_keys=True, ensure_ascii=False).encode()
+        versions[str(step["entryId"])] = hashlib.sha256(
+            content + implementation.encode() + runtime.encode() + resolved
+        ).hexdigest()
+    return versions
+
+
+def _preprocessing_revision(chain: Sequence[Mapping[str, Any]]) -> str:
+    return _pp_chain_signature("", chain)
+
+
+_preprocessing_materialization_lock = threading.RLock()
+
+
+def _preprocessing_source_signature(image_path: Path, *, content: bytes | None = None) -> str:
+    return hashlib.sha256(image_path.read_bytes() if content is None else content).hexdigest()[:24]
 
 
 def _materialize_preprocessed_image(
@@ -6003,55 +6121,85 @@ def _materialize_preprocessed_image(
     unit: dict[str, Any],
     chain: Sequence[Mapping[str, Any]],
     catalog_index: Mapping[str, dict[str, Any]],
+    *,
+    registry_versions: Mapping[str, str] | None = None,
 ) -> Path:
     """Return the path to the final preprocessing variant for a unit's source
     image. An effectively-original chain is a zero-cost pass-through returning
     the ORIGINAL path (nothing is materialized). Otherwise the ordered effective
     steps are applied through the existing filter pipeline and cached under
     ``<unit>/preprocessing/<signature>.png`` (content-addressed, reused)."""
-    source: Path | None = unit.get("image")
-    if source is None or _pp_is_effectively_original(chain):
-        return source  # type: ignore[return-value]
+    source: Path | None = unit.get("sourceImage") or unit.get("image")
+    if source is None or not source.is_file():
+        raise HTTPException(status_code=404, detail="Preprocessing source image is missing")
+    chain = _validated_preprocessing_chain(list(chain), catalog_index)
+    source_bytes = source.read_bytes()
+    source_signature = _preprocessing_source_signature(source, content=source_bytes)
+    versions = registry_versions if registry_versions is not None else _preprocessing_versions(root, chain, catalog_index)
+    signature = _pp_chain_signature(source_signature, chain, registry_versions=versions)
+    unit["sourceImage"] = source
+    unit["sourceSignature"] = source_signature
+    unit["inputSignature"] = signature
+    unit["preprocessingRevision"] = _preprocessing_revision(chain)
+    if _pp_is_effectively_original(chain):
+        return source
     steps = _pp_effective_steps(chain)
-    bodies: list[dict[str, Any]] = []
-    for step in steps:
-        entry_id = str(step.get("entryId"))
-        entry = catalog_index.get(entry_id)
-        if entry is None:
-            raise RuntimeError(f"unknown preprocessing filter: {entry_id}")
-        bodies.append(_chain_step_transform_body(entry, step.get("params") or {}))
-    signature = _pp_chain_signature(_preprocessing_source_signature(source), chain)
     out_dir = unit["dir"] / "preprocessing"
     out_path = out_dir / f"{signature.replace(':', '_')}.png"
-    if out_path.is_file():
-        return out_path
     from PIL import Image  # noqa: PLC0415
-
-    with Image.open(source) as loaded:
-        image = loaded.convert("RGB")
-    _, transform = _resolve_chain(root, {"chain": bodies})
-    result = transform(image).convert("RGB")
-    _save_image_with_provenance(
-        root, result, out_path,
-        operation="preprocessing_chain",
-        parent_image=source,
-        source={"chainSignature": signature,
-                "steps": [{"entryId": str(step.get("entryId")), "params": step.get("params") or {}} for step in steps]},
-        image_format="PNG",
-    )
+    from io import BytesIO
+    with _preprocessing_materialization_lock:
+        if out_path.is_file() and _image_provenance_path(out_path).is_file():
+            return out_path
+        with Image.open(BytesIO(source_bytes)) as loaded:
+            image = loaded.convert("RGBA" if "A" in loaded.getbands() or "transparency" in loaded.info else "RGB")
+        original_size = image.size
+        for count, step in enumerate(steps, 1):
+            prefix = steps[:count]
+            step_signature = _pp_chain_signature(source_signature, prefix, registry_versions=versions)
+            target = out_dir / f"{step_signature.replace(':', '_')}.png"
+            if target.is_file() and _image_provenance_path(target).is_file():
+                with Image.open(target) as cached:
+                   image = cached.copy()
+                continue
+            entry = catalog_index[str(step["entryId"])]
+            before_size = image.size
+            if entry.get("filter") == "scale_3x_nearest" and image.width * image.height * 9 > 89_478_485:
+                raise HTTPException(status_code=422, detail="Preprocessing would exceed the image pixel safety limit")
+            _, transform = _resolve_chain(root, {
+                "chain": [_chain_step_transform_body(entry, step["params"])], "preserveAlpha": True,
+            })
+            image = transform(image)
+            if entry["preprocessing"]["geometry"] == "identity" and image.size != before_size:
+                raise HTTPException(status_code=422, detail=f"{step['entryId']} changed image dimensions without a coordinate map")
+            sx, sy = image.width / original_size[0], image.height / original_size[1]
+            _save_image_with_provenance(
+                root, image, target, operation="image_preprocessing_0", parent_image=source,
+                source={"chainSignature": step_signature, "sourceSignature": source_signature,
+                       "steps": prefix, "implementationVersions": versions},
+                transform={"coordinateSpace": "pixel-edges", "originalSize": list(original_size),
+                          "size": list(image.size), "sourceToVariant": [sx, 0, 0, 0, sy, 0],
+                          "variantToSource": [1 / sx, 0, 0, 0, 1 / sy, 0]},
+                image_format="PNG",
+            )
     return out_path
 
 
 def _preprocessing_chain_payload(root: Path, sequence_id: str, sequence_root: Path,
-                                 steps: list[dict[str, Any]]) -> dict[str, Any]:
-    index = _filter_catalog_index(root)
-    valid = set(index) | {_PP_ORIGINAL_ID}
+                                 steps: list[dict[str, Any]],
+                                 index: Mapping[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    errors: list[str] = []
+    try:
+        _validated_preprocessing_chain(steps, index if index is not None else _filter_catalog_index(root))
+    except HTTPException as error:
+        errors.append(str(error.detail))
     return {
         "sequenceId": sequence_id,
         "schemaVersion": _PP_SCHEMA_VERSION,
         "steps": steps,
         "effectivelyOriginal": _pp_is_effectively_original(steps),
-        "errors": _pp_validate_chain(steps, valid_entry_ids=valid, materializable_entry_ids=set(index)),
+        "errors": errors,
+        "revision": _preprocessing_revision(steps),
         "path": _data_rel_of(root, _preprocessing_chain_path(sequence_root)),
     }
 
@@ -6062,7 +6210,8 @@ def get_preprocessing_chain(workspaceId: str, sequenceId: str) -> dict[str, Any]
     ``Original Pixels`` no-op rows when none is saved)."""
     root = _workspace_root(workspaceId)
     sequence_root = _sequence_root_for(root, sequenceId)
-    steps = _load_preprocessing_chain_at(sequence_root) or _pp_default_chain()
+    steps = (_load_preprocessing_chain_at(sequence_root)
+             if _preprocessing_chain_path(sequence_root).is_file() else _pp_default_chain())
     return _preprocessing_chain_payload(root, sequenceId, sequence_root, steps)
 
 
@@ -6076,20 +6225,93 @@ def put_preprocessing_chain(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if not workspace_id or not sequence_id:
         raise HTTPException(status_code=400, detail="workspaceId and sequenceId are required")
     root = _workspace_root(workspace_id)
-    steps = _pp_normalize_chain(body.get("steps"))
     index = _filter_catalog_index(root)
-    errors = _pp_validate_chain(steps, valid_entry_ids=set(index) | {_PP_ORIGINAL_ID},
-                                materializable_entry_ids=set(index))
-    if errors:
-        raise HTTPException(status_code=400, detail="preprocessing chain invalid: " + "; ".join(errors))
+    steps = _validated_preprocessing_chain(body.get("steps"), index)
     sequence_root = _sequence_root_for(root, sequence_id)
-    sequence_root.mkdir(parents=True, exist_ok=True)
-    _preprocessing_chain_path(sequence_root).write_text(
-        json.dumps({"kind": "preprocessing_chain", "schemaVersion": _PP_SCHEMA_VERSION,
-                    "sequenceId": sequence_id, "steps": steps, "updatedAt": _utc_now()},
-                   indent=2, ensure_ascii=False),
-        encoding="utf-8")
-    return _preprocessing_chain_payload(root, sequence_id, sequence_root, steps)
+    if not sequence_root.is_dir():
+        raise HTTPException(status_code=404, detail="Visual Sequence directory does not exist")
+    _atomic_json_write(_preprocessing_chain_path(sequence_root), {
+        "kind": "preprocessing_chain", "schemaVersion": _PP_SCHEMA_VERSION,
+        "sequenceId": sequence_id, "steps": steps, "updatedAt": _utc_now(),
+    })
+    return _preprocessing_chain_payload(root, sequence_id, sequence_root, steps, index)
+
+
+def _preprocessing_unit(sequence_root: Path, source: Path) -> dict[str, Any]:
+    directory = (sequence_root / "transforms" / source.stem
+                 if source.parent in {sequence_root, sequence_root / "pool"} else source.parent)
+    unit_id = source.stem if source.parent in {sequence_root, sequence_root / "pool"} else source.parent.relative_to(sequence_root).as_posix()
+    return {"id": unit_id, "dir": directory,
+            "image": source, "sequenceRoot": sequence_root}
+
+
+@router.get("/preprocessing-frames")
+def preprocessing_frames(workspaceId: str, sequenceId: str, offset: int = 0, limit: int = 100) -> dict[str, Any]:
+    """List only input frame references, without loading extraction manifests."""
+    if offset < 0 or not 1 <= limit <= 100:
+        raise HTTPException(status_code=400, detail="offset must be nonnegative and limit must be 1..100")
+    root = _workspace_root(workspaceId)
+    sequence_root = _sequence_root_for(root, sequenceId)
+    images = _resolve_set_images(sequence_root)
+    return {"sequenceId": sequenceId, "total": len(images), "offset": offset,
+            "frames": [{"path": _data_rel_of(root, image),
+                        "label": image.relative_to(sequence_root).as_posix()}
+                       for image in images[offset:offset + limit]]}
+
+
+@router.post("/preprocessing-preview")
+def preprocessing_preview(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    root = _workspace_root(str(body.get("workspaceId") or ""))
+    sequence_id = str(body.get("sequenceId") or "")
+    sequence_root = _sequence_root_for(root, sequence_id)
+    source = _safe_workspace_child(root, str(body.get("image") or ""))
+    if source not in _resolve_set_images(sequence_root):
+        raise HTTPException(status_code=400, detail="Preview image is not an input of this Visual Sequence")
+    index = _filter_catalog_index(root)
+    chain = _validated_preprocessing_chain(body.get("steps"), index)
+    unit = _preprocessing_unit(sequence_root, source)
+    result = _materialize_preprocessed_image(root, unit, chain, index)
+    return {"sequenceId": sequence_id, "before": _data_rel_of(root, source),
+            "after": _data_rel_of(root, result), "signature": unit["inputSignature"],
+            "sourceSignature": unit["sourceSignature"],
+            "label": "Original Pixels" if _pp_is_effectively_original(chain) else "Final preprocessed input"}
+
+
+def _preprocessed_model_image(root: Path, image: str, sequence_id: str = "") -> Path:
+    """Resolve raw model inputs once; derived crops/variants are never filtered again."""
+    source = _safe_workspace_child(root, image)
+    if not source.is_file():
+        raise HTTPException(status_code=404, detail=f"Image not found: {image}")
+    if sequence_id:
+        candidates = [_sequence_root_for(root, sequence_id)]
+    else:
+        homes = [home.resolve() for home in _data_homes(root)]
+        candidates = [
+            parent for parent in source.parents
+            if any(parent == home or home in parent.parents for home in homes)
+            and _preprocessing_chain_path(parent).is_file()
+        ]
+    for sequence_root in candidates:
+        # Check source membership rather than guessing from a generated file's path.
+        relative = source.relative_to(sequence_root) if sequence_root in source.parents else None
+        if relative is None or any(part in {"transforms", "preprocessing"} for part in relative.parts[:-1]):
+            continue
+        if source not in _resolve_set_images(sequence_root):
+            continue
+        chain = _load_preprocessing_chain_at(sequence_root)
+        if _pp_is_effectively_original(chain):
+            return source
+        return _materialize_preprocessed_image(
+            root, _preprocessing_unit(sequence_root, source), chain, _filter_catalog_index(root),
+        )
+    return source
+
+
+@router.post("/preprocessing-input")
+def preprocessing_input(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    root = _workspace_root(str(body.get("workspaceId") or ""))
+    image = _preprocessed_model_image(root, str(body.get("image") or ""), str(body.get("sequenceId") or ""))
+    return {"imagePath": _data_rel_of(root, image)}
 
 
 @router.post("/filter-preview")
@@ -7439,14 +7661,21 @@ def _resolve_step_deps(unit: dict[str, Any],
     return resolved
 
 
-def _step_meta_is_stale(out_meta_file: Path, resolved_deps: list[dict[str, Any]]) -> tuple[bool, str]:
+def _step_meta_is_stale(out_meta_file: Path, resolved_deps: list[dict[str, Any]],
+                        input_signature: str | None = None) -> tuple[bool, str]:
     """A completed cross-frame-dependent step is stale when a resolved cross-frame
     target changed frame or output revision since it was produced. Same-frame
     dependencies keep the historical presence-only behavior."""
     try:
         meta = json.loads(out_meta_file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return False, "current"
+        return True, "unreadable-metadata"
+    if not isinstance(meta, dict):
+        return True, "invalid-metadata"
+    previous_input = meta.get("inputSignature")
+    if input_signature and previous_input != input_signature:
+        if previous_input is not None or not input_signature.startswith("original:"):
+            return True, "preprocessing-input-changed"
     consumed = meta.get("consumedDeps") or {}
     for dep in resolved_deps:
         if dep.get("reason") == "same-frame":
@@ -7475,11 +7704,21 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     step_name = f"{transformation}/{doer}"
     if runner is None:
         return {"step": step_name, "status": "error", "error": f"unknown transformation {step_name}"}
+    sequence_root = unit.get("sequenceRoot")
+    if sequence_root and unit.get("preprocessingRevision") is not None:
+        current = _preprocessing_revision(_load_preprocessing_chain_at(Path(sequence_root)))
+        if current != unit["preprocessingRevision"]:
+            return {"step": step_name, "status": "blocked", "reason": "preprocessing-chain-changed",
+                    "error": "Preprocessing changed; submit this sequence again to run the new chain."}
+    if unit.get("sourceSignature") and unit.get("sourceImage"):
+        if _preprocessing_source_signature(unit["sourceImage"]) != unit["sourceSignature"]:
+            return {"step": step_name, "status": "blocked", "reason": "preprocessing-source-changed",
+                    "error": "Source pixels changed; submit this sequence again."}
     out_dir = unit["dir"] / transformation / doer
     resolved_deps = _resolve_step_deps(unit, depends_on, depends_on_resolved)
     out_meta_file = out_dir / "meta.json"
     if not force and out_meta_file.is_file():
-        stale, _reason = _step_meta_is_stale(out_meta_file, resolved_deps)
+        stale, _reason = _step_meta_is_stale(out_meta_file, resolved_deps, unit.get("inputSignature"))
         if not stale:
             return {"step": step_name, "status": "skipped"}
     for dep in resolved_deps:
@@ -7490,6 +7729,11 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         if not meta_path.is_file():
             return {"step": step_name, "status": "blocked",
                     "missing": dep["selector"], "reason": dep.get("reason", "pending")}
+        if dep.get("reason") == "same-frame":
+            stale, reason = _step_meta_is_stale(meta_path, [], unit.get("inputSignature"))
+            if stale:
+                return {"step": step_name, "status": "blocked", "missing": dep["selector"],
+                        "reason": reason, "error": "Run the dependency on the current preprocessed input first."}
     out_dir.mkdir(parents=True, exist_ok=True)
     claim_file = out_dir / "claim.json"
     claim_body = json.dumps({"kind": "transformation_claim", "step": step_name,
@@ -7536,6 +7780,7 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         "createdAt": _utc_now(),
         "elapsedMs": elapsed_ms,
         "outputRevision": revision,
+        **({"inputSignature": unit["inputSignature"]} if unit.get("inputSignature") else {}),
         **({"consumedDeps": consumed_deps} if consumed_deps else {}),
         **stats,
     }
@@ -7630,7 +7875,7 @@ def write_unit_todos(unit: dict[str, Any],
         claim = None if (out_dir / "meta.json").is_file() else _read_claim(out_dir / "claim.json")
         if (out_dir / "meta.json").is_file():
             resolved_now = _resolve_step_deps(unit, depends_on, entry.get("dependsOnResolved"))
-            stale, stale_reason = _step_meta_is_stale(out_dir / "meta.json", resolved_now)
+            stale, stale_reason = _step_meta_is_stale(out_dir / "meta.json", resolved_now, unit.get("inputSignature"))
             if stale:
                 entry["status"] = "pending"
                 entry["stale"] = True
@@ -7663,7 +7908,6 @@ def write_unit_todos(unit: dict[str, Any],
     try:
         image_rel = image_path.relative_to(unit["dir"]).as_posix() if image_path else None
     except ValueError:
-        import os  # noqa: PLC0415
         image_rel = Path(os.path.relpath(image_path, unit["dir"])).as_posix() if image_path else None
     unit["dir"].mkdir(parents=True, exist_ok=True)
     (unit["dir"] / "todos.json").write_text(json.dumps({
@@ -7674,6 +7918,13 @@ def write_unit_todos(unit: dict[str, Any],
         "frameSourceKey": unit.get("frameSourceKey"),
         "sequenceOrdered": bool(unit.get("sequenceOrdered", False)),
         "imagePath": image_rel,
+        **({"inputSignature": unit["inputSignature"],
+            "sourceSignature": unit.get("sourceSignature"),
+            "preprocessingRevision": unit.get("preprocessingRevision"),
+            "sourceImagePath": Path(os.path.relpath(unit["sourceImage"], unit["dir"])).as_posix(),
+            "sequenceRoot": Path(os.path.relpath(unit["sequenceRoot"], unit["dir"])).as_posix()
+                            if unit.get("sequenceRoot") else None}
+           if unit.get("inputSignature") and unit.get("sourceImage") else {}),
         "updatedAt": _utc_now(),
         "todos": todos,
     }, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -8219,8 +8470,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=str(error)) from error
         if not (recording_dir / "recording.json").is_file():
             raise HTTPException(status_code=404, detail=f"not a recording (no recording.json): {recording_rel}")
-        for path in _recording_step_dirs(recording_dir):
-            units.append({"id": path.name, "dir": path, "image": path / "image.png"})
+        units = [_preprocessing_unit(recording_dir, image) for image in _arc_recording_images(recording_dir)]
         target = recording_rel
         pooler_root = recording_dir
         sequence_ordered = True
@@ -8229,23 +8479,7 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             set_base = _resolve_set_dir(root, f"data/{set_id}")
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
-        pool = set_base / "pool"
-        if pool.is_dir():
-            for image in sorted(pool.iterdir()):
-                if image.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
-                    continue
-                units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
-        else:
-            # No pool/: flat frame_*.png dumps put work in transforms/<stem>/;
-            # nested recording frames (<attempt>/<step>/image.png) keep the
-            # frame dir itself as the unit dir, matching the manifest reader.
-            for image in _resolve_set_images(set_base):
-                parent = image.parent
-                if parent == set_base:
-                    units.append({"id": image.stem, "dir": set_base / "transforms" / image.stem, "image": image})
-                else:
-                    unit_id = parent.name if parent.name.isdigit() else image.stem
-                    units.append({"id": unit_id, "dir": parent, "image": image})
+        units = [_preprocessing_unit(set_base, image) for image in _resolve_set_images(set_base)]
         if not units:
             raise HTTPException(status_code=404, detail=f"image set has no images: {set_id}")
         adopt = _llm_adoption_maker(set_base)
@@ -8261,30 +8495,6 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             unit["frameSourceKey"] = image.relative_to(pooler_root).as_posix()
         except (AttributeError, ValueError):
             unit["frameSourceKey"] = str(unit["id"])
-    # Rewire every unit's source image to the materialized, content-addressed
-    # per-sequence preprocessing variant so OpenCV extraction and every LLM
-    # image consumer read the SAME final pixels. The default/empty chain is
-    # effectively original and this is a zero-cost pass-through; frameSourceKey
-    # above stays keyed to the ORIGINAL frame so cross-frame identity is stable.
-    _pp_chain = _load_preprocessing_chain_at(pooler_root)
-    if not _pp_is_effectively_original(_pp_chain):
-        _pp_index = _filter_catalog_index(root)
-        _pp_errors = _pp_validate_chain(
-            _pp_chain, valid_entry_ids=set(_pp_index) | {_PP_ORIGINAL_ID},
-            materializable_entry_ids=set(_pp_index))
-        if _pp_errors:
-            raise HTTPException(status_code=400,
-                                detail="preprocessing chain invalid: " + "; ".join(_pp_errors))
-        for unit in units:
-            if unit.get("image") is None:
-                continue
-            unit["sourceImage"] = unit["image"]
-            try:
-                unit["image"] = _materialize_preprocessed_image(root, unit, _pp_chain, _pp_index)
-            except Exception as error:  # noqa: BLE001 - surfaced to the caller
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"preprocessing failed for {unit['id']}: {error}") from error
     sequence_catalog = {
         "frame_ids_in_order": [str(unit["id"]) for unit in units],
         "ordered": sequence_ordered,
@@ -8317,6 +8527,13 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         )
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
+    chain = _load_preprocessing_chain_at(pooler_root)
+    index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
+    chain = _validated_preprocessing_chain(chain, index)
+    versions = _preprocessing_versions(root, chain, index)
+    for unit in units:
+        unit["sequenceRoot"] = pooler_root
+        unit["image"] = _materialize_preprocessed_image(root, unit, chain, index, registry_versions=versions)
     plan_only = bool(body.get("planOnly"))
     merge_todos = bool(body.get("mergeTodos"))
     fresh_todos = bool(body.get("freshTodos"))
@@ -8394,9 +8611,8 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                                                 depends_on_resolved=resolved))
         pending = write_unit_todos(unit, unit_specs, steps, catalog=sequence_catalog)
         if plan_only:
-            steps = [{"step": f"{spec['transformation']}/{spec['doer']}",
-                      "status": "done" if (unit["dir"] / spec["transformation"] / spec["doer"] / "meta.json").is_file() else "pending"}
-                     for spec in unit_specs]
+            stamped = json.loads((unit["dir"] / "todos.json").read_text(encoding="utf-8"))
+            steps = [{"step": entry["output"], "status": entry["status"]} for entry in stamped["todos"]]
         move_id: Any = int(unit["id"]) if str(unit["id"]).isdigit() else unit["id"]
         return {"move": move_id, "steps": steps, "pending": pending}
 

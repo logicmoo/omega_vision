@@ -20,20 +20,49 @@ class CatalogRevisionTracker:
     """Reuse a validated signature until native filesystem notifications change it."""
 
     def __init__(self, homes: Sequence[Path], families: Sequence[str]) -> None:
-        from watchfiles import watch
-
         self.homes = tuple(homes)
         self.families = tuple(families)
         self.signature: str | None = None
-        roots = {home if home.is_dir() else home.parent for home in homes}
-        self.events = watch(
-            *sorted(roots), watch_filter=self._relevant,
-            debounce=25, step=5, rust_timeout=25, yield_on_timeout=True,
-            force_polling=False, ignore_permission_denied=False,
-        )
-        # Install the native watcher before reading the initial filesystem state.
-        next(self.events)
-        atexit.register(self.events.close)
+        self._lock = threading.Lock()
+        self._ready = threading.Event()
+        self._stop = threading.Event()
+        self._generation = 0
+        self._signature_generation = -1
+        self._error: Exception | None = None
+        self._thread = threading.Thread(target=self._watch, name="visual-sequence-revisions", daemon=True)
+        self._thread.start()
+        atexit.register(self.close)
+
+    def _watch(self) -> None:
+        from watchfiles import watch
+        roots = {home if home.is_dir() else home.parent for home in self.homes}
+        try:
+            for _ in watch(
+                *sorted(roots), watch_filter=self._changed,
+                debounce=25, step=5, rust_timeout=100, yield_on_timeout=True,
+                force_polling=False, ignore_permission_denied=False, stop_event=self._stop,
+            ):
+                self._ready.set()
+        except (OSError, RuntimeError) as error:
+            self._error = error
+            self._ready.set()
+            _LOG.error("Visual Sequence source watcher failed: %s", error)
+
+    def _changed(self, change: Any, raw: str) -> bool:
+        relevant = self._relevant(change, raw)
+        if relevant:
+            with self._lock:
+                self._generation += 1
+        self._ready.set()
+        return relevant
+
+    def close(self) -> None:
+        self._stop.set()
+
+    def invalidate(self) -> None:
+        with self._lock:
+            self._generation += 1
+            self.signature = None
 
     def _relevant(self, change: Any, raw: str) -> bool:
         path = Path(raw)
@@ -44,6 +73,8 @@ class CatalogRevisionTracker:
                 continue
             if not parts:
                 return True
+            if any(part in {"transforms", "preprocessing"} for part in parts[1:-1]):
+                return False
             if parts[0] == "recordings" and len(parts) >= 5 and parts[4] != "image.png":
                 return False
             if parts[:2] == ("arc3_games", "recordings") and len(parts) >= 6 and parts[5] != "image.png":
@@ -57,10 +88,22 @@ class CatalogRevisionTracker:
         return any(path == home or path in home.parents for home in self.homes)
 
     def __call__(self) -> str:
-        changes = next(self.events)
-        if changes or self.signature is None:
-            self.signature = catalog_revision(self.homes, self.families)
-        return self.signature
+        if self._error is not None:
+            raise RuntimeError("Visual Sequence source watcher failed") from self._error
+        # Never advance a blocking watch generator on an HTTP worker: continuous
+        # *irrelevant* runtime events can prevent it from yielding indefinitely.
+        if not self._ready.is_set():
+            return catalog_revision(self.homes, self.families)
+        with self._lock:
+            generation = self._generation
+            if self.signature is not None and generation == self._signature_generation:
+                return self.signature
+        signature = catalog_revision(self.homes, self.families)
+        with self._lock:
+            if generation == self._generation:
+                self.signature = signature
+                self._signature_generation = generation
+        return signature
 
 
 def catalog_revision(homes: Sequence[Path], families: Sequence[str]) -> str:
@@ -86,6 +129,8 @@ def catalog_revision(homes: Sequence[Path], families: Sequence[str]) -> str:
             return
         for entry in children:
             directory = entry.is_dir(follow_symlinks=False)
+            if directory and entry.name in {"transforms", "preprocessing"}:
+                continue
             if directory and recording and depth == 0:
                 continue
             if directory:
