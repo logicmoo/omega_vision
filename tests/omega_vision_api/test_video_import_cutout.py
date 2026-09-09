@@ -393,6 +393,20 @@ def test_former_builtin_pipeline_templates_upgrade_to_opencv_only(
         if step["transformation"] == "turtle_programs"
     )
     assert turtle["dependsOn"] == ["group_acceptance_0/group_acceptance_prolog"]
+    debug = next(
+        step for step in upgraded
+        if step["transformation"] == "parts_debug_0"
+    )
+    assert upgraded[-1] == debug
+    assert debug["priority"] == 50
+    assert debug["dependsOn"] == [
+        "parts_extraction_0/python_opencv",
+        "turtle_programs/turtle_programs_prolog",
+    ]
+    assert sum(
+        step["transformation"] == "parts_debug_0"
+        for step in upgraded
+    ) == 1
     assert json.loads(template.read_text(encoding="utf-8"))["pipeline"] == upgraded
 
 

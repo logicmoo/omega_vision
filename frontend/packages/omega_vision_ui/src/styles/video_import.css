@@ -1440,6 +1440,7 @@
 .video-import-transform-cell { flex: 0 0 auto; min-width: 130px; max-width: 220px; display: flex; flex-direction: column; gap: 5px; justify-content: center; border-radius: 6px; padding: 6px 9px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); font-size: 11px; }
 .video-import-transform-cell.is-done { border-color: rgba(39,220,194,0.35); }
 .video-import-transform-cell.is-started { border-color: rgba(230,173,69,0.5); background: rgba(230,173,69,0.07); }
+.video-import-transform-cell.is-error { max-width: 260px; border-color: rgba(255,122,138,0.65); background: rgba(255,122,138,0.08); color: #ffb0ba; }
 .video-import-transform-cell.is-waiting { opacity: 0.55; border-style: dashed; }
 .video-import-transform-title { font-weight: 600; font-size: 11px; display: flex; flex-direction: column; line-height: 1.25; }
 .video-import-transform-title span { font-weight: 400; opacity: 0.65; font-size: 10px; }
@@ -3181,6 +3182,16 @@ button.video-import-compact-metadata-line::after { content: " ↗"; opacity: 0.6
   display: block;
   width: 100%;
   height: 100%;
+}
+.video-import-transform-cell.is-debug-comparison { max-width: none; }
+.video-import-debug-comparison-image {
+  display: block;
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  background: #fff;
 }
 .video-import-region-highlight-overlay {
   position: absolute;

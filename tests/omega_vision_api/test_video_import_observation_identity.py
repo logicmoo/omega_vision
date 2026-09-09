@@ -270,6 +270,77 @@ def test_exact_final_group_pipeline_migrates_to_observation_identity(
     ]
 
 
+def test_exact_observation_pipeline_migrates_debug_after_turtle(
+    tmp_path: Path,
+) -> None:
+    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template.parent.mkdir(parents=True)
+    previous = video_import_api._PRE_DEBUG_LAST_DEFAULT_PIPELINE_TEMPLATE
+    template.write_text(json.dumps({"pipeline": previous}), encoding="utf-8")
+
+    upgraded = video_import_api.load_pipeline_template(tmp_path)
+
+    assert [step["transformation"] for step in upgraded][-2:] == [
+        "turtle_programs",
+        "parts_debug_0",
+    ]
+    debug = upgraded[-1]
+    assert debug["doer"] == "python_pil"
+    assert debug["priority"] == 50
+    assert debug["dependsOn"] == [
+        "parts_extraction_0/python_opencv",
+        "turtle_programs/turtle_programs_prolog",
+    ]
+    assert sum(
+        step["transformation"] == "parts_debug_0"
+        for step in upgraded
+    ) == 1
+
+
+def test_typed_legacy_default_pipeline_migrates_to_canonical_chain(
+    tmp_path: Path,
+) -> None:
+    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template.parent.mkdir(parents=True)
+    template.write_text(json.dumps({
+        "pipeline": video_import_api._TYPED_LEGACY_DEFAULT_PIPELINE_TEMPLATE,
+    }), encoding="utf-8")
+
+    upgraded = video_import_api.load_pipeline_template(tmp_path)
+
+    assert upgraded == video_import_api._DEFAULT_PIPELINE_TEMPLATE
+    assert [step["transformation"] for step in upgraded] == [
+        "parts_extraction_0",
+        "parts_grouping_0",
+        "group_acceptance_0",
+        "observation_identity_0",
+        "turtle_programs",
+        "parts_debug_0",
+    ]
+
+
+def test_transform_manifest_orders_debug_after_turtle(tmp_path: Path) -> None:
+    unit = {"id": "frame", "dir": tmp_path, "image": None}
+    for step in video_import_api._DEFAULT_PIPELINE_TEMPLATE:
+        output = tmp_path / step["transformation"] / step["doer"]
+        output.mkdir(parents=True)
+        (output / "meta.json").write_text(
+            json.dumps({"elapsedMs": step["priority"]}),
+            encoding="utf-8",
+        )
+    video_import_api.write_unit_todos(
+        unit,
+        video_import_api._DEFAULT_PIPELINE_TEMPLATE,
+    )
+
+    summary = video_import_api._unit_transforms(tmp_path, tmp_path)
+
+    assert summary is not None
+    names = [cell["name"] for cell in summary["list"]]
+    assert names[-2:] == ["turtle_programs", "parts_debug_0"]
+    assert names.count("parts_debug_0") == 1
+
+
 def test_customized_final_group_pipeline_is_not_migrated(tmp_path: Path) -> None:
     template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
     template.parent.mkdir(parents=True)
@@ -314,3 +385,28 @@ def test_pipeline_lane_customization_is_not_migrated(tmp_path: Path) -> None:
         step["transformation"] != "observation_identity_0"
         for step in loaded
     )
+
+
+def test_customized_observation_pipeline_keeps_debug_order(tmp_path: Path) -> None:
+    template = tmp_path / video_import_api._PIPELINE_TEMPLATE_REL
+    template.parent.mkdir(parents=True)
+    custom = [
+        {
+            **step,
+            "options": dict(step.get("options") or {}),
+            "dependsOn": list(step.get("dependsOn") or []),
+        }
+        for step in video_import_api._PRE_DEBUG_LAST_DEFAULT_PIPELINE_TEMPLATE
+    ]
+    debug = next(
+        step for step in custom
+        if step["transformation"] == "parts_debug_0"
+    )
+    debug["options"] = {"lineWidth": 3}
+    template.write_text(json.dumps({"pipeline": custom}), encoding="utf-8")
+
+    loaded = video_import_api.load_pipeline_template(tmp_path)
+
+    assert loaded == custom
+    assert loaded[1]["transformation"] == "parts_debug_0"
+    assert loaded[1]["options"] == {"lineWidth": 3}

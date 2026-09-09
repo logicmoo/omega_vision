@@ -7747,12 +7747,14 @@ export function VideoImportPage({
                   status: "missing",
                   dependsOn: [],
                 }));
+              const visualCells = cells.filter((cell: any) => (
+                String(cell.name) !== "parts_extraction_0"
+                && !compactMetadataKinds.includes(String(cell.name) as CompactMetadataKind)
+              ));
               const displayCells = [
                 ...shownExtractionCells,
-                ...cells.filter((c: any) => (
-                  String(c.name) !== "parts_extraction_0"
-                  && !compactMetadataKinds.includes(String(c.name) as CompactMetadataKind)
-                )),
+                ...visualCells.filter((cell: any) => String(cell.name) !== "parts_debug_0"),
+                ...visualCells.filter((cell: any) => String(cell.name) === "parts_debug_0"),
               ];
               const partsCell = (primaryExtraction && Array.isArray(primaryExtraction.parts) && primaryExtraction.parts.length > 0)
                 ? primaryExtraction
@@ -8125,6 +8127,23 @@ export function VideoImportPage({
                           </div>
                         );
                       }
+                      if (String(t.name) === "parts_debug_0" && t.debugImage) {
+                        return (
+                          <div key={ti} className="video-import-transform-cell is-done is-debug-comparison" title={t.resultPath || t.output}>
+                            <div className="video-import-transform-title">{t.name}<span>{t.doer}{secs ? ` · ${secs}` : ""} · final visual</span></div>
+                            <div className="video-import-region-preview is-debug-comparison">
+                              <img className="video-import-debug-comparison-image" src={asset(t.debugImage)} alt={`${t.name} comparison`} loading="lazy" />
+                              <VisualRegionHighlightOverlay
+                                geometry={rowGeometry}
+                                status={geometryStatus}
+                                members={highlightMembers}
+                                unavailableReason={geometryEntry?.error || "no persisted extraction geometry"}
+                              />
+                            </div>
+                            <div className="video-import-transform-note">compare beside Turtle · same source geometry</div>
+                          </div>
+                        );
+                      }
                       // Image-only transform (e.g. parts_debug overlay) renders as a plain figure.
                       if (t.debugImage && !hasStats) {
                         return (
@@ -8180,11 +8199,19 @@ export function VideoImportPage({
                         </div>
                       );
                     }
-                    if (t.status === "claimed") {
+                    if (["claimed", "started", "running"].includes(String(t.status))) {
                       return (
                         <div key={ti} className="video-import-transform-cell is-started">
                           <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
                           <div className="video-import-transform-wait">⏳ started{t.claimedBy ? ` · ${t.claimedBy}` : ""}{t.claimedAt ? ` · ${agoOf(t.claimedAt)}` : ""}</div>
+                        </div>
+                      );
+                    }
+                    if (t.status === "error") {
+                      return (
+                        <div key={ti} className="video-import-transform-cell is-error" title={String(t.error || "transform failed")}>
+                          <div className="video-import-transform-title">{t.name}<span>{t.doer}</span></div>
+                          <div className="video-import-transform-wait">error · {String(t.error || "transform failed")}</div>
                         </div>
                       );
                     }
@@ -8210,13 +8237,14 @@ export function VideoImportPage({
                         const from = facts.split("/")[1] || "?";
                         header = (
                           <span className="video-import-extractor-pick is-stale"
-                            title={`Derived from ${from}. Re-derive W candidates, final G groups, stable observation IDs, and turtle output from ${partsExtractorSel}.`}>
+                            title={`Derived from ${from}. Re-derive W candidates, final G groups, stable observation IDs, Turtle, and the final debug comparison from ${partsExtractorSel}.`}>
                             <button type="button" disabled={!selDone || !!stripRefreshBusy[rowKey]}
                               onClick={() => void runUnitTransformSteps(it, inputRel, [
                                 { transformation: "parts_grouping_0", doer: "group_regions_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`], priority: 30, type: "py_pl" },
                                 { transformation: "group_acceptance_0", doer: "group_acceptance_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog"], priority: 35, type: "py_pl" },
                                 { transformation: "observation_identity_0", doer: "content_hash", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "parts_grouping_0/group_regions_prolog", "group_acceptance_0/group_acceptance_prolog"], priority: 37, type: "py_pl" },
                                 { transformation: "turtle_programs", doer: "turtle_programs_prolog", options: { partsDoer: partsExtractorSel }, dependsOn: ["group_acceptance_0/group_acceptance_prolog"], priority: 40, type: "py_pl" },
+                                { transformation: "parts_debug_0", doer: "python_pil", options: { partsDoer: partsExtractorSel }, dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "turtle_programs/turtle_programs_prolog"], priority: 50, type: "ui" },
                               ], { force: true })}>
                               {stripRefreshBusy[rowKey] ? "…" : `⟳ stale · re-derive from ${partsExtractorSel.replace(/^python_/, "").replace(/^shape_finder_/, "")}`}
                             </button>

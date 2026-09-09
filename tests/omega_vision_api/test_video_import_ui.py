@@ -342,6 +342,28 @@ def test_metadata_transforms_render_as_compact_real_status_lines() -> None:
     assert ".video-import-compact-metadata-line.is-missing" in styles
 
 
+def test_debug_visual_runs_and_displays_immediately_after_turtle() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert "const visualCells = cells.filter" in page
+    assert 'String(cell.name) !== "parts_debug_0"' in page
+    assert 'String(cell.name) === "parts_debug_0"' in page
+    assert page.index('String(cell.name) !== "parts_debug_0"') < page.index(
+        'String(cell.name) === "parts_debug_0"'
+    )
+    assert 'String(t.name) === "parts_debug_0" && t.debugImage' in page
+    assert 'className="video-import-region-preview is-debug-comparison"' in page
+    assert "<VisualRegionHighlightOverlay" in page
+    assert "compare beside Turtle · same source geometry" in page
+    assert 'dependsOn: [`parts_extraction_0/${partsExtractorSel}`, "turtle_programs/turtle_programs_prolog"]' in page
+    assert 'priority: 50, type: "ui"' in page
+    assert "error · {String(t.error || \"transform failed\")}" in page
+    assert ".video-import-debug-comparison-image" in styles
+    assert "width: 150px;" in styles
+    assert "height: 150px;" in styles
+
+
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:
     explorer = PROLOG_CLAUSE_EXPLORER.read_text(encoding="utf-8")
     styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
