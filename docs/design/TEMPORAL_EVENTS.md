@@ -799,9 +799,18 @@ submitted items in the current Visual Sequence. Key points:
   exact frame key/source and active chain/step provenance; previews retain
   nearest-neighbor/coordinate/highlight correctness. The collapsed banner may show
   the selected preview frame concisely but stays compact.
-- Planned tests also cover: selecting frames, final/intermediate output, no
-  full-run side effect, cache separation, cancellation, missing frame,
-  large-sequence lazy loading, and preview-frame persistence.
+- **Disclosure layout.** The horizontal chain banner is the always-visible
+  disclosure header. BOTH the full step-stack editor AND the Preview
+  frame selector / original-vs-result preview live **underneath** that banner
+  inside its collapsible details region. Collapsing the banner hides the editor and
+  all preview content, reclaiming vertical space (zero hidden-content layout
+  height); nothing preview-related stays visible outside/beside the collapsed
+  banner. Preview state/cache is preserved while collapsed unless invalidated by
+  source/chain changes. Use one accessible disclosure relationship with correct
+  focus return.
+- Planned tests also cover: expanded/collapsed visibility of editor + preview,
+  focus return, state preservation while collapsed, and zero hidden-content layout
+  height.
 
 ### 8.2 Planned tests (deferred stages)
 
