@@ -5216,6 +5216,10 @@ _BUILTIN_FILTERS = [
     {"id": "downscale", "title": "Decrease resolution", "filter": "downscale",
      "params": {"colors": 8, "scale": 2},
      "description": "Generic 1/N resolution decrease, nothing else", "builtin": True},
+    {"id": "scale_3x_nearest", "title": "3x nearest-neighbor (experimental)", "filter": "scale_3x_nearest",
+     "params": {},
+     "description": "Deterministic 3x nearest-neighbor upscale: every source pixel becomes a 3x3 block; preserves exact colors for pixel-art/ARC inputs",
+     "builtin": True, "deterministic": True},
 ]
 
 
@@ -5516,6 +5520,10 @@ def _apply_prepass_filter(image: "Any", filter_name: str, colors: int, scale: in
     if filter_name == "downscale":
         width, height = image.size
         return image.resize((max(1, width // scale), max(1, height // scale)), Image.LANCZOS)
+    if filter_name == "scale_3x_nearest":
+        width, height = image.size
+        # Deterministic 3x upscale: every source pixel becomes an exact 3x3 block.
+        return image.resize((width * 3, height * 3), Image.NEAREST)
     if filter_name == "pixelate":
         width, height = image.size
         small = image.resize((max(1, width // scale), max(1, height // scale)), Image.BILINEAR)
@@ -5627,7 +5635,7 @@ def _resolve_transform(root: Path, body: dict[str, Any]) -> tuple[str, Any]:
     filter_name = str(body.get("filter") or "")
     colors = max(2, min(64, int(body.get("colors") or 8)))
     scale = max(2, min(32, int(body.get("scale") or 8)))
-    if filter_name in {"cartoon", "pixelate", "downscale"}:
+    if filter_name in {"cartoon", "pixelate", "downscale", "scale_3x_nearest"}:
         return filter_name, lambda image: _apply_prepass_filter(image, filter_name, colors, scale)
     if filter_name == "lut":
         lut_rel = str(body.get("lutPath") or "")
@@ -5649,7 +5657,7 @@ def _resolve_transform(root: Path, body: dict[str, Any]) -> tuple[str, Any]:
             raise HTTPException(status_code=400, detail=f"skill {skill_path.name} exports no apply(image, params)")
         params = body.get("params") if isinstance(body.get("params"), dict) else {}
         return f"skill-{skill_path.stem}", lambda image: module.apply(image, dict(params))
-    raise HTTPException(status_code=400, detail="filter must be cartoon, pixelate, downscale, lut, or skill")
+    raise HTTPException(status_code=400, detail="filter must be cartoon, pixelate, downscale, scale_3x_nearest, lut, or skill")
 
 
 @router.post("/filter")
