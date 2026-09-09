@@ -6014,6 +6014,7 @@ def get_preprocessing_chain(workspaceId: str, sequenceId: str) -> dict[str, Any]
     return _preprocessing_chain_payload(root, sequenceId, sequence_root, steps)
 
 
+@router.post("/preprocessing-chain")
 @router.put("/preprocessing-chain")
 def put_preprocessing_chain(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Persist the per-sequence preprocessing chain. Rejects steps that
