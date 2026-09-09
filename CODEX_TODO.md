@@ -479,6 +479,25 @@ values here.
   Documentation only; no predicate is emitted until its status row reads
   implemented.
 
+- Preprocessing filter registry foundation (2026-09-09): first increment of the
+  deferred Preprocessing Setup. Added `scale_3x_nearest` as a canonical built-in
+  filter (`_BUILTIN_FILTERS` + `_apply_prepass_filter` + `_resolve_transform`):
+  deterministic 3x nearest-neighbor upscale where every source pixel becomes an
+  exact 3x3 block, reusing the existing `/filter` + `_resolve_chain` materialization
+  and provenance. DeNoise already exists via the `skimage_effects` skill
+  (`denoise_tv_light/strong/paint`) and is reused, not duplicated. Tested
+  (`tests/omega_vision_api/test_preprocessing_filters.py`): registry membership +
+  deterministic flag, 3x per-pixel block exactness with original preserved,
+  transform determinism, and DeNoise presence. Remaining Preprocessing Setup work
+  stays deferred and is a large multi-commit follow-up: the backend
+  `image_preprocessing_0` chain lineage producing a single content-addressed
+  variant consumed by both OpenCV extraction and every LLM image consumer;
+  per-Visual-Sequence chain persistence; and the frontend `PREPROCESSING · ALL
+  INPUTS` collapsible banner + ordered step-stack editor (two Original Pixels
+  no-op rows, Add Before/After/Remove/reorder, unlimited/duplicates, stable IDs)
+  + lazy Preview frame selector (Original vs Final, no full-run side effects). See
+  the deferred step-stack entry below and TEMPORAL_EVENTS.md §8.1.
+
 - Deferred preprocessing step stack (2026-09-09): the Video Import extraction
   controls will gain a compact, unlimited, ordered stack of preprocessing step
   rows scoped to all submitted items in the current Visual Sequence. It is a
