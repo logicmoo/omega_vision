@@ -146,5 +146,18 @@ export function urlWithVisualSequence(
     url.searchParams.delete(RECORDING_QUERY_PARAMETER);
     url.searchParams.delete(GAME_QUERY_PARAMETER);
   }
+
   return url.toString();
+}
+
+export function preprocessingSequenceId(
+  entries: readonly VisualSequenceCatalogEntry[],
+  location: VisualSequenceLocation | null,
+  selectedId: string,
+): string {
+  // URL navigation wins over the previous view while selection is being resolved.
+  const entry = location
+    ? resolveVisualSequenceLocation(entries, location).entry
+    : entries.find((candidate) => candidate.id === selectedId);
+  return entry ? `data/${entry.id}` : "";
 }

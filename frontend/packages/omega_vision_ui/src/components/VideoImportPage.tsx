@@ -7,6 +7,7 @@ import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
 import { PrologDataInspector } from "./PrologDataInspector";
 import {
+  preprocessingSequenceId,
   resolveVisualSequenceLocation,
   urlWithVisualSequence,
   visualSequenceLocationForEntry,
@@ -3406,6 +3407,8 @@ export function VideoImportPage({
   const DEFAULT_IMAGE_SET = "recognition_reduce";
   const [imageSetList, setImageSetList] = useState<VisualSequenceCatalogEntry[]>([]);
   const [imageSetsLoaded, setImageSetsLoaded] = useState(false);
+  const [imageSetsError, setImageSetsError] = useState("");
+  const [imageSetsReload, setImageSetsReload] = useState(0);
   const [visualSequenceReady, setVisualSequenceReady] = useState(false);
   const restoredVisualSequenceIdRef = useRef((() => {
     try { return window.localStorage.getItem("videoImport.imageSet") || DEFAULT_IMAGE_SET; } catch { return DEFAULT_IMAGE_SET; }
@@ -3415,10 +3418,22 @@ export function VideoImportPage({
   // Persisted server-side per Visual Sequence; OpenCV extraction and every LLM
   // image consumer read the materialized, content-addressed variant. Default =
   // two Original Pixels no-op rows, which resolves to the original pixels.
-  const preprocSequenceId = selectedImageSet ? `data/${selectedImageSet}` : (selectedRecording || "");
+  const preprocSequenceId = preprocessingSequenceId(
+    imageSetList, visualSequenceLocation, selectedImageSet,
+  );
   const [preprocChain, setPreprocChain] = useState<ChainStep[]>([]);
   const [preprocEffectivelyOriginal, setPreprocEffectivelyOriginal] = useState(true);
+  const [preprocError, setPreprocError] = useState("");
+  const [preprocLoaded, setPreprocLoaded] = useState(false);
+  const [preprocSaving, setPreprocSaving] = useState(false);
   const preprocSaveTimer = useRef<number | null>(null);
+  const preprocPendingSave = useRef<(() => void) | null>(null);
+  const preprocSaveQueue = useRef<Promise<void>>(Promise.resolve());
+  const preprocChainRef = useRef<ChainStep[]>([]);
+  const preprocContext = `${workspaceId}|${preprocSequenceId}`;
+  const preprocContextRef = useRef(preprocContext);
+  preprocContextRef.current = preprocContext;
+  const preprocEditRevision = useRef(0);
   const asChainSteps = (raw: unknown): ChainStep[] =>
     (Array.isArray(raw) ? raw : []).map((step: any) => ({
       stepId: typeof step?.stepId === "string" ? step.stepId : undefined,
@@ -3426,38 +3441,72 @@ export function VideoImportPage({
       params: Object.fromEntries(Object.entries(step?.params || {}).map(([key, value]) => [key, String(value)])),
     }));
   useEffect(() => {
-    if (!workspaceId || !preprocSequenceId) { setPreprocChain([]); setPreprocEffectivelyOriginal(true); return; }
+    setPreprocChain([]);
+    preprocChainRef.current = [];
+    setPreprocLoaded(false);
+    setPreprocError("");
+    setPreprocSaving(false);
+    if (!workspaceId || !preprocSequenceId) return;
     let cancelled = false;
     void (async () => {
       try {
         const payload = await api(`preprocessing-chain?workspaceId=${encodeURIComponent(workspaceId)}&sequenceId=${encodeURIComponent(preprocSequenceId)}`);
         if (cancelled) return;
-        setPreprocChain(asChainSteps(payload.steps));
+        const steps = asChainSteps(payload.steps);
+        preprocChainRef.current = steps;
+        setPreprocChain(steps);
         setPreprocEffectivelyOriginal(Boolean(payload.effectivelyOriginal));
-      } catch { if (!cancelled) { setPreprocChain([]); setPreprocEffectivelyOriginal(true); } }
+        setPreprocLoaded(true);
+      } catch (reason) {
+        if (!cancelled) setPreprocError(`Could not load preprocessing: ${reason instanceof Error ? reason.message : String(reason)}`);
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (preprocSaveTimer.current !== null) window.clearTimeout(preprocSaveTimer.current);
+      // Flush the old sequence's pending save before changing contexts.
+      preprocPendingSave.current?.();
+      preprocPendingSave.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, preprocSequenceId]);
   const savePreprocChain = useCallback((steps: ChainStep[]) => {
     if (!workspaceId || !preprocSequenceId) return;
+    const context = `${workspaceId}|${preprocSequenceId}`;
+    const revision = preprocEditRevision.current;
+    setPreprocSaving(true);
     if (preprocSaveTimer.current) window.clearTimeout(preprocSaveTimer.current);
-    preprocSaveTimer.current = window.setTimeout(() => {
-      void (async () => {
+    const enqueue = () => {
+      preprocPendingSave.current = null;
+      preprocSaveQueue.current = preprocSaveQueue.current.then(async () => {
         try {
           const payload = await api("preprocessing-chain", { workspaceId, sequenceId: preprocSequenceId, steps });
+          if (preprocContextRef.current !== context || preprocEditRevision.current !== revision) return;
           setPreprocEffectivelyOriginal(Boolean(payload.effectivelyOriginal));
-          setPreprocChain(asChainSteps(payload.steps));
+          setPreprocError("");
         } catch (reason) {
           say(`✗ preprocessing save failed: ${reason instanceof Error ? reason.message : String(reason)}`);
+          if (preprocContextRef.current === context) setPreprocError(`Save failed: ${String(reason)}`);
+        } finally {
+          if (preprocContextRef.current === context && preprocEditRevision.current === revision) setPreprocSaving(false);
         }
-      })();
-    }, 400);
+      });
+    };
+    preprocPendingSave.current = enqueue;
+    preprocSaveTimer.current = window.setTimeout(enqueue, 400);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, preprocSequenceId]);
   const editPreprocChain = useCallback((update: (current: ChainStep[]) => ChainStep[]) => {
-    setPreprocChain((current) => { const next = update(current); savePreprocChain(next); return next; });
-  }, [savePreprocChain]);
+    if (!preprocLoaded) return;
+    const next = update(preprocChainRef.current).map((step) => ({
+      ...step, stepId: step.stepId || `pp-${crypto.randomUUID()}`,
+    }));
+    preprocEditRevision.current += 1;
+    preprocChainRef.current = next;
+    setPreprocChain(next);
+    setPreprocEffectivelyOriginal(next.every((step) => step.entryId === "select:original"));
+    savePreprocChain(next);
+  }, [preprocLoaded, savePreprocChain]);
   // Lazy, cached, cancelable Original-vs-Final preview of the draft chain on ONE
   // frame — reuses /filter-preview so it has no full-run side effects.
   const [preprocPreview, setPreprocPreview] = useState<{ before: string; after: string; label: string } | null>(null);
@@ -5124,6 +5173,7 @@ export function VideoImportPage({
     }
     let cancelled = false;
     setImageSetsLoaded(false);
+    setImageSetsError("");
     setVisualSequenceReady(false);
     void (async () => {
       try {
@@ -5131,15 +5181,15 @@ export function VideoImportPage({
         if (cancelled) return;
         setImageSetList(sets);
         setImageSetsLoaded(true);
-      } catch {
+      } catch (reason) {
         if (!cancelled) {
           setImageSetList([]);
-          setImageSetsLoaded(true);
+          setImageSetsError(`Visual Sequence catalog failed: ${reason instanceof Error ? reason.message : String(reason)}`);
         }
       }
     })();
     return () => { cancelled = true; };
-  }, [workspaceId]);
+  }, [workspaceId, imageSetsReload]);
   useEffect(() => {
     if (!imageSetsLoaded || pendingVisualSequence) return;
     if (visualSequenceLocation) {
@@ -9005,6 +9055,85 @@ export function VideoImportPage({
   }, [activeImageContext?.imagePath, workspaceId]);
 
   // ---- render -----------------------------------------------------------------------
+  // One canonical Preprocessing Setup, rendered in the shared shell below the
+  // step nav so it appears in every Visual Sequence subview (Recognition,
+  // Objects, Frames) driven by the single resolved sequence — no duplicate
+  // component state. preprocSequenceId is derived from the catalog-resolved
+  // selection (see selectVisualSequence), so it survives a cold reload of a
+  // valid game=/recording= URL.
+  const preprocessingSection = preprocSequenceId ? (
+    <Section {...section("preprocessing", "PREPROCESSING · ALL INPUTS", preprocEffectivelyOriginal ? "original pixels (no preprocessing)" : `${preprocChain.filter((step) => step.entryId && step.entryId !== "select:original").length} step(s) · feeds OpenCV + LLM`)}>
+      <div className="vi2-body">
+        {preprocError && <div role="alert">{preprocError}</div>}
+        <div role="status">{!preprocLoaded ? "Loading saved chain..." : preprocSaving ? "Saving..." : preprocError ? "Not saved" : "Saved"}</div>
+        <div className="video-import-chain-none">
+          Applied to every frame of this Visual Sequence before OpenCV extraction and any LLM image input, keyed to <code>{preprocSequenceId}</code>. An empty stack — or only Original Pixels — resolves to the original pixels.
+        </div>
+        <fieldset disabled={busy || !preprocLoaded} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+        <div className="video-import-chain" role="list">
+          {preprocChain.map((step, index) => {
+            const entry = filters.find((candidate) => candidate.id === step.entryId) || null;
+            const isOriginal = !step.entryId || step.entryId === "select:original";
+            return (
+              <div key={step.stepId} data-step-id={step.stepId} className="video-import-chain-step" role="listitem">
+                <b>{index + 1}.</b>
+                <select
+                  aria-label={`Preprocessing filter ${index + 1}`}
+                  value={step.entryId || "select:original"}
+                  disabled={busy}
+                  onChange={(event) => {
+                    const id = event.target.value;
+                    const picked = filters.find((candidate) => candidate.id === id);
+                    editPreprocChain((current) => current.map((existing, at) => (at === index
+                      ? { ...existing, entryId: id, params: id === "select:original" ? {} : Object.fromEntries(Object.entries(picked?.params || {}).map(([key, value]) => [key, String(value)])) }
+                      : existing)));
+                  }}
+                >
+                  <option value="select:original">Original Pixels (no-op)</option>
+                  {filters.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id} disabled={candidate.broken || candidate.excluded}>
+                      {candidate.excluded ? "🚫 " : candidate.skill ? "🛠 " : candidate.lut ? "🎨 " : ""}{candidate.title}
+                    </option>
+                  ))}
+                </select>
+                {isOriginal && <span className="video-import-chain-none">passes pixels through unchanged</span>}
+                {entry && Object.entries(step.params).map(([key, value]) => {
+                  const choices = entry.paramChoices?.[key];
+                  return (
+                    <label key={key}>{key}
+                      {choices?.length
+                        ? <select className="video-import-param" value={value} disabled={busy} onChange={(event) => editPreprocChain((current) => current.map((existing, at) => (at === index ? { ...existing, params: { ...existing.params, [key]: event.target.value } } : existing)))}>{choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}</select>
+                        : <input className="video-import-param" value={value} disabled={busy} onChange={(event) => editPreprocChain((current) => current.map((existing, at) => (at === index ? { ...existing, params: { ...existing.params, [key]: event.target.value } } : existing)))} />}
+                    </label>
+                  );
+                })}
+                <button title="move up" disabled={busy || index === 0} onClick={() => editPreprocChain((current) => { const next = [...current]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })}>↑</button>
+                <button title="move down" disabled={busy || index === preprocChain.length - 1} onClick={() => editPreprocChain((current) => { const next = [...current]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; })}>↓</button>
+                <button title="add step before" onClick={() => editPreprocChain((current) => { const next = [...current]; next.splice(index, 0, { entryId: "select:original", params: {} }); return next; })}>+ before</button>
+                <button title="add step after" disabled={busy} onClick={() => editPreprocChain((current) => { const next = [...current]; next.splice(index + 1, 0, { entryId: "select:original", params: {} }); return next; })}>＋</button>
+                <button title="remove step" disabled={busy} onClick={() => editPreprocChain((current) => current.filter((_, at) => at !== index))}>×</button>
+              </div>
+            );
+          })}
+          {!preprocChain.length && <div className="video-import-chain-none">no steps — original pixels feed extraction and the LLM</div>}
+        </div>
+        <div className="vi2-body">
+          <button disabled={busy} onClick={() => editPreprocChain((current) => [...current, { entryId: "select:original", params: {} }])}>＋ Add step</button>
+          <button disabled={busy || !preprocChain.length} onClick={() => editPreprocChain(() => [{ entryId: "select:original", params: {} }, { entryId: "select:original", params: {} }])}>Reset to Original</button>
+          <button disabled={busy || preprocPreviewBusy} onClick={() => void previewPreprocFrame()}>{preprocPreviewBusy ? "⏳ Previewing…" : "👁 Preview frame"}</button>
+        </div>
+        </fieldset>
+        {preprocPreview && (
+          <div className="video-import-preview">
+            <figure><img src={asset(preprocPreview.before)} alt="original" /><figcaption>original</figcaption></figure>
+            <span className="video-import-preview-arrow">→</span>
+            <figure><img src={asset(preprocPreview.after)} alt="final" /><figcaption>final · {preprocPreview.label}</figcaption></figure>
+            <button onClick={() => setPreprocPreview(null)}>×</button>
+          </div>
+        )}
+      </div>
+    </Section>
+  ) : null;
   return (
     <section className="resource-view video-import-page vi2" data-subview={activeSubview} onClickCapture={handleImageContextClick} onPointerMove={handleImageZoomPointer} onPointerLeave={() => { hoveredImageRef.current = null; setAltImageZoom(null); setHoverImageContext(null); }}>
       <div className="video-import-topbar">
@@ -9022,6 +9151,9 @@ export function VideoImportPage({
           ))}
         </nav>
       </div>
+
+      {preprocessingSection}
+      {imageSetsError && <div role="alert">{imageSetsError} <button onClick={() => setImageSetsReload((value) => value + 1)}>Retry catalog</button></div>}
 
       {serverJobs.filter((j) => j.state === "running" || j.state === "starting").length > 0 && (
         <div className="video-import-jobs-banner" role="status" aria-live="polite">
@@ -9468,74 +9600,6 @@ export function VideoImportPage({
               {kept && <><small>{kept.size} selected — feeds the chain preview</small><button disabled={busy} onClick={() => { setFrames((current) => current.filter((frame) => kept.has(frame.path))); setKept(null); }}>✂ Keep only</button><button disabled={busy} onClick={() => setKept(null)}>× Clear</button></>}
             </div>
           )}
-        </Section>
-      )}
-
-      {preprocSequenceId && (
-        <Section {...section("preprocessing", "PREPROCESSING · ALL INPUTS", preprocEffectivelyOriginal ? "original pixels (no preprocessing)" : `${preprocChain.filter((step) => step.entryId && step.entryId !== "select:original").length} step(s) · feeds OpenCV + LLM`)}>
-          <div className="vi2-body">
-            <div className="video-import-chain-none">
-              Applied to every frame of this Visual Sequence before OpenCV extraction and any LLM image input, keyed to <code>{preprocSequenceId}</code>. An empty stack — or only Original Pixels — resolves to the original pixels.
-            </div>
-            <div className="video-import-chain" role="list">
-              {preprocChain.map((step, index) => {
-                const entry = filters.find((candidate) => candidate.id === step.entryId) || null;
-                const isOriginal = !step.entryId || step.entryId === "select:original";
-                return (
-                  <div key={step.stepId || index} className="video-import-chain-step" role="listitem">
-                    <b>{index + 1}.</b>
-                    <select
-                      value={step.entryId || "select:original"}
-                      disabled={busy}
-                      onChange={(event) => {
-                        const id = event.target.value;
-                        const picked = filters.find((candidate) => candidate.id === id);
-                        editPreprocChain((current) => current.map((existing, at) => (at === index
-                          ? { ...existing, entryId: id, params: id === "select:original" ? {} : Object.fromEntries(Object.entries(picked?.params || {}).map(([key, value]) => [key, String(value)])) }
-                          : existing)));
-                      }}
-                    >
-                      <option value="select:original">Original Pixels (no-op)</option>
-                      {filters.map((candidate) => (
-                        <option key={candidate.id} value={candidate.id} disabled={candidate.broken || candidate.excluded}>
-                          {candidate.excluded ? "🚫 " : candidate.skill ? "🛠 " : candidate.lut ? "🎨 " : ""}{candidate.title}
-                        </option>
-                      ))}
-                    </select>
-                    {isOriginal && <span className="video-import-chain-none">passes pixels through unchanged</span>}
-                    {entry && Object.entries(step.params).map(([key, value]) => {
-                      const choices = entry.paramChoices?.[key];
-                      return (
-                        <label key={key}>{key}
-                          {choices?.length
-                            ? <select className="video-import-param" value={value} disabled={busy} onChange={(event) => editPreprocChain((current) => current.map((existing, at) => (at === index ? { ...existing, params: { ...existing.params, [key]: event.target.value } } : existing)))}>{choices.map((choice) => <option key={choice} value={choice}>{choice}</option>)}</select>
-                            : <input className="video-import-param" value={value} disabled={busy} onChange={(event) => editPreprocChain((current) => current.map((existing, at) => (at === index ? { ...existing, params: { ...existing.params, [key]: event.target.value } } : existing)))} />}
-                        </label>
-                      );
-                    })}
-                    <button title="move up" disabled={busy || index === 0} onClick={() => editPreprocChain((current) => { const next = [...current]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })}>↑</button>
-                    <button title="move down" disabled={busy || index === preprocChain.length - 1} onClick={() => editPreprocChain((current) => { const next = [...current]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; })}>↓</button>
-                    <button title="add step after" disabled={busy} onClick={() => editPreprocChain((current) => { const next = [...current]; next.splice(index + 1, 0, { entryId: "select:original", params: {} }); return next; })}>＋</button>
-                    <button title="remove step" disabled={busy} onClick={() => editPreprocChain((current) => current.filter((_, at) => at !== index))}>×</button>
-                  </div>
-                );
-              })}
-              {!preprocChain.length && <div className="video-import-chain-none">no steps — original pixels feed extraction and the LLM</div>}
-            </div>
-            <div className="vi2-body">
-              <button disabled={busy} onClick={() => editPreprocChain((current) => [...current, { entryId: "select:original", params: {} }])}>＋ Add step</button>
-              <button disabled={busy || !preprocChain.length} onClick={() => editPreprocChain(() => [{ entryId: "select:original", params: {} }, { entryId: "select:original", params: {} }])}>Reset to Original</button>
-              <button disabled={busy || preprocPreviewBusy} onClick={() => void previewPreprocFrame()}>{preprocPreviewBusy ? "⏳ Previewing…" : "👁 Preview frame"}</button>
-            </div>
-            {preprocPreview && (
-              <div className="video-import-preview">
-                <figure><img src={asset(preprocPreview.before)} alt="original" /><figcaption>original</figcaption></figure>
-                <span className="video-import-preview-arrow">→</span>
-                <figure><img src={asset(preprocPreview.after)} alt="final" /><figcaption>final · {preprocPreview.label}</figcaption></figure>
-                <button onClick={() => setPreprocPreview(null)}>×</button>
-              </div>
-            )}
-          </div>
         </Section>
       )}
 

@@ -55,6 +55,19 @@ WORKBENCH_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "pages" / "F
 SPRITE_VIEWER_PAGE = ROOT / "frontend" / "apps" / "workbench" / "src" / "components" / "SpriteViewerPage.tsx"
 
 
+def test_preprocessing_shared_shell_is_visible_in_primary_subviews() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+    assert page.count('{preprocessingSection}') == 1
+    assert page.count('section("preprocessing",') == 1
+    for subview in ("recognition", "objects", "frames"):
+        assert f'[data-subview="{subview}"] > [data-section="preprocessing"]' in styles
+    assert "preprocessingSequenceId(" in page
+    assert 'title="add step before"' in page
+    assert 'data-step-id={step.stepId}' in page
+    assert "preprocPendingSave.current?.()" in page
+
+
 def test_colored_combobox_is_shared_by_chat_and_video_models() -> None:
     combo = COLORED_COMBOBOX.read_text(encoding="utf-8")
     chat = CHAT_CONVERSATION.read_text(encoding="utf-8")

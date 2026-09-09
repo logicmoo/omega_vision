@@ -80,9 +80,20 @@
 .video-import-page[data-subview="frames"] > [data-section="gallery"],
 .video-import-page[data-subview="frames"] > [data-section="output"],
 .video-import-page[data-subview="frames"] > [data-section="trail"],
+.video-import-page[data-subview="frames"] > [data-section="preprocessing"],
+.video-import-page[data-subview="recognition"] > [data-section="preprocessing"],
+.video-import-page[data-subview="objects"] > [data-section="preprocessing"],
 .video-import-page[data-subview] > [data-section="finish"],
 .video-import-page[data-subview] > [data-section="config"] {
   display: block;
+}
+.video-import-page [data-section="preprocessing"] .video-import-chain {
+  overflow: auto;
+  max-height: 420px;
+}
+.video-import-page [data-section="preprocessing"] .video-import-chain-step {
+  flex-wrap: nowrap;
+  min-width: max-content;
 }
 .video-import-page[data-subview="objects"] > .video-import-scene-object-workspace {
   display: grid;

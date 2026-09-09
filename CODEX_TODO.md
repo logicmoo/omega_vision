@@ -3015,3 +3015,30 @@ Preserve the canonical checkout and its `codex/workbench-navigation-v2` branch.
   disclosure and add persistent overlaid Expand/Collapse controls for the whole
   tree and selected branch. Tree, JSON, and MeTTa views must remain synchronized
   and folding must never mutate source.
+
+## Recovery note (preprocessing option-a refinement, in progress)
+- Committed + unpushed on local main (origin/main..HEAD): 60be96cc2 A, c74ea6150 B, e4003b75d C, 4b8153c2a D, 9fb772823 E, 73335fc53 C-recording-key, 126b89595 + 84031c75b process-viewer hot-loop fix (psutil + single-flight cache).
+- UNCOMMITTED refinement (snapshot: files/recovery-preproc-refinement/): moved the single Preprocessing section into the shared shell (const preprocessingSection rendered once after the step nav) so it shows in Recognition/Objects/Frames; canonical key preprocSequenceId = data/<catalog entry id> (matches seedTodos extraction target), with a URL->catalog re-resolution fallback for cold reload before confirmation. Added VideoImportRecordingUrl.test.mjs route/context tests (8 pass). Frontend builds.
+- Refinement audit (GPT-6 Astra): computed browser styles proved the setup was
+  hidden by the subview CSS allowlist, even when present in the DOM. DOM presence
+  was not successful visual verification. Added explicit Recognition/Objects/Frames
+  visibility and one shared-shell instance; removed temporary debug attributes.
+  Context resolution now uses only validated catalog entries, giving the current
+  URL priority over a previous selected ID during back/forward navigation.
+  Removed the speculative URL-to-directory fallback. Saves are serialized, retain
+  their originating sequence, flush pending edits on context changes, and ignore
+  stale responses; errors are visible rather than interpreted as Original Pixels.
+- Catalog evidence: the bare canonical ls20/20260718-154544 recording was absent
+  from the returned canonical entries, but a legacy imported adapter named
+  arc_recordings/data-recordings-ls20-20260718-154544 exists. Do not claim the
+  recording itself was deleted or silently choose a suffixed attempt.
+  Live acceptance uses the explicit real _attempt8 canonical entry.
+- Full Preprocessing Setup is NOT complete merely because the initial A-E commits
+  exist. Remaining acceptance includes actual visible controls, persistence/reload,
+  preview identity and correct sequence scope, full OpenCV/LLM input-path coverage,
+  downstream staleness and coordinate/implementation-version lineage.
+- Binary-capable implementation-only recovery diff:
+  C:\Users\dougl\.copilot\session-state\624aa1a5-4c13-425c-9e1d-a651f9915222\files\recovery-preproc-refinement\implementation-head.patch.
+  No relevant untracked implementation files existed at the snapshot checkpoint.
+- NEXT after this: reconcile files/visual_sequence_cache.paused.patch (23KB, intact) over current main for Visual Sequence caching.
+- Workflow: no PR/push; commit local main only; preserve runtime/generated files.
