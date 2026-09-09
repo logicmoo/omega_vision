@@ -498,6 +498,55 @@ values here.
   + lazy Preview frame selector (Original vs Final, no full-run side effects). See
   the deferred step-stack entry below and TEMPORAL_EVENTS.md §8.1.
 
+- Queued Recognition control/runtime tasks (2026-09-09, deferred, each its own
+  focused commit after Preprocessing Setup, in this order):
+  1. Move `Add todos` (current Add/Merge behavior; compact label + tooltip that it
+     merges/preserves) and warning-styled `Fresh todos` onto the SAME logical
+     horizontal row as the pooler status / Workers / Pause / Stop (TODO actions
+     adjacent, before the pooler block); no semantic/confirmation/claim changes;
+     row may wrap responsively but stays grouped; tests at normal/narrow widths.
+  2. Remove ONLY the visible `PARTS EXTRACTOR · ALL INPUTS` selector and the
+     `Reduce all N · all impls` button from Recognition; KEEP `First N` (persisted,
+     0 = all, still scopes Add/Fresh). Canonical extractor stays OpenCV in
+     pipeline/templates; do NOT remove OpenCV transform support or legacy backend
+     API compatibility; no hidden selector may drift to a non-OpenCV value; no
+     empty layout gaps. Tests: extractor label/control absent, Reduce All absent,
+     First N present/functional (0 and nonzero), Add/Fresh scope correctly, legacy
+     APIs untouched, no duplicate actions.
+  3. Generic direct transform runner: TWO INDEPENDENT combo+Call slots (not
+     cascading WHAT/BY WHO). Each combo lists the COMPLETE set of registered
+     composite `transformation/doer` pairs (canonical registry key/label +
+     availability metadata; no string-concat guesswork, no duplicate registry);
+     both combos expose the same full list independently (no cross-filtering); the
+     same composite may be chosen in both; selections persist separately per Visual
+     Sequence as UI state; each slot has one adjacent Call. Each Call executes only
+     its own selected composite plus its unmet dependsOn DAG (including persisted
+     cross-frame selectors like frame[-1]@x/y) in deterministic topological order
+     through the canonical transform executor — direct, scoped by First N (0 = all),
+     NOT stamping TODOs and NOT entering the pool. Reuse the same single-writer /
+     output locks / result-path + meta contracts (no races with pool or the other
+     slot; active-claim conflicts shown, never overwritten); respect
+     current-output skip / force / staleness / content revisions; per-unit failure
+     isolation with visible blocking; Stop/cancel + rolling per-unit/dependency
+     status per slot. Confirm before large/expensive calls: preserve the >800
+     Visual Sequence gate, show exact First N unit count + expanded dependency
+     step/call count, and for any LLM dependency/doer show model/backend + exact
+     call count/cost and require confirmation; URL/nav reload never invokes Call.
+     Combos + Call live compactly on the pooler control area; do not restore the
+     removed extractor/Reduce-All controls. Tests: two full identical independent
+     option sets, independent selection/state, adjacent Call per slot, same-pair
+     selection, independent invocation/progress, no cross-filtering, First N
+     0/nonzero, inline + frame[-1] dependencies, deterministic DAG/fan-in/cycle
+     rejection, no TODO/pool-claim creation, active-claim conflict, result/meta
+     parity with the pool, current-output skip/stale rerun, failure isolation,
+     cancel, LLM/large confirmation, no navigation auto-call, and legacy doers.
+     UI is intentionally minimal — essentially `[process/by-who combo] [Call]
+     [process/by-who combo] [Call]`, no WHAT/BY WHO labels, no cascading fields,
+     no setup panel, and no visible dependency editor; dependency expansion / First
+     N / locks / confirmations / progress / error / cancel stay underneath and are
+     surfaced compactly via the button/tooltip/status line. Each slot is ready
+     whenever its selected pair is available.
+
 - Deferred preprocessing step stack (2026-09-09): the Video Import extraction
   controls will gain a compact, unlimited, ordered stack of preprocessing step
   rows scoped to all submitted items in the current Visual Sequence. It is a
