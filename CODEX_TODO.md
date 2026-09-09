@@ -366,7 +366,13 @@ values here.
   Global Shared, Nowhere); `Nowhere` is explicit ephemeral/session-only and warns
   reload loses it; changing Save to never moves/promotes existing records and
   lists only valid writable destinations (browse-only disabled with an exact
-  reason, no silent fallback). `Look in` is a hierarchical MULTI-SELECT CHECKLIST
+  reason, no silent fallback). Shape and Object `Save to` values are SEPARATELY
+  persisted: a save/collection routes newly learned shape records only to Shape
+  Save to and object records only to Object Save to, changing one never
+  changes/defaults/migrates the other, both active destinations are shown clearly
+  with separate capability/error handling, and object-to-shape references stay
+  provider/scope-aware rather than assuming co-location (independent-destination
+  tests included). `Look in` is a hierarchical MULTI-SELECT CHECKLIST
   (reads only; never affects Save to/writes) over a dynamic, searchable Memory
   Location Catalog covering every populated accessible Shape/Object store across
   providers/workspaces (provider/workspace -> game -> level -> run/Visual Sequence
