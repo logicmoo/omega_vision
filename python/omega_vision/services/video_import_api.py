@@ -7061,9 +7061,115 @@ def _read_claim(claim_file: Path) -> tuple[dict[str, Any], float] | None:
     return payload, age
 
 
+def _read_output_revision(meta_path: Path | None) -> str | None:
+    """Read the deterministic outputRevision recorded in a step's meta.json."""
+    if meta_path is None:
+        return None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    rev = meta.get("outputRevision")
+    return str(rev) if rev is not None else None
+
+
+def _resolve_cross_frame_runtime(unit: dict[str, Any], parsed: Any) -> dict[str, Any]:
+    """Resolve a cross-frame dependency against the on-disk sequence at run time,
+    used only when no stamp-time resolution was persisted. Anchors on the current
+    frame id within its ordered sibling frames."""
+    from omega_vision.perception.cross_frame_deps import resolve_dependency  # noqa: PLC0415
+    root = unit["dir"].parent
+    frame_ids = [d.name for d in _recording_step_dirs(root)]
+    res = resolve_dependency(
+        parsed,
+        current_frame_id=str(unit.get("id")),
+        current_frame_order=unit.get("frameOrder"),
+        ordered=bool(unit.get("sequenceOrdered")),
+        frame_ids_in_order=frame_ids,
+        frame_id_set=frame_ids,
+    )
+    if res.resolved and res.frame_id is not None:
+        return {"selector": parsed.raw, "output": parsed.output,
+                "metaPath": root / str(res.frame_id) / parsed.output / "meta.json",
+                "frameId": res.frame_id, "resolved": True, "reason": res.reason}
+    return {"selector": parsed.raw, "output": parsed.output, "metaPath": None,
+            "frameId": None, "resolved": False, "reason": res.reason}
+
+
+def _resolve_step_deps(unit: dict[str, Any],
+                       depends_on: list[str] | None,
+                       depends_on_resolved: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    """Resolve each dependsOn selector to a concrete target meta.json path.
+
+    Same-frame selectors (no ``@``) resolve under the unit dir exactly as before
+    (backward compatible). Cross-frame selectors prefer the stamp-time resolution
+    persisted in ``depends_on_resolved`` (so a catalog edit never silently
+    retargets an old todo); absent that, they resolve against the on-disk
+    sequence."""
+    from omega_vision.perception.cross_frame_deps import (  # noqa: PLC0415
+        DependencyGrammarError, parse_dependency,
+    )
+    persisted = {
+        str(item.get("selector")): item
+        for item in (depends_on_resolved or [])
+        if isinstance(item, dict) and item.get("selector")
+    }
+    root = unit["dir"].parent
+    resolved: list[dict[str, Any]] = []
+    for dep in depends_on or []:
+        selector = str(dep)
+        try:
+            parsed = parse_dependency(selector)
+        except DependencyGrammarError as error:
+            resolved.append({"selector": selector, "output": selector, "metaPath": None,
+                             "frameId": None, "resolved": False, "reason": f"grammar-error:{error}"})
+            continue
+        if not parsed.is_cross_frame:
+            resolved.append({"selector": selector, "output": parsed.output,
+                             "metaPath": unit["dir"] / parsed.output / "meta.json",
+                             "frameId": unit.get("id"), "resolved": True, "reason": "same-frame"})
+            continue
+        pref = persisted.get(selector)
+        if pref is not None:
+            if pref.get("resolved") and pref.get("frameId") is not None:
+                resolved.append({"selector": selector, "output": parsed.output,
+                                 "metaPath": root / str(pref["frameId"]) / parsed.output / "meta.json",
+                                 "frameId": pref.get("frameId"), "resolved": True,
+                                 "reason": str(pref.get("reason") or "resolved")})
+            else:
+                resolved.append({"selector": selector, "output": parsed.output, "metaPath": None,
+                                 "frameId": None, "resolved": False,
+                                 "reason": str(pref.get("reason") or "unresolvable")})
+            continue
+        resolved.append(_resolve_cross_frame_runtime(unit, parsed))
+    return resolved
+
+
+def _step_meta_is_stale(out_meta_file: Path, resolved_deps: list[dict[str, Any]]) -> tuple[bool, str]:
+    """A completed cross-frame-dependent step is stale when a resolved cross-frame
+    target changed frame or output revision since it was produced. Same-frame
+    dependencies keep the historical presence-only behavior."""
+    try:
+        meta = json.loads(out_meta_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False, "current"
+    consumed = meta.get("consumedDeps") or {}
+    for dep in resolved_deps:
+        if dep.get("reason") == "same-frame":
+            continue
+        record = consumed.get(dep["selector"]) or {}
+        if record.get("frameId") != dep.get("frameId"):
+            return True, "resolved-frame-changed"
+        current_rev = _read_output_revision(dep.get("metaPath")) if dep.get("metaPath") else None
+        if current_rev is None or record.get("revision") != current_rev:
+            return True, "revision-changed"
+    return False, "current"
+
+
 def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
                        options: dict[str, Any], *, force: bool = False,
-                       depends_on: list[str] | None = None) -> dict[str, Any]:
+                       depends_on: list[str] | None = None,
+                       depends_on_resolved: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Run one transformation step for one unit, writing the standard output
     contract (result.pl + meta.json + optional debug_image.png). Shared by
     the HTTP endpoint and the offline task pooler.
@@ -7076,11 +7182,20 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     if runner is None:
         return {"step": step_name, "status": "error", "error": f"unknown transformation {step_name}"}
     out_dir = unit["dir"] / transformation / doer
-    if not force and (out_dir / "meta.json").is_file():
-        return {"step": step_name, "status": "skipped"}
-    for dep in depends_on or []:
-        if not (unit["dir"] / dep / "meta.json").is_file():
-            return {"step": step_name, "status": "blocked", "missing": dep}
+    resolved_deps = _resolve_step_deps(unit, depends_on, depends_on_resolved)
+    out_meta_file = out_dir / "meta.json"
+    if not force and out_meta_file.is_file():
+        stale, _reason = _step_meta_is_stale(out_meta_file, resolved_deps)
+        if not stale:
+            return {"step": step_name, "status": "skipped"}
+    for dep in resolved_deps:
+        meta_path = dep.get("metaPath")
+        if not dep.get("resolved") or meta_path is None:
+            return {"step": step_name, "status": "blocked",
+                    "missing": dep["selector"], "reason": dep.get("reason", "unresolvable")}
+        if not meta_path.is_file():
+            return {"step": step_name, "status": "blocked",
+                    "missing": dep["selector"], "reason": dep.get("reason", "pending")}
     out_dir.mkdir(parents=True, exist_ok=True)
     claim_file = out_dir / "claim.json"
     claim_body = json.dumps({"kind": "transformation_claim", "step": step_name,
@@ -7104,6 +7219,21 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         claim_file.unlink(missing_ok=True)
         return {"step": step_name, "status": "error", "error": str(error)}
     elapsed_ms = int((time.perf_counter() - started) * 1000)
+    from omega_vision.perception.cross_frame_deps import output_revision  # noqa: PLC0415
+    result_pl = out_dir / "result.pl"
+    revision = output_revision(
+        result_pl if result_pl.is_file() else None,
+        producer=step_name, schema=str(stats.get("schema", "")),
+    )
+    consumed_deps: dict[str, Any] = {}
+    for dep in resolved_deps:
+        if dep.get("reason") == "same-frame":
+            continue
+        consumed_deps[dep["selector"]] = {
+            "frameId": dep.get("frameId"),
+            "output": dep.get("output"),
+            "revision": _read_output_revision(dep.get("metaPath")),
+        }
     meta = {
         "kind": "sequence_set_transformation",
         "transformation": transformation,
@@ -7111,6 +7241,8 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
         "options": options,
         "createdAt": _utc_now(),
         "elapsedMs": elapsed_ms,
+        "outputRevision": revision,
+        **({"consumedDeps": consumed_deps} if consumed_deps else {}),
         **stats,
     }
     (out_dir / "meta.json").write_text(
@@ -7129,13 +7261,49 @@ def run_transform_step(unit: dict[str, Any], transformation: str, doer: str,
     return entry
 
 
+def _stamp_resolved_deps(unit: dict[str, Any], depends_on: list[str] | None,
+                         catalog: dict[str, Any]) -> list[dict[str, Any]]:
+    """Resolve cross-frame dependencies at stamp time against the full sequence
+    catalog, returning persistable resolution records (same-frame deps are the
+    trivial current frame and are not persisted)."""
+    from omega_vision.perception.cross_frame_deps import (  # noqa: PLC0415
+        parse_dependency, resolve_dependency,
+    )
+    frames = list(catalog.get("frame_ids_in_order") or [])
+    ordered = bool(catalog.get("ordered"))
+    keys = catalog.get("frame_id_set")
+    records: list[dict[str, Any]] = []
+    for dep in depends_on or []:
+        parsed = parse_dependency(str(dep))
+        if not parsed.is_cross_frame:
+            continue
+        res = resolve_dependency(
+            parsed, current_frame_id=str(unit.get("id")),
+            current_frame_order=unit.get("frameOrder"), ordered=ordered,
+            frame_ids_in_order=frames, frame_id_set=keys,
+        )
+        records.append({
+            "selector": parsed.raw, "output": parsed.output,
+            "resolved": res.resolved, "frameId": res.frame_id,
+            "frameOrder": res.frame_order, "reason": res.reason,
+        })
+    return records
+
+
 def write_unit_todos(unit: dict[str, Any],
                      pipeline: list[dict[str, Any]],
-                     step_results: list[dict[str, Any]] | None = None) -> int:
+                     step_results: list[dict[str, Any]] | None = None,
+                     *, catalog: dict[str, Any] | None = None) -> int:
     """Write <unit>/todos.json: the little work-queue file for this image.
     Status is derived from disk (meta.json present = done), so any offline
     process - the task pooler - can scan for todos.json files and read what
-    still needs to be done. Returns the pending count."""
+    still needs to be done. Returns the pending count.
+
+    When ``catalog`` (the ordered Visual Sequence frame ids) is supplied, any
+    cross-frame dependencies are resolved at stamp time and persisted alongside
+    their original selector; without it, previously-persisted resolutions are
+    preserved. Completed steps whose cross-frame targets changed frame or output
+    revision are re-marked pending (stale) so they re-run."""
     results = {entry["step"]: entry for entry in (step_results or [])}
     todos: list[dict[str, Any]] = []
     pending = 0
@@ -7143,28 +7311,47 @@ def write_unit_todos(unit: dict[str, Any],
         transformation, doer = spec["transformation"], spec["doer"]
         step_name = f"{transformation}/{doer}"
         out_dir = unit["dir"] / transformation / doer
+        depends_on = spec.get("dependsOn") or []
         entry: dict[str, Any] = {
             "transformation": transformation,
             "doer": doer,
             "options": spec.get("options") or {},
             "output": step_name,
-            "dependsOn": spec.get("dependsOn") or [],
+            "dependsOn": depends_on,
             "priority": int(spec.get("priority", 100)),
         }
         if spec.get("type"):
             entry["type"] = spec["type"]
+        resolved_refs = None
+        if catalog is not None:
+            try:
+                resolved_refs = _stamp_resolved_deps(unit, depends_on, catalog)
+            except Exception:  # noqa: BLE001 - invalid grammar surfaces via cycle/validate
+                resolved_refs = None
+        if resolved_refs is None:
+            resolved_refs = spec.get("dependsOnResolved")
+        if resolved_refs:
+            entry["dependsOnResolved"] = resolved_refs
         ran = results.get(step_name)
         claim = None if (out_dir / "meta.json").is_file() else _read_claim(out_dir / "claim.json")
         if (out_dir / "meta.json").is_file():
-            entry["status"] = "done"
-            try:
-                meta = json.loads((out_dir / "meta.json").read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                meta = {}
-            if isinstance(meta.get("elapsedMs"), (int, float)):
-                entry["elapsedMs"] = meta["elapsedMs"]
-            if meta.get("createdAt"):
-                entry["completedAt"] = meta["createdAt"]
+            resolved_now = _resolve_step_deps(unit, depends_on, entry.get("dependsOnResolved"))
+            stale, stale_reason = _step_meta_is_stale(out_dir / "meta.json", resolved_now)
+            if stale:
+                entry["status"] = "pending"
+                entry["stale"] = True
+                entry["staleReason"] = stale_reason
+                pending += 1
+            else:
+                entry["status"] = "done"
+                try:
+                    meta = json.loads((out_dir / "meta.json").read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    meta = {}
+                if isinstance(meta.get("elapsedMs"), (int, float)):
+                    entry["elapsedMs"] = meta["elapsedMs"]
+                if meta.get("createdAt"):
+                    entry["completedAt"] = meta["createdAt"]
         elif claim is not None:
             entry["status"] = "started"
             entry["startedBy"] = claim[0].get("claimedBy")
@@ -7780,6 +7967,36 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             unit["frameSourceKey"] = image.relative_to(pooler_root).as_posix()
         except (AttributeError, ValueError):
             unit["frameSourceKey"] = str(unit["id"])
+    sequence_catalog = {
+        "frame_ids_in_order": [str(unit["id"]) for unit in units],
+        "ordered": sequence_ordered,
+        "frame_id_set": {str(unit["id"]) for unit in units},
+    }
+    from omega_vision.perception.cross_frame_deps import (  # noqa: PLC0415
+        DependencyGrammarError as _DepGrammarError,
+        detect_dependency_cycles as _detect_dependency_cycles,
+        parse_dependency as _parse_dependency,
+    )
+    for spec in pipeline_specs:
+        for dep in spec.get("dependsOn") or []:
+            try:
+                _parse_dependency(str(dep))
+            except _DepGrammarError as error:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"invalid cross-frame dependency {dep!r}: {error}",
+                ) from error
+    _dep_cycles = _detect_dependency_cycles(
+        pipeline_specs,
+        frame_ids_in_order=sequence_catalog["frame_ids_in_order"],
+        ordered=sequence_ordered,
+        frame_id_set=sequence_catalog["frame_id_set"],
+    )
+    if _dep_cycles:
+        raise HTTPException(
+            status_code=400,
+            detail="cross-frame dependency cycle detected: " + " -> ".join(_dep_cycles[0]),
+        )
     if only_moves is not None:
         units = [unit for unit in units if unit["id"] in only_moves]
     plan_only = bool(body.get("planOnly"))
@@ -7848,10 +8065,16 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         steps: list[dict[str, Any]] = []
         if not plan_only:
             for spec in sorted(pipeline_specs, key=lambda s: s["priority"]):
+                depends_on = spec.get("dependsOn") or []
+                try:
+                    resolved = _stamp_resolved_deps(unit, depends_on, sequence_catalog)
+                except Exception:  # noqa: BLE001 - validated above; be defensive
+                    resolved = []
                 steps.append(run_transform_step(unit, spec["transformation"], spec["doer"],
                                                 spec.get("options") or {}, force=force,
-                                                depends_on=spec.get("dependsOn") or []))
-        pending = write_unit_todos(unit, unit_specs, steps)
+                                                depends_on=depends_on,
+                                                depends_on_resolved=resolved))
+        pending = write_unit_todos(unit, unit_specs, steps, catalog=sequence_catalog)
         if plan_only:
             steps = [{"step": f"{spec['transformation']}/{spec['doer']}",
                       "status": "done" if (unit["dir"] / spec["transformation"] / spec["doer"] / "meta.json").is_file() else "pending"}
