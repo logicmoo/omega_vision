@@ -353,6 +353,48 @@ values here.
   blocked design work until the user explicitly resumes temporal/object
   implementation.
 
+- Temporal events design doc (2026-09-09): `docs/design/TEMPORAL_EVENTS.md` is
+  the canonical design reference for cross-frame reasoning. It captures the full
+  event taxonomy (visibility/occlusion/motion/geometry/contact/topology/grouping/
+  appearance/multi-frame), event-vs-state distinctions, the transition-bundle
+  ontology (one `transition_assessment` per adjacent pair; `no_material_change`
+  vs `unknown`; first-frame `frame_assessment(initial_observation, no_predecessor)`),
+  canonical `start/continue/end` relation-phase syntax with occluder-first order
+  and legacy `occlusion_*` mapping, the strict deduction/induction lifecycle and
+  the two distinct induction problems (FrameEvidence->Event detector vs
+  Event->Event transition), the durable Candidate Rule Store, the canonical
+  append-only Visual Sequence Event Log + durable episodes, game user-action
+  exogenous events, the LLM canonical-term output contract, the frame 4->5
+  avatar/star occlusion acceptance scenario, and honest current/deferred status.
+  Documentation only; no predicate is emitted until its status row reads
+  implemented.
+
+- Deferred preprocessing step stack (2026-09-09): the Video Import extraction
+  controls will gain a compact, unlimited, ordered stack of preprocessing step
+  rows scoped to all submitted items in the current Visual Sequence. It is a
+  selected reusable **filter chain** that reuses the EXISTING Video Import Filters
+  registry/library — real filter IDs, parameter schemas/editors, validation,
+  previews, materialization, serialization, and saved-chain conventions — never a
+  parallel registry. `Original Pixels` is a removable no-op/pass-through and an
+  empty stack resolves to original pixels without byte duplication; `Denoise`,
+  `scale_3x_nearest`, and future options must be existing registered filters
+  (add once to the canonical registry if absent). Only deterministic,
+  materializable filters may feed OpenCV parts extraction and all LLM image
+  consumers, which receive the identical final variant hash. Persist the ordered
+  chain+params per Visual Sequence; derive deterministic chain/step identities
+  from source hash + ordered implementation/version/config; cache filesystem
+  intermediates; changing/reordering/removing a step stales the correct downstream
+  lineage without auto-running work; preserve the original bytes and exact
+  coordinate transforms/provenance so highlights map back to original coordinates.
+  Not a debug image. Blocked until the user resumes; see
+  `docs/design/TEMPORAL_EVENTS.md` §8.2. Eventual tests: registry parity with
+  Frames & Filters, parameter reuse, unsupported-filter gating, empty/no-op,
+  removable Original, unlimited chains, duplicates, reorder identity, cache reuse,
+  chain. Initial state shows two `Original Pixels` slots (the no-op state; no
+  separate enable checkbox; no-op slots materialize nothing), with the intended
+  experiment being slot 1 -> `3x nearest-neighbor` and slot 2 -> `DeNoise`
+  (`3x -> DeNoise`), neither active by default.
+
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
   percent of the input image. It then recomputes attachment components among
