@@ -510,6 +510,23 @@ values here.
   used by the neighboring lines, with a regression test. `/filters` now returns
   200 (~1.7s, 248 filters) with no heavy imports.
 
+- Darken Slight Gradients filter (2026-09-09): new first-class Video Import
+  Filters skill `data/omega_vision/video_import/filter_skills/darken_light_gradients.py`
+  (id `skill:darken_light_gradients`), NumPy+Pillow only (no scikit-image/matplotlib),
+  so it is visible/selectable in Frames & Filters and automatically available to the
+  future Preprocessing stack through the same registry + `/filter` materialization
+  and provenance. One deterministic, non-cascading pass reads an immutable snapshot:
+  each non-transparent pixel adopts the exact RGBA of its darkest 8-neighbour that is
+  strictly darker but only slightly (`maxLightnessDelta`, default 16 on 0..255) and
+  colour-similar (`maxChromaDelta`, default 32 max per-channel RGB delta) so real
+  colour edges never bleed; edges use in-bounds neighbours only; alpha preserved;
+  repeat as another stack step for more passes. Fixed an int16 overflow in the luma
+  helper (255*587 > int16) that corrupted output. Tests
+  (`tests/omega_vision_api/test_darken_light_gradients_filter.py`, 10): flat-unchanged,
+  all eight directions, threshold boundary inclusive/exclusive, darkest-qualifying,
+  colour-edge rejection, alpha/transparent, no intra-pass cascade, tiny/edge,
+  determinism, and registry discovery + resolver materialization.
+
 - Preprocessing filter registry foundation (2026-09-09): first increment of the
   deferred Preprocessing Setup. Added `scale_3x_nearest` as a canonical built-in
   filter (`_BUILTIN_FILTERS` + `_apply_prepass_filter` + `_resolve_transform`):
