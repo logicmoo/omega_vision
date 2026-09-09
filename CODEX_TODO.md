@@ -405,7 +405,10 @@ values here.
   (original vs final, optional focused step) via the existing Filters preview
   engine, cached by frame hash + draft chain identity, with no full-sequence run;
   it is UI state, not processing identity, and uses lazy/virtualized selection for
-  large sequences.
+  large sequences. The banner is the always-visible disclosure header; both the
+  step-stack editor and the preview selector/preview live inside its collapsible
+  region, so collapsing reclaims all vertical space while preserving preview
+  state/cache unless invalidated.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
