@@ -14,6 +14,59 @@ values here.
 
 ## Current recovery state
 
+### Reboot checkpoint — paused at user request (2026-09-10)
+
+- Main implementation HEAD before this ledger checkpoint:
+  `e4b4b160405e8f1354c4cdb5001a559ed275ba7c`.
+  Source/test implementation is committed and clean. Core semantic foundation:
+  `a8738230a`; active semantic/browser-memory integration: `7a7cc86fe`;
+  scoped memory-default/discovery fix: `e4b4b1604`. All remain local/unpushed.
+  UI-only commits `db1ee1cb5`, `6bb531de4`, and `3693ea106` preserve removal of
+  Completion/Export, Refresh beside the sequence combo, Preprocessing directly
+  below it, and safe Objects source context.
+- The last main live run completed successfully: actual canonical LS20
+  `data/recordings/ls20/20260718-154544_attempt8`, First N 2, event_log_0/canonical,
+  job `7544aadec61f470397eaabbe18fb56b8`, 16/16 steps (10 writes, 6 reuses),
+  zero model calls. The inspected TODO/control hashes stayed unchanged.
+  Receipt: session files `verify_main_semantic.json`.
+- Last validation: full candidate suite 1,612 passed / 11 expected skips;
+  45 frontend tests/build and 14 authored SWI tests passed. Main integration
+  passed 47 focused tests/build; final memory-default fix passed 42 tests with
+  one symlink-privilege skip. Candidate live checks exercised browser-only
+  Nowhere receipts/reset, repeated log execution without history loss, durable
+  grouping, and distinct unpromoted deployment creation.
+- **Next authorized task, NOT implemented:** a simple persistent JSON cache for
+  MEMORY LOCATION CATALOG METADATA, reused when clean. Mark dirty on relevant
+  memory writes/deletes/promotions and root/scope configuration changes; allow
+  explicit refresh/periodic expiry for external edits. Publish atomically and
+  retain invalidations arriving during rebuild. Do not do a full signature/tree
+  walk to test a clean cache. Never cache full learned payloads or Nowhere data.
+  Selected-resource permission/containment checks remain mandatory. This is
+  memory-discovery caching only; broader Visual Sequence caching stays skipped.
+- The user also authorized Sprite View attention, without specifying a redesign.
+  Continue its existing Shape/Object Memory controls/navigation after the cache
+  task; do not invent unrelated UI changes.
+- Reboot snapshot directory:
+  `C:\Users\dougl\.copilot\session-state\624aa1a5-4c13-425c-9e1d-a651f9915222\files\reboot-checkpoint-20260910`.
+  It includes scoped binary diffs, source manifests/copies for relevant untracked
+  candidate files, status/HEAD receipts, and a portable local-commit bundle.
+  Earlier recovery snapshots remain intact. The existing parent candidate
+  worktree is `C:\snet\PeTTa\repos\coplilot_storage\copilot-worktrees\symbolic_ml_workbench\teamspoon-reimagined-journey`;
+  its uncommitted semantic source is also preserved, not discarded.
+- Dirty main files are live `pooler.lock`, `pooler_control.json`,
+  `pooler_status.json`, `video_import/page_state.json`, the existing temporary
+  page-state file, and generated workspace knowledge artifacts. Do not reset,
+  delete, stash, stage, or normalize them.
+- After login: read AGENTS.md then this checkpoint; verify main HEAD/status and
+  consult the snapshot. Rediscover listeners and command lines on 8000/5173
+  (main) and 8001/5175 (candidate); **do not reuse old PIDs**. If main servers
+  are absent, start `.venv\Scripts\python.exe python\workbench_api_server\scripts\run_api_server.py --host 127.0.0.1 --port 8000`;
+  start Vite with WORKBENCH_WEB_HOST=127.0.0.1, WORKBENCH_WEB_PORT=5173,
+  WORKBENCH_API_TARGET=http://127.0.0.1:8000 and
+  `npm.cmd --prefix frontend\apps\workbench run dev`, detached.
+  Preserve the current user URL/state. No further tests, agents, server starts,
+  restarts, or process killing were requested before logout.
+
 - Recovered semantic integration (2026-09-10): recovered the CURRENT parent
   worktree at c2dbc8b00, not its older recovery archive; retained hash-verified
   snapshots including every untracked source/test file before changes. The
