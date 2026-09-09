@@ -9,14 +9,15 @@ perpetua, reyes, rise, slumber (see pilgram's docs).
 
 from PIL import Image
 
-import pilgram
-
-# Every callable filter pilgram ships (aden … xpro2, incl. _1977), so the
-# workbench can offer the full set as a combo, not just lofi.
-_STYLES = sorted(
-    name for name in dir(pilgram)
-    if not name.startswith("__") and name not in {"css", "util"} and callable(getattr(pilgram, name))
-)
+# Static list of the filters pilgram ships. Used only for the UI combo so that
+# discovering/listing this skill never imports the pilgram package; apply()
+# imports pilgram lazily and reports a clear error if it is not installed.
+_STYLES = [
+    "_1977", "aden", "brannan", "brooklyn", "clarendon", "earlybird", "gingham",
+    "hudson", "inkwell", "kelvin", "lark", "lofi", "ludwig", "maven", "mayfair",
+    "moon", "nashville", "perpetua", "reyes", "rise", "slumber", "stinson",
+    "toaster", "valencia", "walden", "willow", "xpro2",
+]
 
 SKILL = {
     "title": "Pilgram color filter (downloaded)",
@@ -27,6 +28,10 @@ SKILL = {
 
 
 def apply(image: Image.Image, params: dict) -> Image.Image:
+    try:
+        import pilgram  # noqa: PLC0415 - optional/heavy dep stays out of discovery
+    except ImportError as error:  # pragma: no cover - environment dependent
+        raise ValueError("pilgram is not installed; run 'pip install pilgram' to use this filter") from error
     style = str(params.get("style") or "lofi").lower()
     transform = getattr(pilgram, style, None)
     if transform is None or style in {"css", "util"} or style.startswith("__"):

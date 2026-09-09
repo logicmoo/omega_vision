@@ -2899,6 +2899,17 @@ def visual_sequences(workspaceId: str) -> dict[str, Any]:
     return {"visualSequences": sequences, "sets": sequences}
 
 
+@router.get("/transform-composites")
+def transform_composites(workspaceId: str) -> dict[str, Any]:
+    """The registered transformation/doer composites for the direct-runner combos.
+
+    Deliberately lightweight: it enumerates only the in-memory registry and never
+    triggers skill discovery or heavy capability imports (scikit-image /
+    matplotlib), so it stays fast and cannot 502 on a cold worker."""
+    _ = _workspace_root(workspaceId)  # validate workspace; registry is process-global
+    return {"composites": _registered_transform_composites()}
+
+
 @router.get("/reduce-manifest")
 def reduce_manifest(workspaceId: str, set_id: str = Query(_CANONICAL_IMAGE_SET, alias="set")) -> dict[str, Any]:
     """Filesystem-driven reduction manifest for the Recognition/Objects pages.
@@ -7047,6 +7058,27 @@ _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
 
 
 _CLAIM_STALE_SECONDS = 30 * 60
+
+
+def _registered_transform_composites() -> list[dict[str, Any]]:
+    """Lightweight enumeration of registered transformation/doer composites.
+
+    Reads only the in-memory ``_SEQUENCE_TRANSFORMS`` registry — no skill
+    discovery, no plugin/network scans, and no heavy imports (scikit-image /
+    matplotlib) — so the direct-runner composite combos populate instantly and
+    deterministically. Each entry is a canonical ``transformation/doer`` id with
+    availability derived from the registered runner."""
+    composites = [
+        {
+            "id": f"{transformation}/{doer}",
+            "transformation": transformation,
+            "doer": doer,
+            "available": callable(runner),
+        }
+        for (transformation, doer), runner in _SEQUENCE_TRANSFORMS.items()
+    ]
+    composites.sort(key=lambda entry: entry["id"])
+    return composites
 
 
 def _claim_worker_id() -> str:
