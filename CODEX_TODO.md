@@ -393,7 +393,10 @@ values here.
   chain. Initial state shows two `Original Pixels` slots (the no-op state; no
   separate enable checkbox; no-op slots materialize nothing), with the intended
   experiment being slot 1 -> `3x nearest-neighbor` and slot 2 -> `DeNoise`
-  (`3x -> DeNoise`), neither active by default.
+  (`3x -> DeNoise`), neither active by default. Each row exposes accessible
+  `+ before`/`+ after`/`remove` actions; insert/delete/reorder preserve stable
+  step IDs/params (identity never index-based), an empty stack is valid
+  (original pixels), and edits stale cache lineage without auto-running work.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten

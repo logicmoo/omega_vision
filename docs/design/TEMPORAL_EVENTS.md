@@ -764,9 +764,19 @@ submitted items in the current Visual Sequence. Key points:
   same original-pixels identity chain. Changing a slot back to `Original Pixels`
   removes its contribution from the effective chain/cache identity while
   preserving only appropriate UI draft parameters per existing form conventions.
-- Planned tests also cover: the two initial `Original Pixels` selections, absence
-  of a separate enable control, activation purely by combo choice, and the
-  intended `3x -> DeNoise` order.
+- **Per-row actions.** Every step row exposes compact, accessible `+ before`,
+  `+ after`, and `remove` actions (icons with labels/tooltips/ARIA, keyboard
+  operable). Inserting before/after any row creates a new stable-ID slot at that
+  exact position, initially `Original Pixels` (no-op). Removing any row is allowed,
+  including either initial row; an empty stack is valid and means original pixels.
+  Preserve existing step IDs/config/params when inserting, deleting, or
+  reordering — **identity must never be based only on list index**. These edits
+  update the draft/effective chain and stale the cache lineage correctly but
+  **never auto-run** downstream processing or LLM calls.
+- Planned tests also cover: `+ before`/`+ after` at first/middle/last positions,
+  stable IDs/params across insert/delete/reorder, remove-to-empty,
+  undo/persistence (if existing form patterns support it), and accessible keyboard
+  operation.
 
 ### 8.2 Planned tests (deferred stages)
 
