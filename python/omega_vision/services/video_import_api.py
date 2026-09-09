@@ -8793,6 +8793,13 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             specs[step] = {**specs[step], "options": {**specs[step].get("options", {}), **model_options}}
     units_by_id = {unit["id"]: unit for unit in units}
     try:
+        from omega_vision.perception.memory_locations import default_preference_snapshot
+        with default_preference_snapshot():
+            runtime_options = [
+                (node.frame_id, node.output, _runtime_transform_options(
+                    units_by_id[node.frame_id], node.output, specs[node.output].get("options", {}),
+                )) for node in plan
+            ]
         confirmation_key = hashlib.sha256(json.dumps({
             "workspace": workspace_id, "sequence": sequence_id,
             "memorySession": body.get("memorySessionId"),
@@ -8802,11 +8809,7 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             "preprocessing": _load_preprocessing_chain_at(directory),
             "modelRevision": model_provenance["resolved_model_hash"] if model_provenance else None,
             "output": output, "specs": {node.output: specs[node.output] for node in plan},
-            "runtimeOptions": [
-                (node.frame_id, node.output, _runtime_transform_options(
-                    units_by_id[node.frame_id], node.output, specs[node.output].get("options", {}),
-                )) for node in plan
-            ],
+            "runtimeOptions": runtime_options,
         }, sort_keys=True, allow_nan=False).encode()).hexdigest()
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=400, detail=f"Invalid execution options: {error}") from error

@@ -52,6 +52,179 @@ def test_independent_preferences_default_run_and_persist_atomic_cas(tmp_path):
     assert not list((tmp_path / "runtime" / "memory-settings").glob("*.pending*"))
 
 
+def test_default_preferences_are_scoped_without_catalog_or_unrelated_payload_reads(tmp_path, monkeypatch):
+    from dataclasses import replace
+    import os
+    store, context = store_at(tmp_path / "local")
+    remote, _ = store_at(tmp_path / "remote", provider="other", workspace="other")
+    current = dict((item["memoryKinds"][0], item["memoryLocationId"])
+                   for item, _ in store._destinations(store.roots[0], context) if item["scopeKind"] == "run")
+    store.save_record("shape", current["shape"], {"uid": "local-shape"}, context)
+    foreign_context = replace(context, game_id="foreign-game", run_id="foreign-run")
+    foreign = next(path for item, path in store._destinations(store.roots[0], foreign_context)
+                   if item["scopeKind"] == "run" and item["memoryKinds"] == ["shape"])
+    foreign.mkdir(parents=True)
+    (foreign / "unrelated.memory.json").write_text("not a valid memory record")
+    ordinary = store.roots[0].root / "recordings"
+    for index in range(12):
+        frame = ordinary / str(index) / "outputs"
+        frame.mkdir(parents=True)
+        (frame / "result.json").write_text("not memory")
+    combined = MemoryLocations([*store.roots, *remote.roots])
+    expected = combined.catalog(context)["effective"]
+    walk, read, safe = os.walk, Path.read_text, combined._safe
+    visited = []
+
+    def scoped_walk(top, **kwargs):
+        assert Path(top) != remote.roots[0].root
+        for directory, children, files in walk(top, **kwargs):
+            assert "foreign-game" not in Path(directory).parts
+            visited.append(directory)
+            yield directory, children, files
+
+    def scoped_read(path, *args, **kwargs):
+        assert not path.is_relative_to(foreign) and not path.is_relative_to(ordinary)
+        return read(path, *args, **kwargs)
+
+    def only_memory_paths(root, path):
+        assert not path.is_relative_to(ordinary), "Ordinary frame directories must not be resolved"
+        return safe(root, path)
+
+    monkeypatch.setattr(os, "walk", scoped_walk)
+    monkeypatch.setattr(Path, "read_text", scoped_read)
+    monkeypatch.setattr(combined, "_safe", only_memory_paths)
+    monkeypatch.setattr(combined, "catalog", lambda *args, **kwargs: pytest.fail("Defaults must not build the catalog"))
+    preferences = combined.load_preferences(context)
+    assert visited
+    for kind in ("shape", "object"):
+        assert preferences[kind]["saveTo"] == current[kind]
+        assert preferences[kind]["lookIn"] == expected[kind]
+    assert not (store.roots[0].root / "runtime").exists()
+    monkeypatch.setattr(combined, "_discovered", lambda *args, **kwargs: pytest.fail("Scoped ID needs no discovery"))
+    assert combined.read_selected("shape", [current["shape"]], context)["records"]
+    combined.save_record("object", current["object"], {"uid": "local-object"}, context)
+
+
+def test_default_preference_snapshot_is_immutable_request_local_metadata(tmp_path, monkeypatch):
+    from omega_vision.perception import memory_locations as memory
+    store, context = store_at(tmp_path)
+    discoveries = []
+    discover = MemoryLocations._discovered
+
+    def counted(self, root, **kwargs):
+        discoveries.append(root.root)
+        yield from discover(self, root, **kwargs)
+
+    monkeypatch.setattr(MemoryLocations, "_discovered", counted)
+    with memory.default_preference_snapshot():
+        original = store.load_preferences(context)
+        original["shape"]["lookIn"].append(NOWHERE)
+        repeated = MemoryLocations(store.roots).load_preferences(context)
+        assert repeated["shape"]["lookIn"] == []
+        assert len(discoveries) == 1
+        cached = memory._DEFAULT_PREFERENCE_READS.get()
+        assert all(set(value) == {"schemaVersion", "expanded", "shape", "object", "revision"}
+                   for value in cached.values())
+    assert cached == {} and memory._DEFAULT_PREFERENCE_READS.get() is None
+    assert not list(tmp_path.iterdir())
+    store.save_record("shape", repeated["shape"]["saveTo"], {"uid": "new-shape"}, context)
+    assert store.load_preferences(context)["shape"]["lookIn"] == [repeated["shape"]["saveTo"]]
+    assert len(discoveries) == 2
+    with pytest.raises(RuntimeError):
+        with memory.default_preference_snapshot():
+            store.load_preferences(context)
+            raise RuntimeError("aborted plan")
+    assert memory._DEFAULT_PREFERENCE_READS.get() is None
+
+
+@pytest.mark.parametrize("game", ["game-a", "games", "levels", "runs"])
+def test_scoped_defaults_match_populated_native_legacy_and_checkpoint_lookups(tmp_path, game):
+    from dataclasses import replace
+    store, original = store_at(tmp_path)
+    context = replace(original, game_id=game)
+    targets = store._destinations(store.roots[0], context)
+    for item, _ in targets:
+        if item["memoryKinds"] == ["shape"]:
+            store.save_record("shape", item["memoryLocationId"], {"uid": "shape-a"}, context)
+    legacy = tmp_path / "existing" / "shape_dir"
+    legacy.mkdir(parents=True)
+    (legacy / "shapes.pl").write_text("shape(key,name,turtle).\n", encoding="utf-8")
+    checkpoints = tmp_path / "runtime" / "object-checkpoints"
+    checkpoints.mkdir(parents=True)
+    (checkpoints / "one.json").write_text(json.dumps({
+        "sequenceId": context.run_id, "objects": [{"uid": "object-a"}],
+    }), encoding="utf-8")
+    expected = store.catalog(context)
+    preferences = store.load_preferences(context)
+    for kind in ("shape", "object"):
+        assert preferences[kind]["lookIn"] == expected["effective"][kind]
+        assert preferences[kind]["saveTo"] == next(item["memoryLocationId"] for item, _ in targets
+                                                  if item["scopeKind"] == "run" and item["memoryKinds"] == [kind])
+    assert not (tmp_path / "runtime" / "memory-settings").exists()
+
+
+def test_default_resolution_preserves_provider_denial_and_invalid_record_errors(tmp_path):
+    store, context = store_at(tmp_path)
+    legacy = tmp_path / "shape_dir"
+    legacy.mkdir()
+    (legacy / "shapes.pl").write_text("malicious(do_something).\n")
+    assert store.load_preferences(context)["shape"]["lookIn"] == []
+    assert store.catalog(context)["errors"]
+    denied = MemoryLocations([AuthorizedMemoryRoot(context.provider_ref, context.workspace_id, tmp_path,
+                                                   "Denied", readable=False)])
+    with pytest.raises(PermissionError, match="preference root"):
+        denied.load_preferences(context)
+    readonly = MemoryLocations([AuthorizedMemoryRoot(context.provider_ref, context.workspace_id, tmp_path,
+                                                     "Read only", writable=False)])
+    preferences = readonly.load_preferences(context)
+    with pytest.raises(PermissionError, match="not writable"):
+        readonly.save_record("shape", preferences["shape"]["saveTo"], {"uid": "shape-a"}, context)
+    with pytest.raises(PermissionError, match="read-only"):
+        readonly.save_preferences(context, preferences, expected_revision=preferences["revision"])
+
+
+def test_discovery_still_surfaces_unreadable_subtrees(tmp_path, monkeypatch):
+    import os
+    store, context = store_at(tmp_path)
+
+    def denied_walk(top, *, onerror, **kwargs):
+        onerror(PermissionError("fixture denied subtree"))
+        yield top, [], []
+
+    monkeypatch.setattr(os, "walk", denied_walk)
+    with pytest.raises(PermissionError, match="subtree is not readable"):
+        list(store._discovered(store.roots[0]))
+    catalog = store.catalog(context)
+    assert catalog["errors"] and catalog["locations"][0]["memoryLocationId"] == NOWHERE
+    assert store.load_preferences(context)["shape"]["lookIn"] == []
+
+
+def test_windows_junction_discovery_skips_foreign_tree_and_checks_selected_path(tmp_path):
+    import os
+    import subprocess
+    if os.name != "nt":
+        pytest.skip("Windows junction regression")
+    store, context = store_at(tmp_path / "workspace")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "shapes.pl").write_text("shape(key,name,turtle).\n")
+    junction = store.roots[0].root / "shape_dir"
+    created = subprocess.run(
+        [os.environ.get("ComSpec", "cmd.exe"), "/c", "mklink", "/J", str(junction), str(outside)],
+        capture_output=True, text=True, check=False,
+    )
+    assert created.returncode == 0, created.stderr
+    try:
+        assert junction.is_junction()
+        assert [item["memoryLocationId"] for item in store.catalog(context)["locations"]] == [NOWHERE]
+        assert store.load_preferences(context)["shape"]["lookIn"] == []
+        with pytest.raises(PermissionError, match="escapes"):
+            store._safe(store.roots[0], junction / "shapes.pl")
+    finally:
+        junction.rmdir()
+    assert (outside / "shapes.pl").is_file()
+
+
 def test_nowhere_has_no_files_no_cache_and_resets_even_when_catalog_empty(tmp_path):
     store, context = store_at(tmp_path)
     volatile = VolatileMemory()

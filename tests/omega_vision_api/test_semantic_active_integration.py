@@ -69,6 +69,46 @@ def commit(client, body, preview, *, run):
     return response.json()
 
 
+def test_first_direct_plan_resolves_default_preferences_once_without_foreign_memory_scan(integrated, monkeypatch):
+    from omega_vision.perception import memory_locations as memory
+    root, client = integrated
+    sequence_id = sequence(root, count=2)
+    external = root / "unrelated-provider"
+    external.mkdir()
+    for index in range(8):
+        frame = external / "recordings" / str(index) / "outputs"
+        frame.mkdir(parents=True)
+        (frame / "result.json").write_text("unrelated generated payload")
+    mounts = [
+        memory.AuthorizedMemoryRoot("filesystem:w", "w", root / "workspace", "Workspace", writable=True),
+        memory.AuthorizedMemoryRoot("external", "w", external, "External recordings"),
+    ]
+    mounts[0].root.mkdir()
+    monkeypatch.setattr(semantics, "authorized_memory_roots", lambda _: mounts)
+    discoveries = []
+    discover = memory.MemoryLocations._discovered
+
+    def counted(self, mount, **kwargs):
+        assert mount.provider_ref == "filesystem:w", "Default planning must not traverse unrelated providers"
+        discoveries.append(mount.root)
+        yield from discover(self, mount, **kwargs)
+
+    monkeypatch.setattr(memory.MemoryLocations, "_discovered", counted)
+    monkeypatch.setattr(memory.MemoryLocations, "catalog",
+                        lambda *args, **kwargs: pytest.fail("Planning must not enumerate memory counts/payloads"))
+    response = client.post("/video-import/direct-calls", json={
+        "workspaceId": "w", "sequenceId": sequence_id, "firstN": 2,
+        "composite": semantics.LOG, "planOnly": True,
+    })
+    assert response.status_code == 200, response.text
+    assert response.json()["steps"] and len(discoveries) == 1
+    assert memory._DEFAULT_PREFERENCE_READS.get() is None
+    assert not api._direct_jobs
+    assert not list(root.rglob("todos.json")) and not list(root.rglob("*.memory.json"))
+    assert not (mounts[0].root / "runtime").exists()
+    assert not list(root.rglob("meta.json"))
+
+
 def test_real_cv_objects_events_and_inspectable_sources(integrated):
     root, client = integrated
     sequence_id = sequence(root)

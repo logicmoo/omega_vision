@@ -21,6 +21,8 @@ shape keys are retained separately, not represented as verified modern links.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
+from contextlib import contextmanager
+from contextvars import ContextVar
 import json
 import os
 from pathlib import Path
@@ -37,6 +39,19 @@ NOWHERE = "memory-nowhere"
 MAX_BROWSER_SNAPSHOT_BYTES = 16 * 1024 * 1024
 KINDS = ("shape", "object")
 SCOPE_ORDER = {"run": 0, "level": 1, "game": 2, "global": 3, "volatile": 4}
+_DEFAULT_PREFERENCE_READS: ContextVar[dict | None] = ContextVar("memory_default_preference_reads", default=None)
+
+
+@contextmanager
+def default_preference_snapshot():
+    """Reuse only default selection metadata within one execution plan."""
+    values = {}
+    token = _DEFAULT_PREFERENCE_READS.set(values)
+    try:
+        yield
+    finally:
+        values.clear()
+        _DEFAULT_PREFERENCE_READS.reset(token)
 
 
 def _copy(value: Any) -> Any:
@@ -449,15 +464,24 @@ class MemoryLocations:
             ))
         ]
 
-    def _discovered(self, root: AuthorizedMemoryRoot) -> Iterable[tuple[dict[str, Any], Path]]:
+    def _discovered(self, root: AuthorizedMemoryRoot, *,
+                    effective_context: MemoryContext | None = None) -> Iterable[tuple[dict[str, Any], Path]]:
         def failed(error: OSError) -> None:
             raise PermissionError("a memory provider subtree is not readable") from error
 
+        self._safe(root, root.root)
         for directory, children, files in os.walk(root.root, followlinks=False, onerror=failed):
             path = Path(directory)
             children[:] = sorted(name for name in children if name not in {".git", "node_modules", ".venv", "__pycache__"}
                                  and not (path / name).is_symlink() and not (path / name).is_junction())
-            self._safe(root, path)
+            parts = path.relative_to(root.root).parts
+            if effective_context is not None and len(parts) % 2 == 0 and parts[:3] == (
+                "knowledge", "artifacts", "memory",
+            ):
+                field = {"games": "game_id", "levels": "level_id", "runs": "run_id"}.get(path.name)
+                if field:
+                    selected = getattr(effective_context, field)
+                    children[:] = [name for name in children if selected is not None and unquote(name) == selected]
             context = _context(root)
             kind, format = None, None
             if path.name == "shape_dir" and "shapes.pl" in files:
@@ -482,6 +506,11 @@ class MemoryLocations:
                             sequences.add(str(snapshot["sequenceId"]))
                 for sequence in sorted(sequences):
                     scoped = {**context, "runId": sequence}
+                    if effective_context is not None and not self._effective({
+                        "providerRef": root.provider_ref, "workspaceId": root.workspace_id,
+                        "scopeKind": _scope(scoped), "context": scoped,
+                    }, effective_context):
+                        continue
                     location = self._location(root, path, kind, scoped, format)
                     location["memoryLocationId"] = _id("memory-location", [location["memoryLocationId"], sequence])
                     location["recordSelector"] = {"sequenceId": sequence}
@@ -498,6 +527,13 @@ class MemoryLocations:
                         if index + 1 < len(parts):
                             context[key] = unquote(parts[index + 1])
             if kind:
+                if effective_context is not None and not self._effective({
+                    "providerRef": root.provider_ref, "workspaceId": root.workspace_id,
+                    "scopeKind": _scope(context), "context": context,
+                }, effective_context):
+                    continue
+                # Ordinary directories contain no memory to read. Resolve only
+                # recognized locations (and each source again before reading).
                 yield self._location(root, path, kind, context, format), path
 
     def _raw_records(self, root: AuthorizedMemoryRoot, location: Mapping[str, Any], path: Path) -> list[dict[str, Any]]:
@@ -639,13 +675,19 @@ class MemoryLocations:
         )
 
     def _find(self, context: MemoryContext, location_id: str) -> tuple[AuthorizedMemoryRoot, dict[str, Any], Path]:
+        # Current scoped destinations are derivable without provider discovery.
+        # Reads/writes below still validate the path and record integrity.
         for root in self.roots:
             if not root.readable or not root.root.is_dir():
                 continue
-            candidates = list(self._discovered(root))
             if (root.provider_ref, root.workspace_id) == (context.provider_ref, context.workspace_id):
-                candidates.extend(self._destinations(root, context))
-            for location, path in candidates:
+                for location, path in self._destinations(root, context):
+                    if location["memoryLocationId"] == location_id:
+                        return root, location, self._safe(root, path)
+        for root in self.roots:
+            if not root.readable or not root.root.is_dir():
+                continue
+            for location, path in self._discovered(root):
                 if location["memoryLocationId"] == location_id:
                     return root, location, self._safe(root, path)
         raise PermissionError("memory location is unavailable or not authorized")
@@ -761,14 +803,45 @@ class MemoryLocations:
             if value.get("revision") != content_hash({key: item for key, item in value.items() if key != "revision"}):
                 raise ValueError("memory preference revision mismatch")
             return value
-        catalog = self.catalog(context)
+        cached = _DEFAULT_PREFERENCE_READS.get()
+        key = (self.roots, context)
+        if cached is not None and key in cached:
+            return _copy(cached[key])
+        destinations, effective = {}, {}
+        for mount in self.roots:
+            if not mount.readable or not mount.root.is_dir() or (
+                mount.provider_ref, mount.workspace_id
+            ) != (context.provider_ref, context.workspace_id) or any(
+                bound is not None and bound != actual for bound, actual in (
+                    (mount.game_id, context.game_id), (mount.level_id, context.level_id), (mount.run_id, context.run_id),
+                )
+            ):
+                continue
+            try:
+                for location, _ in self._destinations(mount, context):
+                    destinations[location["memoryLocationId"]] = location
+                for location, directory in self._discovered(mount, effective_context=context):
+                    try:
+                        if self._records(mount, location, directory):
+                            effective[location["memoryLocationId"]] = location
+                    except (OSError, ValueError):
+                        # Catalog/explicit reads surface these same errors.
+                        continue
+            except (OSError, ValueError):
+                continue
+        ordered = sorted(effective.values(), key=lambda item: (
+            SCOPE_ORDER[item["scopeKind"]], item["providerRef"], item["workspaceId"], item["memoryLocationId"]))
         value = {"schemaVersion": 1, "expanded": False}
         for kind in KINDS:
-            choices = sorted((item for item in catalog["destinations"] if kind in item["memoryKinds"] and item["memoryLocationId"] != NOWHERE),
+            choices = sorted((item for item in destinations.values() if kind in item["memoryKinds"]),
                              key=lambda item: (SCOPE_ORDER[item["scopeKind"]], item["memoryLocationId"]))
             value[kind] = {"saveTo": choices[0]["memoryLocationId"] if choices else NOWHERE,
-                           "lookIn": catalog["effective"][kind], "recentLookIn": []}
-        return {**value, "revision": content_hash(value)}
+                           "lookIn": [item["memoryLocationId"] for item in ordered if kind in item["memoryKinds"]],
+                           "recentLookIn": []}
+        result = {**value, "revision": content_hash(value)}
+        if cached is not None:
+            cached[key] = _copy(result)
+        return result
 
     @staticmethod
     def _validate_preferences(preferences: Mapping[str, Any]) -> None:
