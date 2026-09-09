@@ -33,7 +33,7 @@ import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Mapping, Sequence
 
 from fastapi import APIRouter, Body, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response, StreamingResponse
@@ -213,6 +213,16 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 from omega_vision.inherited_source_overlay import data_homes as _data_homes  # noqa: E402
 from omega_vision.inherited_source_overlay import vision_data_root as _vision_data_root  # noqa: E402
+from omega_vision.perception.image_preprocessing import (  # noqa: E402
+    ORIGINAL_PIXELS_ID as _PP_ORIGINAL_ID,
+    SCHEMA_VERSION as _PP_SCHEMA_VERSION,
+    chain_signature as _pp_chain_signature,
+    default_chain as _pp_default_chain,
+    effective_steps as _pp_effective_steps,
+    is_effectively_original as _pp_is_effectively_original,
+    normalize_chain as _pp_normalize_chain,
+    validate_chain as _pp_validate_chain,
+)
 
 
 def _imports_root(root: Path) -> Path:
@@ -5838,6 +5848,197 @@ def _resolve_chain(root: Path, body: dict[str, Any]) -> tuple[str, Any]:
     return label, composed
 
 
+# --- Per-Visual-Sequence image preprocessing chain -------------------------
+#
+# A preprocessing chain is an ordered list of steps ({stepId, entryId, params})
+# applied to every submitted frame of a Visual Sequence BEFORE OpenCV extraction
+# and any LLM image consumer sees it. Each ``entryId`` selects an entry from the
+# EXISTING Filters registry (``/filters``); ``select:original`` is a removable
+# no-op / pass-through that materializes nothing. The final variant is
+# content-addressed by (source pixels + ordered effective steps) so the same
+# chain over the same source resolves to one cached file, and any change to the
+# source or the chain yields a fresh identity (staleness is automatic).
+
+def _filter_catalog_entries(root: Path) -> list[dict[str, Any]]:
+    """The raw filter catalog (built-ins, published customs, LUTs, skills)
+    WITHOUT vote flags/ordering — enough to resolve a chain step to a transform.
+    Never triggers heavy capability imports (skimage/matplotlib)."""
+    path = _filters_path(root)
+    published: list[dict[str, Any]] = []
+    if path.is_file():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            published = loaded if isinstance(loaded, list) else []
+        except (OSError, json.JSONDecodeError):
+            published = []
+    luts_dir = _luts_dir(root)
+    luts = [
+        {"id": f"lut:{entry.stem}", "title": f"LUT · {entry.stem}", "filter": "lut",
+         "lutPath": _data_rel_of(root, entry), "params": {}, "lut": True}
+        for entry in sorted(luts_dir.glob("*.cube"))
+    ] if luts_dir.is_dir() else []
+    return [*_BUILTIN_FILTERS, *published, *luts, *_discover_skills(root)]
+
+
+def _filter_catalog_index(root: Path) -> dict[str, dict[str, Any]]:
+    return {str(entry.get("id")): entry for entry in _filter_catalog_entries(root) if entry.get("id")}
+
+
+def _chain_step_transform_body(entry: dict[str, Any], params: Mapping[str, Any]) -> dict[str, Any]:
+    """Build a ``_resolve_transform`` body for one chain step from its catalog
+    entry + params — the backend twin of the frontend ``specFor``."""
+    coerced: dict[str, Any] = {}
+    for key, value in dict(params or {}).items():
+        if isinstance(value, str) and re.fullmatch(r"-?\d+(\.\d+)?", value):
+            coerced[key] = float(value) if "." in value else int(value)
+        else:
+            coerced[key] = value
+    body: dict[str, Any] = {"filter": str(entry.get("filter") or ""), "params": coerced}
+    if "colors" in coerced:
+        body["colors"] = coerced["colors"]
+    if "scale" in coerced:
+        body["scale"] = coerced["scale"]
+    if entry.get("lutPath"):
+        body["lutPath"] = entry["lutPath"]
+    if entry.get("skillPath"):
+        body["skillPath"] = entry["skillPath"]
+    return body
+
+
+def _sequence_root_for(root: Path, sequence_id: str) -> Path:
+    """The on-disk directory for a Visual Sequence, resolved the SAME way the
+    run-planning endpoint resolves ``pooler_root`` so persistence and
+    materialization always agree: a ``data/<set>`` target goes through the
+    overlay-aware set-home election; any other target is a direct workspace
+    child (recordings)."""
+    sid = str(sequence_id or "").strip()
+    if not sid:
+        raise HTTPException(status_code=400, detail="sequenceId is required")
+    try:
+        if sid.startswith("data/"):
+            return _resolve_set_dir(root, sid)
+        return _safe_workspace_child(root, sid)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+def _preprocessing_chain_path(sequence_root: Path) -> Path:
+    return sequence_root / "preprocessing_chain.json"
+
+
+def _load_preprocessing_chain_at(sequence_root: Path) -> list[dict[str, Any]]:
+    """Load the persisted chain for a resolved sequence dir, or an empty
+    (effectively-original) chain when none is saved. Never raises."""
+    path = _preprocessing_chain_path(sequence_root)
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    steps = data.get("steps") if isinstance(data, dict) else data
+    if not isinstance(steps, list):
+        return []
+    return _pp_normalize_chain(steps)
+
+
+def _preprocessing_source_signature(image_path: Path) -> str:
+    return hashlib.sha256(image_path.read_bytes()).hexdigest()[:24]
+
+
+def _materialize_preprocessed_image(
+    root: Path,
+    unit: dict[str, Any],
+    chain: Sequence[Mapping[str, Any]],
+    catalog_index: Mapping[str, dict[str, Any]],
+) -> Path:
+    """Return the path to the final preprocessing variant for a unit's source
+    image. An effectively-original chain is a zero-cost pass-through returning
+    the ORIGINAL path (nothing is materialized). Otherwise the ordered effective
+    steps are applied through the existing filter pipeline and cached under
+    ``<unit>/preprocessing/<signature>.png`` (content-addressed, reused)."""
+    source: Path | None = unit.get("image")
+    if source is None or _pp_is_effectively_original(chain):
+        return source  # type: ignore[return-value]
+    steps = _pp_effective_steps(chain)
+    bodies: list[dict[str, Any]] = []
+    for step in steps:
+        entry_id = str(step.get("entryId"))
+        entry = catalog_index.get(entry_id)
+        if entry is None:
+            raise RuntimeError(f"unknown preprocessing filter: {entry_id}")
+        bodies.append(_chain_step_transform_body(entry, step.get("params") or {}))
+    signature = _pp_chain_signature(_preprocessing_source_signature(source), chain)
+    out_dir = unit["dir"] / "preprocessing"
+    out_path = out_dir / f"{signature.replace(':', '_')}.png"
+    if out_path.is_file():
+        return out_path
+    from PIL import Image  # noqa: PLC0415
+
+    with Image.open(source) as loaded:
+        image = loaded.convert("RGB")
+    _, transform = _resolve_chain(root, {"chain": bodies})
+    result = transform(image).convert("RGB")
+    _save_image_with_provenance(
+        root, result, out_path,
+        operation="preprocessing_chain",
+        parent_image=source,
+        source={"chainSignature": signature,
+                "steps": [{"entryId": str(step.get("entryId")), "params": step.get("params") or {}} for step in steps]},
+        image_format="PNG",
+    )
+    return out_path
+
+
+def _preprocessing_chain_payload(root: Path, sequence_id: str, sequence_root: Path,
+                                 steps: list[dict[str, Any]]) -> dict[str, Any]:
+    index = _filter_catalog_index(root)
+    valid = set(index) | {_PP_ORIGINAL_ID}
+    return {
+        "sequenceId": sequence_id,
+        "schemaVersion": _PP_SCHEMA_VERSION,
+        "steps": steps,
+        "effectivelyOriginal": _pp_is_effectively_original(steps),
+        "errors": _pp_validate_chain(steps, valid_entry_ids=valid, materializable_entry_ids=set(index)),
+        "path": _data_rel_of(root, _preprocessing_chain_path(sequence_root)),
+    }
+
+
+@router.get("/preprocessing-chain")
+def get_preprocessing_chain(workspaceId: str, sequenceId: str) -> dict[str, Any]:
+    """The persisted per-sequence preprocessing chain (or the default two
+    ``Original Pixels`` no-op rows when none is saved)."""
+    root = _workspace_root(workspaceId)
+    sequence_root = _sequence_root_for(root, sequenceId)
+    steps = _load_preprocessing_chain_at(sequence_root) or _pp_default_chain()
+    return _preprocessing_chain_payload(root, sequenceId, sequence_root, steps)
+
+
+@router.put("/preprocessing-chain")
+def put_preprocessing_chain(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Persist the per-sequence preprocessing chain. Rejects steps that
+    reference an unknown or non-materializable filter."""
+    workspace_id = str(body.get("workspaceId") or "")
+    sequence_id = str(body.get("sequenceId") or "")
+    if not workspace_id or not sequence_id:
+        raise HTTPException(status_code=400, detail="workspaceId and sequenceId are required")
+    root = _workspace_root(workspace_id)
+    steps = _pp_normalize_chain(body.get("steps"))
+    index = _filter_catalog_index(root)
+    errors = _pp_validate_chain(steps, valid_entry_ids=set(index) | {_PP_ORIGINAL_ID},
+                                materializable_entry_ids=set(index))
+    if errors:
+        raise HTTPException(status_code=400, detail="preprocessing chain invalid: " + "; ".join(errors))
+    sequence_root = _sequence_root_for(root, sequence_id)
+    sequence_root.mkdir(parents=True, exist_ok=True)
+    _preprocessing_chain_path(sequence_root).write_text(
+        json.dumps({"kind": "preprocessing_chain", "schemaVersion": _PP_SCHEMA_VERSION,
+                    "sequenceId": sequence_id, "steps": steps, "updatedAt": _utc_now()},
+                   indent=2, ensure_ascii=False),
+        encoding="utf-8")
+    return _preprocessing_chain_payload(root, sequence_id, sequence_root, steps)
+
+
 @router.post("/filter-preview")
 def preview_filter(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Apply a prepass (or a whole chain) to ONE image; return before/after.
@@ -8007,6 +8208,30 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             unit["frameSourceKey"] = image.relative_to(pooler_root).as_posix()
         except (AttributeError, ValueError):
             unit["frameSourceKey"] = str(unit["id"])
+    # Rewire every unit's source image to the materialized, content-addressed
+    # per-sequence preprocessing variant so OpenCV extraction and every LLM
+    # image consumer read the SAME final pixels. The default/empty chain is
+    # effectively original and this is a zero-cost pass-through; frameSourceKey
+    # above stays keyed to the ORIGINAL frame so cross-frame identity is stable.
+    _pp_chain = _load_preprocessing_chain_at(pooler_root)
+    if not _pp_is_effectively_original(_pp_chain):
+        _pp_index = _filter_catalog_index(root)
+        _pp_errors = _pp_validate_chain(
+            _pp_chain, valid_entry_ids=set(_pp_index) | {_PP_ORIGINAL_ID},
+            materializable_entry_ids=set(_pp_index))
+        if _pp_errors:
+            raise HTTPException(status_code=400,
+                                detail="preprocessing chain invalid: " + "; ".join(_pp_errors))
+        for unit in units:
+            if unit.get("image") is None:
+                continue
+            unit["sourceImage"] = unit["image"]
+            try:
+                unit["image"] = _materialize_preprocessed_image(root, unit, _pp_chain, _pp_index)
+            except Exception as error:  # noqa: BLE001 - surfaced to the caller
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"preprocessing failed for {unit['id']}: {error}") from error
     sequence_catalog = {
         "frame_ids_in_order": [str(unit["id"]) for unit in units],
         "ordered": sequence_ordered,
