@@ -26,6 +26,8 @@ VISUAL_GROUP_TREE_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("VisualGroupTreeModel
 VISUAL_REGION_HIGHLIGHT_MODEL = VIDEO_IMPORT_PAGE.with_name("VisualRegionHighlightModel.ts")
 VISUAL_REGION_HIGHLIGHT_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("VisualRegionHighlightModel.test.mjs")
 VISUAL_REGION_HIGHLIGHT_OVERLAY = VIDEO_IMPORT_PAGE.with_name("VisualRegionHighlightOverlay.tsx")
+COMPACT_TRANSFORM_STATUS_MODEL = VIDEO_IMPORT_PAGE.with_name("CompactTransformStatusModel.ts")
+COMPACT_TRANSFORM_STATUS_MODEL_TEST = VIDEO_IMPORT_PAGE.with_name("CompactTransformStatusModel.test.mjs")
 VIDEO_IMPORT_API = ROOT / "python" / "omega_vision" / "services" / "video_import_api.py"
 VIDEO_IMPORT_STYLES = (
     ROOT
@@ -311,6 +313,33 @@ def test_region_highlights_use_persisted_geometry_on_real_images() -> None:
     assert ".video-import-region-highlight-unavailable" in styles
     assert ".video-import-reduce-stage.is-submitted .video-import-region-preview .video-import-reduce-stageimg" in styles
     assert "width: 100%;" in styles
+
+
+def test_metadata_transforms_render_as_compact_real_status_lines() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    model = COMPACT_TRANSFORM_STATUS_MODEL.read_text(encoding="utf-8")
+    model_test = COMPACT_TRANSFORM_STATUS_MODEL_TEST.read_text(encoding="utf-8")
+    styles = VIDEO_IMPORT_STYLES.read_text(encoding="utf-8")
+
+    assert 'const compactMetadataKinds: CompactMetadataKind[]' in page
+    assert '"group_acceptance_0"' in page
+    assert '"observation_identity_0"' in page
+    assert "!compactMetadataKinds.includes" in page
+    assert "{renderCompactMetadata(it, inputRel)}" in page
+    assert 'aria-label="Frame metadata transforms"' in page
+    assert "compactTransformStatus(" in page
+    assert "selectPrologNavigation(rowKey, transform)" in page
+    assert "Click to inspect the real result source." in page
+    assert "G acceptance: done · count unavailable" in model
+    assert "Observation IDs: done · count unavailable" in model
+    assert "completed G acceptance shows real mode counts" in model_test
+    assert "completed observations show the persisted stable count" in model_test
+    assert "missing legacy metadata stages stay visible without fake counts" in model_test
+    assert "queued running error and stale states remain honest" in model_test
+    assert ".video-import-compact-metadata-line.is-running" in styles
+    assert ".video-import-compact-metadata-line.is-error" in styles
+    assert ".video-import-compact-metadata-line.is-stale" in styles
+    assert ".video-import-compact-metadata-line.is-missing" in styles
 
 
 def test_prolog_clause_explorer_matches_supplied_control_surface() -> None:
