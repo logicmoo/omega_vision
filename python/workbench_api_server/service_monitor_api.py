@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import os
 import re
 import socket
@@ -11,7 +10,6 @@ import psutil
 import time
 from threading import RLock, Thread, get_ident
 from dataclasses import dataclass
-from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -125,36 +123,34 @@ def _listener_pids() -> dict[int, int]:
 def _process_name(pid: int | None) -> str | None:
     if not pid or os.name != "nt":
         return None
-    completed = subprocess.run(
-        ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5, check=False,
-    )
-    rows = list(csv.reader(StringIO(completed.stdout)))
-    if not rows or not rows[0] or rows[0][0].startswith("INFO:"):
+    try:
+        return psutil.Process(pid).name()
+    except (psutil.Error, OSError):
         return None
-    return rows[0][0]
 
 
 def _system_processes() -> list[dict[str, Any]]:
-    """Return enough OS process metadata to recognize equivalent external launches."""
+    """Return enough OS process metadata to recognize equivalent external launches.
+
+    Uses in-process ``psutil`` instead of spawning ``Get-CimInstance`` so the
+    frequently polled process viewer never creates a storm of child processes.
+    """
     if os.name != "nt":
         return []
-    script = (
-        "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | "
-        "ConvertTo-Json -Compress"
-    )
-    completed = subprocess.run(
-        ["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=10, check=False,
-    )
-    if completed.returncode != 0 or not completed.stdout.strip():
-        return []
-    try:
-        document = json.loads(completed.stdout)
-    except json.JSONDecodeError:
-        return []
-    rows = document if isinstance(document, list) else [document]
-    return [row for row in rows if isinstance(row, dict)]
+    rows: list[dict[str, Any]] = []
+    for proc in psutil.process_iter(["pid", "ppid", "name", "cmdline"]):
+        try:
+            info = proc.info
+        except (psutil.Error, OSError):
+            continue
+        cmdline = info.get("cmdline") or []
+        rows.append({
+            "ProcessId": info.get("pid"),
+            "ParentProcessId": info.get("ppid"),
+            "Name": info.get("name"),
+            "CommandLine": " ".join(cmdline) if isinstance(cmdline, (list, tuple)) else str(cmdline or ""),
+        })
+    return rows
 
 
 def _matching_processes(
@@ -457,21 +453,22 @@ def update_startup_policy(request: Request, body: dict[str, Any] = Body(...)) ->
 def list_services(request: Request, include_hidden: bool = False) -> dict[str, Any]:
     api_port = request.url.port or 8000
     cache_key = (bool(include_hidden), int(api_port))
-    now = time.monotonic()
+    # Compute under the lock so concurrent pollers single-flight: the first
+    # request builds the snapshot while the rest wait, then reuse the fresh
+    # cache instead of each launching its own OS enumeration.
     with _SERVICES_CACHE_LOCK:
         cached = _SERVICES_CACHE.get(cache_key)
-        if cached is not None and (now - cached[0]) < _SERVICES_CACHE_TTL_SECONDS:
+        if cached is not None and (time.monotonic() - cached[0]) < _SERVICES_CACHE_TTL_SECONDS:
             return cached[1]
-    listeners = _listener_pids()
-    processes = _system_processes()
-    services = [_service_payload(item, listeners, processes) for item in _definitions(api_port)]
-    if not include_hidden:
-        policy = _startup_policy()
-        services = [item for item in services if not policy.get(item["id"], {}).get("hideFromProcessViewer")]
-    payload = {"services": services, "running": sum(1 for item in services if item["running"])}
-    with _SERVICES_CACHE_LOCK:
+        listeners = _listener_pids()
+        processes = _system_processes()
+        services = [_service_payload(item, listeners, processes) for item in _definitions(api_port)]
+        if not include_hidden:
+            policy = _startup_policy()
+            services = [item for item in services if not policy.get(item["id"], {}).get("hideFromProcessViewer")]
+        payload = {"services": services, "running": sum(1 for item in services if item["running"])}
         _SERVICES_CACHE[cache_key] = (time.monotonic(), payload)
-    return payload
+        return payload
 
 
 def _managed(service_id: str) -> ServiceDefinition:
