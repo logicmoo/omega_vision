@@ -314,8 +314,52 @@ values here.
   inspector opens from a text chip); tsc build clean and `git diff --check`
   clean.
 
-- Deferred oN composition contract (2026-09-09): an oN is not a persistent
-  one-to-one alias for a final gN. It is a higher-level object composed of at
+- Cross-frame dependency resolver (2026-09-09): transform `dependsOn` entries may
+  now target another frame of the same ordered Visual Sequence using a prefix
+  grammar — same-frame `transformation/doer` (unchanged); relative
+  `frame[-1]@…`/`frame[+2]@…` (explicit sign = relative, requires ordered);
+  exact `frame[42]@…` / `frame[foo]@…` (unsigned/named = exact frame key, works
+  ordered or unordered). No `previous_frame@`/`next_frame@` aliases. The pure
+  resolver lives in `python/omega_vision/perception/cross_frame_deps.py`
+  (grammar, resolution, cycle detection over the resolved cross-frame graph,
+  deterministic content-addressed `output_revision`, revision-based staleness,
+  and a first-consumer adjacent-pair plan that omits frame 0). Stamp-time
+  resolution against the full catalog is persisted per todo as `dependsOnResolved`
+  (original selector + resolved frame id) so a catalog/order edit stales the
+  stamped resolution instead of silently retargeting; `run_transform_step`
+  readiness requires the exact resolved target's `meta.json`, records
+  `consumedDeps` revisions, and reruns when a cross-frame target's revision or
+  frame changed; `write_unit_todos` re-marks such completed steps stale/pending;
+  the reduce endpoint validates grammar and rejects dependency cycles (HTTP 400);
+  the pooler passes the persisted resolution through. Same-frame pipelines are
+  unaffected (backward compatible). Deterministic temporal/event/oN stages that
+  will consume this stay deferred. Validation: 35 resolver unit tests, 3 pipeline
+  integration tests (readiness/out-of-range/persist+staleness), the existing
+  two-worker ordering test, and the full omega_vision + omega_vision_api suites
+  (394 passed).
+
+- Queued Visual Sequence caching (2026-09-09, deferred; after the cross-frame
+  resolver, before the LLM pair stages): canonical term is Visual Sequences
+  (legacy recordings/image-sets are adapters only). Browser persists the
+  provider-backed catalog, per-sequence manifest/frame metadata, current
+  selection, and already-accessed thumbnails/assets across reload/restart via a
+  bounded IndexedDB/Cache API layer (not large localStorage), stale-while-
+  revalidate with honest cached/revalidating/stale markers, conditional requests,
+  atomic replace on backend revision/ETag change, bounded LRU/size with explicit
+  clear/refresh, and no eager caching of every frame in 4,782/6,091-frame
+  sequences. Backend adds a persistent provider/revision cache for
+  catalog/manifest enumeration across API restarts (runtime/cache location,
+  excluded from git), keyed by workspace/provider identity, canonical
+  VisualSequenceId/ref, schema version, and filesystem/catalog revision/content
+  signatures, with atomic writes, concurrency-safe dedupe, ETag/Last-Modified
+  contracts, and no caching of credentials or success-shaped errors. Legacy
+  `/image-sets` and recording APIs share the same canonical cache entries;
+  `game=`/`recording=` resolution, the >800 confirmation, nav restoration, and
+  preprocessing selections work from cache but never bypass safety or select
+  stale/deleted content; offline shows read-only cached data while
+  mutations/processing require live validation. Tests per the coordinator spec.
+
+ It is a higher-level object composed of at
   least two final G groups. When this work is explicitly resumed, Prolog may
   infer an oN only when attributable evidence proves both (1) coherent
   cross-frame co-motion with compatible displacement/transform and stable

@@ -231,7 +231,8 @@ def one_pass(roots: list[Path], *, workers: int, limit: int, retry_errors: bool,
         try:
             step = run_transform_step(unit, todo["transformation"], todo["doer"],
                                       todo.get("options") or {},
-                                      depends_on=todo.get("dependsOn") or [])
+                                      depends_on=todo.get("dependsOn") or [],
+                                      depends_on_resolved=todo.get("dependsOnResolved") or [])
             pending = write_unit_todos(unit, entries, [step])
         finally:
             with state_lock:
