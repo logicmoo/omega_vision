@@ -3458,6 +3458,47 @@ export function VideoImportPage({
   const editPreprocChain = useCallback((update: (current: ChainStep[]) => ChainStep[]) => {
     setPreprocChain((current) => { const next = update(current); savePreprocChain(next); return next; });
   }, [savePreprocChain]);
+  // Lazy, cached, cancelable Original-vs-Final preview of the draft chain on ONE
+  // frame — reuses /filter-preview so it has no full-run side effects.
+  const [preprocPreview, setPreprocPreview] = useState<{ before: string; after: string; label: string } | null>(null);
+  const [preprocPreviewBusy, setPreprocPreviewBusy] = useState(false);
+  const preprocPreviewAbort = useRef<AbortController | null>(null);
+  const preprocPreviewCache = useRef<Map<string, { before: string; after: string; label: string }>>(new Map());
+  const preprocSpecs = (): FilterSpec[] => preprocChain
+    .filter((step) => step.entryId && step.entryId !== "select:original")
+    .map((step) => { const entry = filters.find((candidate) => candidate.id === step.entryId); return entry ? specFor(entry, step.params) : null; })
+    .filter((spec): spec is FilterSpec => spec !== null);
+  const previewPreprocFrame = useCallback(async () => {
+    const source = selectedPath
+      || frames[0]?.path
+      || (Array.isArray(recognitionReduce?.items) ? recognitionReduce.items.map((item: any) => item?.inputPath).find(Boolean) : "")
+      || "";
+    if (!source) { say("no frame available to preview"); return; }
+    const specs = preprocSpecs();
+    const key = `${source}|${JSON.stringify(specs)}`;
+    const cached = preprocPreviewCache.current.get(key);
+    if (cached) { setPreprocPreview(cached); return; }
+    if (preprocPreviewAbort.current) preprocPreviewAbort.current.abort();
+    const controller = new AbortController();
+    preprocPreviewAbort.current = controller;
+    setPreprocPreviewBusy(true);
+    try {
+      const payload = specs.length
+        ? await api("filter-preview", { workspaceId, image: source, chain: specs }, controller.signal)
+        : { before: source, after: source, filter: "original (no-op)" };
+      const result = { before: String(payload.before), after: String(payload.after), label: String(payload.filter || "original") };
+      preprocPreviewCache.current.set(key, result);
+      if (!controller.signal.aborted) setPreprocPreview(result);
+    } catch (reason) {
+      if (!(reason instanceof DOMException && reason.name === "AbortError")) {
+        say(`✗ preview failed: ${reason instanceof Error ? reason.message : String(reason)}`);
+      }
+    } finally {
+      setPreprocPreviewBusy(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId, preprocChain, filters, selectedPath, frames, recognitionReduce]);
+  useEffect(() => { setPreprocPreview(null); }, [preprocChain]);
   const [pendingVisualSequence, setPendingVisualSequence] = useState<{
     entry: VisualSequenceCatalogEntry;
     historyMode: RecordingHistoryMode;
@@ -9484,7 +9525,16 @@ export function VideoImportPage({
             <div className="vi2-body">
               <button disabled={busy} onClick={() => editPreprocChain((current) => [...current, { entryId: "select:original", params: {} }])}>＋ Add step</button>
               <button disabled={busy || !preprocChain.length} onClick={() => editPreprocChain(() => [{ entryId: "select:original", params: {} }, { entryId: "select:original", params: {} }])}>Reset to Original</button>
+              <button disabled={busy || preprocPreviewBusy} onClick={() => void previewPreprocFrame()}>{preprocPreviewBusy ? "⏳ Previewing…" : "👁 Preview frame"}</button>
             </div>
+            {preprocPreview && (
+              <div className="video-import-preview">
+                <figure><img src={asset(preprocPreview.before)} alt="original" /><figcaption>original</figcaption></figure>
+                <span className="video-import-preview-arrow">→</span>
+                <figure><img src={asset(preprocPreview.after)} alt="final" /><figcaption>final · {preprocPreview.label}</figcaption></figure>
+                <button onClick={() => setPreprocPreview(null)}>×</button>
+              </div>
+            )}
           </div>
         </Section>
       )}
