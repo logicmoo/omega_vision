@@ -773,10 +773,35 @@ submitted items in the current Visual Sequence. Key points:
   reordering — **identity must never be based only on list index**. These edits
   update the draft/effective chain and stale the cache lineage correctly but
   **never auto-run** downstream processing or LLM calls.
-- Planned tests also cover: `+ before`/`+ after` at first/middle/last positions,
-  stable IDs/params across insert/delete/reorder, remove-to-empty,
-  undo/persistence (if existing form patterns support it), and accessible keyboard
-  operation.
+- **Collapsed banner.** The expanded editor collapses into ONE compact banner
+  that lists the complete ordered chain horizontally as step chips with
+  arrow/separator flow, e.g. `Original Pixels -> 3x nearest -> DeNoise(...)`. It
+  includes the no-op `Original Pixels` slots (styled muted) so the banner
+  truthfully reflects the saved stack, plus concise parameter summaries,
+  dirty/error/stale markers, and final-output identity/status. Unlimited chains
+  scroll **horizontally** in the banner (no vertical wrap, no silent truncation).
+  Clicking the banner/disclosure expands the full editor; clicking a step chip may
+  expand and focus that stable step. Collapsed/expanded state persists through the
+  existing per-Visual-Sequence UI state conventions, with accessible disclosure
+  semantics and keyboard controls. The expanded-only add-before/add-after/remove/
+  parameter controls need not crowd the collapsed banner.
+- **Preview frame.** A `Preview frame` selector sourced from real items in the
+  current Visual Sequence runs the **selected frame alone** through the current
+  draft chain to show original vs final-result preview (and optionally the focused
+  intermediate step when a chip/row is selected) **without** stamping/running the
+  full sequence's TODOs or changing submitted-item selection. It reuses the
+  existing Filters preview/materialization engine, caching by frame content hash +
+  draft chain identity; cancels/debounces stale preview work when
+  frame/params/order change; surfaces errors; and never silently substitutes
+  another frame. The preview-frame choice persists per Visual Sequence as **UI
+  state, not processing identity**. Very large sequences use lazy/virtualized
+  searchable frame selection (no loading all images before previewing). Show the
+  exact frame key/source and active chain/step provenance; previews retain
+  nearest-neighbor/coordinate/highlight correctness. The collapsed banner may show
+  the selected preview frame concisely but stays compact.
+- Planned tests also cover: selecting frames, final/intermediate output, no
+  full-run side effect, cache separation, cancellation, missing frame,
+  large-sequence lazy loading, and preview-frame persistence.
 
 ### 8.2 Planned tests (deferred stages)
 

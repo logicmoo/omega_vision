@@ -396,7 +396,16 @@ values here.
   (`3x -> DeNoise`), neither active by default. Each row exposes accessible
   `+ before`/`+ after`/`remove` actions; insert/delete/reorder preserve stable
   step IDs/params (identity never index-based), an empty stack is valid
-  (original pixels), and edits stale cache lineage without auto-running work.
+  (original pixels), and edits stale cache lineage without auto-running work. The
+  expanded editor collapses into one compact banner listing the ordered chain as
+  horizontally scrolling step chips (`Original Pixels -> 3x nearest -> DeNoise`),
+  including muted no-op chips, param summaries, and dirty/error/stale/output
+  status; clicking expands the full editor or focuses a stable step. A per-sequence
+  `Preview frame` selector runs the selected frame alone through the draft chain
+  (original vs final, optional focused step) via the existing Filters preview
+  engine, cached by frame hash + draft chain identity, with no full-sequence run;
+  it is UI state, not processing identity, and uses lazy/virtualized selection for
+  large sequences.
 
 - Dominant color-mass grouping (2026-09-07): `group_regions.pl` now isolates a
   color occupying at least two-thirds of an attached group's area and ten
