@@ -259,6 +259,21 @@ values here.
   frame 000000 showed r13, r14, and r15 individually across all three previews,
   a four-member w5 union, exact 150px image/overlay alignment, pinned restoration
   after hover leave, and collapsed-row lazy loading.
+  `group_acceptance_0` and `observation_identity_0` remain real pipeline/API
+  stages and inspector sources but no longer consume separate large horizontal
+  cards. Each frame description now shows two compact lines directly beneath
+  Refresh. Completed lines use real final-G/mode and stable-observation counts;
+  missing legacy, queued/dependency-blocked, running, error, and stale-extractor
+  states remain explicit without fabricated zeroes. Result-bearing lines retain
+  doer, duration, source, completion, and summary provenance in their tooltip
+  and open the real `.pl` result through the existing inspector. The full
+  transform list still drives readiness, progress, and source tabs; only the two
+  non-visual cards are filtered from the horizontal strip. Focused validation
+  passed 59 API/UI regressions, 16 executable status/highlight/group model
+  tests, `git diff --check`, and the frontend production build. Live legacy
+  LS20 frame 000000 showed both honest `not available` lines under Refresh,
+  while the remaining extraction/debug/grouping/turtle cards moved together
+  with no acceptance or observation card.
   Final-G temporal correspondence, Prolog frame events, and event-backed rule
   induction remain paused at this clean post-UID boundary for inspection. oN
   tracking, grouping learning, cross-sequence promotion, and expanded Object

@@ -49,6 +49,10 @@ import {
   togglePinnedMembers,
   type ExtractionRegionGeometry,
 } from "./VisualRegionHighlightModel";
+import {
+  compactTransformStatus,
+  type CompactMetadataKind,
+} from "./CompactTransformStatusModel";
 import { modelCapabilityTags } from "@app/components/modelOptionDisplay";
 import { RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, usePageProcessActivity } from "@app/lib/pageProcessActivity";
 import "../styles/video_import.css";
@@ -7669,6 +7673,56 @@ export function VideoImportPage({
               const m = Math.round((Date.now() - t) / 60000);
               return m < 1 ? "just now" : m < 60 ? `${m}m ago` : `${Math.round(m / 60)}h ago`;
             };
+            const compactMetadataKinds: CompactMetadataKind[] = [
+              "group_acceptance_0",
+              "observation_identity_0",
+            ];
+            const renderCompactMetadata = (it: any, inputRel: string) => {
+              const rowKey = String(it.id || inputRel);
+              const transforms: any[] = Array.isArray(it.transforms) ? it.transforms : [];
+              const doneOutputs = new Set(
+                transforms
+                  .filter((transform) => transform.status === "done")
+                  .map((transform) => String(transform.output)),
+              );
+              return (
+                <div className="video-import-compact-metadata" aria-label="Frame metadata transforms">
+                  {compactMetadataKinds.map((kind) => {
+                    const transform = transforms.find((candidate) => String(candidate.name) === kind);
+                    const status = compactTransformStatus(
+                      kind,
+                      transform,
+                      partsExtractorSel,
+                      doneOutputs,
+                    );
+                    const active = Boolean(
+                      transform?.resultPath
+                      && prologInspector?.rowKey === rowKey
+                      && prologInspector.path === String(transform.resultPath)
+                    );
+                    const className = `video-import-compact-metadata-line is-${status.tone}${active ? " is-active" : ""}`;
+                    return status.clickable && transform ? (
+                      <button
+                        key={kind}
+                        type="button"
+                        className={className}
+                        title={`${status.title}\nClick to inspect the real result source.`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          selectPrologNavigation(rowKey, transform);
+                        }}
+                      >
+                        {status.label}
+                      </button>
+                    ) : (
+                      <span key={kind} className={className} title={status.title}>
+                        {status.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            };
             const renderTransformStrip = (it: any, inputRel: string) => {
               const doneBy = new Set((it.transforms || []).filter((t: any) => t.status === "done").map((t: any) => String(t.output)));
               // Shared per-row context for the interactive grouping/turtle cells:
@@ -7695,7 +7749,10 @@ export function VideoImportPage({
                 }));
               const displayCells = [
                 ...shownExtractionCells,
-                ...cells.filter((c: any) => String(c.name) !== "parts_extraction_0"),
+                ...cells.filter((c: any) => (
+                  String(c.name) !== "parts_extraction_0"
+                  && !compactMetadataKinds.includes(String(c.name) as CompactMetadataKind)
+                )),
               ];
               const partsCell = (primaryExtraction && Array.isArray(primaryExtraction.parts) && primaryExtraction.parts.length > 0)
                 ? primaryExtraction
@@ -8404,6 +8461,7 @@ export function VideoImportPage({
                             ) : <span className="video-import-reduce-tag derived">derived</span>}
                             <button type="button" className="video-import-reduce-rowrefresh" title="Re-read this row's on-disk state (todos.json + outputs)"
                               onClick={(e) => { e.stopPropagation(); void refreshReduceManifest(); }}>⟳ refresh</button>
+                            {renderCompactMetadata(it, inputRel)}
                           </div>
                           {tiers.length === 0
                             ? (Array.isArray(it.transforms) && it.transforms.length > 0

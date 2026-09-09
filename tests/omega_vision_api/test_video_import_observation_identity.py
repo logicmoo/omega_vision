@@ -125,6 +125,44 @@ def test_extraction_manifest_exposes_persisted_geometry(tmp_path: Path) -> None:
     assert summary["list"][0]["geometryRevision"]
 
 
+def test_transform_manifest_preserves_started_and_error_details(tmp_path: Path) -> None:
+    unit_dir = tmp_path / "frame"
+    unit_dir.mkdir()
+    (unit_dir / "todos.json").write_text(json.dumps({
+        "kind": "transformation_todos",
+        "todos": [
+            {
+                "transformation": "group_acceptance_0",
+                "doer": "group_acceptance_prolog",
+                "output": "group_acceptance_0/group_acceptance_prolog",
+                "status": "error",
+                "error": "invalid acceptance evidence",
+                "erroredAt": "2026-09-09T00:00:00Z",
+                "dependsOn": [],
+            },
+            {
+                "transformation": "observation_identity_0",
+                "doer": "content_hash",
+                "output": "observation_identity_0/content_hash",
+                "status": "started",
+                "startedBy": "worker-1",
+                "startedAt": "2026-09-09T00:01:00Z",
+                "dependsOn": [],
+            },
+        ],
+    }), encoding="utf-8")
+
+    summary = video_import_api._unit_transforms(tmp_path, unit_dir)
+
+    assert summary is not None
+    acceptance, observations = summary["list"]
+    assert acceptance["error"] == "invalid acceptance evidence"
+    assert acceptance["erroredAt"] == "2026-09-09T00:00:00Z"
+    assert observations["status"] == "started"
+    assert observations["claimedBy"] == "worker-1"
+    assert observations["startedAt"] == "2026-09-09T00:01:00Z"
+
+
 def test_observation_identity_metadata_is_visible_in_transform_manifest(
     tmp_path: Path,
 ) -> None:

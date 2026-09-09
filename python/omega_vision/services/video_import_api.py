@@ -2393,8 +2393,11 @@ def _unit_transforms(root: Path, unit_dir: Path) -> dict[str, Any] | None:
             "type": t.get("type") or "",
             "elapsedMs": t.get("elapsedMs"),
             "completedAt": t.get("completedAt") or "",
-            "claimedBy": t.get("claimedBy") or "",
-            "claimedAt": t.get("claimedAt") or "",
+            "claimedBy": t.get("claimedBy") or t.get("startedBy") or "",
+            "claimedAt": t.get("claimedAt") or t.get("startedAt") or "",
+            "startedAt": t.get("startedAt") or t.get("claimedAt") or "",
+            "error": t.get("error") or "",
+            "erroredAt": t.get("erroredAt") or "",
         }
         if status == "done":
             rp = out_dir / "result.pl"
