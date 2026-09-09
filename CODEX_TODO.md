@@ -3041,4 +3041,17 @@ Preserve the canonical checkout and its `codex/workbench-navigation-v2` branch.
   C:\Users\dougl\.copilot\session-state\624aa1a5-4c13-425c-9e1d-a651f9915222\files\recovery-preproc-refinement\implementation-head.patch.
   No relevant untracked implementation files existed at the snapshot checkpoint.
 - NEXT after this: reconcile files/visual_sequence_cache.paused.patch (23KB, intact) over current main for Visual Sequence caching.
+- Catalog prerequisite brought forward with coordinator approval: the preserved
+  patch was reviewed, not applied blindly. Its shallow directory-mtime signature
+  missed deletion of image.png inside an existing frame directory on Windows.
+  The implementation now checks source membership and manifest metadata once on
+  startup, then uses the existing uvicorn[standard] watchfiles dependency's native
+  notifications to avoid repeating exhaustive checks on warm requests. Processing
+  outputs below recording frames do not invalidate the catalog. Cold enumeration
+  memoizes image lists within a single catalog scan, including whole-game reuse.
+  Persistent snapshots, single-flight assembly, ETag/304, explicit refresh and
+  browser session-cache revalidation preserve imageCount and the >800 load guard.
+  Real measurements: old isolated catalog 34.25s / 428 entries; saved snapshot
+  reload 9.54s; subsequent validated request 0.074s. Browser acceptance remains
+  pending; these timings are not a claim of full Preprocessing completion.
 - Workflow: no PR/push; commit local main only; preserve runtime/generated files.

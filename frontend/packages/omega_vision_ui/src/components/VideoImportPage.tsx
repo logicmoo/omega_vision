@@ -6,6 +6,7 @@ import { SuperControl } from "@app/components/UniversalArtifactEditor";
 import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
 import { PrologDataInspector } from "./PrologDataInspector";
+import { loadVisualSequenceCatalog } from "./VisualSequenceCatalog";
 import {
   preprocessingSequenceId,
   resolveVisualSequenceLocation,
@@ -454,26 +455,6 @@ const activeOutlineGroupNames = (inventory: MemberInventory): Set<string> | null
 type PipelineNext = { label: string; tone: "done" | "active" | "retry" | "wait" | "error" | "lost" };
 
 const API = "/workbench/video-import";
-const visualSequenceCatalogRequests = new Map<string, Promise<VisualSequenceCatalogEntry[]>>();
-
-const loadVisualSequenceCatalog = (workspaceId: string): Promise<VisualSequenceCatalogEntry[]> => {
-  const current = visualSequenceCatalogRequests.get(workspaceId);
-  if (current) return current;
-  const request = fetch(`${API}/visual-sequences?workspaceId=${encodeURIComponent(workspaceId)}`, { cache: "no-store" })
-    .then(async (response) => {
-      if (!response.ok) throw new Error(`Visual Sequence catalog request failed: HTTP ${response.status}`);
-      const data = await response.json();
-      return Array.isArray(data?.visualSequences)
-        ? data.visualSequences
-        : (Array.isArray(data?.sets) ? data.sets : []);
-    })
-    .catch((error) => {
-      visualSequenceCatalogRequests.delete(workspaceId);
-      throw error;
-    });
-  visualSequenceCatalogRequests.set(workspaceId, request);
-  return request;
-};
 
 // Parse a MeTTa symbolic part-graph into parts (label + color) and a relation
 // count, so the Recognition reduce rows can render each stage panel NATIVELY
@@ -5177,7 +5158,7 @@ export function VideoImportPage({
     setVisualSequenceReady(false);
     void (async () => {
       try {
-        const sets = await loadVisualSequenceCatalog(workspaceId);
+        const sets = await loadVisualSequenceCatalog(workspaceId, imageSetsReload > 0);
         if (cancelled) return;
         setImageSetList(sets);
         setImageSetsLoaded(true);
@@ -9153,6 +9134,7 @@ export function VideoImportPage({
       </div>
 
       {preprocessingSection}
+      <button onClick={() => setImageSetsReload((value) => value + 1)}>Refresh Visual Sequences</button>
       {imageSetsError && <div role="alert">{imageSetsError} <button onClick={() => setImageSetsReload((value) => value + 1)}>Retry catalog</button></div>}
 
       {serverJobs.filter((j) => j.state === "running" || j.state === "starting").length > 0 && (

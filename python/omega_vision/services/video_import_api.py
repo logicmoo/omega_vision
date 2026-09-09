@@ -30,6 +30,7 @@ import urllib.parse
 import urllib.request
 import uuid
 import zipfile
+from contextvars import ContextVar
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -2225,9 +2226,19 @@ def image_provenance(workspaceId: str, image: str) -> dict[str, Any]:
 
 _CANONICAL_IMAGE_SET = "recognition_reduce"
 _IMAGE_SET_LABELS = {"recognition_reduce": "Recognition · 20×10 conditions"}
+_catalog_image_cache: ContextVar[dict[Path, list[Path]] | None] = ContextVar("catalog_image_cache", default=None)
 
 
 def _resolve_set_images(d: Path) -> list[Path]:
+    cache = _catalog_image_cache.get()
+    if cache is None:
+        return _scan_set_images(d)
+    if d not in cache:
+        cache[d] = _scan_set_images(d)
+    return cache[d]
+
+
+def _scan_set_images(d: Path) -> list[Path]:
     """Return the input images for an image-set directory, layout-aware.
 
     Supports the reduction ``pool/`` layout, a single ARC recording dir
@@ -2250,7 +2261,7 @@ def _resolve_set_images(d: Path) -> list[Path]:
     if recordings:
         images: list[Path] = []
         for recording in recordings:
-            images.extend(_arc_recording_images(recording))
+            images.extend(_resolve_set_images(recording))
         return images
     images = [
         path
@@ -2569,6 +2580,14 @@ _FRAME_SET_FAMILIES = (
 
 
 def _list_image_sets(root: Path) -> list[dict[str, Any]]:
+    token = _catalog_image_cache.set({})
+    try:
+        return _enumerate_image_sets(root)
+    finally:
+        _catalog_image_cache.reset(token)
+
+
+def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
     """Enumerate image sets on disk for the shared selector.
 
     Includes the canonical Recognition set, any ``data/*`` directory in the
@@ -2885,27 +2904,60 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
             "sequenceRulesLlm": sequence_rules_llm, "occlusionHorizon": occlusion_horizon}
 
 
+from omega_vision.perception.visual_sequence_cache import CatalogCache, CatalogRevisionTracker, etag_matches
+
+_visual_catalog_cache = CatalogCache()
+_visual_catalog_trackers: dict[tuple[Path, ...], CatalogRevisionTracker] = {}
+_visual_catalog_tracker_lock = threading.Lock()
+
+
+def _cached_visual_catalog(workspace_id: str, request: Request, response: Response, refresh: bool) -> Any:
+    root = _workspace_root(workspace_id)
+    homes = _data_homes(root)
+    key = tuple(homes)
+    with _visual_catalog_tracker_lock:
+        tracker = _visual_catalog_trackers.get(key)
+        if tracker is None:
+            tracker = CatalogRevisionTracker(homes, [family[0] for family in _FRAME_SET_FAMILIES])
+            _visual_catalog_trackers[key] = tracker
+        if refresh:
+            tracker.signature = None
+    entries, revision, cache_state = _visual_catalog_cache.get(
+        root / ".cache" / "visual_sequences.json",
+        tracker,
+        lambda: _list_image_sets(root), refresh=refresh,
+    )
+    etag = f'W/"vsc-{revision}"'
+    headers = {"ETag": etag, "Cache-Control": "private, no-cache", "X-Catalog-Cache": cache_state}
+    if response is not None:
+        response.headers.update(headers)
+    if not refresh and request is not None and etag_matches(request.headers.get("if-none-match"), etag):
+        return Response(status_code=304, headers=headers)
+    return entries
+
+
 @router.get("/image-sets")
-def image_sets(workspaceId: str) -> dict[str, Any]:
+def image_sets(workspaceId: str, request: Request = None, response: Response = None, refresh: bool = False) -> Any:
     """List reduce-style image sets available on disk for this workspace.
 
     Powers the shared image-set selector on both the Recognition and Objects
     pages. Because every set is read straight from disk, selecting one shows any
     reduction work already done for it without recomputing.
     """
-    root = _workspace_root(workspaceId)
-    return {"sets": _list_image_sets(root)}
+    entries = _cached_visual_catalog(workspaceId, request, response, refresh)
+    return entries if isinstance(entries, Response) else {"sets": entries}
 
 
 @router.get("/visual-sequences")
-def visual_sequences(workspaceId: str) -> dict[str, Any]:
+def visual_sequences(workspaceId: str, request: Request = None, response: Response = None, refresh: bool = False) -> Any:
     """List the unified Visual Sequence catalog.
 
     ``image-sets`` remains a compatibility route for older clients; both read
     the same provider-aware filesystem catalog.
     """
-    root = _workspace_root(workspaceId)
-    sequences = _list_image_sets(root)
+    sequences = _cached_visual_catalog(workspaceId, request, response, refresh)
+    if isinstance(sequences, Response):
+        return sequences
     return {"visualSequences": sequences, "sets": sequences}
 
 
