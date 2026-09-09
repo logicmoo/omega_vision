@@ -9,7 +9,7 @@ export type VideoImportShellSubview =
   | "objects"
   | "sprite-view"
   | "recognition";
-export type VideoImportIntegratedFocus = "finish" | "advanced" | null;
+export type VideoImportIntegratedFocus = "advanced" | null;
 
 export interface VideoImportShellDestination {
   subview: VideoImportShellSubview;
@@ -85,7 +85,7 @@ export function resolveVideoImportShellDestination(href: string): VideoImportShe
     return { subview: "sources", focus: "advanced" };
   }
   if (["finish", "videoimportfinish"].includes(view) || subview === "finish" || root === "finish") {
-    return { subview: "sources", focus: "finish" };
+    return { subview: "sources", focus: null };
   }
   const visible = new Set<VideoImportShellSubview>([
     "sources",

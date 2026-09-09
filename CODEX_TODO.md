@@ -14,6 +14,22 @@ values here.
 
 ## Current recovery state
 
+- Video Import UI placement update (2026-09-09): removed the entire rendered
+  Completion / Export section and its dangling legacy focus target; old Finish
+  routes return to Sources without recreating it. Refresh Visual Sequences is
+  retained beside the shared sequence combo (not as a standalone top button).
+  The existing rich Preprocessing surface is rendered once immediately beneath
+  that selector in Recognition, Objects, and Frames. Initial catalog loading,
+  internal revalidation, error retry, saved-chain state and backend APIs are
+  unchanged. The exact scoped delta was also applied to the recovered semantic
+  candidate, preserving its unfinished additions so later integration cannot
+  restore the removed section. Local UI contracts: 26 pass; Node
+  navigation/history/catalog tests: 19 pass; frontend build passes.
+  Live placement acceptance is still pending the existing slow catalog:
+  the main process sample shows an AnyIO worker in catalog_revision.scan and
+  MainThread in normal asyncio polling. No caching redesign or unvalidated
+  selector fallback was introduced.
+
 - Main-runtime blocker identified after integration (2026-09-09): the exact
   preprocessing feature is on local main as `8ac0b2b12`, but main HTTP acceptance
   remained blocked. Two samples of the actual API process showed its event loop

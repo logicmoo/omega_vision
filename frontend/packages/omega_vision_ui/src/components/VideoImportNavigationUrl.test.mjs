@@ -87,10 +87,10 @@ test("legacy Sprite Viewer routes migrate to Video Import step 5", () => {
   assert.equal(migrated.searchParams.get("recording"), "run");
 });
 
-test("legacy Finish and Advanced destinations open integrated sections", () => {
+test("legacy Finish falls back to Sources while Advanced retains its section", () => {
   assert.deepEqual(
     resolveVideoImportShellDestination("http://localhost:5173/?view=videoImport&subview=finish"),
-    { subview: "sources", focus: "finish" },
+    { subview: "sources", focus: null },
   );
   assert.deepEqual(
     resolveVideoImportShellDestination("http://localhost:5173/?view=videoImport&nav=Advanced"),
@@ -98,6 +98,11 @@ test("legacy Finish and Advanced destinations open integrated sections", () => {
   );
   assert.deepEqual(
     resolveVideoImportShellDestination("http://localhost:5173/?view=finish"),
-    { subview: "sources", focus: "finish" },
+    { subview: "sources", focus: null },
   );
+  const href = "http://localhost:5173/?view=videoImport&subview=finish&nav=finish&game=ls20&recording=run";
+  const migrated = new URL(canonicalVideoImportShellUrl(href, resolveVideoImportShellDestination(href)));
+  assert.equal(migrated.searchParams.get("subview"), "sources");
+  assert.equal(migrated.searchParams.has("nav"), false);
+  assert.equal(migrated.searchParams.get("recording"), "run");
 });

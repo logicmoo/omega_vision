@@ -2208,7 +2208,7 @@ export function VideoImportPage({
   });
   useEffect(() => {
     if (!integratedFocusRequest) return;
-    const sectionId = integratedFocusRequest === "advanced" ? "config" : "finish";
+    const sectionId = "config";
     setCollapsedMap((current) => ({ ...current, [sectionId]: false }));
     const reveal = () => document.querySelector(`[data-section="${sectionId}"]`)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -7288,7 +7288,6 @@ export function VideoImportPage({
     });
 
   // ---- turtle + materialize --------------------------------------------------------
-  const [gameId, setGameId] = useState("video-cast-2");
   const turtleLeafCandidates = memberInventories
     .filter((inventory) =>
       Boolean(inventory.parentInventoryId)
@@ -7422,21 +7421,6 @@ export function VideoImportPage({
       });
       return `Turtle PNG complete: ${rendered} terminal image(s)`;
     });
-  const materialize = () =>
-    run("Materializing recording", async () => {
-      const bySource = new Map(output.map((entry) => [entry.source, entry.path]));
-      const payload = await api("materialize", { workspaceId, gameId, frames: frames.map((frame) => ({ ...frame, path: bySource.get(frame.path) || frame.path })) });
-      const directory = String(payload.gameDirectory || gameId);
-      window.setTimeout(() => {
-        const url = new URL(window.location.href);
-        url.searchParams.set("workspace", workspaceId);
-        url.searchParams.set("view", "arc3-play");
-        url.searchParams.set("game", directory);
-        window.location.href = url.toString();
-      }, 600);
-      return `recording ready: ${payload.levelDir} — opening Play & Record`;
-    });
-
   const automaticStagesRunningRef = useRef(new Set<keyof LlmCallConcurrency>());
   const [automaticSchedulerTick, setAutomaticSchedulerTick] = useState(0);
   const runnableInventoryIds = new Set(
@@ -9105,6 +9089,7 @@ export function VideoImportPage({
     if (!ids.length) return null;
     const value = scope === "objects" ? (objectsShowLive ? OBJECTS_LIVE_SET : selectedImageSet) : selectedImageSet;
     return (
+      <div className="video-import-imageset-picker">
       <label className="video-import-imageset-selector" title="Choose a Visual Sequence — one image or many, read straight from its configured provider">
         <span>visual sequence</span>
         <ColoredTagCombobox
@@ -9121,6 +9106,9 @@ export function VideoImportPage({
           }}
         />
       </label>
+      <button type="button" className="video-import-imageset-refresh" aria-label="Refresh Visual Sequences"
+        title="Refresh Visual Sequences" onClick={() => setImageSetsReload((value) => value + 1)}>↻ Refresh</button>
+      </div>
     );
   };
 
@@ -9366,8 +9354,15 @@ export function VideoImportPage({
         </nav>
       </div>
 
-      {preprocessingSection}
-      <button onClick={() => setImageSetsReload((value) => value + 1)}>Refresh Visual Sequences</button>
+      {["recognition", "objects", "frames"].includes(activeSubview) && imageSetList.length > 0 && (
+        <div className="video-import-sequence-setup">
+          <div className="video-import-imageset-bar">
+            {renderImageSetSelector(activeSubview === "objects" ? "objects" : "recognition")}
+            <span className="video-import-imageset-hint">disk-backed · switching keeps reduced work · drives Inputs + Extractions</span>
+          </div>
+          {preprocessingSection}
+        </div>
+      )}
       {imageSetsError && <div role="alert">{imageSetsError} <button onClick={() => setImageSetsReload((value) => value + 1)}>Retry catalog</button></div>}
 
       {serverJobs.filter((j) => j.state === "running" || j.state === "starting").length > 0 && (
@@ -10575,7 +10570,6 @@ export function VideoImportPage({
       )}
 
       </>)}
-      {objectsTab === "extractions" && <div className="video-import-imageset-bar">{renderImageSetSelector("objects")}{!objectsShowLive && <span className="video-import-imageset-hint">disk-backed · switching keeps reduced work</span>}</div>}
       {objectsTab === "extractions" && !objectsShowLive && renderReduceExtractions()}
       {objectsTab === "extractions" && objectsShowLive && (() => {
         const invs = orderedMemberInventories.length ? orderedMemberInventories : memberInventories;
@@ -10648,37 +10642,6 @@ export function VideoImportPage({
       })()}
       </div>
       )}
-      <Section {...section("finish", "COMPLETION / EXPORT", selected ? `${output.length ? "OUTPUT frames feed completion" : "input frames feed completion"}` : "choose a source to enable completion controls")}>
-          <div className="vi2-body video-import-timeline">
-            <b>TURTLE GEN</b>
-            <label>model
-              <ColoredTagCombobox value={turtleModel} ids={videoModelIds} ariaLabel="Turtle Gen model" allowNone noneLabel={`<use global · ${allCallsModel || "none"}>`} describe={describeVideoModel} disabled={busy} onChange={(value) => { turtleModelTouchedRef.current = true; setTurtleModel(value); }} />
-            </label>
-            <details className="video-import-member-prompt-disclosure">
-              <summary>TURTLE PROMPT</summary>
-              <label className="video-import-member-prompt-editor">
-                <span>EDIT PROMPT</span>
-                <textarea value={turtlePrompt} disabled={busy} onChange={(event) => { setTurtlePromptSelection("workspace"); setTurtlePrompt(event.target.value); }} spellCheck={false} />
-              </label>
-            </details>
-            <button disabled={busy || !isRunnableVisionModel(effectiveTurtleModel) || !members.length} onClick={() => startServerStage("turtle")}>Call LLM · Turtle Gen</button>
-            <b>TURTLE PNG</b>
-            <label>model
-              <ColoredTagCombobox value={turtlePngModel} ids={videoModelIds} ariaLabel="Turtle PNG model" allowNone noneLabel={`<use global · ${allCallsModel || "none"}>`} describe={describeVideoModel} disabled={busy} onChange={(value) => { turtlePngModelTouchedRef.current = true; setTurtlePngModel(value); }} />
-            </label>
-            <details className="video-import-member-prompt-disclosure">
-              <summary>TURTLE PNG PROMPT</summary>
-              <label className="video-import-member-prompt-editor">
-                <span>EDIT PROMPT</span>
-                <textarea value={turtlePngPrompt} disabled={busy} onChange={(event) => { setTurtlePngPromptSelection("workspace"); setTurtlePngPrompt(event.target.value); }} spellCheck={false} />
-              </label>
-            </details>
-            <button disabled={busy || !isRunnableVisionModel(effectiveTurtlePngModel) || !Object.values(turtleArtifacts).some((artifact) => artifact.rawProgram && !artifact.renderedImage)} onClick={() => startServerStage("turtlePng")}>Call LLM · Turtle PNG</button>
-            <b>MAKE VISUAL SEQUENCE</b>
-            <label>game id <input type="text" value={gameId} disabled={busy} onChange={(event) => setGameId(event.target.value)} /></label>
-            <button disabled={busy || !frames.length || !gameId.trim()} onClick={() => void materialize()}>Materialize filtered frames as a Visual Sequence</button>
-          </div>
-      </Section>
       {activeSubview === "recognition" && (
         <section className="video-import-recognition">
           <div className="video-import-recognition-headbar">
@@ -10730,9 +10693,6 @@ export function VideoImportPage({
             </div>
           )}
 
-          {imageSetList.length > 0 && (
-            <div className="video-import-imageset-bar">{renderImageSetSelector("recognition")}<span className="video-import-imageset-hint">disk-backed · switching keeps reduced work · drives Inputs + Extractions</span></div>
-          )}
 
           {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && (
             <div className="video-import-reduce-tabs" role="tablist" aria-label="Reduction views">

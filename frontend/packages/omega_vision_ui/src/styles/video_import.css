@@ -83,7 +83,6 @@
 .video-import-page[data-subview="frames"] > [data-section="preprocessing"],
 .video-import-page[data-subview="recognition"] > [data-section="preprocessing"],
 .video-import-page[data-subview="objects"] > [data-section="preprocessing"],
-.video-import-page[data-subview] > [data-section="finish"],
 .video-import-page[data-subview] > [data-section="config"] {
   display: block;
 }
@@ -1346,6 +1345,10 @@
 
 /* --- Shared image-set selector (Recognition + Objects Extractions views) --- */
 .video-import-imageset-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 2px 0 12px; }
+.video-import-sequence-setup { display: grid; gap: 6px; min-width: 0; }
+.video-import-sequence-setup > .video-import-imageset-bar { margin-bottom: 0; }
+.video-import-imageset-picker { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; flex-wrap: wrap; }
+.video-import-imageset-refresh { flex: 0 0 auto; padding: 4px 8px; font-size: 11px; white-space: nowrap; }
 .video-import-imageset-selector { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.72); }
 .video-import-imageset-selector > span { text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; color: rgba(255,255,255,0.5); }
 .video-import-imageset-selector select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; color: #e9edf1; font-size: 12px; font-weight: 700; padding: 6px 10px; cursor: pointer; }

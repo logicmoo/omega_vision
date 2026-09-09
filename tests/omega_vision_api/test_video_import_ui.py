@@ -725,8 +725,8 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "Call LLM · Planner" in source
     assert "Call LLM · Outliner" in source
     assert "Call LLM · Recursive Extractor" in source
-    assert "Call LLM · Turtle Gen" in source
-    assert "Call LLM · Turtle PNG" in source
+    assert "Call LLM · Turtle Gen" not in source
+    assert "Call LLM · Turtle PNG" not in source
     assert "DEFAULT_MEMBER_DESCRIPTION_PROMPT" in source
     assert "DEFAULT_MEMBER_ORDER_PROMPT" in source
     assert "DEFAULT_MEMBER_OUTLINER_PROMPT" in source
@@ -741,13 +741,13 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     assert "clearPreTurtleLeaves" in source
     assert "activeTurtleArtifact.rawProgram" in source
     assert 'className="video-import-member-prompt-editor"' in source
-    assert source.count('className="video-import-member-prompt-disclosure"') == 5
+    assert source.count('className="video-import-member-prompt-disclosure"') == 3
     assert "video-import-member-prompt-disclosure" in styles
     assert "<textarea value={memberOrderPrompt}" in source
     assert "<textarea value={memberOutlinerPrompt}" in source
     assert "<textarea value={memberExtractorPrompt}" in source
-    assert "<textarea value={turtlePrompt}" in source
-    assert "<textarea value={turtlePngPrompt}" in source
+    assert "<textarea value={turtlePrompt}" not in source
+    assert "<textarea value={turtlePngPrompt}" not in source
     assert "D · DESCRIBER" in source
     assert "Call LLM · Describe selected input images" in source
     assert '{{goal}}' in source
@@ -1105,8 +1105,9 @@ def test_member_gallery_has_two_stage_runner_with_inspectable_prompts() -> None:
     split = source.index('aria-label="Video Import pipeline forks"')
     assert 'section("memberDescription", "SCENE OBJECTS TEXTUAL DESCRIPTION"' not in source
     assert automation < split
-    assert source.index('section("config", "ADVANCED CONTROLS · JSON CONFIG"') > source.index('section("finish", "COMPLETION / EXPORT"')
-    assert '.video-import-page[data-subview] > [data-section="finish"]' in styles
+    assert source.index('section("config", "ADVANCED CONTROLS · JSON CONFIG"') > split
+    assert 'section("finish",' not in source
+    assert '[data-section="finish"]' not in styles
 
 
 def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tree() -> None:
@@ -1189,7 +1190,7 @@ def test_scene_object_flow_is_recursive_describer_planner_outliner_extractor_tre
     assert "overflow: visible" in board_rule
 
 
-def test_sprite_finish_and_advanced_have_one_canonical_video_import_surface() -> None:
+def test_sprite_and_advanced_preserved_without_completion_export_surface() -> None:
     page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
     workbench = WORKBENCH_PAGE.read_text(encoding="utf-8")
     sprite = SPRITE_VIEWER_PAGE.read_text(encoding="utf-8")
@@ -1209,12 +1210,12 @@ def test_sprite_finish_and_advanced_have_one_canonical_video_import_surface() ->
     assert page.count("<SpriteViewerPage />") == 1
     assert "export function SpriteViewerPage()" in sprite
     assert 'className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}' in page
-    assert page.count('section("finish", "COMPLETION / EXPORT"') == 1
+    assert 'COMPLETION / EXPORT' not in page
+    for removed_control in ("Call LLM · Turtle Gen", "Call LLM · Turtle PNG",
+                            "Materialize filtered frames as a Visual Sequence"):
+        assert removed_control not in page
     assert page.count('section("config", "ADVANCED CONTROLS · JSON CONFIG"') == 1
     for preserved_control in (
-        "Call LLM · Turtle Gen",
-        "Call LLM · Turtle PNG",
-        "Materialize filtered frames as a Visual Sequence",
         "⏎ Apply to flow",
         "↻ track live",
         "⟲ forget saved",
@@ -1223,7 +1224,24 @@ def test_sprite_finish_and_advanced_have_one_canonical_video_import_surface() ->
     assert "resolveVideoImportShellDestination" in navigation
     assert "canonicalVideoImportShellUrl" in navigation
     assert "legacy Sprite Viewer routes migrate to Video Import step 5" in navigation_test
-    assert "legacy Finish and Advanced destinations open integrated sections" in navigation_test
+    assert "legacy Finish falls back to Sources while Advanced retains its section" in navigation_test
+
+
+def test_catalog_refresh_lives_beside_shared_visual_sequence_selector() -> None:
+    page = VIDEO_IMPORT_PAGE.read_text(encoding="utf-8")
+    selector = page[page.index("const renderImageSetSelector"):page.index("const renderOutlineObjectSections")]
+    assert 'className="video-import-imageset-picker"' in selector
+    assert 'aria-label="Refresh Visual Sequences"' in selector
+    assert "setImageSetsReload((value) => value + 1)" in selector
+    assert page.count('aria-label="Refresh Visual Sequences"') == 1
+    assert ">Refresh Visual Sequences</button>" not in page
+    assert "Retry catalog" in page
+    assert "loadVisualSequenceCatalog(workspaceId, imageSetsReload > 0)" in page
+    host = page[page.index('className="video-import-sequence-setup"'):page.index("{imageSetsError &&")]
+    assert host.index("renderImageSetSelector(") < host.index("{preprocessingSection}")
+    assert page.count("{preprocessingSection}") == 1
+    assert page.count("{renderImageSetSelector(") == 1
+    assert '["recognition", "objects", "frames"].includes(activeSubview)' in page
 
 
 def test_alt_hover_gives_image_and_context_separate_half_page_panes() -> None:
