@@ -3415,7 +3415,7 @@ export function VideoImportPage({
   // Persisted server-side per Visual Sequence; OpenCV extraction and every LLM
   // image consumer read the materialized, content-addressed variant. Default =
   // two Original Pixels no-op rows, which resolves to the original pixels.
-  const preprocSequenceId = selectedImageSet ? `data/${selectedImageSet}` : "";
+  const preprocSequenceId = selectedImageSet ? `data/${selectedImageSet}` : (selectedRecording || "");
   const [preprocChain, setPreprocChain] = useState<ChainStep[]>([]);
   const [preprocEffectivelyOriginal, setPreprocEffectivelyOriginal] = useState(true);
   const preprocSaveTimer = useRef<number | null>(null);
