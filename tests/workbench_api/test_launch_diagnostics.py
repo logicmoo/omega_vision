@@ -4,6 +4,7 @@ import base64
 import importlib.util
 import io
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -87,7 +88,8 @@ def test_configured_metadata_urls_follow_real_command_ports_not_defaults():
 
 
 @pytest.mark.parametrize("hidden", [False, True])
-def test_policy_launch_announces_before_spawn_and_uses_child_console_or_existing_log(tmp_path, monkeypatch, capsys, hidden):
+@pytest.mark.parametrize("service_id", ["plugin", "workbench-api", "workbench-web"])
+def test_policy_launch_announces_before_spawn_and_keeps_windows_launches_visible(tmp_path, monkeypatch, capsys, hidden, service_id):
     starter = load_script("start_with_policy.py")
     monkeypatch.setattr(starter, "ROOT", tmp_path)
     monkeypatch.setattr(starter, "policy_for", lambda _: {"start": True, "hiddenWindow": hidden})
@@ -97,22 +99,69 @@ def test_policy_launch_announces_before_spawn_and_uses_child_console_or_existing
     recorded = []
     monkeypatch.setattr(starter, "_record_started_process", lambda *args, **kwargs: recorded.append(args))
     original = [sys.executable, "child.py", "--token", "private-value"]
-    monkeypatch.setattr(sys, "argv", ["start_with_policy.py", "--service", "plugin", "--cwd", str(tmp_path), "--", *original])
+    monkeypatch.setattr(sys, "argv", ["start_with_policy.py", "--service", service_id, "--cwd", str(tmp_path), "--", *original])
     def spawn(command, **kwargs):
         output = capsys.readouterr().err
         assert "Declared purpose" in output and "private-value" not in output
         assert "http://127.0.0.1:1234/health" in output
-        if hidden:
+        if hidden and sys.platform != "win32":
             assert command == original
-            assert "Declared purpose" in (tmp_path / "runtime" / "logs" / "plugin.stderr.log").read_text()
+            assert "Declared purpose" in (tmp_path / "runtime" / "logs" / f"{service_id}.stderr.log").read_text()
         elif sys.platform == "win32":
-            assert Path(command[-1]).name == "run_announced_console.ps1"
+            assert Path(command[0]).name.lower() == "cmd.exe"
+            assert command[-1] == "%WB_CONSOLE_SCRIPT%"
+            assert kwargs["creationflags"] & subprocess.CREATE_NEW_CONSOLE
+            assert not kwargs["creationflags"] & subprocess.CREATE_NO_WINDOW
             assert json.loads(kwargs["env"]["WB_CONSOLE_PAYLOAD"])["argv"] == original
             assert "Declared purpose" in kwargs["env"]["WB_CONSOLE_BANNER"]
+            assert kwargs["stdout"] is None and kwargs["stderr"] is None
+            assert not (tmp_path / "runtime" / "logs").exists()
         return SimpleNamespace(pid=71)
     monkeypatch.setattr(starter.subprocess, "Popen", spawn)
     assert starter.main() == 0
     assert recorded[0][2] == original
+
+
+def test_disabled_plugin_is_not_started_to_show_a_console(tmp_path, monkeypatch):
+    starter = load_script("start_with_policy.py")
+    monkeypatch.setattr(starter, "policy_for", lambda _: {"start": False, "hiddenWindow": True})
+    monkeypatch.setattr(starter, "read_service_metadata", lambda *_: {})
+    monkeypatch.setattr(sys, "argv", ["start_with_policy.py", "--service", "plugin", "--", sys.executable])
+    monkeypatch.setattr(starter.subprocess, "Popen", lambda *_args, **_kwargs: pytest.fail("Disabled plugin must not start"))
+    assert starter.main() == 3
+
+
+def test_managed_start_announces_in_a_visible_console_even_with_log_redirection(tmp_path, monkeypatch, capsys):
+    definition = monitor.ServiceDefinition(
+        "plugin", "Actual plugin", "Declared plugin purpose", 9988, "/ready",
+        launcher=tmp_path / "plugin.cmd", working_directory=tmp_path,
+    )
+    monkeypatch.setattr(monitor, "_port_open", lambda _: False)
+    monkeypatch.setattr(monitor, "_read_managed_service_resources", lambda: {})
+    monkeypatch.setattr(monitor, "LOG_ROOT", tmp_path / "logs")
+    monkeypatch.setattr(monitor, "get_filesystem_provider", lambda: SimpleNamespace(
+        make_directory=lambda path: path.mkdir(parents=True, exist_ok=True),
+        open_append_text=lambda path: path.open("a", encoding="utf-8"),
+    ))
+    calls = []
+    def spawn(command, **kwargs):
+        calls.append(command)
+        assert "Declared plugin purpose" in capsys.readouterr().err
+        assert kwargs["stdout"].name.endswith("plugin.stdout.log")
+        assert kwargs["stderr"].name.endswith("plugin.stderr.log")
+        if sys.platform == "win32":
+            assert Path(command[0]).name.lower() == "cmd.exe"
+            assert kwargs["creationflags"] & subprocess.CREATE_NEW_CONSOLE
+            assert not kwargs["creationflags"] & subprocess.CREATE_NO_WINDOW
+            banner = kwargs["env"]["WB_CONSOLE_BANNER"]
+            assert "9988" in banner.splitlines()[0]
+            assert "Actual plugin" in banner
+            assert kwargs["env"]["WB_CONSOLE_REQUIRE_VISIBLE"] == "1"
+            assert str(definition.launcher) in json.loads(kwargs["env"]["WB_CONSOLE_PAYLOAD"])["argv"]
+        return SimpleNamespace(pid=71)
+    monkeypatch.setattr(monitor.subprocess, "Popen", spawn)
+    monitor._start(definition)
+    assert len(calls) == 1
 
 
 def test_visible_managed_launch_passes_real_metadata_into_console_before_spawn(tmp_path, monkeypatch, capsys):
@@ -229,8 +278,19 @@ def test_project_shell_bootstrap_announces_before_python_and_does_not_parse_exec
         identity="worker", label="Actual worker", description="Actual purpose",
         urls={"service origin": "http://127.0.0.1:8111"},
     )
-    script = Path(command[-1]).read_text()
+    assert Path(command[0]).name.lower() == "cmd.exe"
+    assert command[1:] == ["/d", "/q", "/v:off", "/s", "/c", "%WB_CONSOLE_SCRIPT%"]
+    wrapper = Path(environment["WB_CONSOLE_SCRIPT"].strip('"'))
+    assert wrapper.name == "run_announced_console.cmd"
+    cmd_source = wrapper.read_text()
+    assert "DisableDelayedExpansion" in cmd_source
+    assert 'powershell.exe -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -File "%~dp0run_announced_console.ps1"' in cmd_source
+    assert "exit /b %ERRORLEVEL%" in cmd_source
+    assert "%*" not in cmd_source and "WB_CONSOLE_PAYLOAD" not in cmd_source
+    script = wrapper.with_suffix(".ps1").read_text()
     assert environment["WB_CONSOLE_BANNER"].splitlines()[0].startswith("[launch command]")
+    assert "8111" in environment["WB_CONSOLE_BANNER"].splitlines()[0]
+    assert "Actual worker" in environment["WB_CONSOLE_BANNER"].splitlines()[0]
     assert "private-value" not in environment["WB_CONSOLE_BANNER"]
     assert "8111" in environment["WB_CONSOLE_TITLE"]
     assert json.loads(environment["WB_CONSOLE_PAYLOAD"])["argv"] == original
@@ -242,6 +302,28 @@ def test_project_shell_bootstrap_announces_before_python_and_does_not_parse_exec
     assert "$start.UseShellExecute = $false" in script
     assert environment["WB_CONSOLE_REQUIRE_VISIBLE"] == "1"
     assert script.index("$env:WB_CONSOLE_READY -ne '1'") < script.index("[Diagnostics.Process]::Start")
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows CMD parsing contract")
+def test_cmd_bootstrap_path_is_expanded_once_without_creating_a_visible_window(tmp_path, monkeypatch):
+    directory = tmp_path / "space & (group)! %UNEXPANDED_PATH%"
+    scripts = directory / "scripts"
+    scripts.mkdir(parents=True)
+    wrapper = scripts / "run_announced_console.cmd"
+    wrapper.write_text("@echo off\necho INERT_CMD_BOOTSTRAP\nexit /b 27\n", encoding="ascii")
+    monkeypatch.setattr(diagnostics, "__file__", str(directory / "launch_diagnostics.py"))
+    command, environment = diagnostics.prepare_console_launch(
+        [sys.executable, "not-executed.py"], directory,
+        {**os.environ, "UNEXPANDED_PATH": "must-not-be-substituted"},
+        identity="inert-parser-check",
+    )
+    result = subprocess.run(
+        command, cwd=directory, env=environment, capture_output=True, text=True,
+        creationflags=subprocess.CREATE_NO_WINDOW, timeout=15,
+    )
+    assert result.returncode == 27, result.stdout + result.stderr
+    assert result.stdout.strip() == "INERT_CMD_BOOTSTRAP"
+    assert not result.stderr
 
 
 def test_environment_runner_restores_caller_environment_and_forwards_once(tmp_path, monkeypatch, capsys):

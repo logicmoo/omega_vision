@@ -35,6 +35,51 @@ research, or services.
 
 ## Current recovery state
 
+### Resumed TODO implementation (2026-09-10)
+
+The user requested resuming this TODO list after the local-main ledger cleanup.
+Coordinator `c75fc682-11e5-4e13-a872-13e563d8b48f` is continuing the existing
+visible CMD launcher correction first, in the user's local `main` checkout.
+Source changes and focused non-service checks are resumed; service starts,
+visible diagnostic windows, data repair/migration, and deferred research audits
+remain outside this step. Preserve the existing inspector, research, runtime,
+and other uncommitted edits. Earlier all-stopped notes below are historical
+for this resumed source task, not permission to restart anything.
+
+The user then explicitly required visible pre-execution commands in batch and
+plugin launchers, selecting visible CMD windows for every Workbench-controlled
+plugin process launch, even when a saved policy requests a hidden window.
+The briefly supplied `openworld_dr` path was withdrawn; work remains here on
+local `main`. No files in that other repository were changed.
+
+**Launcher source checkpoint:** completed the existing CMD wrapper integration.
+Startup-policy launches, submitted managed commands, and managed-service
+start/reconciliation now share the visible, command-first console boundary.
+Disabled/already-running services remain untouched; saved policies are not
+rewritten. Existing service logs and protocol stdout behavior are preserved,
+and in-process plugins stay in the API console. External plugin-owned
+repositories and launch scripts were not modified.
+
+API/Vite batch entrypoints display safely formatted host/port command lines
+before credential/application bootstrap, then the actual resolved Python
+command and argument values immediately before execution. Display templates
+substitute only explicit placeholders, preserving literal `--env` names.
+CMD bootstrap paths travel through one environment expansion rather than
+incorrectly escaped nested command-line quotes; original child argv and
+caller environment are preserved by the existing private payload boundary.
+
+Focused source/mocked coverage passed 26 cases; the expanded suite passed
+66 cases with one real-child diagnostic deliberately deselected. Native
+launcher coverage used inert executables, copied scripts, and
+`CREATE_NO_WINDOW`, not services or visible diagnostic windows. The default
+pytest scratch directory was inaccessible; the successful runs used fresh
+task-owned scratch directories without modifying its permissions.
+The earlier `/describe` receipt still has no captured exit code, and its old
+panel is now closed. Source integration is complete; live visible-window and
+user-context menu/inspector acceptance remain pending explicit launch
+authorization. No services, game sessions, reimports, or data repairs were
+started to complete this checkpoint.
+
 - Launcher activation bypass / visible-output gap (2026-09-10): the user
   reported three blank consoles after API activation. The activation command
   was raw `.venv\Scripts\python.exe ...run_api_server.py --host 127.0.0.1

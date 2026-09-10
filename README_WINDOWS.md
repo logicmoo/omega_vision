@@ -16,12 +16,16 @@ The recommended native-Windows configuration is:
 
 ## Visible launcher startup
 
-All 14 first-party `.bat`/`.cmd` entrypoints print their path, purpose and
+The 14 direct first-party `.bat`/`.cmd` entrypoints print their path, purpose and
 working directory before environment/bootstrap work. Their first output now
 identifies the launcher command, and they set a meaningful title. Before each Python call,
 they show the resolved executable, entrypoint, fixed options and selected
 non-secret argument values. Delegating launchers identify the child script;
 quiet probes identify their `NUL` redirection instead of appearing idle.
+The API and Vite entrypoints use the shared diagnostic helper for their first
+command line, so the actual host/port values are visible without echoing raw
+arguments through CMD. Their pre-execution Python command lines substitute
+sanitized argument values; literal `--env` variable names remain unchanged.
 
 Credential setup stays quiet. A failing setup reports a generic warning without
 printing its output. Free-form forwarded arguments are deliberately withheld
@@ -32,13 +36,20 @@ version selector without launching an extra interpreter-discovery probe.
 Owned service/plugin launch boundaries also print declared identity, description,
 configured URLs and log destinations. Credentials, URL userinfo and secret
 arguments are redacted, including in new process receipts. Visible service
-consoles enter a project-owned shell bootstrap that writes a command-first
+consoles enter the project-owned `run_announced_console.cmd` bootstrap that writes a command-first
 banner through the attached console device before Python starts, even if the
 parent API logs its stderr elsewhere. Execution arguments travel privately as
 JSON environment data, are restored before the one child runs, and are never
 reparsed or echoed by the shell. New receipts retain parent PID, launcher path
-and sanitized actual spawn command. Hidden processes keep
-their existing visibility and logs. Diagnostics do not contaminate protocol
+and sanitized actual spawn command. All Workbench-controlled Windows service
+and plugin process launches now open visible Command Prompt windows, including
+launches whose saved policy requests a hidden window; that saved preference is
+not rewritten. Disabled or already-running services are not started just to
+show a console. Managed-service log destinations are preserved, and the command
+banner is still written to the same attached console even when stdout/stderr
+go to those logs. In-process plugins announce in their existing API console;
+they do not acquire a fabricated child command or a separate process.
+Diagnostics do not contaminate protocol
 stdout. The detached Omega task pool announces before bootstrap and identifies
 its transformation workers as in-process tasks.
 
@@ -54,9 +65,10 @@ Do not use raw, output-only-redirected Python as an agent-driven service start.
 The raw API entrypoint also announces itself before slow imports, but cannot
 identify a different outer console created by a tool transport.
 
-The in-app terminal diagnostic's output was unavailable through its declared
-read action during the latest validation. That is not evidence of a successful
-visible banner or exit code; see the exact attempt receipts in `CODEX_TODO.md`.
+The earlier in-app description diagnostic eventually yielded recorded output,
+but no exit code was captured. Its panel is no longer open. These historical
+receipts do not establish live acceptance of the current launch path; see
+`CODEX_TODO.md`. Do not start another diagnostic or service without authorization.
 
 ## Fast path for a fresh Windows machine
 

@@ -97,6 +97,11 @@ def main() -> int:
     print(f"[launch] Checking startup policy for {redact_text(args.service)}...", file=sys.stderr, flush=True)
     declared = read_service_metadata(SERVICE_DIRECTORY, args.service)
     policy = policy_for(args.service)
+    if os.name == "nt":
+        if policy["hiddenWindow"]:
+            print("[launch] Windows launches use a visible Command Prompt; the saved hidden-window preference is not applied.",
+                  file=sys.stderr, flush=True)
+        policy = {**policy, "hiddenWindow": False}
     if not policy["start"]:
         print(f"{redact_text(args.service)}: disabled by the shared Workbench startup policy resource", flush=True)
         return 3

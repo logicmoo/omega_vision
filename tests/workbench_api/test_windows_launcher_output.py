@@ -31,6 +31,11 @@ LAUNCHERS = (
     "scripts/setup_windows.bat",
 )
 HELPER = "scripts/windows_launcher_diagnostics.ps1"
+CONSOLE_WRAPPER = "python/workbench_api_server/scripts/run_announced_console.cmd"
+SERVICE_COMMAND_LAUNCHERS = {
+    "python/workbench_api_server/scripts/run_api_server.bat",
+    "python/workbench_api_server/scripts/run_vite_server.bat",
+}
 
 # Native .exe stubs preserve CMD's return/quoting behavior, unlike .cmd files
 # impersonating python.exe (which would require CALL to return to the launcher).
@@ -110,21 +115,27 @@ def test_all_tracked_launchers_have_early_safe_diagnostics():
         ["git", "ls-files", "*.bat", "*.cmd"], cwd=ROOT,
         capture_output=True, text=True, check=True,
     ).stdout.splitlines()
-    assert set(tracked) == set(LAUNCHERS)
+    assert set(LAUNCHERS) <= set(tracked) <= {*LAUNCHERS, CONSOLE_WRAPPER}
+    assert (ROOT / CONSOLE_WRAPPER).is_file()
     for relative in LAUNCHERS:
         text = (ROOT / relative).read_text(encoding="utf-8")
         command = (
             'echo [launcher] command: "%ComSpec%" /d /c "%~f0" '
             '[forwarded arguments: REDACTED]'
         )
-        banner = text.index(command)
+        banner = text.index(" -Bootstrap -ServiceCommand") if relative in SERVICE_COMMAND_LAUNCHERS else text.index(command)
         echoes = [line.strip() for line in text.splitlines()
                   if line.lstrip().lower().startswith("echo")]
-        assert echoes[0] == command
+        if relative not in SERVICE_COMMAND_LAUNCHERS:
+            assert echoes[0] == command
         assert 'set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"' in text
         assert 'set "WB_DIAG_BOOTSTRAP_PURPOSE=' in text
         bootstrap = text.index(' -Bootstrap')
-        assert banner < text.index("\ntitle ") < bootstrap
+        if relative in SERVICE_COMMAND_LAUNCHERS:
+            assert text.index("\ntitle ") < banner
+            assert not any("WB_DIAG_BOOTSTRAP_" in line for line in echoes)
+        else:
+            assert banner < text.index("\ntitle ") < bootstrap
         assert 'set "WB_DIAG_TITLE=' in text
         assert 'set "WB_DIAG_TITLE_PORTS=' in text
         if "setkeys.bat" in text:
@@ -142,7 +153,7 @@ def test_all_tracked_launchers_have_early_safe_diagnostics():
 
 def test_diagnostics_use_only_the_attached_console_and_headless_fallbacks():
     helper = (ROOT / HELPER).read_text(encoding="utf-8")
-    assert "param([switch] $Bootstrap)" in helper
+    assert "param([switch] $Bootstrap, [switch] $PreparedConsole, [switch] $ServiceCommand)" in helper
     assert "[Console]::IsOutputRedirected" in helper
     assert "'CONOUT$', 0x40000000, 3, [IntPtr]::Zero, 3, 0" in helper
     assert "WriteConsoleW" in helper
@@ -150,7 +161,7 @@ def test_diagnostics_use_only_the_attached_console_and_headless_fallbacks():
     assert "[Console]::Out.WriteLine($safe)" in helper
     assert "[Console]::Error.WriteLine($safe)" in helper
     assert "Write-Diagnostic $command -AlreadyLogged" in helper
-    assert helper.index("Write-Diagnostic $command -AlreadyLogged") < helper.index(
+    assert helper.index("Write-Diagnostic $command") < helper.index(
         "Write-Diagnostic ('[launcher] Purpose:"
     )
     for prohibited in (
@@ -158,6 +169,19 @@ def test_diagnostics_use_only_the_attached_console_and_headless_fallbacks():
         "Start-Process", "Add-Type", "Process.Start", "-WindowStyle",
     ):
         assert prohibited not in helper
+
+
+def test_service_commands_expand_only_explicit_display_placeholders():
+    api = (ROOT / "python/workbench_api_server/scripts/run_api_server.bat").read_text()
+    vite = (ROOT / "python/workbench_api_server/scripts/run_vite_server.bat").read_text()
+    assert "--host {BIND_IP} --port {API_PORT}" in api
+    assert "--api {WORKBENCH_CONTROL_API}" in vite and "--cwd {CD}" in vite
+    assert "--env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT" in vite
+    assert '-- {ComSpec} /d /c "npm.cmd run dev"' in vite
+    helper = (ROOT / HELPER).read_text()
+    assert "function Format-CommandDetail" in helper
+    assert 'Protect-Display $value' in helper
+    assert "(Format-CommandDetail $env:WB_DIAG_DETAIL)" in helper
 
 
 def test_service_titles_update_with_validated_ports_not_raw_arguments():
@@ -249,6 +273,7 @@ def native_stub():
             [str(compiler), "/nologo", "/target:exe", f"/out:{executable}",
              "/reference:System.Web.Extensions.dll", str(source)],
             cwd=directory, capture_output=True, text=True, timeout=60,
+            creationflags=subprocess.CREATE_NO_WINDOW,
             env={**os.environ, "TEMP": str(directory), "TMP": str(directory)},
         )
         assert result.returncode == 0, result.stdout + result.stderr
@@ -319,6 +344,7 @@ def sandbox(native_stub):
                 f'""{directory / relative}" {arguments}"',
                 cwd=caller, env={**environment, **overrides},
                 input="\n", capture_output=True, text=True, timeout=90,
+                creationflags=subprocess.CREATE_NO_WINDOW,
             )
             records = [json.loads(line) for line in log.read_text().splitlines()]
             return result, records
@@ -339,7 +365,11 @@ def test_every_launcher_executes_only_stubs_with_visible_banner(sandbox, relativ
     assert first.startswith('[launcher] command: "'), output
     assert "\\cmd.exe\" /d /c \"" in first.casefold(), output
     assert str(directory / relative) in first
-    assert first.endswith("[forwarded arguments: REDACTED]")
+    if relative in SERVICE_COMMAND_LAUNCHERS:
+        assert ("8000" if "run_api_server" in relative else "5173") in first
+        assert "Workbench" in first
+    else:
+        assert first.endswith("[forwarded arguments: REDACTED]")
     assert result.stdout.index("[launcher] command:") < result.stdout.index("[launcher] Purpose:")
     assert result.stdout.index("[launcher] Purpose:") < result.stdout.index("[launcher] CWD:")
     assert str(directory / relative) in output
@@ -469,6 +499,31 @@ def test_managed_wrappers_preserve_nonzero_exit(sandbox, name):
     assert result.returncode == 35, result.stdout + result.stderr
     assert len(records) == 1
     assert result.stdout.index("[launcher] execute:") < result.stdout.index("STUB_PYTHON")
+
+
+@pytest.mark.parametrize(("launcher", "arguments", "expected_options"), [
+    ("run_api_server", "127.0.0.2 8511", '--host "127.0.0.2" --port "8511"'),
+    ("run_vite_server", "127.0.0.2 5517 http://localhost:8511",
+     '--api "http://localhost:8511" --service workbench-web --cwd "'),
+])
+def test_service_banner_precedes_execution_with_actual_command_values(sandbox, launcher, arguments, expected_options):
+    directory, _, run = sandbox
+    result, records = run(
+        f"python/workbench_api_server/scripts/{launcher}.bat", arguments, STUB_EXIT="23",
+    )
+    assert result.returncode == 23, result.stdout + result.stderr
+    first = result.stdout.splitlines()[0]
+    assert "[launcher] command:" in first and "Workbench" in first
+    assert '"127.0.0.2"' in first
+    assert ('"8511"' if launcher == "run_api_server" else '"5517"') in first
+    assert len(records) == 1
+    command = next(line for line in result.stdout.splitlines() if line.startswith("[launcher] execute:"))
+    assert str(directory / ".venv/Scripts/python.exe") in command
+    assert expected_options in command
+    assert result.stdout.index(command) < result.stdout.index("STUB_PYTHON")
+    if launcher == "run_vite_server":
+        assert "--env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT" in command
+        assert '/d /c "npm.cmd run dev"' in command
 
 
 def test_vite_redacts_urls_preserves_environment_and_exit(sandbox):

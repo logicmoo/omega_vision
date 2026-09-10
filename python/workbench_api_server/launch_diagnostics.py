@@ -88,8 +88,12 @@ def launch_banner(
     urls: Mapping[str, str] | None = None, logs: Mapping[str, str] | None = None,
     details: Mapping[str, str] | None = None,
 ) -> str:
+    endpoint = (urls or {}).get("service origin") or (urls or {}).get("API")
+    purpose = redact_text(label or identity)
+    if endpoint:
+        purpose += f" on {redact_text(endpoint)}"
     lines = [
-        f"[launch command] {display_command(command, cwd)}",
+        f"[launch command] {display_command(command, cwd)} — {purpose}",
         f"[launch] {redact_text(label or identity)} [{redact_text(identity)}]",
         f"  Purpose: {redact_text(description or 'No description declared.')}",
         f"  Working directory: {redact_text(Path(cwd).resolve())}",
@@ -125,22 +129,22 @@ def prepare_console_launch(
     command: Sequence[str], cwd: Path | str, environment: Mapping[str, str], **metadata,
 ) -> tuple[list[str], dict[str, str]]:
     """The visible shell announces before Python; execution argv never enters shell text."""
-    shell = shutil.which("powershell.exe")
-    if not shell:
-        raise FileNotFoundError("Windows PowerShell is required for the announced console bootstrap")
+    shell = shutil.which("cmd.exe")
+    if not shell or not shutil.which("powershell.exe"):
+        raise FileNotFoundError("Command Prompt and Windows PowerShell are required for the announced console bootstrap")
     if not command:
         raise ValueError("A console child command is required")
     program = Path(command[0])
     resolved = str((Path(cwd) / program).resolve()) if program.is_absolute() or program.parent != Path(".") else shutil.which(command[0])
     if not resolved or not Path(resolved).is_file():
         raise FileNotFoundError(2, "Console child executable was not found", command[0])
-    script = Path(__file__).parent / "scripts" / "run_announced_console.ps1"
+    script = Path(__file__).parent / "scripts" / "run_announced_console.cmd"
     runner = script.with_name("run_announced_command.py")
     metadata = {**metadata, "details": {
         **(metadata.get("details") or {}),
         "bootstrap runner": display_command([sys.executable, str(runner), "--environment"], cwd),
     }}
-    keys = ("WB_CONSOLE_BANNER", "WB_CONSOLE_TITLE", "WB_CONSOLE_PYTHON", "WB_CONSOLE_RUNNER",
+    keys = ("WB_CONSOLE_BANNER", "WB_CONSOLE_TITLE", "WB_CONSOLE_PYTHON", "WB_CONSOLE_RUNNER", "WB_CONSOLE_SCRIPT",
             "WB_CONSOLE_PAYLOAD", "WB_CONSOLE_REQUIRE_VISIBLE", "WB_CONSOLE_READY")
     title = f"{metadata.get('label') or metadata['identity']} [{metadata['identity']}]"
     urls = metadata.get("urls") or {}
@@ -152,6 +156,7 @@ def prepare_console_launch(
         "WB_CONSOLE_TITLE": redact_text(title),
         "WB_CONSOLE_PYTHON": sys.executable,
         "WB_CONSOLE_RUNNER": str(runner),
+        "WB_CONSOLE_SCRIPT": f'"{script}"',
         "WB_CONSOLE_REQUIRE_VISIBLE": "1",
         "WB_CONSOLE_READY": "0",
         "WB_CONSOLE_PAYLOAD": json.dumps({
@@ -159,7 +164,8 @@ def prepare_console_launch(
             "restoreEnvironment": {key: environment.get(key) for key in keys},
         }),
     })
-    return [shell, "-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(script)], launch_environment
+    # Expand the quoted path once in CMD, without list2cmdline escaping its quotes.
+    return [shell, "/d", "/q", "/v:off", "/s", "/c", "%WB_CONSOLE_SCRIPT%"], launch_environment
 
 
 def read_service_metadata(directory: Path, service_id: str) -> dict:

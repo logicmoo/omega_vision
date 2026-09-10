@@ -592,9 +592,9 @@ def _start(definition: ServiceDefinition) -> None:
     resources.make_directory(LOG_ROOT)
     stdout_handle = resources.open_append_text(LOG_ROOT / f"{definition.id}.stdout.log")
     stderr_handle = resources.open_append_text(LOG_ROOT / f"{definition.id}.stderr.log")
-    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    flags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     try:
-        from launch_diagnostics import announce_launch, configured_urls
+        from launch_diagnostics import announce_launch, configured_urls, prepare_console_launch
         command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", str(definition.launcher)]
         metadata = {
             "identity": definition.id, "label": definition.label,
@@ -608,9 +608,15 @@ def _start(definition: ServiceDefinition) -> None:
         }
         announce_launch(command, definition.working_directory, **metadata)
         announce_launch(command, definition.working_directory, stream=stderr_handle, **metadata)
+        environment = dict(os.environ)
+        if os.name == "nt":
+            command, environment = prepare_console_launch(
+                command, definition.working_directory, environment, **metadata,
+            )
         subprocess.Popen(
             command,
-            cwd=definition.working_directory, stdin=subprocess.DEVNULL, stdout=stdout_handle, stderr=stderr_handle,
+            cwd=definition.working_directory, env=environment,
+            stdin=subprocess.DEVNULL, stdout=stdout_handle, stderr=stderr_handle,
             creationflags=flags, close_fds=False,
         )
     finally:

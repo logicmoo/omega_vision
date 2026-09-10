@@ -1,11 +1,16 @@
 @echo off
-echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
 title MeTTa Workbench Vite Frontend
 set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
 set "WB_DIAG_BOOTSTRAP_PURPOSE=run the Vite frontend through the managed command launcher."
 set "WB_DIAG_TITLE=MeTTa Workbench Vite Frontend"
 set "WB_DIAG_TITLE_PORTS=WEB_PORT"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
+set "WB_DIAG_BOOTSTRAP_HOST=%~1"
+if not defined WB_DIAG_BOOTSTRAP_HOST set "WB_DIAG_BOOTSTRAP_HOST=127.0.0.1"
+set "WB_DIAG_BOOTSTRAP_PORT=%~2"
+if not defined WB_DIAG_BOOTSTRAP_PORT set "WB_DIAG_BOOTSTRAP_PORT=5173"
+set "WB_DIAG_BOOTSTRAP_EXTRA=%~3"
+if not defined WB_DIAG_BOOTSTRAP_EXTRA set "WB_DIAG_BOOTSTRAP_EXTRA=http://127.0.0.1:8000"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap -ServiceCommand
 rem Intentionally do not SETLOCAL here.  These variables must remain in this
 rem child command window after Vite is stopped so `restart` uses the same
 rem host, port, and API target.
@@ -56,7 +61,7 @@ set "WORKBENCH_CONTROL_API=%WORKBENCH_CONTROL_API%"
 if not defined WORKBENCH_CONTROL_API set "WORKBENCH_CONTROL_API=%API_TARGET%"
 set "WB_DIAG_EXE=%ROOT%\.venv\Scripts\python.exe"
 set "WB_DIAG_TARGET=%~dp0submit_managed_command.py"
-set "WB_DIAG_DETAIL=--api WORKBENCH_CONTROL_API --service workbench-web --cwd CD --env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT --env WORKBENCH_API_TARGET -- ComSpec /d /c npm.cmd run dev"
+set "WB_DIAG_DETAIL=--api {WORKBENCH_CONTROL_API} --service workbench-web --cwd {CD} --env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT --env WORKBENCH_API_TARGET -- {ComSpec} /d /c "npm.cmd run dev""
 set "WB_DIAG_VARS=WORKBENCH_CONTROL_API;CD;WORKBENCH_WEB_HOST;WORKBENCH_WEB_PORT;WORKBENCH_API_TARGET;ComSpec"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\scripts\windows_launcher_diagnostics.ps1"
 "%ROOT%\.venv\Scripts\python.exe" "%~dp0submit_managed_command.py" --api "%WORKBENCH_CONTROL_API%" --service workbench-web --cwd "%CD%" --env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT --env WORKBENCH_API_TARGET -- "%ComSpec%" /d /c "npm.cmd run dev"

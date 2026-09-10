@@ -1,4 +1,4 @@
-param([switch] $Bootstrap, [switch] $PreparedConsole)
+param([switch] $Bootstrap, [switch] $PreparedConsole, [switch] $ServiceCommand)
 
 # Values arrive through the environment, never through a second CMD parse.
 # This helper only describes commands; it must never execute an interpreter.
@@ -38,6 +38,19 @@ function Resolve-Executable([string] $Value) {
         }
     }
     return "$Value [not found on PATH]"
+}
+
+function Format-CommandDetail([string] $Template) {
+    return [regex]::Replace($Template, '\{([A-Za-z_][A-Za-z0-9_]*)\}', {
+        param($Match)
+        $name = $Match.Groups[1].Value
+        $value = [Environment]::GetEnvironmentVariable($name)
+        if ($name -eq 'CD') { $value = (Get-Location).Path }
+        if ($name -match '(?i)password|passwd|secret|token|api_?key|authorization') {
+            $value = '[REDACTED]'
+        }
+        return '"' + (Protect-Display $value) + '"'
+    })
 }
 
 $script:ConsoleApi = $null
@@ -142,8 +155,19 @@ try {
     } elseif ($Bootstrap) {
         $command = '[launcher] command: "{0}" /d /c "{1}" [forwarded arguments: REDACTED]' -f
             $env:ComSpec, $env:WB_DIAG_BOOTSTRAP_SCRIPT
-        # The BAT already wrote this first line to stdout, before this helper.
-        Write-Diagnostic $command -AlreadyLogged
+        if ($ServiceCommand) {
+            $command = '[launcher] command: "{0}" /d /c "{1}" {2}' -f
+                (Protect-Display $env:ComSpec), (Protect-Display $env:WB_DIAG_BOOTSTRAP_SCRIPT),
+                (Format-CommandDetail '{WB_DIAG_BOOTSTRAP_HOST} {WB_DIAG_BOOTSTRAP_PORT}')
+            if ($env:WB_DIAG_BOOTSTRAP_EXTRA) {
+                $command += ' ' + (Format-CommandDetail '{WB_DIAG_BOOTSTRAP_EXTRA}')
+            }
+            $command += ' - ' + (Protect-Display $env:WB_DIAG_TITLE)
+            Write-Diagnostic $command
+        } else {
+            # Other BAT entrypoints already wrote this first line to stdout.
+            Write-Diagnostic $command -AlreadyLogged
+        }
         Write-Diagnostic ('[launcher] Purpose: ' + $env:WB_DIAG_BOOTSTRAP_PURPOSE)
         Write-Diagnostic ('[launcher] CWD: ' + (Get-Location).Path)
     } else {
@@ -152,7 +176,7 @@ try {
         if ($target) { $target = [IO.Path]::GetFullPath($target) }
         $command = '"' + (Protect-Display $exe) + '"'
         if ($target) { $command += ' "' + (Protect-Display $target) + '"' }
-        Write-Diagnostic ('[launcher] execute: {0} {1}' -f $command, $env:WB_DIAG_DETAIL)
+        Write-Diagnostic ('[launcher] execute: {0} {1}' -f $command, (Format-CommandDetail $env:WB_DIAG_DETAIL))
         foreach ($name in ($env:WB_DIAG_VARS -split ';')) {
             if (-not $name) { continue }
             $value = [Environment]::GetEnvironmentVariable($name)

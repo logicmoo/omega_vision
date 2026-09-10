@@ -6,6 +6,7 @@ import sys
 def _early_console_command() -> None:
     """The raw entrypoint must also identify itself when stderr is redirected."""
     arguments = []
+    host, port = "127.0.0.1", "8000"
     remaining = iter(sys.argv[1:])
     for value in remaining:
         flag, equals, inline = value.partition("=")
@@ -13,11 +14,16 @@ def _early_console_command() -> None:
             argument = inline if equals else next(remaining, "")
             safe = argument and all(char.isascii() and (char.isalnum() or char in ".-:") for char in argument)
             arguments.extend((flag, argument if safe else "[REDACTED]"))
+            if flag == "--host":
+                host = argument if safe else "[REDACTED]"
+            else:
+                port = argument if safe else "[REDACTED]"
         elif value in {"-h", "--help"}:
             arguments.append(value)
         else:
             arguments.append("[argument withheld]")
-    text = f'[launch command] "{sys.executable}" "{__file__}" {" ".join(arguments)}\n'
+    activity = "Workbench API help (no server or port opened)" if any(arg in {"-h", "--help"} for arg in sys.argv[1:]) else f"Python: Workbench API on {host}:{port}"
+    text = f'[launch command] "{sys.executable}" "{__file__}" {" ".join(arguments)} — {activity}\n'
     output = sys.stderr
     if sys.platform == "win32":
         try:

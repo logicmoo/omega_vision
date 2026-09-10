@@ -1,13 +1,17 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 if /I "%~1"=="/describe" goto :describe
-echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
 title MeTTa Workbench API
 set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
 set "WB_DIAG_BOOTSTRAP_PURPOSE=run the workbench API bootstrap process."
 set "WB_DIAG_TITLE=MeTTa Workbench API"
 set "WB_DIAG_TITLE_PORTS=API_PORT"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
+set "WB_DIAG_BOOTSTRAP_HOST=%~1"
+if not defined WB_DIAG_BOOTSTRAP_HOST set "WB_DIAG_BOOTSTRAP_HOST=127.0.0.1"
+set "WB_DIAG_BOOTSTRAP_PORT=%~2"
+if not defined WB_DIAG_BOOTSTRAP_PORT set "WB_DIAG_BOOTSTRAP_PORT=8000"
+set "WB_DIAG_BOOTSTRAP_EXTRA="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap -ServiceCommand
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
 @echo off
 if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
@@ -43,7 +47,7 @@ echo.
 
 set "WB_DIAG_EXE=%PYTHON_EXE%"
 set "WB_DIAG_TARGET=%ROOT%\scripts\run_api_server.py"
-set "WB_DIAG_DETAIL=--host BIND_IP --port API_PORT"
+set "WB_DIAG_DETAIL=--host {BIND_IP} --port {API_PORT}"
 set "WB_DIAG_VARS=BIND_IP;API_PORT"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%REPO_ROOT%\scripts\windows_launcher_diagnostics.ps1"
 "%PYTHON_EXE%" "%ROOT%\scripts\run_api_server.py" --host %BIND_IP% --port %API_PORT%
