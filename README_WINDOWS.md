@@ -14,6 +14,34 @@ The recommended native-Windows configuration is:
 - SWI-Prolog on `PATH` when using Prolog-backed features;
 - Windows Terminal or a normal `cmd.exe` window for the interactive debugger.
 
+## Visible launcher startup
+
+All 14 first-party `.bat`/`.cmd` entrypoints print their path, purpose and
+working directory before environment/bootstrap work. Before each Python call,
+they show the resolved executable, entrypoint, fixed options and selected
+non-secret argument values. Delegating launchers identify the child script;
+quiet probes identify their `NUL` redirection instead of appearing idle.
+
+Credential setup stays quiet. A failing setup reports a generic warning without
+printing its output. Free-form forwarded arguments are deliberately withheld
+from batch diagnostics rather than reparsed by CMD; execution still receives
+them unchanged. `py` diagnostics identify the resolved `py.exe` and requested
+version selector without launching an extra interpreter-discovery probe.
+
+Owned service/plugin launch boundaries also print declared identity, description,
+configured URLs and log destinations. Credentials, URL userinfo and secret
+arguments are redacted, including in new process receipts. Visible service
+consoles receive their own flushed banner through `CONOUT$` before the child
+starts, even if the parent API logs its stderr elsewhere. Hidden processes keep
+their existing visibility and logs. Diagnostics do not contaminate protocol
+stdout. The detached Omega task pool announces before bootstrap and identifies
+its transformation workers as in-process tasks.
+
+Plugin checkouts with their own Git repositories are not rewritten by this
+project. In particular, `codex_cli`'s generated `launch_codex.bat` and external
+EMULLM/Coplex/mailbox launchers remain their owners' responsibility; this project
+announces the available metadata at its boundary.
+
 ## Fast path for a fresh Windows machine
 
 ### 1. Enable long paths as Administrator

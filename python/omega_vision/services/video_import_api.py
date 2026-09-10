@@ -8492,16 +8492,32 @@ def _pooler_spawn_if_dead() -> int:
     pid = _pooler_alive()
     if pid:
         return pid
+    from launch_diagnostics import announce_launch, launch_banner
+
     script = _REPO_ROOT / "python" / "omega_vision" / "services" / "transform_task_pooler.py"
     flags = 0
     if os.name == "nt":
         flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
                  | getattr(subprocess, "DETACHED_PROCESS", 0x00000008))
     cmd = [sys.executable, str(script), "--control", str(_POOLER_CONTROL_PATH)]
-    log = open(_authorize_storage_path(_POOLER_CONTROL_PATH.with_name("pooler.log")), "ab")  # noqa: SIM115
+    log_path = _authorize_storage_path(_POOLER_CONTROL_PATH.with_name("pooler.log"))
+    diagnostics = {
+        "identity": "omega-vision-transform-task-pooler",
+        "label": "Omega Vision detached transformation task pool",
+        "description": "Offline worker serving the active todo root from the control file; "
+                       "in-process transformation/doer tasks, no HTTP listener or new console.",
+        "logs": {"Pool output (stdout/stderr)": str(log_path),
+                 "Shared Omega data root": str(_POOLER_CONTROL_PATH.parent),
+                 "Control file": str(_POOLER_CONTROL_PATH),
+                 "Status file": str(_POOLER_CONTROL_PATH.with_name("pooler_status.json"))},
+    }
+    configured_root = str(_pooler_read(_POOLER_CONTROL_PATH).get("root") or "")
+    if configured_root:
+        diagnostics["logs"]["Configured todo root"] = str((_REPO_ROOT / configured_root).resolve())
+    announce_launch(cmd, _REPO_ROOT, **diagnostics)
+    log = open(log_path, "ab")  # noqa: SIM115
     try:
-        # first line of every run: WHAT is being started (echo of the command)
-        log.write(f"\n[spawn] {_utc_now()} $ {' '.join(cmd)}\n".encode("utf-8"))
+        log.write(launch_banner(cmd, _REPO_ROOT, **diagnostics).encode("utf-8"))
         log.flush()
         proc = subprocess.Popen(
             cmd, cwd=str(_REPO_ROOT), stdout=log, stderr=subprocess.STDOUT,

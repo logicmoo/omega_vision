@@ -14,6 +14,46 @@ values here.
 
 ## Current recovery state
 
+- Windows startup diagnostics (2026-09-10): audited all 14 tracked first-party
+  BAT/CMD launchers, with no dependency/cache/external-project script edits.
+  Inventory: root `run_workbench.bat`; `python/arc_cli_debugger/cli/interactive_runner.bat`
+  and `webui/run_webui.bat`; API script launchers `run_api_server`, `run_demo`,
+  `run_vite_server`, `run_channel_relay`, `run_clawrouter`, `run_omniroute`,
+  `run_meet_bridge`; and `scripts/setup_windows.bat`, `build_api_docs.bat`,
+  `install_vb_cable.bat`, `codex_commit.cmd`.
+  Each prints path/purpose/cwd before bootstrap, then resolved Python commands
+  and safe options before invocation. Handoffs/probe redirections are visible.
+  Secret setup output remains withheld with a generic failure warning; no
+  environment dump/global command echo. Arbitrary forwarded arguments remain
+  unchanged in execution but are withheld in batch diagnostics; py.exe and its
+  version selector are shown without another discovery invocation.
+  Added native Python diagnostics for startup policy, managed submissions/waits,
+  API supervisor workers, plugin registration and detached task-pool/mailbox
+  boundaries. Declared service/plugin descriptions, configured ports/URLs and
+  log paths are shown, not invented endpoints. Visible service workers use one
+  owned waiting console wrapper, with the banner sent directly to `CONOUT$`
+  before spawning their one child; stderr fallback preserves headless callers
+  and stdout protocols. Hidden worker flags/logs, scheduling and cancellation
+  remain unchanged; in-process tasks are identified as such.
+  Credentials/URL userinfo/tokens and complete Cookie/Authorization headers are
+  redacted from new diagnostics/process receipts; execution argv is untouched.
+  Independent review caught and corrected Cookie-tail leakage and inherited
+  stderr bypassing a new visible console.
+  No first-party BAT/CMD generator exists beyond these files; external
+  `plugins/codex_cli` generates `launch_codex.bat` in its own Git checkout.
+  External EMULLM/Coplex and sibling mailbox launchers are likewise not edited;
+  their available metadata is printed at the owned boundary.
+  Safe validation uses native inert executable stubs in copied launchers,
+  mocked spawns and a bounded inert child: no actual services/installations,
+  external secret scripts, process kills or runtime-data mutations for acceptance.
+  Final launcher/service/pool/protocol/documentation validation: 104 passed.
+  Actual CMD stub cases cover all 14 entrypoints, path spaces, ampersands,
+  parentheses/exclamations, forwarded arguments, failure exit codes and quiet
+  secret setup. Visible-console device output is checked before the mocked
+  child spawn; an inert real child preserves protocol stdout and exit code 37.
+  Parallel visibility/Frames/Temporal and contextual-inspector work belongs to
+  the frontend child and later backend increments, not this launcher commit.
+
 - Visual Sequence COMBO OPTION LIST cache (2026-09-10, explicit bounded scope):
   implemented a dedicated shared
   `data/omega_vision/.cache/visual-sequence-list/choices.json`, plus tiny dirty

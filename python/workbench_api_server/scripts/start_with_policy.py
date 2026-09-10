@@ -9,6 +9,8 @@ import time
 from threading import get_ident
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from launch_diagnostics import announce_launch, configured_logs, configured_urls, console_command, read_service_metadata, redact_arguments, redact_text
 
 ROOT = Path(__file__).resolve().parents[3]
 POLICY_PATH = (
@@ -36,7 +38,7 @@ def _record_started_process(
         "pid": process.pid,
         "startedAtEpoch": time.time(),
         "cwd": str(cwd.resolve()),
-        "rawCommand": command,
+        "rawCommand": redact_arguments(command),
         "terminationScope": "process-tree",
     })
     temporary = PROCESS_LEDGER.with_name(
@@ -88,12 +90,21 @@ def main() -> int:
     args = parser.parse_args()
     if args.command[:1] == ["--"]:
         args.command = args.command[1:]
+    print(f"[launch] Checking startup policy for {redact_text(args.service)}...", file=sys.stderr, flush=True)
+    declared = read_service_metadata(SERVICE_DIRECTORY, args.service)
     policy = policy_for(args.service)
     if not policy["start"]:
-        print(f"{args.service}: disabled by the shared Workbench startup policy resource")
+        print(f"{redact_text(args.service)}: disabled by the shared Workbench startup policy resource", flush=True)
         return 3
     if not args.command:
         parser.error("a child command is required")
+    metadata = {
+        "identity": args.service,
+        "label": str(declared.get("label") or args.service),
+        "description": str(declared.get("description") or "No service description declared."),
+        "urls": configured_urls(declared, args.command, os.environ),
+        "logs": configured_logs(declared),
+    }
     flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     stdout = stderr = None
     if os.name == "nt":
@@ -103,15 +114,20 @@ def main() -> int:
         log_root.mkdir(parents=True, exist_ok=True)
         stdout = (log_root / f"{args.service}.stdout.log").open("a", encoding="utf-8")
         stderr = (log_root / f"{args.service}.stderr.log").open("a", encoding="utf-8")
+        metadata["logs"].update({"stdout": str(stdout.name), "stderr": str(stderr.name)})
     try:
-        process = subprocess.Popen(args.command, cwd=args.cwd, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr, creationflags=flags, close_fds=False)
+        announce_launch(args.command, args.cwd, **metadata)
+        if stderr is not None:
+            announce_launch(args.command, args.cwd, stream=stderr, **metadata)
+        command = console_command(args.command, args.cwd, **metadata) if os.name == "nt" and not policy["hiddenWindow"] else args.command
+        process = subprocess.Popen(command, cwd=args.cwd, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr, creationflags=flags, close_fds=False)
         _record_started_process(args.service, process, list(args.command), args.cwd)
     finally:
         if stdout:
             stdout.close()
         if stderr:
             stderr.close()
-    print(f"{args.service}: started ({'hidden window' if policy['hiddenWindow'] else 'visible window'})")
+    print(f"{redact_text(args.service)}: started ({'hidden window' if policy['hiddenWindow'] else 'visible window'})", flush=True)
     return 0
 
 

@@ -3,12 +3,15 @@ from __future__ import annotations
 import argparse
 import json
 import time
+import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 import psutil
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from launch_diagnostics import announce_launch
 
 ROOT = Path(__file__).resolve().parents[2]
 LEDGER = ROOT / "runtime" / "run_workbench_processes.json"
@@ -34,6 +37,11 @@ def main() -> int:
     parser.add_argument("--url", required=True)
     parser.add_argument("--timeout", type=float, required=True)
     args = parser.parse_args()
+    announce_launch(
+        [], Path.cwd(), identity=args.service, label=f"Waiting for {args.service}",
+        description="Waiting for the configured health endpoint; no additional process is launched.",
+        urls={"health": args.url}, details={"timeout seconds": str(args.timeout)},
+    )
     deadline = time.monotonic() + args.timeout
     grace_deadline = time.monotonic() + 5
     while time.monotonic() < deadline:

@@ -94,6 +94,8 @@ _ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
 def _redact(value: str) -> str:
+    from launch_diagnostics import redact_text
+    value = redact_text(value)
     value = _ANSI_ESCAPE.sub("", value)
     for pattern in _SECRET_PATTERNS:
         value = pattern.sub(lambda match: (match.group(1) if match.lastindex else "") + "[REDACTED]", value)
@@ -514,6 +516,7 @@ def _validated_environment(service_id: str, value: Any) -> dict[str, str]:
 
 
 def _record_api_launch(service_id: str, process: subprocess.Popen, cwd: Path, command: list[str]) -> None:
+    from launch_diagnostics import redact_arguments
     try:
         entries = resources.read_config_json(PROCESS_LEDGER)
     except (OSError, json.JSONDecodeError):
@@ -521,7 +524,7 @@ def _record_api_launch(service_id: str, process: subprocess.Popen, cwd: Path, co
     if not isinstance(entries, list):
         entries = []
     entries = [entry for entry in entries if isinstance(entry, dict) and entry.get("service") != service_id]
-    entries.append({"service": service_id, "pid": process.pid, "startedAtEpoch": time.time(), "cwd": str(cwd.resolve()), "rawCommand": command, "terminationScope": "process-tree", "launchedBy": "workbench-api"})
+    entries.append({"service": service_id, "pid": process.pid, "startedAtEpoch": time.time(), "cwd": str(cwd.resolve()), "rawCommand": redact_arguments(command), "terminationScope": "process-tree", "launchedBy": "workbench-api"})
     resources.make_directory(PROCESS_LEDGER.parent, parents=True, exist_ok=True)
     temporary = PROCESS_LEDGER.with_name(
         f".{PROCESS_LEDGER.name}.{os.getpid()}.{get_ident()}.tmp"
@@ -553,10 +556,25 @@ def launch_submitted_command(service_id: str, request: Request, body: dict[str, 
         executable_command = command
         if Path(command[0]).suffix.lower() in {".bat", ".cmd"}:
             executable_command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", *command]
+        from launch_diagnostics import announce_launch, configured_urls, console_command, redact_arguments
+        declared = _read_managed_service_resources().get(service_id, {})
+        metadata = {
+            "identity": service_id,
+            "label": definition.label if definition else service_id,
+            "description": definition.description if definition else str(declared.get("description") or "Managed service command."),
+            "urls": configured_urls({
+                "id": service_id,
+                **({"port": definition.port, "healthPath": definition.health_path} if definition else {}),
+                **declared,
+            }, command, {**os.environ, **environment}),
+        }
+        announce_launch(executable_command, cwd, **metadata)
+        if os.name == "nt":
+            executable_command = console_command(executable_command, cwd, **metadata)
         process = subprocess.Popen(executable_command, cwd=cwd, env={**os.environ, **environment}, stdin=subprocess.DEVNULL, creationflags=flags, close_fds=False)
         _PENDING_LAUNCHES[service_id] = (process.pid, time.monotonic())
         _record_api_launch(service_id, process, cwd, command)
-        return {"status": "started", "serviceId": service_id, "pid": process.pid, "rawCommand": command, "terminationScope": "process-tree"}
+        return {"status": "started", "serviceId": service_id, "pid": process.pid, "rawCommand": redact_arguments(command), "terminationScope": "process-tree"}
 
 
 def _start(definition: ServiceDefinition) -> None:
@@ -571,8 +589,22 @@ def _start(definition: ServiceDefinition) -> None:
     stderr_handle = resources.open_append_text(LOG_ROOT / f"{definition.id}.stderr.log")
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     try:
+        from launch_diagnostics import announce_launch, configured_urls
+        command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", str(definition.launcher)]
+        metadata = {
+            "identity": definition.id, "label": definition.label,
+            "description": definition.description,
+            "urls": configured_urls({
+                "id": definition.id, "port": definition.port, "healthPath": definition.health_path,
+                **_read_managed_service_resources().get(definition.id, {}),
+            }, command),
+            "logs": {"stdout": str(LOG_ROOT / f"{definition.id}.stdout.log"),
+                     "stderr": str(LOG_ROOT / f"{definition.id}.stderr.log")},
+        }
+        announce_launch(command, definition.working_directory, **metadata)
+        announce_launch(command, definition.working_directory, stream=stderr_handle, **metadata)
         subprocess.Popen(
-            [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", str(definition.launcher)],
+            command,
             cwd=definition.working_directory, stdin=subprocess.DEVNULL, stdout=stdout_handle, stderr=stderr_handle,
             creationflags=flags, close_fds=False,
         )

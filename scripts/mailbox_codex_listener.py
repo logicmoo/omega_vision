@@ -30,6 +30,19 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+_LOCAL_SERVER = Path(__file__).resolve().parents[1] / "python" / "workbench_api_server"
+if str(_LOCAL_SERVER) not in sys.path:
+    sys.path.insert(0, str(_LOCAL_SERVER))
+from launch_diagnostics import announce_launch
+
+if __name__ == "__main__":
+    announce_launch(
+        [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]], Path.cwd(),
+        identity="mailbox-codex-listener",
+        label="Codex mailbox listener",
+        description="REST mailbox worker starting before runtime/client bootstrap; JSON results remain on stdout.",
+    )
+
 from _runtime import configure_runtime_home
 
 try:
@@ -205,6 +218,15 @@ def _spawn_detached(command: Sequence[str], *, cwd: Path) -> int:
     flags = 0
     if os.name == "nt":
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
+    announce_launch(
+        command, cwd, identity="mailbox-relay-fallback",
+        label="Detached mailbox relay fallback",
+        description="Start the external mailbox relay after the Workbench service supervisor was unavailable; "
+                    "child output is discarded and no new visible console is created.",
+        urls={"Configured relay": RELAY_URL,
+              "Workbench service supervisor": f"{API_BASE}/workbench/system/services/mailbox_server/start"},
+        logs={"Child stdout": "DEVNULL (discarded)", "Child stderr": "DEVNULL (discarded)"},
+    )
     process = subprocess.Popen(
         list(command),
         cwd=str(cwd),

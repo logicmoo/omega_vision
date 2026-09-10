@@ -7,7 +7,8 @@ import subprocess
 import sys
 import time
 
-import uvicorn
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from launch_diagnostics import announce_launch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -31,6 +32,11 @@ def _stop_worker(worker: subprocess.Popen[bytes]) -> None:
 def _run_explicit_restart_supervisor(host: str, port: int) -> None:
     command = [sys.executable, str(Path(__file__).resolve()), "--host", host, "--port", str(port)]
     environment = {**os.environ, SUPERVISED_WORKER_ENV: "1"}
+    def announce() -> None:
+        announce_launch(command, WORKBENCH_ROOT, identity="workbench-api",
+                        description="Workbench API worker under the explicit restart supervisor.",
+                        urls={"API": f"http://{host}:{port}", "health": f"http://{host}:{port}/workbench/health"})
+    announce()
     worker = subprocess.Popen(command, cwd=WORKBENCH_ROOT, env=environment)
     try:
         while True:
@@ -39,6 +45,7 @@ def _run_explicit_restart_supervisor(host: str, port: int) -> None:
                 raise SystemExit(return_code)
             print("Explicit API restart requested; starting fresh worker...", flush=True)
             time.sleep(0.2)
+            announce()
             worker = subprocess.Popen(command, cwd=WORKBENCH_ROOT, env=environment)
     except KeyboardInterrupt:
         pass
@@ -51,6 +58,9 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8000, type=int)
     args = parser.parse_args()
+    announce_launch([sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]], Path.cwd(),
+                    identity="workbench-api", description=parser.description,
+                    urls={"API": f"http://{args.host}:{args.port}", "health": f"http://{args.host}:{args.port}/workbench/health"})
 
     os.chdir(SERVER_ROOT)
     for extra in (SERVER_ROOT, REPO_ROOT / "python", REPO_ROOT / "python" / "plugins_framework"):
@@ -58,6 +68,7 @@ def main() -> None:
     if os.environ.get(SUPERVISED_WORKER_ENV) != "1":
         _run_explicit_restart_supervisor(args.host, args.port)
         return
+    import uvicorn
     uvicorn.run(
         "app:app",
         host=args.host,

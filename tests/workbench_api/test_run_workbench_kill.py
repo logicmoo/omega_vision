@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import re
 from pathlib import Path
 
 
@@ -14,7 +15,7 @@ def test_run_workbench_kill_switch_routes_to_scoped_shutdown_helper() -> None:
     launcher = (ROOT / "run_workbench.bat").read_text(encoding="utf-8")
     assert 'if /I "%~1"=="/kill"' in launcher
     assert "stop_workbench.py" in launcher
-    assert '--web-port "!KILL_WEB_PORT!" --api-port "!KILL_API_PORT!"' in launcher
+    assert '--web-port "%KILL_WEB_PORT%" --api-port "%KILL_API_PORT%"' in launcher
 
 
 def test_shutdown_targets_only_declared_workbench_listener_ports(monkeypatch) -> None:
@@ -37,7 +38,7 @@ def test_launcher_routes_mailbox_relay_through_startup_policy_and_pid_ledger() -
     assert "mailbox-server.cmd" in demo
     assert "PROCESS_LEDGER" in starter
     assert "_record_started_process(args.service, process, list(args.command), args.cwd)" in starter
-    assert '"rawCommand": command' in starter
+    assert '"rawCommand": redact_arguments(command)' in starter
     assert '"terminationScope": "process-tree"' in starter
     service = (ROOT / "workspaces" / "shared_library_system" / "design" / "services" / "channel_relay.managed_service.metta").read_text(encoding="utf-8")
     policy = (ROOT / "workspaces" / "shared_library_system" / "policies" / "workbench_startup.workbench_startup_policy.metta").read_text(encoding="utf-8")
@@ -126,6 +127,6 @@ def test_api_submitted_commands_forward_only_service_allowlisted_environment() -
     assert '"mailbox_server": {"PYTHONPATH"}' in monitor
     assert "env={**os.environ, **environment}" in monitor
     demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
-    assert demo.count("wait_for_managed_service.py") == 3
+    assert len(re.findall(r'^\s*"%WORKBENCH_PYTHON%" "%ROOT%wait_for_managed_service\.py"', demo, re.MULTILINE)) == 3
     waiter = (ROOT / "python" / "workbench_api_server" / "scripts" / "wait_for_managed_service.py").read_text(encoding="utf-8")
     assert "exited before becoming healthy" in waiter

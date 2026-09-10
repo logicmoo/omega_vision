@@ -1,4 +1,8 @@
 @echo off
+setlocal DisableDelayedExpansion
+echo "[launcher] %~f0"
+echo "[launcher] Purpose: download the official VB-CABLE package and open its interactive installer."
+echo "[launcher] CWD: %CD%"
 REM install_vb_cable.bat
 REM
 REM Downloads and launches the OFFICIAL VB-CABLE virtual audio cable
@@ -23,26 +27,29 @@ REM After reboot, run:
 REM   .venv\Scripts\python.exe scripts\meet_caption_bridge.py --list-audio-devices
 REM to confirm "CABLE Input" / "CABLE Output" now appear in the device list.
 
-setlocal
 set "DL_URL=https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip"
 set "DL_ZIP=%TEMP%\VBCABLE_Driver_Pack45.zip"
 set "DL_DIR=%TEMP%\VBCABLE_Driver_Pack45"
 
 echo Downloading VB-CABLE from %DL_URL% ...
-powershell -NoProfile -Command "Invoke-WebRequest -Uri '%DL_URL%' -OutFile '%DL_ZIP%'"
+echo "[launcher] Handoff: PowerShell Invoke-WebRequest; package output: %DL_ZIP%"
+powershell -NoProfile -Command "Invoke-WebRequest -Uri $env:DL_URL -OutFile $env:DL_ZIP"
 if not exist "%DL_ZIP%" (
   echo Download failed - check your internet connection or the URL above.
   exit /b 1
 )
 
 echo Extracting ...
-powershell -NoProfile -Command "Expand-Archive -Path '%DL_ZIP%' -DestinationPath '%DL_DIR%' -Force"
+echo "[launcher] Handoff: PowerShell Expand-Archive; output directory: %DL_DIR%"
+powershell -NoProfile -Command "Expand-Archive -Path $env:DL_ZIP -DestinationPath $env:DL_DIR -Force"
 
 echo Launching the VB-CABLE setup program (this WILL prompt for admin approval - please click Yes) ...
 if exist "%DL_DIR%\VBCABLE_Setup_x64.exe" (
+  echo "[launcher] Handoff: %DL_DIR%\VBCABLE_Setup_x64.exe"
   start "" "%DL_DIR%\VBCABLE_Setup_x64.exe"
 ) else (
-  echo Could not find VBCABLE_Setup_x64.exe in %DL_DIR% - open that folder and run the installer manually.
+  echo "Could not find VBCABLE_Setup_x64.exe in %DL_DIR% - open that folder and run the installer manually."
+  echo "[launcher] Handoff: explorer; folder: %DL_DIR%"
   explorer "%DL_DIR%"
 )
 

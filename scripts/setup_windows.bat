@@ -1,6 +1,11 @@
 @echo off
-setlocal EnableExtensions
-if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat"
+setlocal EnableExtensions DisableDelayedExpansion
+echo "[launcher] %~f0"
+echo "[launcher] Purpose: select Python and prepare the repository development environment."
+echo "[launcher] CWD: %CD%"
+if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
+@echo off
+if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
 
 rem Always operate from the repository root.
 cd /d "%~dp0.."
@@ -16,7 +21,7 @@ set "PYTHONPATH="
 
 echo.
 echo === MeTTaSymbolicLearnerWorkbench Windows setup ===
-echo Repository: %CD%
+echo Repository: "%CD%"
 echo.
 
 rem Prefer the Python launcher because it bypasses the Microsoft Store
@@ -26,23 +31,50 @@ set "PYTHON_COMMAND="
 
 where py >nul 2>nul
 if not errorlevel 1 (
+    set "WB_DIAG_EXE=py"
+    set "WB_DIAG_TARGET="
+    set "WB_DIAG_DETAIL=-3.12 -c import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1); stdout/stderr: NUL"
+    set "WB_DIAG_VARS="
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
     py -3.12 -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" >nul 2>nul
-    if not errorlevel 1 set "PYTHON_COMMAND=py -3.12"
+    if not errorlevel 1 (
+        set "PYTHON_COMMAND=py -3.12"
+        set "BASE_PYTHON=py"
+        set "BASE_SELECTOR=-3.12"
+    )
 )
 
 if not defined PYTHON_COMMAND (
     where py >nul 2>nul
     if not errorlevel 1 (
+        set "WB_DIAG_EXE=py"
+        set "WB_DIAG_TARGET="
+        set "WB_DIAG_DETAIL=-3 -c import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1); stdout/stderr: NUL"
+        set "WB_DIAG_VARS="
+        powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
         py -3 -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" >nul 2>nul
-        if not errorlevel 1 set "PYTHON_COMMAND=py -3"
+        if not errorlevel 1 (
+            set "PYTHON_COMMAND=py -3"
+            set "BASE_PYTHON=py"
+            set "BASE_SELECTOR=-3"
+        )
     )
 )
 
 if not defined PYTHON_COMMAND (
     where python >nul 2>nul
     if not errorlevel 1 (
+        set "WB_DIAG_EXE=python"
+        set "WB_DIAG_TARGET="
+        set "WB_DIAG_DETAIL=-c import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1); stdout/stderr: NUL"
+        set "WB_DIAG_VARS="
+        powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
         python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" >nul 2>nul
-        if not errorlevel 1 set "PYTHON_COMMAND=python"
+        if not errorlevel 1 (
+            set "PYTHON_COMMAND=python"
+            set "BASE_PYTHON=python"
+            set "BASE_SELECTOR="
+        )
     )
 )
 
@@ -61,12 +93,22 @@ if not defined PYTHON_COMMAND (
 )
 
 echo Using: %PYTHON_COMMAND%
+set "WB_DIAG_EXE=%BASE_PYTHON%"
+set "WB_DIAG_TARGET="
+set "WB_DIAG_DETAIL=%BASE_SELECTOR% --version"
+set "WB_DIAG_VARS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
 call %PYTHON_COMMAND% --version
 if errorlevel 1 exit /b 1
 
 if not exist ".venv\Scripts\python.exe" (
     echo.
     echo Creating .venv ...
+    set "WB_DIAG_EXE=%BASE_PYTHON%"
+    set "WB_DIAG_TARGET="
+    set "WB_DIAG_DETAIL=%BASE_SELECTOR% -m venv .venv"
+    set "WB_DIAG_VARS="
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
     call %PYTHON_COMMAND% -m venv ".venv"
     if errorlevel 1 (
         echo ERROR: Unable to create .venv.
@@ -78,6 +120,11 @@ if not exist ".venv\Scripts\python.exe" (
 
 set "VENV_PYTHON=%CD%\.venv\Scripts\python.exe"
 
+set "WB_DIAG_EXE=%VENV_PYTHON%"
+set "WB_DIAG_TARGET="
+set "WB_DIAG_DETAIL=-c import encodings, sys, sysconfig; raise SystemExit(0 if sys.prefix != sys.base_prefix else 1); stdout/stderr: NUL"
+set "WB_DIAG_VARS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
 "%VENV_PYTHON%" -c "import encodings, sys, sysconfig; raise SystemExit(0 if sys.prefix != sys.base_prefix else 1)" >nul 2>nul
 if errorlevel 1 (
     echo.
@@ -90,11 +137,21 @@ if errorlevel 1 (
 
 echo.
 echo Updating pip, setuptools, and wheel ...
+set "WB_DIAG_EXE=%VENV_PYTHON%"
+set "WB_DIAG_TARGET="
+set "WB_DIAG_DETAIL=-m pip install --upgrade pip setuptools wheel"
+set "WB_DIAG_VARS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
 "%VENV_PYTHON%" -m pip install --upgrade pip setuptools wheel
 if errorlevel 1 exit /b 1
 
 echo.
 echo Installing the repository with all optional dependencies ...
+set "WB_DIAG_EXE=%VENV_PYTHON%"
+set "WB_DIAG_TARGET="
+set "WB_DIAG_DETAIL=-m pip install -e .[all]"
+set "WB_DIAG_VARS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
 "%VENV_PYTHON%" -m pip install -e ".[all]"
 if errorlevel 1 (
     echo ERROR: Dependency installation failed.
@@ -123,12 +180,22 @@ if not exist "vendor\ARC-AGI-3-Agents\.git" (
 if exist "vendor\ARC-AGI-3-Agents" (
     echo.
     echo Slimming optional framework imports ...
+    set "WB_DIAG_EXE=%VENV_PYTHON%"
+    set "WB_DIAG_TARGET=scripts\slim_framework.py"
+    set "WB_DIAG_DETAIL="
+    set "WB_DIAG_VARS="
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
     "%VENV_PYTHON%" "scripts\slim_framework.py"
     if errorlevel 1 exit /b 1
 )
 
 echo.
 echo Verifying imports ...
+set "WB_DIAG_EXE=%VENV_PYTHON%"
+set "WB_DIAG_TARGET="
+set "WB_DIAG_DETAIL=-c import arc_agi, json_repair, numpy, PIL; print('Core Python imports: OK')"
+set "WB_DIAG_VARS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1"
 "%VENV_PYTHON%" -c "import arc_agi, json_repair, numpy, PIL; print('Core Python imports: OK')"
 if errorlevel 1 exit /b 1
 

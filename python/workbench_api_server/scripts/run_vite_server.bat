@@ -1,8 +1,13 @@
 @echo off
+echo "[launcher] %~f0"
+echo "[launcher] Purpose: run the Vite frontend through the managed command launcher."
+echo "[launcher] CWD: %CD%"
 rem Intentionally do not SETLOCAL here.  These variables must remain in this
 rem child command window after Vite is stopped so `restart` uses the same
 rem host, port, and API target.
-if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat"
+if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
+@echo off
+if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
 set "ROOT=%~dp0..\..\.."
 set "BIND_IP=%~1"
 if not defined BIND_IP set "BIND_IP=127.0.0.1"
@@ -28,12 +33,10 @@ echo  Changes are debounced into one full reload. Runtime,
 echo  workspace, test, build, and log changes do not reload the UI.
 echo ============================================================
 echo  Working directory:
-echo    %CD%
+echo    "%CD%"
 echo.
 echo  Environment for this instance:
-echo    WORKBENCH_WEB_HOST=%WORKBENCH_WEB_HOST%
-echo    WORKBENCH_WEB_PORT=%WORKBENCH_WEB_PORT%
-echo    WORKBENCH_API_TARGET=%WORKBENCH_API_TARGET%
+echo    Sanitized WORKBENCH_WEB_HOST, WORKBENCH_WEB_PORT, and WORKBENCH_API_TARGET follow below.
 echo.
 echo  Command being run:
 echo    npm run dev
@@ -48,7 +51,13 @@ echo.
 
 set "WORKBENCH_CONTROL_API=%WORKBENCH_CONTROL_API%"
 if not defined WORKBENCH_CONTROL_API set "WORKBENCH_CONTROL_API=%API_TARGET%"
+set "WB_DIAG_EXE=%ROOT%\.venv\Scripts\python.exe"
+set "WB_DIAG_TARGET=%~dp0submit_managed_command.py"
+set "WB_DIAG_DETAIL=--api WORKBENCH_CONTROL_API --service workbench-web --cwd CD --env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT --env WORKBENCH_API_TARGET -- ComSpec /d /c npm.cmd run dev"
+set "WB_DIAG_VARS=WORKBENCH_CONTROL_API;CD;WORKBENCH_WEB_HOST;WORKBENCH_WEB_PORT;WORKBENCH_API_TARGET;ComSpec"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\scripts\windows_launcher_diagnostics.ps1"
 "%ROOT%\.venv\Scripts\python.exe" "%~dp0submit_managed_command.py" --api "%WORKBENCH_CONTROL_API%" --service workbench-web --cwd "%CD%" --env WORKBENCH_WEB_HOST --env WORKBENCH_WEB_PORT --env WORKBENCH_API_TARGET -- "%ComSpec%" /d /c "npm.cmd run dev"
+set "LAUNCH_EXIT_CODE=%ERRORLEVEL%"
 
 echo.
 echo ------------------------------------------------------------
@@ -58,3 +67,4 @@ echo  Full restart command:
 echo    npm run dev
 echo ------------------------------------------------------------
 echo.
+exit /b %LAUNCH_EXIT_CODE%

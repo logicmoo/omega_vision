@@ -9,6 +9,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from launch_diagnostics import announce_launch, configured_urls, read_service_metadata, redact_text
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Ask the Workbench API to launch one expanded managed command.")
@@ -23,6 +25,16 @@ def main() -> int:
         command = command[1:]
     if not command:
         parser.error("an expanded command is required after --")
+    print(f"[launch] Preparing managed command for {redact_text(args.service)}...", file=sys.stderr, flush=True)
+    declared = read_service_metadata(
+        Path(__file__).resolve().parents[3] / "workspaces" / "shared_library_system" / "design" / "services",
+        args.service,
+    )
+    announce_launch(
+        command, args.cwd, identity=args.service, label=str(declared.get("label") or args.service),
+        description=str(declared.get("description") or "No service description declared."),
+        urls={**configured_urls(declared, command, os.environ), "control API": args.api},
+    )
     environment = {name: os.environ[name] for name in args.env if name in os.environ}
     payload = json.dumps({"cwd": str(args.cwd.resolve()), "command": command, "environment": environment}).encode("utf-8")
     request = urllib.request.Request(
@@ -38,7 +50,7 @@ def main() -> int:
         return 0
     except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError, ValueError) as error:
         print("WARNING: Workbench API is unavailable; running this command in LEGACY MODE.", file=sys.stderr)
-        print(f"WARNING: This fallback process is not API-owned: {error}", file=sys.stderr)
+        print(f"WARNING: This fallback process is not API-owned: {redact_text(error)}", file=sys.stderr, flush=True)
         return subprocess.call(command, cwd=args.cwd)
 
 

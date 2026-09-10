@@ -432,6 +432,18 @@ def _scan(*, register: bool) -> list[dict[str, Any]]:
             item["initialization"] = initialization_report(item)
             if register and scan_mode == "startup" and plugin_id not in _loaded:
                 entrypoint = manifest_path.parent / str(manifest.get("entrypoint") or "plugin.py")
+                from launch_diagnostics import announce_launch, configured_logs, configured_urls
+                links = configured_urls(item)
+                for page in item["uiPages"]:
+                    if page.get("descriptor"):
+                        links[f"UI {page.get('id', 'page')}"] = str(page["descriptor"])
+                announce_launch(
+                    [], manifest_path.parent, identity=plugin_id,
+                    label=str(manifest.get("name") or manifest.get("label") or plugin_id),
+                    description=str(manifest.get("description") or "No plugin description declared."),
+                    urls=links, logs=configured_logs(item),
+                    details={"entrypoint": str(entrypoint), "mode": "in-process plugin initialization"},
+                )
                 spec = importlib.util.spec_from_file_location(f"workbench_plugin_{plugin_id}", entrypoint)
                 if spec is None or spec.loader is None:
                     raise ValueError(f"Cannot load plugin entrypoint: {entrypoint}")

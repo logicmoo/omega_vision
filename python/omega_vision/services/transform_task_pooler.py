@@ -46,6 +46,35 @@ for entry in (str(_REPO_ROOT / "python"), str(_REPO_ROOT / "python" / "workbench
     if entry not in sys.path:
         sys.path.insert(0, entry)
 
+from launch_diagnostics import announce_launch  # noqa: E402
+
+
+def _announce_startup(argv: list[str]) -> None:
+    parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    parser.add_argument("--control", default=str(_REPO_ROOT / "data" / "omega_vision" / "pooler_control.json"))
+    parser.add_argument("--root", action="append")
+    args, _ = parser.parse_known_args(argv)
+    paths = {}
+    if args.root:
+        paths.update({f"Scan root {index}": str(Path(root).resolve())
+                      for index, root in enumerate(args.root, 1)})
+    else:
+        control = Path(args.control).resolve()
+        paths = {"Control file": str(control),
+                 "Status file": str(control.with_name("pooler_status.json"))}
+    announce_launch(
+        [sys.executable, str(_HERE), *argv], Path.cwd(),
+        identity="omega-vision-transform-task-pooler",
+        label="Omega Vision transformation task pool",
+        description=f"Offline todo worker (pid {os.getpid()}) starting before application bootstrap; "
+                    "transformations/doers run as in-process ThreadPoolExecutor tasks, not new Python workers.",
+        logs=paths,
+    )
+
+
+if __name__ == "__main__":
+    _announce_startup(sys.argv[1:])
+
 from omega_vision.services.video_import_api import (  # noqa: E402
     run_transform_step,
     write_unit_todos,
@@ -252,6 +281,7 @@ def one_pass(roots: list[Path], *, workers: int, limit: int, retry_errors: bool,
             active[token] = label
         _tell()
         try:
+            print(f"[pooler] in-process task starting: {label}", file=sys.stderr, flush=True)
             step = run_transform_step(unit, todo["transformation"], todo["doer"],
                                       todo.get("options") or {},
                                       depends_on=todo.get("dependsOn") or [],
@@ -301,7 +331,7 @@ def one_pass(roots: list[Path], *, workers: int, limit: int, retry_errors: bool,
                 elif status == "error":
                     detail = f" {str(step.get('error', ''))[:120]}"
                 kind = f" [{todo['type']}]" if todo.get("type") else ""
-                print(f"[pooler] {unit['id']} p{todo.get('priority', 100)}{kind} "
+                print(f"[pooler] in-process task {unit['id']} p{todo.get('priority', 100)}{kind} "
                       f"{step['step']}: {status}{detail} | {pending} pending", flush=True)
     finally:
         stop_ticker.set()
@@ -440,9 +470,7 @@ def main(argv: list[str]) -> int:
                     help="skip todos of this type (e.g. ui)")
     args = ap.parse_args(argv)
 
-    # announce: first log line is the exact command, and the console window
-    # (when visible) is titled so stray windows are identifiable.
-    print(f"[pooler] $ {sys.executable} {' '.join(sys.argv)}", flush=True)
+    # Title an existing console only; detached launches never create one.
     if os.name == "nt":
         try:
             import ctypes  # noqa: PLC0415

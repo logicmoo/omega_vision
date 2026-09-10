@@ -1,6 +1,11 @@
 @echo off
-setlocal EnableExtensions
-if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat"
+setlocal EnableExtensions DisableDelayedExpansion
+echo "[launcher] %~f0"
+echo "[launcher] Purpose: ensure OmniRoute is available and launch its managed gateway."
+echo "[launcher] CWD: %CD%"
+if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
+@echo off
+if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
 
 set "OMNIROUTE_PORT=%~1"
 if not defined OMNIROUTE_PORT set "OMNIROUTE_PORT=20128"
@@ -25,8 +30,7 @@ echo.
 echo ============================================================
 echo  OmniRoute local gateway
 echo ============================================================
-echo  Dashboard:             http://127.0.0.1:%OMNIROUTE_PORT%/
-echo  OpenAI-compatible API: http://127.0.0.1:%OMNIROUTE_PORT%/v1
+echo  Local gateway paths: / and /v1; configured port is shown below.
 echo  Default workbench model: auto/best-free
 echo.
 echo  First-run endpoint-key setup is handled by the workbench.
@@ -37,8 +41,15 @@ echo.
 
 set "WORKBENCH_CONTROL_API=%WORKBENCH_CONTROL_API%"
 if not defined WORKBENCH_CONTROL_API set "WORKBENCH_CONTROL_API=http://127.0.0.1:8000"
+set "WB_DIAG_EXE=%~dp0..\..\..\.venv\Scripts\python.exe"
+set "WB_DIAG_TARGET=%~dp0submit_managed_command.py"
+set "WB_DIAG_DETAIL=--api WORKBENCH_CONTROL_API --service omniroute --cwd CD --env PORT --env DASHBOARD_PORT -- OMNIROUTE_CMD serve --port OMNIROUTE_PORT --no-open --no-tray --log"
+set "WB_DIAG_VARS=WORKBENCH_CONTROL_API;CD;PORT;DASHBOARD_PORT;OMNIROUTE_CMD;OMNIROUTE_PORT"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1"
 "%~dp0..\..\..\.venv\Scripts\python.exe" "%~dp0submit_managed_command.py" --api "%WORKBENCH_CONTROL_API%" --service omniroute --cwd "%CD%" --env PORT --env DASHBOARD_PORT -- "%OMNIROUTE_CMD%" serve --port %OMNIROUTE_PORT% --no-open --no-tray --log
+set "LAUNCH_EXIT_CODE=%ERRORLEVEL%"
 
 echo.
 echo OmniRoute stopped. Rerun this script to restart it.
 echo.
+exit /b %LAUNCH_EXIT_CODE%
