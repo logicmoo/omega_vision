@@ -165,8 +165,7 @@ def test_recognition_catalog_and_set_execution_address_advertised_canonical_dire
     assert legacy.exists() == with_legacy
 
 
-@pytest.mark.parametrize("cache_layer", ["memory", "disk"])
-def test_recognition_identity_correction_invalidates_old_catalog_ids(repository, monkeypatch, cache_layer):
+def test_recognition_identity_correction_invalidates_old_catalog_ids(repository, monkeypatch):
     from omega_vision.perception.visual_sequence_cache import CatalogCache
 
     _, _, home = repository
@@ -176,8 +175,6 @@ def test_recognition_identity_correction_invalidates_old_catalog_ids(repository,
     cache = CatalogCache()
     cache.get(home / ".cache" / "visual_sequences.json", lambda: "unchanged-source",
               lambda: [{"id": "recognition_reduce", "dir": "data/curated/recognition_reduce"}])
-    monkeypatch.setattr(api, "_visual_catalog_cache", cache if cache_layer == "memory" else CatalogCache())
-    monkeypatch.setattr(api, "_visual_catalog_trackers", {(home,): lambda: "unchanged-source"})
     entries = api.visual_sequences("example")["visualSequences"]
     assert next(item for item in entries if item.get("canonical"))["id"] == "curated/recognition_reduce"
     assert all(item["dir"] == f"data/{item['id']}" for item in entries)
@@ -628,7 +625,8 @@ def test_two_workspaces_share_sequences_caches_locks_and_executions(repository, 
     assert first["visualSequences"] == second["visualSequences"]
     assert api._page_state_lock("example") is api._page_state_lock("another")
     assert pipeline._run_store_key("example") == pipeline._run_store_key("another")
-    assert [p.name for p in (home / ".cache").glob("visual_sequences*.json")] == ["visual_sequences.json"]
+    assert (home / ".cache" / "visual-sequence-list" / "choices.json").is_file()
+    assert not list((home / ".cache").glob("visual_sequences*.json"))
     _, first_units = semantics._units("example", "data/recordings/capture")
     _, second_units = semantics._units("another", "data/recordings/capture")
     assert first_units[0]["providerId"] == second_units[0]["providerId"] == "filesystem:omega_vision"

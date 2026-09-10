@@ -62,7 +62,6 @@ def test_catalog_etag_and_refresh_keep_guard_counts(tmp_path, monkeypatch):
     root = tmp_path
     monkeypatch.setattr(api, "_workspace_root", lambda _: root)
     monkeypatch.setattr(api, "_data_homes", lambda _: [root / "data" / "omega_vision"])
-    monkeypatch.setattr(api, "_visual_catalog_cache", CatalogCache())
     calls = []
     monkeypatch.setattr(api, "_list_image_sets", lambda _: calls.append(1) or [{"id": "large", "imageCount": 801}])
     app = FastAPI()

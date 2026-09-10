@@ -76,7 +76,7 @@ def test_visual_sequence_route_and_image_set_adapter_share_one_catalog(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    catalog = [{"id": "curated/one", "visualSequenceId": "curated/one"}]
+    catalog = [{"id": "curated/one", "visualSequenceId": "curated/one", "imageCount": 1}]
     monkeypatch.setattr(video_import_api, "_workspace_root", lambda _workspace_id: tmp_path)
     monkeypatch.setattr(video_import_api, "_list_image_sets", lambda _root: catalog)
 

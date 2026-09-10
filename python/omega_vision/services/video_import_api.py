@@ -31,6 +31,7 @@ import urllib.request
 import uuid
 import zipfile
 from contextvars import ContextVar
+from contextlib import nullcontext
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -77,6 +78,12 @@ def _page_state_lock(workspace_id: str, *, container: Path | None = None) -> thr
 
 def _atomic_json_write(path: Path, value: Any) -> None:
     path = _authorize_storage_path(path)
+    affects_choices = path.name in {"manifest.json", "recording.json"} and _sequence_writable(path, path)
+    with visual_sequence_list_mutation() if affects_choices else nullcontext():
+        _atomic_json_write_contents(path, value)
+
+
+def _atomic_json_write_contents(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
     try:
@@ -593,17 +600,22 @@ def _save_image_with_provenance(
         raise ValueError("Image output escapes canonical Omega storage")
     if not resolved.is_relative_to(_imports_root(root) / "previews"):
         _require_sequence_write(root, resolved)
-    image_path.parent.mkdir(parents=True, exist_ok=True)
-    image.save(image_path, image_format) if image_format else image.save(image_path)
-    return _write_image_provenance(
-        root,
-        image_path,
-        dimensions=image.size,
-        operation=operation,
-        parent_image=parent_image,
-        source=source,
-        transform=transform,
+    affects_choices = (
+        _sequence_writable(root, resolved)
+        and not {"transforms", "preprocessing"}.intersection(resolved.relative_to(home).parts)
     )
+    with visual_sequence_list_mutation(root) if affects_choices else nullcontext():
+        image_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(image_path, image_format) if image_format else image.save(image_path)
+        return _write_image_provenance(
+            root,
+            image_path,
+            dimensions=image.size,
+            operation=operation,
+            parent_image=parent_image,
+            source=source,
+            transform=transform,
+        )
 
 
 def _catalog_path(root: Path) -> Path:
@@ -2085,9 +2097,10 @@ def extract_frames(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
         started = time.monotonic()
         frames_dir = _video_frames_dir(root, video_path)
-        if frames_dir.is_dir():
-            shutil.rmtree(frames_dir, ignore_errors=True)
-        frames_dir.mkdir(parents=True, exist_ok=True)
+        with visual_sequence_list_mutation(root):
+            if frames_dir.is_dir():
+                shutil.rmtree(frames_dir, ignore_errors=True)
+            frames_dir.mkdir(parents=True, exist_ok=True)
         frames: list[dict[str, Any]] = []
         try:
             reader = imageio.get_reader(str(video_path))
@@ -2649,11 +2662,10 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
     Includes the canonical Recognition set, any ``data/*`` directory in the
     reduction layout (``pool/`` and/or ``manifest.json``), and every frame-based
     source family the Objects page offers (ARC recordings, curated data, videos)
-    — grouped the same way. Sets are resolved down the workspace inheritance
-    chain of data homes (workspace override -> included workspaces -> shared
-    repo store); the nearest home wins for a given set id. Counts are read
-    straight from disk so the selector reflects real reusable work; switching
-    sets never has to redo reduction.
+    — grouped the same way. All entries come from the single shared Omega root;
+    historical families remain explicit read-only adapters. Counts are read
+    exactly on a dirty/expired/explicit list rebuild, not on clean combo reads.
+    Switching sets never has to redo reduction.
     """
     homes = _data_homes(root)
     sets: list[dict[str, Any]] = []
@@ -2974,30 +2986,17 @@ def _flat_set_manifest(root: Path, set_id: str) -> dict[str, Any]:
             "sequenceRulesLlm": sequence_rules_llm, "occlusionHorizon": occlusion_horizon}
 
 
-from omega_vision.perception.visual_sequence_cache import CatalogCache, CatalogRevisionTracker, etag_matches
-
-_visual_catalog_cache = CatalogCache()
-_visual_catalog_trackers: dict[tuple[Path, ...], CatalogRevisionTracker] = {}
-_visual_catalog_tracker_lock = threading.Lock()
+from omega_vision.perception.visual_sequence_cache import etag_matches
+from omega_vision.perception.visual_sequence_list_cache import (
+    visual_sequence_list_mutation,
+    visual_sequence_options,
+)
 
 
 def _cached_visual_catalog(workspace_id: str, request: Request, response: Response, refresh: bool) -> Any:
     root = _workspace_root(workspace_id)
-    cache_path = _storage_path(root, ".cache", "visual_sequences.json")
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    homes = _data_homes(root)
-    key = tuple(homes)
-    with _visual_catalog_tracker_lock:
-        tracker = _visual_catalog_trackers.get(key)
-        if tracker is None:
-            tracker = CatalogRevisionTracker(homes, [family[0] for family in _FRAME_SET_FAMILIES])
-            _visual_catalog_trackers[key] = tracker
-        if refresh:
-            tracker.invalidate()
-    entries, revision, cache_state = _visual_catalog_cache.get(
-        cache_path,
-        lambda: hashlib.sha256(f"physical-sequence-ids-v2:{tracker()}".encode()).hexdigest(),
-        lambda: _list_image_sets(root), refresh=refresh,
+    entries, revision, cache_state = visual_sequence_options(
+        root, lambda: _list_image_sets(root), refresh=refresh,
     )
     etag = f'W/"vsc-{revision}"'
     headers = {"ETag": etag, "Cache-Control": "private, no-cache", "X-Catalog-Cache": cache_state}
@@ -3013,8 +3012,8 @@ def image_sets(workspaceId: str, request: Request = None, response: Response = N
     """List reduce-style image sets available on disk for this workspace.
 
     Powers the shared image-set selector on both the Recognition and Objects
-    pages. Because every set is read straight from disk, selecting one shows any
-    reduction work already done for it without recomputing.
+    pages. Only the small option list is cached; accessing a selected sequence
+    still resolves and validates its current filesystem resources.
     """
     entries = _cached_visual_catalog(workspaceId, request, response, refresh)
     return entries if isinstance(entries, Response) else {
@@ -6743,6 +6742,11 @@ def select_group(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 @router.post("/materialize")
 def materialize_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    with visual_sequence_list_mutation():
+        return _materialize_recording(body)
+
+
+def _materialize_recording(body: dict[str, Any]) -> dict[str, Any]:
     """Lay the annotated frames out as an ARC3-style playable recording.
 
     Every frame after the first becomes one move whose action encodes the
@@ -6859,6 +6863,11 @@ def materialize_recording(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 @router.post("/sequence-sets/from-image-set")
 def sequence_set_from_image_set(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    with visual_sequence_list_mutation():
+        return _sequence_set_from_image_set(body)
+
+
+def _sequence_set_from_image_set(body: dict[str, Any]) -> dict[str, Any]:
     """Build a Sequence Set (canonical ARC recording format) from an Image Set.
 
     Each command block selects condition images per character and stamps

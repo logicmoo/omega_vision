@@ -31,10 +31,12 @@ import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from contextlib import nullcontext
 from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import FileResponse
+from omega_vision.perception.visual_sequence_list_cache import visual_sequence_list_mutation
 
 from resource_store import get_filesystem_provider
 
@@ -585,6 +587,19 @@ class PlaySession:
         action_data: dict[str, Any],
         ordinal: int | None,
     ) -> dict[str, Any]:
+        with visual_sequence_list_mutation(self.workspace_root):
+            return self._write_node_files(
+                directory, incoming_action=incoming_action, action_data=action_data, ordinal=ordinal,
+            )
+
+    def _write_node_files(
+        self,
+        directory: Path,
+        *,
+        incoming_action: str | None,
+        action_data: dict[str, Any],
+        ordinal: int | None,
+    ) -> dict[str, Any]:
         resources.make_directory(directory)
         try:
             png = self._frame_png()
@@ -628,12 +643,13 @@ class PlaySession:
             "last_event": reason,
             "moves": self._level_moves,
         }
-        resources.write_config_json(
-            self.level_dir / "recording.json",
-            manifest,
-            ensure_ascii=False,
-            trailing_newline=False,
-        )
+        with visual_sequence_list_mutation(self.workspace_root):
+            resources.write_config_json(
+                self.level_dir / "recording.json",
+                manifest,
+                ensure_ascii=False,
+                trailing_newline=False,
+            )
 
     def _relative(self, path: Path) -> str:
         # data_rel_of tries the workspace root first, then maps files living
@@ -1330,7 +1346,8 @@ def _purge_prior_import(root: Path, game_dir: str, rel_path: str) -> int:
             except (OSError, json.JSONDecodeError):
                 continue
             if manifest.get("imported_from") == rel_path:
-                resources.delete_tree(level_dir)
+                with visual_sequence_list_mutation(root):
+                    resources.delete_tree(level_dir)
                 removed += 1
         savepoints_path = game_root / "savepoints.json"
         with _savepoints_lock:
@@ -1471,7 +1488,6 @@ def _import_recording_as_movelist(root: Path, rel_path: str, label: str | None) 
 
 def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str, Any]:
     _ensure_python_path()
-    from image_codec import frame_to_png_bytes
 
     try:
         source = _safe_workspace_child(root, rel_path)
@@ -1494,6 +1510,15 @@ def _import_recording(root: Path, rel_path: str, label: str | None) -> dict[str,
             events.append(row)
     if not events:
         raise HTTPException(status_code=400, detail="no frame events found in recording")
+
+    with visual_sequence_list_mutation(root):
+        return _write_imported_recording(root, rel_path, label, source, events)
+
+
+def _write_imported_recording(
+    root: Path, rel_path: str, label: str | None, source: Path, events: list[dict[str, Any]],
+) -> dict[str, Any]:
+    from image_codec import frame_to_png_bytes
 
     first = events[0]["data"]
     game_id = str(first.get("game_id") or source.stem)
@@ -1908,7 +1933,6 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
     as the human-JSONL importer.
     """
     _ensure_python_path()
-    from image_codec import frame_to_png_bytes
 
     try:
         run_dir = _safe_workspace_child(root, rel_dir)
@@ -1928,6 +1952,15 @@ def _import_release_run(root: Path, rel_dir: str, label: str | None) -> dict[str
     steps = arclog_module.load(str(log_path))
     if not steps:
         raise HTTPException(status_code=400, detail="no steps found in log.txt")
+
+    with visual_sequence_list_mutation(root):
+        return _write_imported_release_run(root, rel_dir, label, run_dir, steps)
+
+
+def _write_imported_release_run(
+    root: Path, rel_dir: str, label: str | None, run_dir: Path, steps: list[Any],
+) -> dict[str, Any]:
+    from image_codec import frame_to_png_bytes
 
     scorecard: dict[str, Any] = {}
     scorecard_path = run_dir / "scorecard.json"
@@ -2437,6 +2470,11 @@ def duplicate_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -
         new_name = f"{base}{suffix}"
         suffix += 1
     new_path = target.parent / new_name
+    with visual_sequence_list_mutation(root):
+        return _copy_recording_dir(root, target, new_path)
+
+
+def _copy_recording_dir(root: Path, target: Path, new_path: Path) -> dict[str, Any]:
     resources.copy_tree(target, new_path)
     manifest_path = new_path / "recording.json"
     try:
@@ -2451,7 +2489,7 @@ def duplicate_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -
             )
     except (OSError, json.JSONDecodeError):
         pass
-    return {"path": _data_rel_of(root, new_path), "name": new_name}
+    return {"path": _data_rel_of(root, new_path), "name": new_path.name}
 
 
 @router.post("/recording-dirs/delete")
@@ -2465,7 +2503,8 @@ def delete_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -> d
     root = _workspace_root(workspace_id)
     target = _recording_dir_of(root, rel_path)
     rel = _data_rel_of(root, target)
-    resources.delete_tree(target)
+    with visual_sequence_list_mutation(root):
+        resources.delete_tree(target)
     return {"removed": rel}
 
 
@@ -2500,7 +2539,8 @@ def _dedupe_recordings_in(root: Path, game_root: Path) -> list[str]:
         clusters.sort(key=lambda cluster: cluster[-1][0])
         for cluster in clusters[:-1]:  # keep only the most recent run
             for _, path in cluster:
-                resources.delete_tree(path)
+                with visual_sequence_list_mutation(root):
+                    resources.delete_tree(path)
                 removed.append(_data_rel_of(root, path))
     return removed
 
@@ -2560,12 +2600,13 @@ def _rewrite_recording_references(root: Path, game_root: Path, rename_map: dict[
             continue
         if isinstance(manifest, dict) and manifest.get("level_directory") in rename_map:
             manifest["level_directory"] = rename_map[manifest["level_directory"]]
-            resources.write_config_json(
-                manifest_path,
-                manifest,
-                ensure_ascii=False,
-                trailing_newline=False,
-            )
+            with visual_sequence_list_mutation(root):
+                resources.write_config_json(
+                    manifest_path,
+                    manifest,
+                    ensure_ascii=False,
+                    trailing_newline=False,
+                )
 
     savepoints_path = game_root / "savepoints.json"
     if not savepoints_path.is_file():
@@ -2624,6 +2665,15 @@ def _sort_recordings_by_size_in(root: Path, game_root: Path) -> list[tuple[str, 
         new_rel = _data_rel_of(root, new_path)
         pairs.append((old_rel, new_rel, entry, new_path))
 
+    if not pairs:
+        return []
+    with visual_sequence_list_mutation(root):
+        return _rename_recording_dirs(root, game_root, pairs)
+
+
+def _rename_recording_dirs(
+    root: Path, game_root: Path, pairs: list[tuple[str, str, Path, Path]],
+) -> list[tuple[str, str]]:
     # Two-phase (stage under temp names first) so re-ranking never collides
     # with a directory that hasn't moved yet, same technique used by the
     # older per-level scripts/rename_level_dirs_by_size.py.
@@ -2671,7 +2721,8 @@ def retain_largest_recordings(workspaceId: str, keep: int, gameId: str | None = 
         ranked = _ranked_recordings_by_size_in(root, game_root)
         for _size, entry in ranked[keep:]:
             removed.append(_data_rel_of(root, entry))
-            resources.delete_tree(entry)
+            with visual_sequence_list_mutation(root):
+                resources.delete_tree(entry)
     return {"removed": removed, "count": len(removed)}
 
 
@@ -2692,7 +2743,8 @@ def clear_recordings(workspaceId: str, gameId: str | None = None) -> dict[str, A
             continue
         for entry in _iter_recording_dirs(game_root):
             removed.append(_data_rel_of(root, entry))
-            resources.delete_tree(entry)
+            with visual_sequence_list_mutation(root):
+                resources.delete_tree(entry)
     with _sessions_lock:
         sessions = list(_sessions.values())
     detached: list[str] = []
@@ -3000,12 +3052,18 @@ def silo_write(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         directory = _require_sequence_write(root, _safe_workspace_child(root, directory_rel))
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    resources.make_directory(directory)
     target = _require_sequence_write(root, directory / name)
-    if target.suffix.lower() == ".json":
-        resources.write_bytes(target, content.encode("utf-8"))
-    else:
-        resources.write_text(target, content, encoding="utf-8")
+    affects_options = (
+        name in {"recording.json", "manifest.json"}
+        or name.endswith(".provenance.json")
+        or target.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+    ) and not {"transforms", "preprocessing"}.intersection(target.relative_to(_vision_data_root(root)).parts)
+    with visual_sequence_list_mutation(root) if affects_options else nullcontext():
+        resources.make_directory(directory)
+        if target.suffix.lower() == ".json":
+            resources.write_bytes(target, content.encode("utf-8"))
+        else:
+            resources.write_text(target, content, encoding="utf-8")
     return {"path": _data_rel_of(root, target), "bytes": len(content.encode("utf-8"))}
 
 

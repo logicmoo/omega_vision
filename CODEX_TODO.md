@@ -14,6 +14,52 @@ values here.
 
 ## Current recovery state
 
+- Visual Sequence COMBO OPTION LIST cache (2026-09-10, explicit bounded scope):
+  implemented a dedicated shared
+  `data/omega_vision/.cache/visual-sequence-list/choices.json`, plus tiny dirty
+  marker and OS-owned rebuild lock. It stores only existing option IDs,
+  labels/groups, exact counts, ordering/selection metadata and legacy read-only
+  flags. No images, manifests, preprocessing variants or generated outputs are
+  cached here. Clean/restarted hits read JSON and the dirty marker directly:
+  no frame-folder enumeration, recursive signature or watcher startup.
+  Managed captures/imports, source images, recording/reduction metadata and
+  create/delete/rename operations invalidate before/after mutation. Previews,
+  runtime receipts, detached captures and read-only calls stay clean.
+  Explicit Refresh and five-minute expiry cover external edits. Rebuilds are
+  serialized/atomic, concurrent refreshes coalesce, and a dirty token arriving
+  during or after publication is never cleared by the publisher.
+  Client options/ETags are shared across workspaces; caller authorization remains
+  per request. Malformed paths/counts are rejected and late ordinary responses
+  cannot overwrite refreshed choices. Selected resources still use the existing
+  current resolver and execution/large-list confirmation checks.
+  Validation: 144 final focused API/cache/writer/boundary/documentation tests,
+  17 frontend cache/history/800-versus-801 tests, and production build pass. A broader API
+  pass had 406 passes and three fixture failures; the missing mock option count
+  and two old out-of-root fixture paths were corrected, then their tests passed
+  in the focused follow-up. No production path guard was weakened.
+  Actual main measurements at 587 options: isolated rebuild 10.1275s, clean
+  disk hit 0.0394s, second workspace with enumeration forbidden 0.0463s.
+  Restarted main API HTTP: explicit rebuild 10.5464s; warm 200 0.0921s;
+  second workspace 0.0576s; conditional 304 0.0565s, identical ETag/counts.
+  Final real restart reused the published list from disk (595 then-current
+  options, unchanged ETag): first request including startup/context work 4.4509s,
+  next warm request 0.1022s. Current owned API PID is 75664, handle
+  `option-list-final-api`; existing Vite PID 74704 remains on 5173.
+  Cache-directory/file/lock redirects are rejected even when they point at other
+  data inside the shared root; no cache writer can overwrite semantic records.
+  Real browser combo shows the actual choices without new catalog/frame/job
+  requests on open/reopen. Under the running app's load, initial cached browser
+  request took 2.689s, explicit browser refresh 20.581s, and a measured repaint
+  on reopening took 2.172s with zero option-network requests; this change does
+  not claim to fix broader app rendering/queue latency.
+  The actual 26,228-image choice still prompts before loading; cancelling kept
+  the LS20 URL and issued no frame/job requests. Refresh remains beside the
+  selector; exactly one rich Preprocessing section is 10px below it. Screenshot
+  captured inline. Existing user page 1 is untouched.
+  This reopens ONLY the formerly skipped option-list work. Broader Visual
+  Sequence/image/manifest/output caching remains outside scope. No migration,
+  data cleanup, dependency installation, new branch/worktree or remote push.
+
 - Integrated shared-root and inspector acceptance (2026-09-10): the canonical
   storage gate PASSED after correction and independent targeted re-review of
   descendant transform output containment, canonical recognition executable IDs,

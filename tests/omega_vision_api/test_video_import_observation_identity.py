@@ -103,7 +103,7 @@ def test_observation_identity_transform_is_replayable_and_creates_no_image(
 
 
 def test_extraction_manifest_exposes_persisted_geometry(tmp_path: Path) -> None:
-    unit_dir = tmp_path / "frame"
+    unit_dir = tmp_path / "data" / "omega_vision" / "recordings" / "frame"
     _write_final_group_fixture(unit_dir)
     (unit_dir / "todos.json").write_text(json.dumps({
         "kind": "transformation_todos",
@@ -126,8 +126,8 @@ def test_extraction_manifest_exposes_persisted_geometry(tmp_path: Path) -> None:
 
 
 def test_transform_manifest_preserves_started_and_error_details(tmp_path: Path) -> None:
-    unit_dir = tmp_path / "frame"
-    unit_dir.mkdir()
+    unit_dir = tmp_path / "data" / "omega_vision" / "recordings" / "frame"
+    unit_dir.mkdir(parents=True)
     (unit_dir / "todos.json").write_text(json.dumps({
         "kind": "transformation_todos",
         "todos": [

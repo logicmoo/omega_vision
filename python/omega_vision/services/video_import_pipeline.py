@@ -40,6 +40,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
+from omega_vision.perception.visual_sequence_list_cache import visual_sequence_list_mutation
 
 from arc3_play_api import _workspace_root
 from operation_resolution import _model_execution_parameters
@@ -2842,6 +2843,11 @@ def _reduce_set_images(d: Path) -> list["Path"]:
     return sorted(list(d.glob("*.png")) + list(d.glob("*.jpg")))
 
 
+def _write_reduction_manifest(root: Path, manifest_path: Path, payload: dict[str, Any]) -> None:
+    with _reduce_manifest_lock, visual_sequence_list_mutation(root):
+        manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
 def run_reduce(
     workspace_id: str,
     *,
@@ -3196,8 +3202,7 @@ def run_reduce(
     def _write_manifest() -> None:
         ordered = [manifest_rows[i] for i in sorted(manifest_rows, key=lambda i: order_pos.get(i, 10**9))]
         payload = {"tiers": tiers_meta, "count": len(ordered), "items": ordered}
-        with _reduce_manifest_lock:
-            manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        _write_reduction_manifest(root, manifest_path, payload)
 
     def reduce_one(entry: dict[str, Any]) -> None:
         if stop_event is not None and stop_event.is_set():

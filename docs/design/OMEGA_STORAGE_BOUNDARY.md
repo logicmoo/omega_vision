@@ -39,6 +39,29 @@ failure was fixed and its targeted regression rerun; the unrelated installed
 Codex plugin's two-page-versus-one assertion remains unchanged. Windows symlink
 privilege limitations remain as reported below; deterministic escape tests pass.
 
+## Visual Sequence option-list cache
+
+The later, explicitly authorized list-only cache uses
+`data/omega_vision/.cache/visual-sequence-list/choices.json`. Its identity is the
+actual canonical root and option-catalog version, never the caller workspace.
+Only stable option IDs, labels/groups, exact counts and small selection/read-only
+metadata are retained. The previous signature-based catalog snapshot is not read
+or removed; it cannot override this dedicated payload.
+
+Clean hits read this JSON and a tiny dirty token without enumerating frame
+directories or computing a recursive signature. Managed source/metadata changes
+invalidate before and after writes; explicit Refresh and five-minute expiry
+cover external edits. Existing OS-owned locking and atomic JSON publication
+serialize/coalesce rebuilds without clearing concurrent invalidations.
+Cached discovery is never authorization: current selected-resource resolvers and
+confirmation checks remain authoritative. Invalid paths/counts and read/build
+errors are not disguised as a stale success.
+
+Browser choices share one option/ETag snapshot across workspaces, while requests
+still validate their own caller context. Opening the dropdown itself makes no
+per-sequence frame requests. This is not an image, frame-manifest, preprocessing,
+execution-output or broader Visual Sequence caching system.
+
 ## One physical home
 
 Repository workspaces and the repository entrypoint use
@@ -98,7 +121,7 @@ across workspace switches. Game/level/run scope and access grants still apply.
 Candidate provenance is retained. New memory envelopes carry `storageContext`
 with the real creating workspace as metadata; it never filters shared discovery.
 Preferences are shared and scoped only by game/level/run, not editor workspace.
-The shared visual catalog uses `.cache/visual_sequences.json`. Memory cache
+The shared visual option list uses `.cache/visual-sequence-list/choices.json`. Memory cache
 identity retains physical-root, shared-provider, scope and grant inputs, never
 an editor-workspace partition. Old workspace caches cannot authorize new
 locations. The cache remains metadata-only; directory escapes are rejected.
@@ -242,7 +265,7 @@ namespaces.
 | Direct execution records | `H\runtime\executions\direct-<job-id>.json` |
 | Optional action-tree runtime state | `H\runtime\states\play_action_trees\...`; standalone Omega default `H\runtime\states\action_trees\...` |
 | Pipeline template | `H\transform_pipeline.json` |
-| Visual catalog cache | `H\.cache\visual_sequences.json` |
+| Visual Sequence option-list cache | `H\.cache\visual-sequence-list\choices.json`, `dirty.json`, and contained rebuild lock |
 | Memory metadata cache and invalidation guards | `H\.cache\memory-catalog\...`; configured cache paths outside the authorized root rejected |
 | Game preview thumbnails, both Play implementations | `H\.cache\environment_thumbnails\<safe-game-id>.png` |
 | Pooler control, heartbeat, log and lock | `H\pooler_control.json`, `H\pooler_status.json`, `H\pooler.log`, `H\pooler.lock` |
