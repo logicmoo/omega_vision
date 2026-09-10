@@ -32,15 +32,67 @@ def workspace(tmp_path, monkeypatch):
     return tmp_path, TestClient(app)
 
 
-def make_sequence(root: Path, *, name="one", count=4, seed=10, ordered=True, layout="recording", motion=2,
-                  attest=True, provenance_recording=None):
-    sequence = root / "data" / "omega_vision" / "recordings" / name
+def select_native_memory(sequence_id):
+    locations, context = semantics._memory("test", sequence_id)
+    preferences = locations.load_preferences(context)
+    destinations = locations.catalog(context)["destinations"]
+    for kind in ("shape", "object"):
+        preferences[kind]["saveTo"] = next(
+            item["memoryLocationId"] for item in destinations
+            if item["format"] == "memory_metta" and item["memoryKinds"] == [kind]
+            and item["registeredPath"] == "memory_inherited"
+        )
+        preferences[kind]["lookIn"] = []
+    locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
+
+
+def native_records(root):
+    from omega_vision.perception.metta_memory import MeTTaMemoryDatabase
+    home = root / "data" / "omega_vision"
+    return [entry["record"] for kind in ("shape", "object")
+            for path in home.rglob(f"{kind}s_db.metta")
+            for entry in MeTTaMemoryDatabase(home, path.parent, kind).read()]
+
+
+def look_in_saved_shapes(sequence_id):
+    locations, context = semantics._memory("test", sequence_id)
+    preferences = locations.load_preferences(context)
+    preferences["shape"]["lookIn"] = [preferences["shape"]["saveTo"]]
+    locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
+
+
+def rule_scope(unit, *, origin=None):
+    return {"workspaceId": "test", "sequenceId": unit["sequenceId"], "frameId": unit["id"],
+            "proposalFrameId": (origin or unit)["id"]}
+
+
+def multilevel_sequence(root):
+    units = make_sequence(root, count=4, select_memory=False)
+    path = Path(units[0]["sequenceRoot"]) / "recording.json"
+    manifest = json.loads(path.read_text())
+    manifest.pop("level")
+    for index, move in enumerate(manifest["moves"]):
+        move["level"] = "1" if index < 2 else "2"
+    write_json(path, manifest)
+    return semantics._units("test", units[0]["sequenceId"])[1]
+
+
+def make_sequence(root: Path, *, name="one", count=4, seed=10, ordered=True, layout="native", motion=2,
+                  attest=True, provenance_recording=None, select_memory=True):
+    if provenance_recording and layout == "native":
+        layout = "recording"
+    sequence = root / "data" / "omega_vision" / "recordings"
+    if layout == "native":
+        sequence /= "fixture-game"
+    sequence /= name
     sequence.mkdir(parents=True)
     if ordered:
         write_json(sequence / "recording.json", {"game_id": "fixture-game", "level": "1", "moves": []})
     moves = []
     for order in range(count):
-        if layout == "recording":
+        if layout == "native":
+            source = sequence / f"frame_{order:06}" / "image.png"
+        elif layout == "recording":
             source = sequence / "image.png" if order == 0 else sequence / str(order - 1) / "image.png"
         else:
             source = sequence / "pool" / f"frame_{order:06}.png"
@@ -51,7 +103,7 @@ def make_sequence(root: Path, *, name="one", count=4, seed=10, ordered=True, lay
         draw.rectangle((x, 4, x + 2, 13), fill="red")
         draw.rectangle((x + 3, 4, x + 7, 13), fill="blue")
         image.save(source)
-        if order and layout == "recording":
+        if order and layout in {"recording", "native"}:
             write_json(source.parent / "state.json", {
                 "incoming_action": "ACTION2", "action_data": {"recorded_order": order},
                 "recorded_at": f"2026-01-01T00:00:{order:02}Z",
@@ -73,7 +125,16 @@ def make_sequence(root: Path, *, name="one", count=4, seed=10, ordered=True, lay
                     "level": "7", "moveCount": len(moves), "moveList": moves,
                 },
             })
-    _, units = semantics._units("test", f"data/recordings/{name}")
+    sequence_id = "data/" + sequence.relative_to(root / "data" / "omega_vision").as_posix()
+    if layout == "native" and ordered:
+        write_json(sequence / "recording.json", {
+            "game_id": "fixture-game", "level": "1",
+            "moves": [{"directory": f"{sequence_id}/frame_{order:06}", "level": "1",
+                       "action": "ACTION2" if order else None} for order in range(count)],
+        })
+    _, units = semantics._units("test", sequence_id)
+    if select_memory and ordered:
+        select_native_memory(sequence_id)
     for order, unit in enumerate(units):
         x = 2 + order * motion
         geometry = {"width": 48, "height": 24, "polygons": {}}
@@ -245,11 +306,11 @@ def test_runtime_revision_tracks_object_and_authored_event_implementations(works
 
 def test_runtime_revision_tracks_promoted_rule_lifecycle_without_writes(workspace):
     root, client = workspace
-    unit = make_sequence(root, count=1)[0]
+    origin, unit = make_sequence(root, count=2, select_memory=False)
     initial = semantics.runtime_revision(unit, semantics.EVENTS)
     assert isinstance(initial, str) and semantics.runtime_revision(unit, ("unrelated", "stage")) is None
     assert not (root / "data" / "omega_vision" / "runtime").exists()
-    store = semantics._store(root)
+    store = semantics._store(root, origin)
     candidate = store.create(
         {"body": [{"predicate": "present", "args": [{"var": "Object"}]}],
          "head": {"predicate": "moved", "args": [{"var": "Object"}]}},
@@ -290,7 +351,7 @@ def test_runtime_revision_tracks_promoted_rule_lifecycle_without_writes(workspac
     store.promote(candidate["candidate_id"], gates=semantics.PromotionGates())
     assert semantics.runtime_revision(unit, semantics.EVENTS) not in {initial, promoted}
     rejected = client.post(f"/semantic/candidates/{candidate['candidate_id']}/reject", json={
-        "workspaceId": "test", "reviewer": "revision-test", "reason": "Test activation revision after rejection",
+        **rule_scope(origin), "reviewer": "revision-test", "reason": "Test activation revision after rejection",
     })
     assert rejected.status_code == 200, rejected.text
     assert semantics.runtime_revision(unit, semantics.EVENTS) == initial
@@ -312,20 +373,66 @@ def _promote_registry_fixture(store, candidate):
 
 def test_grouping_registry_publication_ignores_promotions_in_other_families(workspace):
     root, _ = workspace
-    store = semantics._store(root)
+    origin, current = make_sequence(root, count=2, select_memory=False)
+    store = semantics._store(root, current)
     grouping_revision = semantics._registry_revision(store, kinds={"grouping"})
     event_revision = semantics._registry_revision(store, kinds=semantics.EVENT_RULE_KINDS)
-    candidate = store.create(
+    writer = semantics._store(root, origin)
+    candidate = writer.create(
         {"body": [{"predicate": "present", "args": [{"var": "Object"}]}],
          "head": {"predicate": "moved", "args": [{"var": "Object"}]}},
         kind="event_detector", scope={"domain": "visual-sequence"}, source="authored",
         provenance={"code_hash": "unrelated-promotion"}, inducer_version="registry-isolation-test",
     )
-    _promote_registry_fixture(store, candidate)
+    _promote_registry_fixture(writer, candidate)
     assert semantics._registry_revision(store, kinds=semantics.EVENT_RULE_KINDS) != event_revision
     assert semantics._registry_revision(store, kinds={"grouping"}) == grouping_revision
     with semantics._registry_publication(store, grouping_revision):
         pass
+
+
+def test_historical_rules_are_inspectable_but_never_an_unsupported_context_fallback(workspace):
+    from omega_vision.perception.candidate_rules import CandidateRuleStore
+    root, client = workspace
+    unit = make_sequence(root, layout="pool", count=1, select_memory=False)[0]
+    legacy = CandidateRuleStore(root / "data" / "omega_vision")
+    candidate = legacy.create(
+        {"body": [{"predicate": "present", "args": [{"var": "Object"}]}],
+         "head": {"predicate": "moved", "args": [{"var": "Object"}]}},
+        kind="event_detector", scope={"domain": "visual-sequence"}, source="authored",
+        provenance={"code_hash": "historical-fixture"}, inducer_version="legacy-fixture",
+    )
+    _promote_registry_fixture(legacy, candidate)
+    before = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    inventory = client.get("/semantic/candidates", params={"workspaceId": "test", "status": "promoted"})
+    assert inventory.status_code == 200
+    assert inventory.json()["storageStatus"] == "legacy_read_only_migration_required"
+    assert inventory.json()["candidates"][0]["candidate_id"] == candidate["candidate_id"]
+    unavailable = semantics._store(root, unit, require_context=False)
+    assert unavailable.context_unavailable == "unsupported_hierarchy"
+    assert unavailable.list(status="promoted") == []
+    assert unavailable.effective_semantics() == []
+    assert {path: path.read_bytes() for path in root.rglob("*") if path.is_file()} == before
+
+
+def test_rule_evaluation_uses_explicit_current_frame_cutoff_and_rejects_reordered_units(workspace):
+    root, client = workspace
+    units = make_sequence(root, count=3, select_memory=False)
+    store = semantics._store(root, units[0])
+    assert semantics._causal_evaluation_units(store, units) == [units[0]]
+    invalid = [*units[:1], {**units[1], "frameOrder": 0}, units[2]]
+    with pytest.raises(semantics.ValidationError, match="explicit recording manifest"):
+        semantics._causal_evaluation_units(store, invalid)
+    before = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    for suffix, body in (
+        ("promote", {"workspaceId": "test"}),
+        ("reject", {"workspaceId": "test", "reviewer": "test", "reason": "Missing origin"}),
+        ("evaluate", {"workspaceId": "test", "sequences": []}),
+        ("deployment", {**rule_scope(units[1], origin=units[0]), "reviewer": "test", "reason": "Cross-frame"}),
+    ):
+        response = client.post(f"/semantic/candidates/missing/{suffix}", json=body)
+        assert response.status_code == 422
+    assert {path: path.read_bytes() for path in root.rglob("*") if path.is_file()} == before
 
 
 @pytest.mark.parametrize("promoted", [False, True])
@@ -334,7 +441,7 @@ def test_only_effective_registry_change_rebuilds_real_prefix(workspace, monkeypa
     root, _ = workspace
     units = make_sequence(root, count=3)
     run_core(units)
-    store = semantics._store(root)
+    store = semantics._store(root, units[-2])
     candidate = store.create(
         {"body": [{"predicate": "present", "args": [{"var": "Object"}]}],
          "head": {"predicate": "moved", "args": [{"var": "Object"}]}},
@@ -353,7 +460,7 @@ def test_only_effective_registry_change_rebuilds_real_prefix(workspace, monkeypa
     monkeypatch.setattr(event_deduction, "deduce_sequence", replay)
     summary, result = invoke(units[-1], semantics.EVENTS)
     assert calls == ([[semantics._frame(unit).uid for unit in units]] if promoted else [])
-    revision = semantics._registry_revision(store, kinds=semantics.EVENT_RULE_KINDS)
+    revision = semantics._registry_revision(semantics._store(root, units[-1]), kinds=semantics.EVENT_RULE_KINDS)
     assert result["registryRevision"] == summary["registryRevision"] == revision
     assert result["assessment"]["provenance"]["candidate_registry"] == revision
     before = semantics._event_log(root, units[0]["sequenceId"]).read()
@@ -377,7 +484,7 @@ def test_registry_race_only_blocks_effective_semantic_changes(workspace, monkeyp
 
     def concurrent_change(*args, **kwargs):
         result = original(*args, **kwargs)
-        store = semantics._store(root)
+        store = semantics._store(root, units[0])
         candidate = store.create(
             {"body": [{"predicate": "present", "args": [{"var": "Object"}]}],
              "head": {"predicate": "moved", "args": [{"var": "Object"}]}},
@@ -438,7 +545,10 @@ def test_actual_unit_layouts_temporal_objects_and_event_replay(workspace, layout
     if layout == "recording":
         assert units[0]["dir"] == root / "data" / "omega_vision" / "recordings" / "one" / "transforms" / "image"
         assert units[1]["dir"] == root / "data" / "omega_vision" / "recordings" / "one" / "0"
-    run_core(units, grouping=True)
+    run_core(units)
+    from omega_vision.perception.contextual_memory import ContextUnavailable
+    with pytest.raises(ContextUnavailable, match="canonical game/recording"):
+        invoke(units[0], semantics.GROUPING)
     first = semantics._result(units[0], semantics.TEMPORAL)
     assert first["assessment"] == "initial_observation" and "pairUid" not in first
     pair = semantics._result(units[1], semantics.TEMPORAL)
@@ -469,8 +579,7 @@ def test_actual_unit_layouts_temporal_objects_and_event_replay(workspace, layout
     assert episodes.status_code == 200
     replay = client.post("/semantic/events/replay", json={"workspaceId": "test", "sequenceId": units[0]["sequenceId"]})
     assert replay.status_code == 200 and replay.json()["generation"] == log["generation"]
-    assert semantics._store(root).list(kind="grouping")
-    assert all(not candidate["evidence"] for candidate in semantics._store(root).list(kind="grouping"))
+    assert not list(root.rglob("induced_rules.metta"))
 
 
 def test_unordered_inputs_never_fabricate_adjacency(workspace, monkeypatch):
@@ -498,6 +607,7 @@ def test_imported_arc_provenance_supplies_real_actions_timestamps_and_memory_con
     assert setup.json()["catalog"]["context"]["gameId"] == "actual-game-v7"
     assert setup.json()["catalog"]["context"]["levelId"] == "7"
     assert setup.json()["catalog"]["context"]["runId"] == recording
+    select_native_memory(units[0]["sequenceId"])
     run_core(units)
     log = semantics._event_log(root, units[0]["sequenceId"]).read()
     actions = [entry for entry in log["entries"] if entry["kind"] == "user_action"]
@@ -782,46 +892,53 @@ def test_event_candidate_induction_evaluation_promotion_and_rejection(workspace)
     held = make_sequence(root, name="held", seed=20)
     run_core(train)
     run_core(held)
-    _, proposals = invoke(train[-1], semantics.INDUCTION)
+    origin = train[-2]
+    _, proposals = invoke(origin, semantics.INDUCTION)
     assert proposals["candidateIds"]
-    store = semantics._store(root)
+    store = semantics._store(root, origin)
     detector = next(item for item in store.list(kind="event_detector")
                     if item["rule"]["head"]["predicate"] == "moved"
                     and any(atom["predicate"] == "displacement_magnitude" for atom in item["rule"]["body"]))
     candidate_id = detector["candidate_id"]
     path = f"/semantic/candidates/{candidate_id}"
-    rejected = client.post(path + "/promote", json={"workspaceId": "test"})
+    scope = rule_scope(origin)
+    rejected = client.post(path + "/promote", json=scope)
     assert rejected.status_code == 422 and "promotion blocked" in rejected.text
     overlap = client.post(path + "/evaluate", json={
-        "workspaceId": "test", "sequences": [{"sequenceId": train[0]["sequenceId"], "partition": "held_out"}],
+        **scope, "sequences": [{"sequenceId": train[0]["sequenceId"], "partition": "held_out"}],
     })
     assert overlap.status_code == 422 and "overlaps" in overlap.text
     evaluated = client.post(path + "/evaluate", json={
-        "workspaceId": "test", "sequences": [
+        **scope, "sequences": [
             {"sequenceId": train[0]["sequenceId"], "partition": "train"},
             {"sequenceId": held[0]["sequenceId"], "partition": "held_out"},
         ],
     })
     assert evaluated.status_code == 200, evaluated.text
-    promoted = client.post(path + "/promote", json={"workspaceId": "test"})
+    promoted = client.post(path + "/promote", json=scope)
     assert promoted.status_code == 200, promoted.text
     assert promoted.json()["requiresReplay"]
-    assert (root / "data" / "omega_vision" / "design" / "event-rules" / f"{candidate_id}.json").is_file()
-    # Typed promoted rules are replayed in the real deduction adapter.
+    assert (store.context.stm_area() / "deduction_rules.metta").is_file()
+    assert not (root / "data" / "omega_vision" / "design" / "event-rules").exists()
+    # Promotion is strictly subsequent-frame and local to this recording's level STM.
     _, replay = invoke(held[1], semantics.EVENTS)
+    assert candidate_id not in replay["learned_rule_replay"]["accepted_detectors"]
+    _, replay = invoke(origin, semantics.EVENTS)
+    assert candidate_id not in replay["learned_rule_replay"]["accepted_detectors"]
+    _, replay = invoke(train[-1], semantics.EVENTS)
     assert candidate_id in replay["learned_rule_replay"]["accepted_detectors"]
-    evidence = client.get(path + "/evidence", params={"workspaceId": "test"})
+    evidence = client.get(path + "/evidence", params=scope)
     assert evidence.status_code == 200 and evidence.json()["evidence"]
-    rejected = client.post(path + "/reject", json={"workspaceId": "test", "reviewer": "tester", "reason": "withdraw"})
+    rejected = client.post(path + "/reject", json={**scope, "reviewer": "tester", "reason": "withdraw"})
     assert rejected.status_code == 200 and rejected.json()["status"] == "rejected"
-    _, replay = invoke(held[1], semantics.EVENTS)
+    _, replay = invoke(train[-1], semantics.EVENTS)
     assert candidate_id not in replay["learned_rule_replay"]["accepted_detectors"]
 
 
 def test_memory_setup_explicit_refresh_rebuilds_metadata_without_saving_preferences(workspace, monkeypatch):
     from omega_vision.perception.memory_locations import MemoryLocations
     root, client = workspace
-    units = make_sequence(root, count=1)
+    units = make_sequence(root, count=1, select_memory=False)
     calls = []
     original = MemoryLocations._discovered
 
@@ -862,14 +979,14 @@ def test_memory_contract_independent_destinations_and_browser_volatile(workspace
         **body, "preferences": result["preferences"], "expectedRevision": result["preferences"]["revision"],
     })
     assert conflict.status_code == 409
-    before = {str(path) for path in root.rglob("*.memory.json")}
+    before = {path: path.read_bytes() for path in root.rglob("*_db.metta")}
     payload = {"uid": "shape-original", "name": "real user-authored shape"}
     volatile = client.post("/semantic/memory/save", json={
         **body, "memorySessionId": "browser-page-test", "memorySnapshot": None,
         "kind": "shape", "destinationId": NOWHERE, "payload": payload,
     })
     assert volatile.status_code == 200 and volatile.json()["volatile"] is True
-    assert {str(path) for path in root.rglob("*.memory.json")} == before
+    assert {path: path.read_bytes() for path in root.rglob("*_db.metta")} == before
     loaded = client.post("/semantic/memory/read", json={
         **body, "memorySessionId": "browser-page-test", "memorySnapshot": volatile.json()["memorySnapshot"],
         "kind": "shape", "locationIds": [NOWHERE],
@@ -881,7 +998,8 @@ def test_memory_contract_independent_destinations_and_browser_volatile(workspace
                     if item["memoryKinds"] == ["shape"] and item["capabilities"]["write"])
     disk = client.post("/semantic/memory/save", json={**body, "kind": "shape", "destinationId": location, "payload": payload})
     assert disk.status_code == 200, disk.text
-    assert list(root.rglob("*.memory.json"))
+    assert native_records(root)[0]["payload"] == payload
+    assert not list(root.rglob("*.memory.json"))
     copied = client.post("/semantic/memory/copy", json={
         **body, "memorySessionId": "browser-page-test", "memorySnapshot": None,
         "kind": "shape", "sourceLocationId": location,
@@ -942,7 +1060,8 @@ def test_memory_sessions_require_browser_snapshot_without_server_or_disk_retenti
     assert next(item for item in counts if item["memoryLocationId"] == NOWHERE)["counts"]["shape"] == 1
     assert not list(root.rglob("*.memory.json"))
     assert not list((root / "data" / "omega_vision" / "runtime").glob("*checkpoints*"))
-    destination = setup.json()["preferences"]["shape"]["saveTo"]
+    destination = next(item["memoryLocationId"] for item in setup.json()["catalog"]["destinations"]
+                       if item.get("format") == "memory_metta" and item["memoryKinds"] == ["shape"])
     blocked_copy = client.post("/semantic/memory/copy", json={
         **b, "memorySnapshot": None, "kind": "shape", "sourceLocationId": NOWHERE,
         "recordUid": record["recordUid"], "destinationId": destination,
@@ -954,7 +1073,8 @@ def test_memory_sessions_require_browser_snapshot_without_server_or_disk_retenti
     })
     assert copied.status_code == 200, copied.text
     assert copied.json()["record"]["origin"]["recordUid"] == record["recordUid"]
-    assert list(root.rglob("*.memory.json"))
+    assert list(root.rglob("shapes_db.metta"))
+    assert not list(root.rglob("*.memory.json"))
     reset = client.post("/semantic/memory/reset", json=a)
     assert reset.status_code == 200 and reset.json()["requiresNewSession"] is True
     assert reset.headers["cache-control"] == "no-store"
@@ -985,13 +1105,15 @@ def _nowhere_consumer_memory(*sequences):
     return state
 
 
-def _assert_consumer_receipts_only(root, state):
+def _assert_consumer_receipts_only(root, state, preserved=None):
     forbidden = []
     for output in state.outputs.values():
         forbidden.extend(json.dumps(value, sort_keys=True) for value in (
             output["result"], output["result"]["checkpoint"],
         ))
     for path in root.rglob("*.json"):
+        if preserved and preserved.get(path) == path.read_bytes():
+            continue
         encoded = json.dumps(json.loads(path.read_text(encoding="utf-8")), sort_keys=True)
         assert '"memorySnapshot"' not in encoded and '"snapshotUid"' not in encoded, path
         assert all(contents not in encoded for contents in forbidden), path
@@ -1009,7 +1131,7 @@ def test_nowhere_replay_and_event_evaluation_require_browser_owned_sealed_result
     run_core(train)
     run_core(held)
     invoke(train[-1], semantics.INDUCTION)
-    detector = next(item for item in semantics._store(root).list(kind="event_detector")
+    detector = next(item for item in semantics._store(root, train[-1]).list(kind="event_detector")
                     if item["rule"]["head"]["predicate"] == "moved")
     snapshot = state.to_wire()
     transport = {"memorySessionId": state.session_id, "memorySnapshot": snapshot}
@@ -1033,7 +1155,7 @@ def test_nowhere_replay_and_event_evaluation_require_browser_owned_sealed_result
     actions = [
         ("/semantic/events/replay", {"workspaceId": "test", "sequenceId": held[0]["sequenceId"]}),
         (f"/semantic/candidates/{detector['candidate_id']}/evaluate", {
-            "workspaceId": "test", "sequences": [
+            **rule_scope(train[-1]), "sequences": [
                 {"sequenceId": train[0]["sequenceId"], "partition": "train"},
                 {"sequenceId": held[0]["sequenceId"], "partition": "held_out"},
             ],
@@ -1076,9 +1198,14 @@ def test_nowhere_grouping_evaluation_and_distinct_deployment_consume_browser_che
     root, client = workspace
     train = make_sequence(root, name="consumer-group-train", seed=31, count=1)
     held = make_sequence(root, name="consumer-group-held", seed=61, count=1)
+    # The review concerns an explicitly saved proposal; later Nowhere runs must
+    # supply their checkpoint without creating a second persistent proposal.
+    invoke(train[0], semantics.GROUPING)
+    parent = semantics._store(root, train[0]).list(kind="grouping")[0]
+    preserved = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
     state = _nowhere_consumer_memory(train, held)
     invoke(train[0], semantics.GROUPING)
-    parent = semantics._store(root).list(kind="grouping")[0]
+    assert semantics._store(root, train[0]).get(parent["candidate_id"]) == parent
     checkpoint = semantics._result(train[0], semantics.GROUPING)["checkpoint"]
     anchor_uid = parent["rule"]["head"]["args"][1]
     anchor = next(item for item in checkpoint["anchors"] if item["uid"] == anchor_uid)
@@ -1089,14 +1216,13 @@ def test_nowhere_grouping_evaluation_and_distinct_deployment_consume_browser_che
     path = f"/semantic/candidates/{parent['candidate_id']}"
     actions = [
         (path + "/evaluate", {
-            "workspaceId": "test", "trainingSequenceId": train[0]["sequenceId"],
-            "sequenceId": held[0]["sequenceId"], "partition": "held_out",
+            **rule_scope(train[0]), "evaluationSequenceId": held[0]["sequenceId"], "partition": "held_out",
             "labels": [{"frameUid": frame.uid, "groupUid": group.uid, "anchorUid": anchor_uid,
                         "expectedTemplateMatch": True, "reviewer": "independent reviewer",
                         "reason": "Inspected original held-out producer masks"}],
         }),
         (path + "/deployment", {
-            "workspaceId": "test", "trainingSequenceId": train[0]["sequenceId"],
+            **rule_scope(train[0]),
             "reviewer": "independent reviewer", "reason": "Create a separately evaluated deployment",
         }),
     ]
@@ -1117,7 +1243,7 @@ def test_nowhere_grouping_evaluation_and_distinct_deployment_consume_browser_che
         blocked = client.post(url, json={**body, "memorySessionId": state.session_id})
         assert blocked.status_code == 409, blocked.text
     assert state.to_wire() == snapshot
-    _assert_consumer_receipts_only(root, state)
+    _assert_consumer_receipts_only(root, state, preserved)
 
 
 def test_generated_nowhere_memory_is_not_a_persistent_object_or_grouping_cache(workspace):
@@ -1159,7 +1285,9 @@ def test_generated_nowhere_memory_is_not_a_persistent_object_or_grouping_cache(w
             assert set(receipt) == {"schemaVersion", "storage", "resultHash", "checkpointHash"}
             assert receipt["storage"] == "browser_session"
             assert "persistent_object(" not in semantics._artifact(unit, step, "result.pl").read_text()
-    assert semantics._store(root).list(kind="grouping")
+    assert not semantics._store(root).list(kind="grouping")
+    assert not list(root.rglob("induced_rules.metta"))
+    assert any(output["result"].get("volatileProposals") for output in state.outputs.values())
     snapshot = state.to_wire()
     objects = client.post("/semantic/memory/read", json={
         **body, "memorySnapshot": snapshot, "kind": "object", "locationIds": [NOWHERE],
@@ -1208,7 +1336,8 @@ def test_pooler_cannot_borrow_even_an_existing_api_memory_lease(workspace, stage
     assert not hasattr(semantics, "_MEMORY_LEASES")
     locations.save_preferences(context, original, expected_revision=changed["revision"])
     invoke(unit, stage)
-    assert list(root.rglob("*.memory.json"))
+    assert native_records(root)
+    assert not list(root.rglob("*.memory.json"))
 
 
 @pytest.mark.parametrize(("shape_nowhere", "object_nowhere"), [(True, False), (False, True), (True, True), (False, False)])
@@ -1240,7 +1369,8 @@ def test_independent_destinations_and_request_roundtrip_never_spill_nowhere_chec
         if object_nowhere:
             for path in Path(unit["dir"]).rglob("*.json"):
                 assert '"memberTrackUids"' not in path.read_text(), path
-    persisted = [json.loads(path.read_text()) for path in root.rglob("*.memory.json")]
+    persisted = native_records(root)
+    assert not list(root.rglob("*.memory.json"))
     assert {item["memoryKind"] for item in persisted} == {
         kind for kind, nowhere in (("shape", shape_nowhere), ("object", object_nowhere)) if not nowhere
     }
@@ -1281,7 +1411,7 @@ def test_generated_shape_and_object_destinations_stay_independent(workspace):
     preferences = deepcopy(setup["preferences"])
     preferences["shape"]["saveTo"] = next(
         item["memoryLocationId"] for item in setup["catalog"]["destinations"]
-        if item["scopeKind"] == "global" and item["memoryKinds"] == ["shape"]
+        if item["scopeKind"] == "global" and item["memoryKinds"] == ["shape"] and item["format"] == "memory_metta"
     )
     response = client.put("/semantic/memory/preferences", json={
         **body, "preferences": preferences, "expectedRevision": setup["preferences"]["revision"],
@@ -1309,6 +1439,195 @@ def test_generated_shape_and_object_destinations_stay_independent(workspace):
     assert not (root / "data" / "omega_vision" / "runtime" / "object-checkpoints").exists()
 
 
+@pytest.mark.parametrize("stage", [semantics.OBJECTS, semantics.GROUPING])
+def test_multilevel_direct_execution_retains_actual_frame_nowhere_preferences(workspace, monkeypatch, stage):
+    from omega_vision.perception.memory_locations import BrowserMemory, NOWHERE
+    root, _ = workspace
+    units = multilevel_sequence(root)
+    sequence_id = units[0]["sequenceId"]
+    # A valid unrelated None-level selection must not mask later-frame Nowhere.
+    select_native_memory(sequence_id)
+    selected = {}
+    for unit in (units[0], units[2]):
+        locations, context = semantics._memory("test", sequence_id, frame_id=unit["id"])
+        preferences = locations.load_preferences(context)
+        for kind in ("shape", "object"):
+            preferences[kind]["saveTo"] = (NOWHERE if context.level_id == "2" else next(
+                item["memoryLocationId"] for item in locations.catalog(context)["destinations"]
+                if item["format"] == "memory_metta" and item["memoryKinds"] == [kind]
+                and item["registeredPath"] == "memory_inherited"
+            ))
+            preferences[kind]["lookIn"] = [NOWHERE] if context.level_id == "2" else []
+        locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
+        selected[context.level_id] = (locations, context)
+    preferences_before = {path: path.read_bytes() for path in
+                          (root / "data" / "omega_vision" / "runtime" / "memory-settings").glob("*.json")}
+    state = BrowserMemory("test", "multilevel-direct-browser")
+    locations, context = selected["2"]
+    locations.save_record("shape", NOWHERE, {"uid": "page-ram-sentinel"}, context, volatile=state.memory)
+    for unit in units:
+        invoke(unit, semantics.TEMPORAL)
+    transformation, doer = stage.split("/")
+    monkeypatch.setattr(api, "_direct_jobs", {})
+    monkeypatch.setattr(api, "_direct_specs", lambda _: {
+        stage: {"transformation": transformation, "doer": doer, "dependsOn": [], "options": {}},
+    })
+    initialized, executed = [], []
+    initialize = api._persist_execution_memory_defaults
+
+    def track_initialization(unit, steps):
+        initialized.append(unit["id"])
+        memory = semantics._memory
+
+        def frame_memory(workspace_id, sequence_id, frame_id=None):
+            assert frame_id == unit["id"]
+            return memory(workspace_id, sequence_id, frame_id)
+
+        with monkeypatch.context() as scoped:
+            scoped.setattr(semantics, "_memory", frame_memory)
+            initialize(unit, steps)
+
+    def run(unit, transformation, doer, options, **kwargs):
+        locations, current = semantics._memory("test", sequence_id, frame_id=unit["id"])
+        preferences = locations.load_preferences(current)
+        assert unit.get("_browserMemory") is not None
+        assert preferences["shape"]["saveTo"] == (NOWHERE if current.level_id == "2"
+                                                 else selected["1"][0].load_preferences(selected["1"][1])["shape"]["saveTo"])
+        out = api._unit_output_path(unit, transformation, doer)
+        out.mkdir(parents=True, exist_ok=True)
+        runner = semantics.run_objects if stage == semantics.OBJECTS else semantics.run_grouping
+        stats = runner(unit, out, options)
+        executed.append((unit["id"], current.level_id))
+        return {"step": stage, "status": "written", "stats": stats}
+
+    monkeypatch.setattr(api, "_persist_execution_memory_defaults", track_initialization)
+    monkeypatch.setattr(api, "run_transform_step", run)
+    app = FastAPI()
+    app.include_router(api.router)
+    client = TestClient(app)
+    body = {"workspaceId": "test", "sequenceId": sequence_id, "composite": stage}
+    denied = client.post("/video-import/direct-calls", json=body)
+    assert denied.status_code == 409 and "Nowhere" in denied.text
+    assert not api._direct_jobs and not initialized
+    response = client.post("/video-import/direct-calls", json={
+        **body, "memorySessionId": state.session_id, "memorySnapshot": state.to_wire(),
+    })
+    assert response.status_code == 200 and "application/x-ndjson" in response.headers["content-type"]
+    result = json.loads(response.text.splitlines()[-1])
+    assert result["state"] == "done", result.get("error")
+    assert initialized == [unit["id"] for unit in units]
+    assert executed == [(unit["id"], "1" if index < 2 else "2") for index, unit in enumerate(units)]
+    restored = BrowserMemory("test", state.session_id, result["memorySnapshot"])
+    records = locations.read_selected("shape", [NOWHERE], context, volatile=restored.memory)["records"]
+    assert any(item["preferred"]["payload"]["uid"] == "page-ram-sentinel" for item in records)
+    assert all(record["causal"]["levelId"] == "1" for record in native_records(root))
+    assert {path: path.read_bytes() for path in
+            (root / "data" / "omega_vision" / "runtime" / "memory-settings").glob("*.json")} == preferences_before
+    for path in root.rglob("*"):
+        if path.is_file() and path.suffix in {".json", ".jsonl", ".metta"}:
+            assert "page-ram-sentinel" not in path.read_text(encoding="utf-8"), path
+    assert all("memorySnapshot" not in job for job in api._direct_jobs.values())
+    with pytest.raises(__import__("fastapi").HTTPException, match="Nowhere"):
+        api._ensure_queue_memory_destinations(units[2], [stage])
+    api._ensure_queue_memory_destinations(units[0], [stage])
+
+
+@pytest.mark.parametrize("route", ["semantic_commit", "sequence_transform"])
+def test_multilevel_queue_checks_every_frame_before_preference_or_todo_writes(workspace, monkeypatch, route):
+    from fastapi import HTTPException
+    from omega_vision.perception.memory_locations import NOWHERE
+    root, _ = workspace
+    units = multilevel_sequence(root)
+    sequence_id = units[0]["sequenceId"]
+    locations, context = semantics._memory("test", sequence_id, frame_id=units[2]["id"])
+    preferences = locations.load_preferences(context)
+    for kind in ("shape", "object"):
+        preferences[kind].update(saveTo=NOWHERE, lookIn=[])
+    locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
+    first_locations, first_context = semantics._memory("test", sequence_id, frame_id=units[0]["id"])
+    first_locations.load_preferences(first_context)
+    assert not first_locations._preference_path(first_context)[1].exists()
+    before = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    monkeypatch.setattr(api, "_materialize_preprocessed_image",
+                        lambda *args, **kwargs: pytest.fail("Queue must reject before materializing images"))
+    monkeypatch.setattr(api, "_pooler_point_at", lambda *args: pytest.fail("Must not retarget any pooler"))
+    if route == "semantic_commit":
+        raw = {"steps": [{"frameId": unit["id"], "output": semantics.OBJECTS} for unit in units]}
+        monkeypatch.setattr(api, "semantic_execution_plan", lambda body: {
+            "blockedReasons": [], "confirmationKey": "fixture-plan", "raw": raw,
+        })
+        call = lambda: api.semantic_execution_commit({
+            "workspaceId": "test", "sequenceId": sequence_id,
+            "confirmed": True, "confirmationKey": "fixture-plan", "run": False,
+        })
+    else:
+        transformation, doer = semantics.OBJECTS.split("/")
+        call = lambda: api.sequence_set_transform({
+            "workspaceId": "test", "recording": sequence_id,
+            "transformation": transformation, "doer": doer,
+        })
+    with pytest.raises(HTTPException, match="Nowhere") as error:
+        call()
+    assert error.value.status_code == 409
+    assert {path: path.read_bytes() for path in root.rglob("*") if path.is_file()} == before
+    assert not list(root.rglob("todos.json"))
+
+
+@pytest.mark.parametrize("kind", ["shape", "object"])
+def test_memory_copy_requires_explicit_scope_and_preserves_causal_exact_source(workspace, kind):
+    from omega_vision.perception.contextual_memory import ContextualMemory
+    root, client = workspace
+    units = multilevel_sequence(root)
+    home = root / "data" / "omega_vision"
+    native = ContextualMemory(root, "test", mount=semantics.authorized_memory_roots("test")[0])
+    contexts = [semantics._inspection_context(root, unit["sequenceId"], unit["id"]) for unit in units]
+    source = native.save(home / "memory_inherited", kind, {"uid": "copy-origin"})
+    targets = [native.descriptor(contexts[2].frame_area(), kind, contexts[2]),
+               native.descriptor(contexts[2].stm_area(), kind, contexts[2])]
+    body = {"workspaceId": "test", "sequenceId": units[2]["sequenceId"], "kind": kind,
+            "sourceLocationId": source["source"]["memoryLocationId"], "recordUid": source["recordUid"]}
+    before = {path: path.read_bytes() for path in home.rglob("*.metta")}
+    for target in targets:
+        for frame in (None, "missing-frame", units[0]["id"]):
+            request = {**body, "destinationId": target["memoryLocationId"]}
+            if frame is not None:
+                request["frameId"] = frame
+            response = client.post("/semantic/memory/copy", json=request)
+            assert response.status_code in {403, 404, 422}
+    assert {path: path.read_bytes() for path in home.rglob("*.metta")} == before
+    copied = []
+    for target in targets:
+        response = client.post("/semantic/memory/copy", json={
+            **body, "frameId": units[2]["id"], "destinationId": target["memoryLocationId"],
+        })
+        assert response.status_code == 200, response.text
+        record = response.json()["record"]
+        assert record["origin"]["recordUid"] == source["recordUid"]
+        assert record["origin"]["revision"] == source["revision"]
+        assert all(record["origin"]["source"][key] == value for key, value in source["source"].items())
+        assert record["causal"] == contexts[2].causal
+        copied.append(record)
+    stm = copied[1]
+    global_target = source["source"]["memoryLocationId"]
+    copy_stm = {**body, "sourceLocationId": stm["source"]["memoryLocationId"],
+                "recordUid": stm["recordUid"], "destinationId": global_target}
+    after = {path: path.read_bytes() for path in home.rglob("*.metta")}
+    for frame in (None, "missing-frame", units[0]["id"], units[2]["id"]):
+        request = {**copy_stm}
+        if frame is not None:
+            request["frameId"] = frame
+        response = client.post("/semantic/memory/copy", json=request)
+        assert response.status_code in {403, 404, 422}
+    assert {path: path.read_bytes() for path in home.rglob("*.metta")} == after
+    response = client.post("/semantic/memory/copy", json={**copy_stm, "frameId": units[3]["id"]})
+    assert response.status_code == 200, response.text
+    assert response.json()["record"]["origin"]["recordUid"] == stm["recordUid"]
+    assert response.json()["record"]["origin"]["revision"] == stm["revision"]
+    assert (contexts[2].frame_area() / f"{kind}s_db.metta").is_file()
+    assert (contexts[2].stm_area() / f"{kind}s_db.metta").is_file()
+    assert not (contexts[0].stm_area() / f"{kind}s_db.metta").exists()
+
+
 def test_real_opencv_prolog_observation_outputs_feed_semantic_stages(workspace, monkeypatch):
     root, _ = workspace
     sequence = root / "data" / "omega_vision" / "recordings" / "actual-extractor"
@@ -1319,6 +1638,7 @@ def test_real_opencv_prolog_observation_outputs_feed_semantic_stages(workspace, 
         ImageDraw.Draw(image).rectangle((4 + index * 2, 5, 10 + index * 2, 15), fill="yellow")
         image.save(directory / "image.png")
     _, units = semantics._units("test", "data/recordings/actual-extractor")
+    select_native_memory(units[0]["sequenceId"])
     write_json(sequence / "preprocessing_chain.json", {
         "steps": [{"stepId": "scale", "entryId": "scale_3x_nearest", "params": {}}],
     })
@@ -1350,37 +1670,39 @@ def test_real_opencv_prolog_observation_outputs_feed_semantic_stages(workspace, 
 def test_grouping_review_replays_actual_held_out_masks_before_promotion(workspace, monkeypatch):
     from dataclasses import replace
     root, client = workspace
-    train = make_sequence(root, name="group-train", seed=30, count=2)
+    train = make_sequence(root, name="group-train", seed=30, count=3)
     held = make_sequence(root, name="group-held", seed=60, count=2)
     for units in (train, held):
         locations, context = semantics._memory("test", units[0]["sequenceId"])
         preferences = locations.load_preferences(context)
         destination = next(item["memoryLocationId"] for item in locations.catalog(context)["destinations"]
-                           if item["scopeKind"] == "global" and item["memoryKinds"] == ["shape"])
+                           if item["scopeKind"] == "global" and item["memoryKinds"] == ["shape"]
+                           and item["format"] == "memory_metta")
         preferences["shape"]["saveTo"] = destination
-        preferences["shape"]["lookIn"] = [destination]
+        preferences["shape"]["lookIn"] = [] if units is train else [destination]
         locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
     for units in (train, held):
         for unit in units:
             invoke(unit, semantics.TEMPORAL)
-            if units is train:
+            if units is train and unit is train[0]:
                 invoke(unit, semantics.GROUPING)
-    store = semantics._store(root)
+    look_in_saved_shapes(train[0]["sequenceId"])
+    store = semantics._store(root, train[0])
+    scope = rule_scope(train[0])
     candidate = store.list(kind="grouping")[0]
-    checkpoint = semantics._result(train[-1], semantics.GROUPING)["checkpoint"]
+    checkpoint = semantics._result(train[0], semantics.GROUPING)["checkpoint"]
     anchor_uid = candidate["rule"]["head"]["args"][1]
     anchor = next(item for item in checkpoint["anchors"] if item["uid"] == anchor_uid)
     path = f"/semantic/candidates/{candidate['candidate_id']}"
     _, before = invoke(held[0], semantics.GROUPING)
     assert before["templateInference"]["applications"] == []
-    assert before["persistedCandidates"] == [] and before["deferredCandidates"]
+    assert before["persistedCandidates"]
     assert store.get(candidate["candidate_id"]) == candidate
     for partition, units in (("train", train), ("held_out", held)):
         frame = semantics._frame(units[0])
         group = next(group for group in frame.groups if len(group.points) == len(anchor["canonicalPoints"]))
         response = client.post(path + "/evaluate", json={
-            "workspaceId": "test", "trainingSequenceId": train[0]["sequenceId"],
-            "sequenceId": units[0]["sequenceId"], "partition": partition,
+            **scope, "evaluationSequenceId": units[0]["sequenceId"], "partition": partition,
             "labels": [{"frameUid": frame.uid, "groupUid": group.uid, "anchorUid": anchor_uid,
                         "expectedTemplateMatch": True, "reviewer": "test reviewer",
                         "reason": "Inspected original pixels and independently matched the frozen template"}],
@@ -1388,7 +1710,7 @@ def test_grouping_review_replays_actual_held_out_masks_before_promotion(workspac
         assert response.status_code == 200, response.text
         assert response.json()["observations"][0]["outcome"] == "support"
     previous_revision = semantics.runtime_revision(train[-1], semantics.GROUPING)
-    result = client.post(path + "/promote", json={"workspaceId": "test"})
+    result = client.post(path + "/promote", json=scope)
     assert result.status_code == 200, result.text
     assert result.json()["promotion"]["status"] == "promoted"
     assert semantics.runtime_revision(train[-1], semantics.GROUPING) != previous_revision
@@ -1397,93 +1719,110 @@ def test_grouping_review_replays_actual_held_out_masks_before_promotion(workspac
     execution_revision = semantics.runtime_revision(held[0], semantics.GROUPING)
     summary, after = invoke(held[0], semantics.GROUPING)
     assert after["registryRevision"]["kinds"] == ["grouping"]
-    applied = [row for row in after["templateInference"]["applications"] if row["status"] == "applied"]
-    assert summary["appliedTemplateCount"] == 1 and len(applied) == 1
+    assert summary["appliedTemplateCount"] == 0 and after["templateInference"]["applications"] == []
+    locations, context = semantics._memory("test", held[0]["sequenceId"])
+    selected = locations.read_selected("shape", [destination], context)
+    proof = semantics._apply_grouping_templates(
+        held[0], semantics._frame(held[0]), [frozen], selected["records"], memory_context=context,
+    )
+    applied = [row for row in proof["applications"] if row["status"] == "applied"]
+    assert len(applied) == 1
     assert applied[0]["candidateId"] == candidate["candidate_id"]
     assert applied[0]["anchorReferences"] and applied[0]["prototypeReferences"]
     assert applied[0]["evidenceIds"] and applied[0]["dependsOnCandidates"] == [candidate["candidate_id"]]
     assert applied[0]["dependsOnPrototypes"] and applied[0]["ruleEngineVersion"]
     assert any(term["predicate"] == "independent_group_support" for term in applied[0]["facts"])
-    assert any(row["appliedTemplates"] for row in after["observations"])
-    assert "grouping_template_candidate(" in semantics._artifact(held[0], semantics.GROUPING, "result.pl").read_text()
+    assert not any(row["appliedTemplates"] for row in after["observations"])
+    assert "grouping_template_candidate(" not in semantics._artifact(held[0], semantics.GROUPING, "result.pl").read_text()
     assert store.get(candidate["candidate_id"]) == frozen
     assert semantics.runtime_revision(held[0], semantics.GROUPING) == execution_revision
-    summary, unreviewed = invoke(held[1], semantics.GROUPING)
+    summary, unreviewed = invoke(train[1], semantics.GROUPING)
     assert summary["appliedTemplateCount"] == 0
     assert any(row["status"] == "independent_evidence_required" for row in unreviewed["templateInference"]["applications"])
     assert all(row["status"] in {"independent_evidence_required", "no_match"}
                for row in unreviewed["templateInference"]["applications"])
     assert all(not row["evidenceIds"] for row in unreviewed["templateInference"]["applications"])
     assert store.get(candidate["candidate_id"]) == frozen
-    locations, context = semantics._memory("test", held[0]["sequenceId"])
-    selected = locations.read_selected("shape", [destination], context)
     other_provider = replace(semantics._frame(held[0]), provider_id="filesystem:another-provider")
     assert semantics._apply_grouping_templates(
         held[0], other_provider, [frozen], selected["records"], memory_context=context,
     ) == {"applications": [], "unavailable": []}
+    locations, context = semantics._memory("test", train[1]["sequenceId"], frame_id=train[1]["id"])
     preferences = locations.load_preferences(context)
     preferences["shape"]["lookIn"] = []
     locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
-    summary, unavailable = invoke(held[0], semantics.GROUPING)
+    summary, unavailable = invoke(train[1], semantics.GROUPING)
     assert summary["appliedTemplateCount"] == 0 and summary["unavailableTemplateCount"] == 1
     assert unavailable["templateInference"]["unavailable"][0]["reason"] == \
         "select_saved_training_anchor_and_prototype_in_shape_look_in"
     assert store.get(candidate["candidate_id"]) == frozen
     lookup = next(item["memoryLocationId"] for item in locations.catalog(context)["destinations"]
-                  if item["scopeKind"] == "level" and item["memoryKinds"] == ["shape"])
+                  if item["format"] == "memory_metta" and item["memoryKinds"] == ["shape"]
+                  and item["registeredPath"].endswith("_stm"))
     preferences = locations.load_preferences(context)
     preferences["shape"]["lookIn"] = [lookup]
     locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
-    missing_revision = semantics.runtime_revision(held[0], semantics.GROUPING)
+    missing_revision = semantics.runtime_revision(train[1], semantics.GROUPING)
     training_prototypes = {uid for item in frozen["proposals"] for uid in item["provenance"]["prototypeUids"]}
+    training_frames = {uid for item in frozen["proposals"]
+                       for uid in item["provenance"]["groupingTraining"]["frameUids"]}
     for item in selected["records"]:
-        record = item["preferred"]
-        if record["payload"].get("uid") in {anchor_uid, *training_prototypes}:
-            locations.save_copy(record, lookup, context)
-    assert semantics.runtime_revision(held[0], semantics.GROUPING) != missing_revision
-    summary, copied = invoke(held[0], semantics.GROUPING)
-    assert summary["appliedTemplateCount"] == 1
+        for record in item["versions"]:
+            payload = record["payload"]
+            if (payload.get("uid") in {anchor_uid, *training_prototypes}
+                    and {revision["frameUid"] for revision in payload.get("revisions", [])} <= training_frames):
+                locations.save_copy(record, lookup, context)
+    assert semantics.runtime_revision(train[1], semantics.GROUPING) != missing_revision
+    assert locations.read_selected("shape", [lookup], context)["records"] == []
+    summary, copied = invoke(train[1], semantics.GROUPING)
+    assert summary["unavailableTemplateCount"] == 1
+    summary, copied = invoke(train[2], semantics.GROUPING)
+    assert summary["appliedTemplateCount"] == 0 and summary["unavailableTemplateCount"] == 0
+    assert copied["templateInference"]["applications"]
     assert all(reference["memoryLocationId"] == lookup for row in copied["templateInference"]["applications"]
                for reference in row["prototypeReferences"])
     assert store.get(candidate["candidate_id"]) == frozen
-    output = semantics._artifact(held[0], semantics.GROUPING)
+    output = semantics._artifact(train[2], semantics.GROUPING)
     saved_output = output.read_bytes()
-    saved_memory = {path: path.read_bytes() for path in root.rglob("*.memory.json")}
+    saved_memory = {path: path.read_bytes() for path in root.rglob("*_db.metta")}
     apply_templates = semantics._apply_grouping_templates
 
     def reject_during_application(*args, **kwargs):
         prediction = apply_templates(*args, **kwargs)
         rejected = client.post(path + "/reject", json={
-            "workspaceId": "test", "reviewer": "concurrent reviewer", "reason": "Revoke during application",
+            **scope, "reviewer": "concurrent reviewer", "reason": "Revoke during application",
         })
         assert rejected.status_code == 200, rejected.text
         return prediction
 
     monkeypatch.setattr(semantics, "_apply_grouping_templates", reject_during_application)
     with pytest.raises(semantics.ConflictError, match="registry changed"):
-        invoke(held[0], semantics.GROUPING)
+        invoke(train[2], semantics.GROUPING)
     assert output.read_bytes() == saved_output
-    assert {path: path.read_bytes() for path in root.rglob("*.memory.json")} == saved_memory
+    assert {path: path.read_bytes() for path in root.rglob("*_db.metta")} == saved_memory
 
 
 def test_grouping_deployment_requires_separate_replay_and_promotion_before_unseen_application(workspace):
     root, client = workspace
-    train = make_sequence(root, name="deployment-train", seed=31, count=1)
+    train = make_sequence(root, name="deployment-train", seed=31, count=2)
     held = make_sequence(root, name="deployment-held", seed=61, count=1)
     unseen = make_sequence(root, name="deployment-unseen", seed=91, count=1)
     for units in (train, held, unseen):
         locations, context = semantics._memory("test", units[0]["sequenceId"])
         preferences = locations.load_preferences(context)
         destination = next(item["memoryLocationId"] for item in locations.catalog(context)["destinations"]
-                           if item["scopeKind"] == "global" and item["memoryKinds"] == ["shape"])
+                           if item["scopeKind"] == "global" and item["memoryKinds"] == ["shape"]
+                           and item["format"] == "memory_metta")
         preferences["shape"]["saveTo"] = destination
-        preferences["shape"]["lookIn"] = [destination]
+        preferences["shape"]["lookIn"] = [] if units is train else [destination]
         locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
     invoke(train[0], semantics.GROUPING)
-    store = semantics._store(root)
+    look_in_saved_shapes(train[0]["sequenceId"])
+    store = semantics._store(root, train[0])
+    scope = rule_scope(train[0])
     parent = store.list(kind="grouping")[0]
     response = client.post(f"/semantic/candidates/{parent['candidate_id']}/deployment", json={
-        "workspaceId": "test", "trainingSequenceId": train[0]["sequenceId"],
+        **scope,
         "reviewer": "independent reviewer", "reason": "Evaluate unguarded deployment against original masks",
     })
     assert response.status_code == 200, response.text
@@ -1491,7 +1830,7 @@ def test_grouping_deployment_requires_separate_replay_and_promotion_before_unsee
     assert deployment["status"] == "proposed" and deployment["evidence"] == deployment["evaluations"] == []
     assert deployment["parent_ids"] == [parent["candidate_id"]]
     path = f"/semantic/candidates/{deployment['candidate_id']}"
-    blocked = client.post(path + "/promote", json={"workspaceId": "test"})
+    blocked = client.post(path + "/promote", json=scope)
     assert blocked.status_code == 422, blocked.text
     summary, _ = invoke(unseen[0], semantics.GROUPING)
     assert summary["appliedTemplateCount"] == 0
@@ -1502,8 +1841,7 @@ def test_grouping_deployment_requires_separate_replay_and_promotion_before_unsee
         frame = semantics._frame(units[0])
         group = next(group for group in frame.groups if len(group.points) == len(anchor["canonicalPoints"]))
         response = client.post(path + "/evaluate", json={
-            "workspaceId": "test", "trainingSequenceId": train[0]["sequenceId"],
-            "sequenceId": units[0]["sequenceId"], "partition": partition,
+            **scope, "evaluationSequenceId": units[0]["sequenceId"], "partition": partition,
             "labels": [{"frameUid": frame.uid, "groupUid": group.uid, "anchorUid": anchor_id,
                         "expectedTemplateMatch": True, "reviewer": "independent reviewer",
                         "reason": "Independently inspected original producer masks"}],
@@ -1514,14 +1852,16 @@ def test_grouping_deployment_requires_separate_replay_and_promotion_before_unsee
     assert evaluated["status"] == "eligible"
     assert all(all(term["predicate"] != "independent_group_support" for term in evidence["provenance"]["facts"])
                for evidence in evaluated["evidence"])
-    assert client.post(path + "/promote", json={"workspaceId": "test"}).status_code == 200
-    revision = semantics.runtime_revision(unseen[0], semantics.GROUPING)
+    assert client.post(path + "/promote", json=scope).status_code == 200
+    revision = semantics.runtime_revision(train[1], semantics.GROUPING)
     summary, result = invoke(unseen[0], semantics.GROUPING)
+    assert summary["appliedTemplateCount"] == 0 and result["templateInference"]["applications"] == []
+    summary, result = invoke(train[1], semantics.GROUPING)
     applied = [row for row in result["templateInference"]["applications"] if row["status"] == "applied"]
     assert summary["appliedTemplateCount"] == 1 and len(applied) == 1
     assert applied[0]["candidateId"] == deployment["candidate_id"] and applied[0]["evidenceIds"] == []
     assert all(term["predicate"] != "independent_group_support" for term in applied[0]["facts"])
-    assert semantics.runtime_revision(unseen[0], semantics.GROUPING) == revision
+    assert semantics.runtime_revision(train[1], semantics.GROUPING) == revision
     assert store.get(parent["candidate_id"]) == parent
     assert any(term["predicate"] == "independent_group_support" for term in parent["rule"]["body"])
 
@@ -1541,7 +1881,7 @@ def test_llm_rule_proposals_are_stored_unevaluated_and_errors_are_audited(worksp
     calls = setup_model(monkeypatch, raw)
     _, result = invoke(units[-1], semantics.LLM_RULES, {"confirmModel": True})
     assert len(calls) == 1 and len(result["candidateIds"]) == 1
-    candidate = semantics._store(root).get(result["candidateIds"][0])
+    candidate = semantics._store(root, units[-1]).get(result["candidateIds"][0])
     assert candidate["status"] == "proposed" and candidate["evidence"] == [] and candidate["evaluations"] == []
     assert candidate["proposals"][0]["source"] == "llm_proposal"
     assert semantics._training(candidate)
@@ -1549,7 +1889,7 @@ def test_llm_rule_proposals_are_stored_unevaluated_and_errors_are_audited(worksp
     calls = setup_model(monkeypatch, '{"candidates":[{"kind":"event_detector","rule":"halt."}]}')
     with pytest.raises(ValueError):
         invoke(units[-1], semantics.LLM_RULES, {"confirmModel": True})
-    assert calls and len(semantics._store(root).list()) == 1
+    assert calls and len(semantics._store(root, units[-1]).list()) == 1
     assert any("invalid" in path.read_text() for path in (root / "data" / "omega_vision" / "runtime" / "rule-proposals").glob("*.json"))
 
 
@@ -1614,7 +1954,7 @@ def test_internal_log_prefix_changes_still_require_explicit_supersession(workspa
     log = semantics._event_log(root, units[0]["sequenceId"])
     before = log.read()
     history = {path: path.read_bytes() for path in log.path.glob("*.json")}
-    count = 2 if changed in {"frame", "assessment"} else 1
+    count = 2 if changed in {"frame", "assessment", "registry"} else 1
     if changed in {"frame", "assessment"}:
         original = event_deduction.deduce_sequence
 
@@ -1632,7 +1972,7 @@ def test_internal_log_prefix_changes_still_require_explicit_supersession(workspa
     elif changed == "detector":
         monkeypatch.setattr(event_deduction, "implementation_version", lambda *_: "updated-authored-detector")
     else:
-        store = semantics._store(root)
+        store = semantics._store(root, units[0])
         candidate = store.create(
             {"body": [{"predicate": "present", "args": [{"var": "Object"}]}],
              "head": {"predicate": "moved", "args": [{"var": "Object"}]}},
@@ -1640,6 +1980,8 @@ def test_internal_log_prefix_changes_still_require_explicit_supersession(workspa
             provenance={"code_hash": "changed-registry"}, inducer_version="tail-registry-test",
         )
         _promote_registry_fixture(store, candidate)
+        invoke(units[0], semantics.LOG)
+        assert log.read() == before
     with pytest.raises(semantics.ConflictError, match="explicit suffix supersession"):
         invoke(units[count - 1], semantics.LOG)
     assert log.read() == before

@@ -312,10 +312,14 @@ def _validate_payload(kind: str, payload: Mapping[str, Any]) -> None:
     references = payload.get("shapeReferences", [])
     if not isinstance(references, list):
         raise ValueError("shape references must be an attributed list, never a flattened value")
+    from omega_vision.perception.memory_references import normalize_reference
     for reference in references:
-        required = ("providerRef", "workspaceId", "memoryLocationId", "recordUid", "revision")
-        if not isinstance(reference, Mapping) or any(not isinstance(reference.get(key), str) or not reference[key] for key in required):
-            raise ValueError("shape references require attributed provider/workspace/location/record/revision")
+        normalize_reference(reference, source_kind=kind, legacy_shape=True)
+    typed_references = payload.get("references", [])
+    if not isinstance(typed_references, list):
+        raise ValueError("references must be an explicitly typed attributed list")
+    for reference in typed_references:
+        normalize_reference(reference, source_kind=kind)
     _copy(dict(payload))
 
 
@@ -531,6 +535,12 @@ class MemoryLocations:
                     selected = getattr(effective_context, field)
                     children[:] = [name for name in children if selected is not None and unquote(name) == selected]
             context = _context(root)
+            if getattr(self, "supports_metta_memory", False):
+                from omega_vision.perception.metta_memory import DATABASE_FILES, MeTTaMemoryDatabase
+                for memory_kind in KINDS:
+                    if DATABASE_FILES[memory_kind] in files:
+                        database = MeTTaMemoryDatabase(root.root, path, memory_kind)
+                        yield self._location(root, database.path, memory_kind, context, "memory_metta"), database.path
             kind, format = None, None
             if path.name == "shape_dir" and "shapes.pl" in files:
                 kind, format = "shape", "legacy_shape"
@@ -666,6 +676,8 @@ class MemoryLocations:
             "available": root.root.is_dir(), "readable": os.access(root.root, os.R_OK),
             "writable": os.access(root.root, os.W_OK),
         }
+        if getattr(self, "supports_metta_memory", False):
+            identity["storageContract"] = "omega-contextual-metta-v1"
 
         def build():
             locations, errors = [], []

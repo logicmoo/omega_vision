@@ -2036,6 +2036,9 @@ def extract_frames(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(error)) from error
     if not video_path.is_file():
         raise HTTPException(status_code=404, detail=f"video not found: {video_rel}")
+    frames_dir = _require_sequence_write(root, _video_frames_dir(root, video_path))
+    if frames_dir.exists():
+        raise HTTPException(status_code=409, detail="Existing extracted frames and history were retained; replacement requires an explicit preservation policy.")
     try:
         import imageio  # noqa: F401, PLC0415 - optional dependency
     except ImportError as error:
@@ -2094,15 +2097,14 @@ def extract_frames(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     def work() -> None:
         import imageio  # noqa: PLC0415
         from PIL import Image  # noqa: PLC0415
+        from omega_vision.services.recording_import_safety import claim_import_directory
+        from omega_vision.services.memory_mutation_safety import preserve_memory_trees
 
         started = time.monotonic()
-        frames_dir = _video_frames_dir(root, video_path)
-        with visual_sequence_list_mutation(root):
-            if frames_dir.is_dir():
-                shutil.rmtree(frames_dir, ignore_errors=True)
-            frames_dir.mkdir(parents=True, exist_ok=True)
         frames: list[dict[str, Any]] = []
         try:
+            with preserve_memory_trees(root, frames_dir), visual_sequence_list_mutation(root):
+                claim_import_directory(frames_dir)
             reader = imageio.get_reader(str(video_path))
             try:
                 fps = float(reader.get_meta_data().get("fps") or 24.0)
@@ -2250,6 +2252,7 @@ _IMAGE_SET_LABELS = {
     "recognition_reduce": "Recognition · 20×10 conditions",
 }
 _catalog_image_cache: ContextVar[dict[Path, list[Path]] | None] = ContextVar("catalog_image_cache", default=None)
+from omega_vision.perception.metta_memory import is_memory_directory
 
 
 def _resolve_set_images(d: Path) -> list[Path]:
@@ -2270,7 +2273,7 @@ def _scan_set_images(d: Path) -> list[Path]:
     whole-game dirs (every child Recording concatenated), and curated-style
     trees (every image anywhere below, ordered naturally, exactly like the
     curated source lister)."""
-    if not d.is_dir():
+    if is_memory_directory(d.name) or not d.is_dir():
         return []
     pool = d / "pool"
     if pool.is_dir():
@@ -2291,7 +2294,8 @@ def _scan_set_images(d: Path) -> list[Path]:
         return images
     images: list[Path] = []
     for directory, children, files in os.walk(d):
-        children[:] = [name for name in children if name not in {"transforms", "preprocessing"}]
+        children[:] = [name for name in children
+                       if name not in {"transforms", "preprocessing"} and not is_memory_directory(name)]
         images.extend(Path(directory) / name for name in files
                       if Path(name).suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"})
     return sorted(images, key=lambda path: _natural_path_key(path.relative_to(d)))
@@ -2730,7 +2734,7 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
         if not data_dir.is_dir():
             continue
         for child in sorted(data_dir.iterdir()):
-            if child.name not in {"importables", "video_import", "VideoImports"} and child.is_dir() and child.name != _CANONICAL_IMAGE_SET and ((child / "pool").is_dir() or (child / "manifest.json").is_file()):
+            if not is_memory_directory(child.name) and child.name not in {"importables", "video_import", "VideoImports"} and child.is_dir() and child.name != _CANONICAL_IMAGE_SET and ((child / "pool").is_dir() or (child / "manifest.json").is_file()):
                 add(child.name, f"data/{child.name}", group="Image Sets", group_key="4-loaded")
     # Frame-based source families (organised like the Objects source combobox).
     for rec_base, group, group_key in _FRAME_SET_FAMILIES:
@@ -2740,7 +2744,7 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
             if not rec_dir.is_dir():
                 continue
             for child in sorted(rec_dir.iterdir()):
-                if not child.is_dir():
+                if is_memory_directory(child.name) or not child.is_dir():
                     continue
                 leaf = child.name.replace("data-recordings-", "").replace("data-curated-", "").replace("data-arc3_games-recordings-", "").replace("data-arc3_games-curated-", "").replace("-", " ")
                 add(f"{rec_base}/{child.name}", f"data/{rec_base}/{child.name}", label=leaf, group=group, group_key=group_key)
@@ -4560,7 +4564,8 @@ def _recording_step_dirs(recording_dir: Path) -> list[Path]:
         return []
     with os.scandir(recording_dir) as entries:
         steps = [Path(child.path) for child in entries
-                 if child.is_dir() and os.path.isfile(os.path.join(child.path, "image.png"))]
+                 if not is_memory_directory(child.name) and child.is_dir()
+                 and os.path.isfile(os.path.join(child.path, "image.png"))]
     return sorted(
         steps,
         key=lambda p: (0, int(p.name), "") if p.name.isdigit() else (1, 0, p.name.lower()),
@@ -4604,7 +4609,8 @@ def _curated_source_images(root: Path, source_dir: Path) -> list[Path]:
     images = [
         path
         for path in resolved.rglob("*")
-        if path.is_file() and path.suffix.lower() in _IMAGE_SUFFIXES
+        if not any(is_memory_directory(part) for part in path.relative_to(resolved).parts)
+        and not is_memory_directory(resolved.name) and path.is_file() and path.suffix.lower() in _IMAGE_SUFFIXES
     ]
     return sorted(images, key=lambda path: _natural_path_key(path.relative_to(resolved)))
 
@@ -4621,7 +4627,7 @@ def list_curated_image_sources(workspaceId: str) -> dict[str, Any]:
             (entry for entry in data_root.iterdir() if entry.is_dir()),
             key=lambda path: path.name.lower(),
         ):
-            if source_dir.name.lower() in _CURATED_DATA_EXCLUDES or source_dir.name.lower() in seen:
+            if is_memory_directory(source_dir.name) or source_dir.name.lower() in _CURATED_DATA_EXCLUDES or source_dir.name.lower() in seen:
                 continue
             images = _curated_source_images(root, source_dir)
             if not images:
@@ -6055,6 +6061,8 @@ def _sequence_root_for(root: Path, sequence_id: str) -> Path:
         else:
             directory = _safe_workspace_child(root, sid)
         relative = tuple(part.lower() for part in directory.relative_to(_vision_data_root(root).resolve()).parts)
+        if any(is_memory_directory(part) for part in relative):
+            raise HTTPException(status_code=400, detail="Memory areas are not Visual Sequences")
         if relative and (relative[0] == "importables" or relative[:2] in {
             ("arc3_games", "importables"), ("video_import", "importables"),
         }):
@@ -7833,7 +7841,9 @@ def _ensure_queue_memory_destinations(unit: Mapping[str, Any], steps: Iterable[s
     kinds = ("shape", "object") if _semantic_stages.OBJECTS in steps else ("shape",) if _semantic_stages.GROUPING in steps else ()
     if not kinds:
         return
-    locations, context = _semantic_stages._memory(str(unit["workspaceId"]), unit.get("sequenceId"))
+    locations, context = _semantic_stages._memory(
+        str(unit["workspaceId"]), unit.get("sequenceId"), frame_id=unit.get("id"),
+    )
     preferences = locations.load_preferences(context)
     if any(preferences[kind]["saveTo"] == "memory-nowhere" or "memory-nowhere" in preferences[kind]["lookIn"]
            for kind in kinds):
@@ -7845,7 +7855,9 @@ def _persist_execution_memory_defaults(unit: Mapping[str, Any], steps: Iterable[
     """Freeze unsaved effective lookups before this explicit run creates new memory locations."""
     if not set(steps).intersection({_semantic_stages.OBJECTS, _semantic_stages.GROUPING}):
         return
-    locations, context = _semantic_stages._memory(str(unit["workspaceId"]), unit.get("sequenceId"))
+    locations, context = _semantic_stages._memory(
+        str(unit["workspaceId"]), unit.get("sequenceId"), frame_id=unit.get("id"),
+    )
     _, path = locations._preference_path(context)
     if not path.is_file():
         preferences = locations.load_preferences(context)
@@ -8816,16 +8828,21 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     for step in llm_steps:
         specs[step] = {**specs[step], "options": {**specs[step].get("options", {}), "confirmModel": True}}
     browser_state = units[0].get("_browserMemory") if units else None
-    memory_steps = {node.output for node in plan} & {_semantic_stages.OBJECTS, _semantic_stages.GROUPING}
+    frame_steps: dict[str, set[str]] = {}
+    for node in plan:
+        frame_steps.setdefault(node.frame_id, set()).add(node.output)
     needs_browser = False
-    if memory_steps and selected:
-        locations, memory_context = _semantic_stages._memory(workspace_id, sequence_id)
+    for frame_id, steps in frame_steps.items():
+        memory_kinds = (("shape", "object") if _semantic_stages.OBJECTS in steps
+                        else ("shape",) if _semantic_stages.GROUPING in steps else ())
+        if not memory_kinds:
+            continue
+        locations, memory_context = _semantic_stages._memory(workspace_id, sequence_id, frame_id=frame_id)
         preferences = locations.load_preferences(memory_context)
-        memory_kinds = ("shape", "object") if _semantic_stages.OBJECTS in memory_steps else ("shape",)
-        needs_browser = any(preferences[kind]["saveTo"] == "memory-nowhere"
-                            or "memory-nowhere" in preferences[kind]["lookIn"] for kind in memory_kinds)
-        if needs_browser and browser_state is None:
-            raise HTTPException(409, "Nowhere requires an explicit browser memory snapshot. Run in the current page.")
+        needs_browser |= any(preferences[kind]["saveTo"] == "memory-nowhere"
+                             or "memory-nowhere" in preferences[kind]["lookIn"] for kind in memory_kinds)
+    if needs_browser and browser_state is None:
+        raise HTTPException(409, "Nowhere requires an explicit browser memory snapshot. Run in the current page.")
     if not needs_browser:
         # Ordinary durable execution retains its existing asynchronous behavior.
         # Do not let an unused browser payload escape into its worker closure.
@@ -8836,8 +8853,8 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     if browser_state is not None and len(selected) > 128:
         raise HTTPException(409, "Browser-memory execution is bounded to First N ≤ 128. "
                             "Choose a smaller scope or durable memory destinations.")
-    if selected:
-        _persist_execution_memory_defaults(selected[0], (node.output for node in plan))
+    for frame_id, steps in frame_steps.items():
+        _persist_execution_memory_defaults(units_by_id[frame_id], steps)
     chain = _load_preprocessing_chain_at(directory)
     index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
     chain = _validated_preprocessing_chain(chain, index)
@@ -9118,13 +9135,17 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         for spec in pipeline_specs:
             if _step_for_unit(spec, unit) is not None:
                 _transform_output_dir(unit, spec["transformation"], spec["doer"])
-    if units:
-        memory_steps = {
+    frame_steps = {
+        unit["id"]: {
             f"{spec['transformation']}/{spec['doer']}" for spec in pipeline_specs
-            if any(_step_for_unit(spec, unit) is not None for unit in units)
+            if _step_for_unit(spec, unit) is not None
         }
-        _ensure_queue_memory_destinations(units[0], memory_steps)
-        _persist_execution_memory_defaults(units[0], memory_steps)
+        for unit in units
+    }
+    for unit in units:
+        _ensure_queue_memory_destinations(unit, frame_steps[unit["id"]])
+    for unit in units:
+        _persist_execution_memory_defaults(unit, frame_steps[unit["id"]])
     chain = _load_preprocessing_chain_at(pooler_root)
     index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
     chain = _validated_preprocessing_chain(chain, index)
@@ -9188,10 +9209,12 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         extra_specs = adopt(unit) if adopt is not None else []
         unit_specs = extra_specs + active_specs
         if fresh_todos:
-            for spec in active_specs:
-                output_dir = _transform_output_dir(unit, spec["transformation"], spec["doer"])
-                if output_dir.is_dir():
-                    shutil.rmtree(output_dir)
+            from omega_vision.services.memory_mutation_safety import preserve_memory_trees
+            output_dirs = [_transform_output_dir(unit, spec["transformation"], spec["doer"]) for spec in active_specs]
+            with preserve_memory_trees(_unit_workspace_root(unit), *output_dirs):
+                for output_dir in output_dirs:
+                    if output_dir.is_dir():
+                        shutil.rmtree(output_dir)
         if merge_todos:
             merged: dict[str, dict[str, Any]] = {
                 f"{s['transformation']}/{s['doer']}": s for s in _existing_unit_specs(unit)
@@ -9411,9 +9434,13 @@ def semantic_execution_commit(body: dict[str, Any] = Body(...)) -> dict[str, Any
     _require_sequence_write(root, directory)
     _attach_memory_session(units, body)
     selected = units[:body["firstN"]] if body.get("firstN") else units
-    if selected:
-        _ensure_queue_memory_destinations(selected[0], (step["output"] for step in raw["steps"]))
-        _persist_execution_memory_defaults(selected[0], (step["output"] for step in raw["steps"]))
+    frame_steps: dict[str, set[str]] = {}
+    for step in raw["steps"]:
+        frame_steps.setdefault(step["frameId"], set()).add(step["output"])
+    for unit in units:
+        _ensure_queue_memory_destinations(unit, frame_steps.get(unit["id"], ()))
+    for unit in units:
+        _persist_execution_memory_defaults(unit, frame_steps.get(unit["id"], ()))
     chain = _load_preprocessing_chain_at(directory)
     index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
     chain = _validated_preprocessing_chain(chain, index)

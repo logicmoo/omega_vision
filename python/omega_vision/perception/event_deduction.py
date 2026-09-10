@@ -741,9 +741,12 @@ def deduce_sequence(
     results = []
     registry = accepted_detectors(config)
     for index, temporal in enumerate(temporal_results):
+        from omega_vision.perception.contextual_rules import ContextualRuleStore
+        pair_store = (candidate_store.for_temporal_frame(frames[index + 1])
+                      if isinstance(candidate_store, ContextualRuleStore) else candidate_store)
         result = deduce_pair_events(
             frames[index], frames[index + 1], temporal, previous_state=state,
-            config=config, swipl_executable=swipl_executable, timeout=timeout, candidate_store=candidate_store,
+            config=config, swipl_executable=swipl_executable, timeout=timeout, candidate_store=pair_store,
             objects=object_results[index + 1] if object_results is not None else None,
             scope_context=scope_context,
             attachment_context=attachment_contexts[index + 1] if attachment_contexts is not None else None,

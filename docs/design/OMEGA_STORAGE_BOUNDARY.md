@@ -10,6 +10,155 @@ The authoritative seven-point instruction is
 [AGENTS.md, Mandatory Omega Vision shared-storage contract](../../AGENTS.md#mandatory-omega-vision-shared-storage-contract-2026-09-10).
 Its recovery reference is maintained by the coordinator in `CODEX_TODO.md`.
 
+## Contextual memory design and implementation boundary
+
+The following later user decisions supersede the earlier native JSON memory
+destination conventions described in historical checkpoints below. They are
+design requirements, not a claim that every proposed domain is implemented.
+Do not migrate, delete, rename, convert, or create placeholder databases merely
+to enact this design. Existing data remains explicit read-only compatibility
+data when new writers are introduced.
+
+`H` is the same shared `<repository>/data/omega_vision`. Workspaces never divide
+these paths or identities. Each actual memory area uses genuine
+`shapes_db.metta`, `shape_groups_db.metta`, `object_groups_db.metta`,
+`shape_group_classes_db.metta`, `object_group_classes_db.metta`,
+`objects_db.metta` and `obj_classes_db.metta`, with independently updated records,
+versions and provenance; no renamed JSON or second writable shadow database.
+Groups retain distinct membership, references and provenance: V/W hypotheses
+are not automatically accepted G, and observed groups are not persistent objects
+or renamed `oN` records. Group storage is part of this schema plan, not permission
+to migrate outputs or manufacture placeholder groups.
+Groups of shapes and groups of objects have different typed membership/reference
+domains and separate class families. These explicit pairs supersede the proposed
+ambiguous `groups_db.metta` / `grp_classes_db.metta` names in the new design.
+Group classes and object classes are separate category definitions, not renamed
+instances. No shape-class DB was requested. Keep explicit class references and
+distinct identities; do not rename existing files or invent populated classes.
+Object composition is recursive: each part is itself an object with its own
+identity/class/observations, and a composed object can be another object's part.
+`part-of` is an explicit relationship/role, not a separate entity kind.
+Collections/group membership do not imply composition or articulation; this
+graph is separate from classification, property inheritance and dependencies.
+Observed visual groups may support partially visible part objects, but inferred
+hidden parts must not be relabeled as observed evidence. Reference DTOs therefore
+need explicit target kind, including object-to-object part references; existing
+shape-only references must not be reinterpreted implicitly.
+G and O both **have** separately identified Shapes, potentially multiple
+attributed view/pose Shapes. Shared geometry does not merge their identities,
+membership, classes, or inferred whole structure.
+The user's A example is exact: **"A = Objects articulated; an Eye is an O;
+Face is an A."** A is a structured whole of one or more Objects, not merely a
+joint relation or arbitrary collection C. A single-object A is valid; recursive
+part Objects and articulated wholes may participate in larger wholes. Relational
+organization is required without imposing mechanical hinges on a face. Both O
+and A have Shapes/observations; unseen members remain inferred/unknown. No A
+database filename or automatic wrapping/face inference was authorized.
+
+UI type formatting is display-only: uppercase stable type markers **and**
+capitalized names, for example `G1 — Group`, `O1 — Object`, `S1 — Shape`.
+The proposed principal marker map is R Region, S Shape, G Shape Group,
+I Object Observation, O Object (including parts), A Objects Articulated,
+C Object Collection; GC/OC/CC distinguish the applicable classes. Existing V/W
+hypothesis-layer meanings remain intact. Use actual stable aliases when present,
+never transient row positions, and expose original IDs in source/tooltips.
+Never uppercase stored IDs or raw Prolog/MeTTa atoms to achieve this display.
+
+| Area storage | Exact directory |
+|---|---|
+| Inherited | `H/memory_inherited` |
+| Recordings-wide | `H/recordings/memory_recordings` |
+| Game-wide | `H/recordings/<game>/memory_game_all` |
+| Shared game/level LTM | `H/recordings/<game>/memory_level_<level>_ltm` |
+| Recording-specific level STM | `H/recordings/<game>/<recording>/memory_level_<level>_stm` |
+| Frame/move | `H/recordings/<game>/<recording>/<frame>/memory` |
+
+Each recording has distinct STM for every level actually present in its
+metadata; do not invent levels or create game-global numeric frame directories.
+Memory directories and database files must be excluded from source-frame and
+Visual Sequence enumeration.
+
+The inspector always offers these six contextual choices for both Shapes and
+Objects, before discovery, preferences, counts or existence checks:
+
+1. Long term/Inherited
+2. Current Movie/Body (All Previous Chapters)
+3. Current Chapter/Game (All Previous Scenes)
+4. Current Scene/Level (All Previous Frames)
+5. Previous Moment/Frame
+6. Current Moment/Frame
+
+Previous means **strictly previous**: Movie excludes the current Chapter;
+Chapter excludes the current Scene; Scene excludes the current Frame. Current
+Moment is exactly the selected frame; Previous Moment is its immediate
+predecessor in validated explicit ordering. Scene inspection uses only the
+current recording's level STM, never an implicit union with shared level LTM.
+No automatic STM expiry/reset, LTM copying or merging is authorized. Level LTM's
+participation in other contextual views remains unspecified.
+
+Missing hierarchy/order/context or no predecessor is an explicit result, not a
+reason to remove a fixed choice or invent folder/timestamp ordering. Counts and
+existence are unknown until an area is selected. Nowhere remains RAM-only;
+existing legacy/demo areas remain secondary compatibility choices. Aggregate
+area IDs are not physical source-location IDs: returned immutable records must
+retain their actual authorized provider/location/revision identity.
+
+The exact preserved read-only legacy registry, relative to `H`, is:
+
+- `object_memory/shape_dir`
+- `object_memory/identity_dir/ls20`
+- `object_memory_demo/raw_ls20_saved_154/shape_dir`
+- `object_memory_demo/raw_ls20_saved_154/identity_dir/ls20`
+- `object_memory_demo/vf_data-recordings-ls20-20260718-154544_attempt8/shape_dir`
+- `object_memory_demo/vf_data-recordings-ls20-20260718-154544_attempt8/identity_dir/ls20`
+- `object_memory_demo/vf_data-arc3_games-recordings-ls20-ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/shape_dir`
+- `object_memory_demo/vf_data-arc3_games-recordings-ls20-ls20-8aed7120-f7a9-45a1-837a-68bc7dc37a4f_attempt7_size_0003/identity_dir/ls20`
+
+Use current canonical provider/location constructors and reader format tags;
+do not invent replacement IDs. The earlier two suggested native global folders
+under `knowledge/artifacts/memory` are superseded as new destinations.
+
+Scoped rule data is co-located in the same areas. The proposed uniform roles
+are `deduction_rules.metta` (accepted deduction rules), `induction_rules.metta`
+(authored/accepted learning procedures), and `induced_rules.metta` (learned
+proposals with lifecycle/provenance/evidence/counterexamples). Procedure rules
+and induced proposals must never be conflated. Unapproved proposals normally
+remain in the generating frame/move's `memory/induced_rules.metta`; there is no
+new literal `moves/` sequence family. Explicitly promoted rules belong to the
+current recording's per-level STM, in its role-appropriate rule file, not to
+game-level LTM, game-wide or inherited stores by default. Publication/references
+retain original evidence, identity and immutable history. Record generating and
+promotion frame/order so strict-previous reads remain causal; there is no
+automatic onward promotion. Presence in a file never approves, promotes or executes a rule.
+Existing authored `.pl`/`.py` implementations and candidate histories are not
+moved or rewritten by this design discussion.
+
+### Validated Shape/Object foundation; activation pending
+
+The current backend implements native Shape/Object MeTTa databases, independently
+locked/versioned writes, exact original selected-record source, direct registered
+legacy adapters, and config-only options. Contextual references reapply the same
+area/sequence/frame cutoff before exact matching. Frame-specific preferences,
+Nowhere detection and copies use the actual execution frame, including multilevel
+recordings. Explicit promotion bindings are verified against immutable history
+so a later approval in another level does not erase an earlier level's binding.
+
+The validated bundle passed 244 focused tests (one Windows symlink-privilege
+skip), followed by 92 review-fix checks and nine publication-history checks.
+Targeted independent re-review found no remaining issue in those corrected
+chains. This is not a claim of live activation or of the unimplemented domains.
+
+Movie/Chapter ordering without an authoritative hierarchy, additional LTM-view
+policy, induction-procedure AST publication, and new cross-frame deployment
+parent-reference adapters remain explicitly unavailable. Group/class data
+producers/readers and recursive/A rich payload rendering remain planned; typed
+reference tags do not manufacture those records. Historical records are retained,
+not silently migrated or treated as newly approved rules.
+
+Live activation is held while the existing API hosts unrelated game sessions.
+Do not restart it merely to validate these changes without coordinating the
+in-memory session impact.
+
 ## Integrated main acceptance
 
 The coordinator completed the storage gate and owned API restart on 2026-09-10.

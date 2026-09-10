@@ -38,6 +38,8 @@ from typing import Any
 from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import FileResponse
 from omega_vision.perception.visual_sequence_list_cache import visual_sequence_list_mutation
+from omega_vision.services.memory_mutation_safety import preserve_memory_trees
+from omega_vision.perception.metta_memory import is_memory_directory
 
 router = APIRouter(prefix="/arc3-play", tags=["arc3-play"])
 
@@ -346,7 +348,8 @@ def _iter_recording_dirs(game_root: Path) -> list[Path]:
     level_<n>_<rank> naming)."""
     if not game_root.is_dir():
         return []
-    entries = [entry for entry in game_root.iterdir() if entry.is_dir() and (entry / "recording.json").is_file()]
+    entries = [entry for entry in game_root.iterdir() if not is_memory_directory(entry.name)
+               and entry.is_dir() and (entry / "recording.json").is_file()]
     return sorted(entries, key=lambda entry: entry.name)
 
 
@@ -355,11 +358,13 @@ def _looks_like_image_set_dir(entry: Path) -> bool:
     a recording.json manifest, move subdirs (0/ 1/ 2/ ... or free-form
     foo/ bar/) with an image.png each, or a flat directory of frame *.png
     files."""
+    if is_memory_directory(entry.name):
+        return False
     if (entry / "recording.json").is_file():
         return True
     try:
         for child in entry.iterdir():
-            if child.is_dir() and (child / "image.png").is_file():
+            if not is_memory_directory(child.name) and child.is_dir() and (child / "image.png").is_file():
                 return True
             if child.is_file() and child.suffix.lower() == ".png":
                 return True
@@ -369,7 +374,8 @@ def _looks_like_image_set_dir(entry: Path) -> bool:
     # holds at least one image anywhere below it (short-circuits on the first).
     try:
         for sub in entry.rglob("*"):
-            if sub.is_file() and sub.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}:
+            if (not any(is_memory_directory(part) for part in sub.relative_to(entry).parts)
+                    and sub.is_file() and sub.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}):
                 return True
     except OSError:
         return False
@@ -2129,9 +2135,13 @@ def _recording_dir_stats(entry: Path) -> dict[str, Any]:
     move_file_count = 0
     try:
         for child in entry.iterdir():
+            if is_memory_directory(child.name):
+                continue
             if child.is_dir():
                 files_here = 0
                 for sub in child.rglob("*"):
+                    if any(is_memory_directory(part) for part in sub.relative_to(child).parts):
+                        continue
                     if sub.is_file():
                         files_here += 1
                         try:
@@ -2174,6 +2184,8 @@ def _image_set_dir_stats(entry: Path) -> dict[str, Any]:
     subdir_count = 0
     try:
         for sub in entry.rglob("*"):
+            if any(is_memory_directory(part) for part in sub.relative_to(entry).parts):
+                continue
             if sub.is_dir():
                 if sub.parent == entry:
                     subdir_count += 1
@@ -2376,7 +2388,8 @@ def duplicate_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -
 
 
 def _copy_recording_dir(root: Path, target: Path, new_path: Path) -> dict[str, Any]:
-    shutil.copytree(target, new_path)
+    with preserve_memory_trees(root, target, new_path):
+        shutil.copytree(target, new_path)
     manifest_path = new_path / "recording.json"
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -2399,7 +2412,7 @@ def delete_recording_dir(body: dict[str, Any] = Body(default_factory=dict)) -> d
     root = _workspace_root(workspace_id)
     target = _recording_dir_of(root, rel_path)
     rel = _data_rel_of(root, target)
-    with visual_sequence_list_mutation(root):
+    with preserve_memory_trees(root, target), visual_sequence_list_mutation(root):
         shutil.rmtree(target, ignore_errors=True)
     return {"removed": rel}
 
@@ -2419,7 +2432,7 @@ def _dedupe_recordings_in(root: Path, game_root: Path) -> list[str]:
             continue  # never touch live-played recordings, only re-imports
         groups.setdefault(imported_from, []).append((manifest_path.stat().st_mtime, level_dir))
 
-    removed: list[str] = []
+    targets: list[Path] = []
     for entries in groups.values():
         if len(entries) <= 1:
             continue
@@ -2435,9 +2448,13 @@ def _dedupe_recordings_in(root: Path, game_root: Path) -> list[str]:
         clusters.sort(key=lambda cluster: cluster[-1][0])
         for cluster in clusters[:-1]:  # keep only the most recent run
             for _, path in cluster:
-                with visual_sequence_list_mutation(root):
-                    shutil.rmtree(path, ignore_errors=True)
-                removed.append(_data_rel_of(root, path))
+                targets.append(path)
+    removed: list[str] = []
+    with preserve_memory_trees(root, *targets):
+        for path in targets:
+            with visual_sequence_list_mutation(root):
+                shutil.rmtree(path, ignore_errors=True)
+            removed.append(_data_rel_of(root, path))
     return removed
 
 
@@ -2563,14 +2580,18 @@ def _rename_recording_dirs(
     # Two-phase (stage under temp names first) so re-ranking never collides
     # with a directory that hasn't moved yet, same technique used by the
     # older per-level scripts/rename_level_dirs_by_size.py.
-    staged: list[tuple[Path, Path]] = []
-    for rank, (_old_rel, _new_rel, entry, new_path) in enumerate(pairs, start=1):
-        temp_path = entry.parent / f"{entry.name}.rename_staging_{rank}"
-        entry.rename(temp_path)
-        staged.append((temp_path, new_path))
-    for temp_path, new_path in staged:
-        new_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path.rename(new_path)
+    targets = [path for pair in pairs for path in pair[2:]]
+    targets.extend(entry.parent / f"{entry.name}.rename_staging_{rank}"
+                   for rank, (_old_rel, _new_rel, entry, _new_path) in enumerate(pairs, start=1))
+    with preserve_memory_trees(root, *targets):
+        staged: list[tuple[Path, Path]] = []
+        for rank, (_old_rel, _new_rel, entry, new_path) in enumerate(pairs, start=1):
+            temp_path = entry.parent / f"{entry.name}.rename_staging_{rank}"
+            entry.rename(temp_path)
+            staged.append((temp_path, new_path))
+        for temp_path, new_path in staged:
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path.rename(new_path)
 
     rename_map = {old_rel: new_rel for old_rel, new_rel, _entry, _new_path in pairs}
     if rename_map:
@@ -2601,11 +2622,10 @@ def retain_largest_recordings(workspaceId: str, keep: int, gameId: str | None = 
     root = _workspace_root(workspaceId)
     directories = _writable_game_dirs(root, gameId)
     removed: list[str] = []
-    for game_root in directories:
-        if not game_root.is_dir():
-            continue
-        ranked = _ranked_recordings_by_size_in(root, game_root)
-        for _size, entry in ranked[keep:]:
+    targets = [entry for game_root in directories if game_root.is_dir()
+               for _size, entry in _ranked_recordings_by_size_in(root, game_root)[keep:]]
+    with preserve_memory_trees(root, *targets):
+        for entry in targets:
             removed.append(_data_rel_of(root, entry))
             with visual_sequence_list_mutation(root):
                 shutil.rmtree(entry, ignore_errors=True)
@@ -2624,10 +2644,10 @@ def clear_recordings(workspaceId: str, gameId: str | None = None) -> dict[str, A
     root = _workspace_root(workspaceId)
     directories = _writable_game_dirs(root, gameId)
     removed: list[str] = []
-    for game_root in directories:
-        if not game_root.is_dir():
-            continue
-        for entry in _iter_recording_dirs(game_root):
+    targets = [entry for game_root in directories if game_root.is_dir()
+               for entry in _iter_recording_dirs(game_root)]
+    with preserve_memory_trees(root, *targets):
+        for entry in targets:
             removed.append(_data_rel_of(root, entry))
             with visual_sequence_list_mutation(root):
                 shutil.rmtree(entry, ignore_errors=True)

@@ -14,6 +14,69 @@ values here.
 
 ## Current recovery state
 
+- UI navigation/import safety incident (2026-09-10; acceptance held): an
+  ordinary restored Video Import URL emitted unrequested
+  `POST /workbench/arc3-play/import-recording` and `/sessions` (both 201).
+  The frontend owner traced this to Arc3PlayPage treating any `?game=` link as
+  an instruction to import/resume, including the always-mounted embedded player.
+  URL restoration is now being made read-only in both embedded and standalone
+  players; actual imports/starts/replays require explicit user actions.
+  The former backend `_purge_prior_import` recursively deleted recording
+  directories matching `imported_from` and removed matching savepoint entries.
+  Read-only evidence for `data/omega_vision/recordings/ls20/20260718-154544_attempt8`:
+  manifest SHA256 `E0913CB17A94E6157D3BAE71020A325DCAB684C87EC516F16358D7F503A5959E`,
+  regenerated `started_at`/`updated_at` around `2026-09-10T05:01:01Z`,
+  imported from `data/importables/release-runs/ls20/20260718-154544`;
+  91 moves/direct child frame directories and zero immediate `todos.json`.
+  A later 92-frame read DOES NOT prove prior generated outputs survived.
+  Earlier `verify_main_semantic.json` records successful event-log writes and
+  reused stages, but already had null TODO hashes; absence of TODOs alone is
+  not evidence of their loss. No complete immediate pre-incident file baseline
+  is available, so no total loss count or exact causal attribution is claimed.
+  Current read-only session inventory included LS20 IDs
+  `bacf907b70ef4ab1a3d0600c6722e595` (`saved_576`) and
+  `bf3e481744e1416699217315c4392de6` (`saved_584`); unrelated sessions remain
+  untouched and not attributed to this incident.
+  Main now has a narrow backend guard: repeated-source imports/movelist imports
+  reject with 409 without deleting history; the existing safe suffix policy for
+  different-source filename collisions remains, with atomic new-directory
+  claims protecting racing collisions. Ninety focused temporary-directory
+  tests pass, including byte-identical metadata/frames/todos/results/memory on
+  rejection. No real recording was re-imported, repaired, rolled back or deleted
+  to validate the fix. Live acceptance waits for controlled activation of the
+  safety fix; pending MeTTa-memory changes must not be silently bundled into it.
+  The isolated safety commit is `dd6d6ebfe0408fc5b74517ca3a19052e5603e0fb`;
+  frontend and memory work remain separate. UI acceptance uses the actual
+  `arc3_random_player` menu and preserves user page 1. The frontend follow-up also
+  owns missing-workspace ARC3 defaults and the default-checked Settings control
+  for explicit `workspace=default` redirection; no backend/data partition change.
+
+- Contextual memory follow-up (Shape/Object foundation validated; activation pending):
+  [the current memory design](docs/design/OMEGA_STORAGE_BOUNDARY.md#contextual-memory-design-and-implementation-boundary)
+  records six always-ready semantic areas, strict previous-child exclusion,
+  real shape/object DBs, separate shape-group/object-group DBs and corresponding
+  group-class DBs, plus `obj_classes_db.metta`; per-recording/per-level STM, shared
+  game-level LTM and per-frame memory. Scene reads only its recording-level
+  STM before the current frame. No expiry/copy/migration or guessed ordering.
+  Scoped deduction procedures, induction procedures and induced proposals are
+  distinct; proposed rule DBs are co-located, with unapproved proposals normally
+  in the originating move/frame area and explicit promotions in the current
+  recording's per-level STM, retaining origin and generation/promotion order.
+  Rule co-location is recorded as design,
+  not completed implementation or authorization to move existing source/history.
+  The earlier eleven physical choices are compatibility extras, not substitutes
+  for the six primary contextual views. Frontend visibility/combined-page/
+  Temporal work is a separate finalized child slice awaiting owned live review.
+  Backend compatibility failures have been resolved: 244 focused tests passed
+  with one Windows privilege skip, then 92 review-fix checks and nine immutable
+  multi-level publication-history checks. All 14 frozen source/test hashes match
+  `.codex/contextual-memory-receipt.json`. Final targeted re-review is clear.
+  Live restart is coordinated, not automatic: API PID 75664 currently retains
+  unrelated WA30 session `3c8819ab456f4330a60a41f0cfd7b6eb` at
+  `data/recordings/wa30/saved_003` as well as the two recorded LS20 sessions.
+  No active Video Import jobs were returned, but that does not authorize
+  discarding another game's in-memory session.
+
 - Windows startup diagnostics (2026-09-10): audited all 14 tracked first-party
   BAT/CMD launchers, with no dependency/cache/external-project script edits.
   Inventory: root `run_workbench.bat`; `python/arc_cli_debugger/cli/interactive_runner.bat`

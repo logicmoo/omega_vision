@@ -82,26 +82,52 @@ def _workspace(workspace_id: str) -> Path:
     return root
 
 
-def _store(root: Path) -> CandidateRuleStore:
+def _store(root: Path, unit=None, *, require_context=True) -> CandidateRuleStore:
+    from omega_vision.perception.contextual_rules import ContextualRuleStore, ReadOnlyLegacyRuleStore
+    from omega_vision.perception.contextual_memory import ContextUnavailable
+    unavailable = None
+    if unit is not None:
+        try:
+            context = _inspection_context(root, unit["sequenceId"], unit["id"])
+        except ContextUnavailable as error:
+            if require_context:
+                raise
+            unavailable = error.code
+        else:
+            if unit.get("frameOrder") != context.current.order:
+                raise ValidationError("Pipeline frame order disagrees with the explicit recording manifest")
+            return ContextualRuleStore(context)
     root = _api()._vision_data_root(root)
     for family in ("rule-candidates", "rule-proposals", "semantic-learning", "grouping-promotion-locks"):
         _safe(root, root / "runtime" / family)
     for family in ("event-rules", "grouping-rules"):
         _safe(root, root / "design" / family)
-    return CandidateRuleStore(root)
+    legacy = ReadOnlyLegacyRuleStore(root)
+    legacy.context_unavailable = unavailable
+    return legacy
 
 
 def _registry_revision(store: CandidateRuleStore, records=None, *, kinds=None) -> dict[str, Any]:
     from omega_vision.perception.event_induction import engine_version
+    context = getattr(store, "context", None)
     return {
-        "storePath": str(store.path.resolve()), "kinds": sorted(kinds) if kinds is not None else None,
+        "storePath": str((context.stm_area() if context else store.path).resolve()),
+        "kinds": sorted(kinds) if kinds is not None else None,
         "semantics": store.effective_semantics(records=records, kinds=kinds),
         "ruleEngineVersion": engine_version(),
+        "contextUnavailable": getattr(store, "context_unavailable", None),
     }
 
 
 @contextmanager
 def _registry_publication(store: CandidateRuleStore, revision: Mapping[str, Any]):
+    from omega_vision.perception.contextual_rules import ContextualRuleStore
+    if isinstance(store, ContextualRuleStore):
+        with store.journal.publication():
+            if _registry_revision(store, kinds=revision.get("kinds")) != revision:
+                raise ConflictError("Candidate registry changed during deduction; replan and replay the sequence")
+            yield
+        return
     with store.journal.transaction() as records:
         if _registry_revision(store, records, kinds=revision.get("kinds")) != revision:
             raise ConflictError("Candidate registry changed during deduction; replan and replay the sequence")
@@ -334,10 +360,10 @@ def run_objects(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) ->
     from omega_vision.perception.grouping_learning import shape_anchor
     from omega_vision.perception.object_evidence import infer_objects_with_evidence as infer_objects
     _, units, index = _context(unit)
-    with _memory_access(unit["workspaceId"], unit["sequenceId"], unit.get("_browserMemory")) as access:
+    with _memory_access(unit["workspaceId"], unit["sequenceId"], unit.get("_browserMemory"), frame_id=unit["id"]) as access:
         locations, context, volatile = access
         preferences = locations.load_preferences(context)
-        _require_generated_session(unit, preferences, ("shape", "object"))
+        _require_generated_session(unit, preferences, ("shape", "object"), locations=locations, context=context)
         frame = _frame(units[index])
         result = infer_objects(
             frame, temporal=_result(units[index], TEMPORAL) if index else None,
@@ -365,7 +391,7 @@ def run_objects(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) ->
                     payload = record["payload"]
                     if payload.get("kind") != "shape_point_anchor" or payload.get("shapeKey") != anchor["shapeKey"]:
                         continue
-                    reference = {**_memory_reference(record), "memberTrackUid": member["trackUid"],
+                    reference = {**_memory_reference(record, relation="has_shape"), "memberTrackUid": member["trackUid"],
                                  "observationUid": member["observationUid"]}
                     if reference not in references:
                         references.append(reference)
@@ -544,20 +570,24 @@ def run_grouping(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -
     from omega_vision.perception.grouping_learning import observe_grouping
     from omega_vision.perception.grouping_promotion import persist_grouping_candidates
     root, units, index = _context(unit)
-    with _memory_access(unit["workspaceId"], unit["sequenceId"], unit.get("_browserMemory")) as access:
+    with _memory_access(unit["workspaceId"], unit["sequenceId"], unit.get("_browserMemory"), frame_id=unit["id"]) as access:
         locations, context, volatile = access
         preferences = locations.load_preferences(context)
-        _require_generated_session(unit, preferences, ("shape",))
+        _require_generated_session(unit, preferences, ("shape",), locations=locations, context=context)
         frames = [_frame(item) for item in units[:index + 1]]
         result = observe_grouping(
             frames[-1], previous_state=_result(units[index - 1], GROUPING)["checkpoint"] if index else None,
         )
-        store = _store(root)
+        from omega_vision.perception.memory_locations import NOWHERE
+        transient = preferences["shape"]["saveTo"] == NOWHERE
+        store = _store(root, unit, require_context=not transient)
         proposals, deferred = _grouping_learning_proposals(result, store.list(kind="grouping"), frames[-1])
         # Final G acceptance and template self-matches are never positive training labels.
-        result["persistedCandidates"] = persist_grouping_candidates(
+        result["persistedCandidates"] = [] if transient else persist_grouping_candidates(
             store, {**result, "candidates": proposals}, training_frames=frames, source_images=_source_images(units, frames),
         )
+        if transient:
+            result["volatileProposals"] = proposals
         revision = _registry_revision(store, kinds={"grouping"})
         selected = locations.read_selected("shape", preferences["shape"]["lookIn"], context, volatile=volatile)
         if selected["errors"]:
@@ -600,7 +630,7 @@ def run_events(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> 
     )
     from omega_vision.perception.event_records import render_term
     root, units, index = _context(unit)
-    store = _store(root)
+    store = _store(root, unit, require_context=False)
     registry_revision = _registry_revision(store, kinds=EVENT_RULE_KINDS)
     frame = _frame(units[index])
     objects = _result(units[index], OBJECTS)
@@ -804,7 +834,9 @@ def _replay(root: Path, units: list[dict[str, Any]], *,
     from omega_vision.perception.event_deduction import deduce_sequence
     if not units or not units[0]["sequenceOrdered"]:
         raise ValidationError("Canonical replay requires an ordered sequence")
-    store = _store(root)
+    store = _store(root, units[-1], require_context=False)
+    if hasattr(store, "context") and any(item["id"] != store.context.moments[index].frame_id for index, item in enumerate(units)):
+        raise ValidationError("Replay frame order disagrees with the explicit recording manifest")
     registry_revision = (dict(registry_revision) if registry_revision is not None
                          else _registry_revision(store, kinds=EVENT_RULE_KINDS))
     frames = [_frame(item) for item in units]
@@ -847,7 +879,7 @@ def _replay(root: Path, units: list[dict[str, Any]], *,
 
 def run_log(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -> dict[str, Any]:
     root, units, index = _context(unit)
-    store = _store(root)
+    store = _store(root, unit, require_context=False)
     registry_revision = _registry_revision(store, kinds=EVENT_RULE_KINDS)
     result = _replay(root, units[:index + 1], registry_revision=registry_revision, reuse_existing_tail=True)
     with _registry_publication(store, registry_revision):
@@ -931,7 +963,7 @@ def run_induction(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) 
     from omega_vision.perception.event_induction import induce_detector_rules, induce_transition_rules
     root, units, index = _context(unit)
     examples, training = _examples(root, units[:index + 1], "train")
-    store = _store(root)
+    store = _store(root, unit)
     scope = {"domain": "visual-sequence", "provider_id": units[index]["providerId"]}
     with writer_lock(_api()._storage_path(root, "runtime", "semantic-learning")):
         detectors = induce_detector_rules(store, examples, scope=scope)
@@ -1100,6 +1132,7 @@ def run_llm_induction(unit: dict[str, Any], out_dir: Path, options: dict[str, An
     from omega_vision.perception.event_induction import ingest_llm_rule_proposals
     from omega_vision.perception.event_records import PREDICATES
     root, units, index = _context(unit)
+    store = _store(root, unit)
     if index == 0:
         return _emit(unit, out_dir, {"status": "skipped", "reason": "no_predecessor"},
                      schema="llm_event_rule_proposals", summary={"status": "skipped"})
@@ -1113,7 +1146,6 @@ def run_llm_induction(unit: dict[str, Any], out_dir: Path, options: dict[str, An
     raw, provenance = _invoke_audited(root, unit, out_dir, options, template_name="semantic_event_induction.txt",
                                     context=context, images=units[index - 1:index + 1])
     provenance["semanticTraining"] = [training]
-    store = _store(root)
     with writer_lock(_api()._storage_path(root, "runtime", "semantic-learning")):
         candidates = ingest_llm_rule_proposals(store, raw, provenance=provenance, entity_ids=known, inducer_version=VERSION)
         _record_training(store, candidates, [training])
@@ -1193,10 +1225,11 @@ def runtime_revision(unit: Mapping[str, Any], step: str | tuple[str, str]) -> st
              else {"grouping"} if composite == GROUPING else set())
     if kinds:
         from omega_vision.perception.event_induction import engine_version
-        store = _store(root)
+        store = _store(root, unit, require_context=False)
         revision["registryStore"] = str(store.path.resolve())
+        revision["ruleContextUnavailable"] = getattr(store, "context_unavailable", None)
         revision["ruleEngineVersion"] = engine_version()
-        promoted = [candidate for candidate in (store.list(status="promoted") if store.path.is_dir() else [])
+        promoted = [candidate for candidate in store.list(status="promoted")
                     if candidate["kind"] in kinds]
         revision["promotedRules"] = effective_promoted_semantics(promoted)
     if composite == EVENTS:
@@ -1205,7 +1238,7 @@ def runtime_revision(unit: Mapping[str, Any], step: str | tuple[str, str]) -> st
         }
     if composite in {OBJECTS, GROUPING}:
         from omega_vision.perception.memory_locations import NOWHERE
-        locations, context = _memory(unit["workspaceId"], unit.get("sequenceId"))
+        locations, context = _memory(unit["workspaceId"], unit.get("sequenceId"), frame_id=unit.get("id"))
         preferences = locations.load_preferences(context)
         memory_kinds = ("shape", "object") if composite == OBJECTS else ("shape",)
         selections = {kind: {key: preferences[kind][key] for key in ("saveTo", "lookIn")}
@@ -1267,26 +1300,41 @@ def _gates(body: Mapping[str, Any]) -> PromotionGates:
 
 @router.get("/candidates")
 @_http
-def candidates(workspaceId: str, response: Response, kind: str | None = None, status: str | None = None):
+def candidates(workspaceId: str, response: Response, kind: str | None = None, status: str | None = None,
+               sequenceId: str | None = None, frameId: str | None = None, proposalFrameId: str | None = None):
     response.headers["Cache-Control"] = "no-store"
     root = _workspace(workspaceId)
-    return {"candidates": _store(root).list(kind=kind, status=status),
+    store = _candidate_read_store(workspaceId, sequenceId, frameId, proposalFrameId)
+    return {"candidates": store.list(kind=kind, status=status),
+            "storageStatus": "contextual" if sequenceId else "legacy_read_only_migration_required",
             "unavailableStorage": _api().unavailable_legacy_storage(root)}
 
 
 @router.get("/candidates/{candidate_id}")
 @_http
-def candidate_detail(candidate_id: str, workspaceId: str, response: Response):
+def candidate_detail(candidate_id: str, workspaceId: str, response: Response,
+                     sequenceId: str | None = None, frameId: str | None = None, proposalFrameId: str | None = None):
     response.headers["Cache-Control"] = "no-store"
-    return _store(_workspace(workspaceId)).get(candidate_id)
+    return _candidate_read_store(workspaceId, sequenceId, frameId, proposalFrameId).get(candidate_id)
 
 
 @router.get("/candidates/{candidate_id}/evidence")
 @_http
-def candidate_evidence(candidate_id: str, workspaceId: str, response: Response):
+def candidate_evidence(candidate_id: str, workspaceId: str, response: Response,
+                       sequenceId: str | None = None, frameId: str | None = None, proposalFrameId: str | None = None):
     response.headers["Cache-Control"] = "no-store"
-    candidate = _store(_workspace(workspaceId)).get(candidate_id)
+    candidate = _candidate_read_store(workspaceId, sequenceId, frameId, proposalFrameId).get(candidate_id)
     return {"candidateId": candidate_id, "evidence": candidate["evidence"], "evaluations": candidate["evaluations"]}
+
+
+def _causal_evaluation_units(store, units):
+    context = getattr(store, "context", None)
+    if context is None or Path(units[0]["sequenceRoot"]).resolve() != context.directory:
+        return units
+    orders = {moment.frame_id: moment.order for moment in context.moments}
+    if any(orders.get(unit["id"]) != unit.get("frameOrder") for unit in units):
+        raise ValidationError("Evaluation frames disagree with the explicit recording manifest")
+    return [unit for unit in units if orders[unit["id"]] <= context.current.order]
 
 
 def _evaluate_grouping(store: CandidateRuleStore, candidate_id: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -1302,6 +1350,7 @@ def _evaluate_grouping(store: CandidateRuleStore, candidate_id: str, body: dict[
         raise ValidationError("Unknown training frame")
     checkpoint = _result(training_unit or training_units[-1], GROUPING)["checkpoint"]
     root, units = _consumer_units(body["workspaceId"], body["sequenceId"], state)
+    units = _causal_evaluation_units(store, units)
     if not units[0]["sequenceOrdered"]:
         raise ValidationError("Grouping replay requires an ordered sequence")
     frames = [_frame(item) for item in units]
@@ -1337,18 +1386,30 @@ def _evaluate_grouping(store: CandidateRuleStore, candidate_id: str, body: dict[
 
 
 @router.post("/candidates/{candidate_id}/evaluate")
+@router.post("/memory/rules/{candidate_id}/evaluate")
 @_http
 def candidate_evaluate(candidate_id: str, response: Response, body: dict[str, Any] = Body(...)):
     from omega_vision.perception.event_induction import evaluate_candidate
     response.headers["Cache-Control"] = "no-store"
     root = _workspace(body.get("workspaceId", ""))
-    store = _store(root)
+    _fields(body, {"workspaceId", "sequenceId", "frameId", "proposalFrameId"},
+            {"sequences", "evaluationSequenceId", "partition", "labels",
+             "allowLlmPromotion", "memorySessionId", "memorySnapshot"})
+    store = _scoped_rule_request(body)
     candidate = store.get(candidate_id)
     if candidate["kind"] == "grouping":
-        return _evaluate_grouping(store, candidate_id, body)
-    _fields(body, {"workspaceId", "sequences"}, {"allowLlmPromotion", "memorySessionId", "memorySnapshot"})
+        _fields(body, {"workspaceId", "sequenceId", "frameId", "proposalFrameId",
+                       "evaluationSequenceId", "partition", "labels"},
+                {"allowLlmPromotion", "memorySessionId", "memorySnapshot"})
+        evaluation = {key: value for key, value in body.items()
+                      if key not in {"frameId", "proposalFrameId", "evaluationSequenceId"}}
+        evaluation.update(trainingSequenceId=body["sequenceId"], trainingFrameId=body["proposalFrameId"],
+                          sequenceId=body["evaluationSequenceId"])
+        return _evaluate_grouping(store, candidate_id, evaluation)
+    _fields(body, {"workspaceId", "sequenceId", "frameId", "proposalFrameId", "sequences"},
+            {"allowLlmPromotion", "memorySessionId", "memorySnapshot"})
     state = browser_memory(body)
-    if not isinstance(body["sequences"], list) or not body["sequences"]:
+    if not isinstance(body.get("sequences"), list) or not body["sequences"]:
         raise ValidationError("Supply actual sequence IDs and explicit train/held_out partitions")
     examples, sources = [], []
     for selection in body["sequences"]:
@@ -1356,6 +1417,7 @@ def candidate_evaluate(candidate_id: str, response: Response, body: dict[str, An
         if selection["partition"] not in {"train", "held_out"}:
             raise ValidationError("Partition must be train or held_out")
         _, units = _consumer_units(body["workspaceId"], selection["sequenceId"], state)
+        units = _causal_evaluation_units(store, units)
         batch, source = _examples(root, units, selection["partition"])
         if not batch:
             raise ValidationError("Initial observations do not provide evaluation pairs")
@@ -1379,16 +1441,18 @@ def candidate_evaluate(candidate_id: str, response: Response, body: dict[str, An
 def candidate_deployment(candidate_id: str, response: Response, body: dict[str, Any] = Body(...)):
     from omega_vision.perception.grouping_promotion import create_grouping_deployment
     response.headers["Cache-Control"] = "no-store"
-    _fields(body, {"workspaceId", "trainingSequenceId", "reviewer", "reason"},
-            {"trainingFrameId", "memorySessionId", "memorySnapshot"})
+    _fields(body, {"workspaceId", "sequenceId", "frameId", "proposalFrameId", "reviewer", "reason"},
+            {"memorySessionId", "memorySnapshot"})
+    if body["frameId"] != body["proposalFrameId"]:
+        raise ValidationError("Cross-frame grouping deployment requires an explicit immutable parent-reference adapter")
     state = browser_memory(body)
-    root, units = _consumer_units(body["workspaceId"], body["trainingSequenceId"], state)
-    unit = next((item for item in units if item["id"] == body.get("trainingFrameId")), None)
-    if "trainingFrameId" in body and unit is None:
+    _, units = _consumer_units(body["workspaceId"], body["sequenceId"], state)
+    unit = next((item for item in units if item["id"] == body["frameId"]), None)
+    if unit is None:
         raise ValidationError("Unknown training frame")
-    checkpoint = _result(unit or units[-1], GROUPING)["checkpoint"]
+    checkpoint = _result(unit, GROUPING)["checkpoint"]
     candidate = create_grouping_deployment(
-        _store(root), candidate_id, checkpoint, reviewer=body["reviewer"], reason=body["reason"],
+        _scoped_rule_request(body), candidate_id, checkpoint, reviewer=body["reviewer"], reason=body["reason"],
     )
     return {"candidate": candidate, "requiresIndependentEvaluation": True,
             "activation": "Only separate explicit promotion activates this exact deployment AST"}
@@ -1398,9 +1462,9 @@ def candidate_deployment(candidate_id: str, response: Response, body: dict[str, 
 @_http
 def candidate_promote(candidate_id: str, body: dict[str, Any] = Body(...)):
     from omega_vision.perception.grouping_promotion import evaluate_grouping_promotion
-    _fields(body, {"workspaceId"}, {"allowLlmPromotion"})
+    _fields(body, {"workspaceId", "sequenceId", "frameId", "proposalFrameId"}, {"allowLlmPromotion"})
     root = _workspace(body["workspaceId"])
-    store = _store(root)
+    store = _scoped_rule_request(body)
     if store.get(candidate_id)["kind"] == "grouping":
         from omega_vision.perception.memory_catalog_cache import memory_catalog_mutation
         _api()._storage_path(root, ".cache", "memory-catalog")
@@ -1415,10 +1479,10 @@ def candidate_promote(candidate_id: str, body: dict[str, Any] = Body(...)):
 @router.post("/candidates/{candidate_id}/reject")
 @_http
 def candidate_reject(candidate_id: str, body: dict[str, Any] = Body(...)):
-    _fields(body, {"workspaceId", "reason", "reviewer"})
+    _fields(body, {"workspaceId", "sequenceId", "frameId", "proposalFrameId", "reason", "reviewer"})
     if not isinstance(body["reviewer"], str) or not body["reviewer"].strip():
         raise ValidationError("An attributed reviewer is required")
-    return _store(_workspace(body["workspaceId"])).reject(
+    return _scoped_rule_request(body).reject(
         candidate_id, reason=body["reason"],
         provenance={"source": "human_review", "reviewer": body["reviewer"], "adapterVersion": VERSION},
     )
@@ -1481,7 +1545,7 @@ def authorized_memory_roots(workspace_id: str):
     return mounts
 
 
-def _memory(workspace_id: str, sequence_id: str | None):
+def _memory(workspace_id: str, sequence_id: str | None, frame_id: str | None = None):
     from omega_vision.perception.memory_locations import MemoryContext, MemoryLocations
     root = _workspace(workspace_id)
     game = level = run = None
@@ -1531,14 +1595,86 @@ def _memory(workspace_id: str, sequence_id: str | None):
                        if source_recording else {sequence_id})
         run_aliases.update({run, "data/omega_vision/" + run.removeprefix("data/"),
                             "data/omega_vision/omega_vision/" + run.removeprefix("data/")})
+        direct_parts = directory.relative_to(_api()._vision_data_root(root)).parts
+        if (frame_id and len(direct_parts) == 3 and direct_parts[0] == "recordings"
+                and isinstance(manifest.get("moves"), list) and manifest.get("game_id") is not None):
+            selected = _inspection_context(root, sequence_id, frame_id)
+            game, level, run = selected.game_id, selected.current.level_id, selected.sequence_id
     context = MemoryContext(
         provider_ref=OMEGA_PROVIDER_ID, workspace_id=OMEGA_STORAGE_ID,
         game_id=str(game) if game is not None else None,
         level_id=str(level) if level is not None else None, run_id=run,
     )
     class OmegaMemoryLocations(MemoryLocations):
-        def save_record(self, *args, **kwargs):
-            return super().save_record(*args, **kwargs, provenance_workspace_id=workspace_id)
+        supports_metta_memory = True
+
+        def _native(self):
+            from omega_vision.perception.contextual_memory import ContextualMemory, ContextUnavailable
+            context = None
+            self.context_unavailable = None
+            if frame_id:
+                try:
+                    context = _inspection_context(root, sequence_id, frame_id)
+                except ContextUnavailable as error:
+                    self.context_unavailable = {"reasonCode": error.code, "message": str(error)}
+            return ContextualMemory(root, workspace_id, mount=self.roots[0]), context
+
+        def _location(self, mount, path, kind, context, format):
+            result = super()._location(mount, path, kind, context, format)
+            if format == "memory_json":
+                result["capabilities"].update(write=False, reason="Historical JSON memory is read-only; select a MeTTa area explicitly")
+            elif format == "memory_metta":
+                result["capabilities"].update(write=mount.writable, reason=None if mount.writable else "Read-only grant")
+            return result
+
+        def _destinations(self, mount, context):
+            old = super()._destinations(mount, context)
+            if getattr(self, "_legacy_defaults_only", False):
+                return old
+            native, current = self._native()
+            return old + [(native.descriptor(area, kind, current), area / filename)
+                          for area in native.native_areas(current)
+                          for kind, filename in (("shape", "shapes_db.metta"), ("object", "objects_db.metta"))]
+
+        def _records(self, mount, location, path):
+            if location["format"] == "memory_metta":
+                if getattr(self, "_building_native_catalog", False):
+                    from omega_vision.perception.contextual_memory import ContextualMemory
+                    native, current = ContextualMemory(root, workspace_id, mount=mount), None
+                else:
+                    native, current = self._native()
+                filters = {}
+                if current:
+                    if current.current.level_id is not None and path.parent == current.stm_area():
+                        filters["before"] = current.current.order
+                    elif path.parent == current.frame_area():
+                        filters["exact"] = current.current.order
+                return native.read(path.parent, location["memoryKinds"][0], current, **filters)[0]
+            return super()._records(mount, location, path)
+
+        def _catalog_metadata(self, *args, **kwargs):
+            previous = getattr(self, "_building_native_catalog", False)
+            self._building_native_catalog = True
+            try:
+                result = super()._catalog_metadata(*args, **kwargs)
+            finally:
+                self._building_native_catalog = previous
+            if getattr(self, "_legacy_defaults_only", False):
+                result = {**result, "locations": [item for item in result["locations"]
+                                                  if item["format"] != "memory_metta"]}
+            return result
+
+        def save_record(self, kind, destination_id, payload, context, **kwargs):
+            from omega_vision.perception.memory_locations import NOWHERE
+            if destination_id == NOWHERE:
+                return super().save_record(kind, destination_id, payload, context,
+                                           **kwargs, provenance_workspace_id=workspace_id)
+            native, current = self._native()
+            for area in native.native_areas(current):
+                if native.descriptor(area, kind, current)["memoryLocationId"] == destination_id:
+                    return native.save(area, kind, payload, context=current,
+                                       origin=kwargs.get("origin"), concept_uid=kwargs.get("concept_uid"))
+            raise PermissionError("Historical or unregistered memory destination is read-only; select an explicit MeTTa area")
 
         def _legacy_preferences(self, context):
             from omega_vision.perception.memory_locations import AuthorizedMemoryRoot
@@ -1579,6 +1715,8 @@ def _memory(workspace_id: str, sequence_id: str | None):
 
         def catalog(self, context, **kwargs):
             result = super().catalog(context, **kwargs)
+            if getattr(self, "context_unavailable", None):
+                result["contextUnavailable"] = self.context_unavailable
             historical = {item["memoryLocationId"]: item
                           for item in (*result["locations"], *result["destinations"])
                           if self._historical_alias_location(item)}
@@ -1614,7 +1752,11 @@ def _memory(workspace_id: str, sequence_id: str | None):
                     raise ValueError("Conflicting historical sequence/workspace preferences require explicit selection or migration")
                 if historical:
                     return historical[0]
-            return super().load_preferences(context)
+            self._legacy_defaults_only = True
+            try:
+                return super().load_preferences(context)
+            finally:
+                self._legacy_defaults_only = False
 
     return OmegaMemoryLocations(authorized_memory_roots(workspace_id)), context
 
@@ -1634,15 +1776,15 @@ def browser_memory(body: Mapping[str, Any]):
 
 
 @contextmanager
-def _memory_access(workspace_id: str, sequence_id: str | None, state=None):
-    locations, context = _memory(workspace_id, sequence_id)
+def _memory_access(workspace_id: str, sequence_id: str | None, state=None, *, frame_id=None):
+    locations, context = _memory(workspace_id, sequence_id, frame_id)
     yield locations, context, state.memory if state else None
 
 
 def _transient_output(unit: Mapping[str, Any], step: str, preferences=None) -> bool:
     from omega_vision.perception.memory_locations import NOWHERE
     if preferences is None:
-        locations, context = _memory(unit["workspaceId"], unit["sequenceId"])
+        locations, context = _memory(unit["workspaceId"], unit["sequenceId"], frame_id=unit.get("id"))
         preferences = locations.load_preferences(context)
     kinds = ("shape", "object") if step == OBJECTS else ("shape",)
     return any(preferences[kind]["saveTo"] == NOWHERE for kind in kinds)
@@ -1663,7 +1805,8 @@ def transient_output_available(unit: Mapping[str, Any], step: str) -> bool:
     return bool(output and output["resultHash"] == receipt.get("resultHash"))
 
 
-def _require_generated_session(unit: Mapping[str, Any], preferences: Mapping[str, Any], kinds):
+def _require_generated_session(unit: Mapping[str, Any], preferences: Mapping[str, Any], kinds, *,
+                               locations=None, context=None):
     from omega_vision.perception.memory_locations import NOWHERE
     uses_nowhere = any(preferences[kind]["saveTo"] == NOWHERE or NOWHERE in preferences[kind]["lookIn"]
                        for kind in kinds)
@@ -1678,11 +1821,23 @@ def _require_generated_session(unit: Mapping[str, Any], preferences: Mapping[str
             "use Run now/direct in the page "
             "or choose persistent memory locations."
         )
+    if locations is not None:
+        for kind in kinds:
+            if preferences[kind]["saveTo"] != NOWHERE:
+                _, destination, _ = locations._find(context, preferences[kind]["saveTo"])
+                if kind not in destination["memoryKinds"] or not destination["capabilities"]["write"]:
+                    raise PermissionError("Selected historical memory is read-only; choose an explicit MeTTa destination")
 
 
-def _memory_reference(record: Mapping[str, Any]) -> dict[str, Any]:
-    return {**{key: record["source"][key] for key in ("providerRef", "workspaceId", "memoryLocationId")},
-            "recordUid": record["recordUid"], "revision": record["revision"]}
+def _memory_reference(record: Mapping[str, Any], *, relation: str = "references") -> dict[str, Any]:
+    from omega_vision.perception.memory_references import normalize_reference
+    return normalize_reference({
+            **{key: record["source"][key] for key in ("providerRef", "workspaceId", "memoryLocationId")
+               if key in record["source"]},
+            "recordUid": record["recordUid"], "revision": record["revision"],
+            "targetKind": record["memoryKind"], "relation": relation,
+            **({"registeredPath": record["source"]["registeredPath"]}
+               if record["source"].get("registeredPath") else {})})
 
 
 def _save_generated_records(access, preferences: Mapping[str, Any], kind: str,
@@ -1709,10 +1864,10 @@ def _memory_write_summary(preferences: Mapping[str, Any], kind: str, records) ->
 @router.get("/memory")
 @_http
 def memory_setup(workspaceId: str, response: Response, sequenceId: str | None = None,
-                 memorySessionId: str | None = None, refresh: bool = False):
+                 memorySessionId: str | None = None, refresh: bool = False, frameId: str | None = None):
     response.headers["Cache-Control"] = "no-store"
     browser_memory({"workspaceId": workspaceId, "memorySessionId": memorySessionId})
-    with _memory_access(workspaceId, sequenceId) as (locations, context, volatile):
+    with _memory_access(workspaceId, sequenceId, frame_id=frameId) as (locations, context, volatile):
         return {"catalog": locations.catalog(context, volatile=volatile, refresh=refresh),
                 "preferences": locations.load_preferences(context), "context": asdict(context),
                 "volatileLifetime": "browser_page", "memorySessionId": memorySessionId}
@@ -1721,12 +1876,12 @@ def memory_setup(workspaceId: str, response: Response, sequenceId: str | None = 
 @router.post("/memory/setup")
 @_http
 def memory_setup_snapshot(response: Response, body: dict[str, Any] = Body(...)):
-    _fields(body, {"workspaceId"}, {"sequenceId", "memorySessionId", "memorySnapshot", "refresh"})
+    _fields(body, {"workspaceId"}, {"sequenceId", "frameId", "memorySessionId", "memorySnapshot", "refresh"})
     if type(body.get("refresh", False)) is not bool:
         raise ValidationError("refresh must be boolean")
     state = browser_memory(body)
     response.headers["Cache-Control"] = "no-store"
-    with _memory_access(body["workspaceId"], body.get("sequenceId"), state) as (locations, context, volatile):
+    with _memory_access(body["workspaceId"], body.get("sequenceId"), state, frame_id=body.get("frameId")) as (locations, context, volatile):
         return {"catalog": locations.catalog(context, volatile=volatile, refresh=body.get("refresh", False)),
                 "preferences": locations.load_preferences(context), "context": asdict(context),
                 "volatileLifetime": "browser_page"}
@@ -1735,8 +1890,8 @@ def memory_setup_snapshot(response: Response, body: dict[str, Any] = Body(...)):
 @router.put("/memory/preferences")
 @_http
 def memory_preferences(response: Response, body: dict[str, Any] = Body(...)):
-    _fields(body, {"workspaceId", "preferences", "expectedRevision"}, {"sequenceId", "memorySessionId"})
-    locations, context = _memory(body["workspaceId"], body.get("sequenceId"))
+    _fields(body, {"workspaceId", "preferences", "expectedRevision"}, {"sequenceId", "frameId", "memorySessionId"})
+    locations, context = _memory(body["workspaceId"], body.get("sequenceId"), body.get("frameId"))
     response.headers["Cache-Control"] = "no-store"
     try:
         return locations.save_preferences(context, body["preferences"], expected_revision=body["expectedRevision"])
@@ -1763,12 +1918,18 @@ def memory_read(response: Response, body: dict[str, Any] = Body(...)):
 def memory_copy(response: Response, body: dict[str, Any] = Body(...)):
     from omega_vision.perception.memory_locations import NOWHERE
     _fields(body, {"workspaceId", "kind", "sourceLocationId", "recordUid", "destinationId"},
-            {"sequenceId", "memorySessionId", "memorySnapshot"})
+            {"sequenceId", "frameId", "memorySessionId", "memorySnapshot"})
     state = browser_memory(body)
     if NOWHERE in (body["sourceLocationId"], body["destinationId"]) and state is None:
         raise ValidationError("Nowhere copies require an explicit browser memory snapshot")
-    with _memory_access(body["workspaceId"], body.get("sequenceId"), state) as access:
+    with _memory_access(body["workspaceId"], body.get("sequenceId"), state, frame_id=body.get("frameId")) as access:
         locations, context, volatile = access
+        if body["sourceLocationId"] != NOWHERE:
+            _, source_location, source_path = locations._find(context, body["sourceLocationId"])
+            if source_location["format"] == "memory_metta":
+                native, current = locations._native()
+                if source_path.parent not in native.native_areas(current):
+                    raise PermissionError("Source memory requires its explicit authorized frame/level context")
         source = locations.read_selected(body["kind"], [body["sourceLocationId"]], context, volatile=volatile)
         if source["errors"]:
             raise ValidationError("Source memory location is unavailable")
@@ -1786,9 +1947,9 @@ def memory_copy(response: Response, body: dict[str, Any] = Body(...)):
 @_http
 def memory_save(response: Response, body: dict[str, Any] = Body(...)):
     from omega_vision.perception.memory_locations import NOWHERE
-    _fields(body, {"workspaceId", "kind", "destinationId", "payload"}, {"sequenceId", "memorySessionId", "memorySnapshot"})
+    _fields(body, {"workspaceId", "kind", "destinationId", "payload"}, {"sequenceId", "frameId", "memorySessionId", "memorySnapshot"})
     state = browser_memory(body)
-    with _memory_access(body["workspaceId"], body.get("sequenceId"), state) as access:
+    with _memory_access(body["workspaceId"], body.get("sequenceId"), state, frame_id=body.get("frameId")) as access:
         locations, context, volatile = access
         result = locations.save_record(body["kind"], body["destinationId"], body["payload"], context,
                                        volatile=volatile, origin={"source": "explicit_browser_save"})
@@ -1806,3 +1967,136 @@ def memory_reset(response: Response, body: dict[str, Any] = Body(...)):
     response.headers["Cache-Control"] = "no-store"
     return {"memorySessionId": body["memorySessionId"], "requiresNewSession": True,
             "message": "No memory is retained by the server. Clear the browser snapshot and rotate its page token."}
+
+
+def _inspection_context(root, sequence_id, frame_id):
+    from omega_vision.perception.contextual_memory import ContextUnavailable, recording_context
+    if not sequence_id:
+        raise ContextUnavailable("missing_sequence", "Select an actual recording and frame")
+    directory = _api()._sequence_root_for(root, sequence_id)
+    return recording_context(root, directory, frame_id)
+
+
+@router.get("/memory/inspectable-areas")
+@_http
+def memory_inspectable_areas(workspaceId: str, response: Response):
+    from omega_vision.perception.contextual_memory import inspectable_areas
+    _workspace(workspaceId)
+    response.headers["Cache-Control"] = "no-store"
+    return inspectable_areas()
+
+
+@router.post("/memory/inspect-area")
+@_http
+def memory_inspect_area(response: Response, body: dict[str, Any] = Body(...)):
+    from omega_vision.perception.contextual_memory import ContextualMemory
+    _fields(body, {"workspaceId", "areaId", "kind"},
+            {"sequenceId", "frameId", "memorySnapshot", "memorySessionId"})
+    root = _workspace(body["workspaceId"])
+    state = browser_memory(body)
+    response.headers["Cache-Control"] = "no-store"
+    return ContextualMemory(root, body["workspaceId"], mount=authorized_memory_roots(body["workspaceId"])[0]).inspect(
+        body["areaId"], body["kind"],
+        context_loader=lambda: _inspection_context(root, body.get("sequenceId"), body.get("frameId")),
+        volatile=state.memory if state else None,
+    )
+
+
+@router.post("/memory/save-area")
+@_http
+def memory_save_area(response: Response, body: dict[str, Any] = Body(...)):
+    from omega_vision.perception.contextual_memory import ContextualMemory
+    _fields(body, {"workspaceId", "kind", "scope", "payload", "sequenceId", "frameId"})
+    root = _workspace(body["workspaceId"])
+    context = _inspection_context(root, body["sequenceId"], body["frameId"])
+    if body["scope"] == "frame":
+        area = context.frame_area()
+    elif body["scope"] == "recording-level-stm":
+        area = context.stm_area()
+    else:
+        raise ValidationError("Explicit frame or recording-level-stm save scope is required")
+    response.headers["Cache-Control"] = "no-store"
+    record = ContextualMemory(root, body["workspaceId"], mount=authorized_memory_roots(body["workspaceId"])[0]).save(
+        area, body["kind"], body["payload"], context=context,
+        origin={"source": "explicit_browser_save"},
+    )
+    return {"record": record, "volatile": False}
+
+
+def _candidate_read_store(workspace_id, sequence_id, frame_id, proposal_frame_id):
+    if sequence_id is None and frame_id is None and proposal_frame_id is None:
+        return _store(_workspace(workspace_id))
+    if not sequence_id or not frame_id:
+        raise ValidationError("Scoped candidate reads require sequenceId and frameId")
+    body = {"workspaceId": workspace_id, "sequenceId": sequence_id, "frameId": frame_id}
+    if proposal_frame_id is not None:
+        body["proposalFrameId"] = proposal_frame_id
+    return _scoped_rule_request(body, writable=False)
+
+
+def _scoped_rule_request(body, *, writable=True):
+    from omega_vision.perception.contextual_rules import ContextualRuleStore
+    root = _workspace(body["workspaceId"])
+    grant = authorized_memory_roots(body["workspaceId"])[0]
+    if not grant.readable or (writable and not grant.writable) or grant.root != _api()._vision_data_root(root):
+        raise PermissionError("The shared provider does not authorize the selected rule operation")
+    context = _inspection_context(root, body["sequenceId"], body["frameId"])
+    origin = (_inspection_context(root, body["sequenceId"], body["proposalFrameId"])
+              if "proposalFrameId" in body else context)
+    return ContextualRuleStore(context, origin=origin)
+
+
+@router.post("/memory/rules/propose")
+@_http
+def memory_rule_propose(response: Response, body: dict[str, Any] = Body(...)):
+    _fields(body, {"workspaceId", "sequenceId", "frameId", "kind", "rule", "source", "provenance", "inducerVersion"},
+            {"entityIds"})
+    store = _scoped_rule_request(body)
+    candidate = store.create(body["rule"], kind=body["kind"], source=body["source"],
+                             provenance=body["provenance"], inducer_version=body["inducerVersion"],
+                             entity_ids=body.get("entityIds", []),
+                             scope={"domain": "visual-sequence", "provider_id": OMEGA_PROVIDER_ID})
+    response.headers["Cache-Control"] = "no-store"
+    return {"candidate": candidate, "authority": "proposals_only",
+            "source": "data/" + store.journal.database.path.relative_to(store.context.root).as_posix()}
+
+
+@router.post("/memory/rules/{candidate_id}/promote")
+@_http
+def memory_rule_promote(candidate_id: str, response: Response, body: dict[str, Any] = Body(...)):
+    _fields(body, {"workspaceId", "sequenceId", "frameId", "proposalFrameId"},
+            {"role", "allowLlmPromotion"})
+    store = _scoped_rule_request(body)
+    role = body.get("role", "deduction")
+    if store.get(candidate_id)["kind"] == "grouping" and role == "deduction":
+        from omega_vision.perception.grouping_promotion import evaluate_grouping_promotion
+        candidate = evaluate_grouping_promotion(store, candidate_id, gates=_gates(body), promote=True)["promotion"]
+    else:
+        candidate = store.promote(candidate_id, gates=_gates(body), role=role)
+    response.headers["Cache-Control"] = "no-store"
+    return {"candidate": candidate, "destination": "data/" + store.context.stm_area().relative_to(store.context.root).as_posix(),
+            "requiresCausalCutoff": True, "automaticOnwardPromotion": False}
+
+
+@router.post("/memory/inspect-reference")
+@_http
+def memory_inspect_reference(response: Response, body: dict[str, Any] = Body(...)):
+    from omega_vision.perception.contextual_memory import ContextualMemory, ContextUnavailable
+    _fields(body, {"workspaceId", "areaId", "reference"},
+            {"sequenceId", "frameId", "memorySessionId", "memorySnapshot"})
+    if not isinstance(body["reference"], dict):
+        raise ValidationError("An attributed reference object is required")
+    root = _workspace(body["workspaceId"])
+    state = browser_memory(body)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return ContextualMemory(root, body["workspaceId"], mount=authorized_memory_roots(body["workspaceId"])[0]).inspect_reference(
+            body["reference"], area_id=body["areaId"],
+            context_loader=lambda: _inspection_context(root, body.get("sequenceId"), body.get("frameId")),
+            volatile=state.memory if state else None,
+        )
+    except ContextUnavailable as error:
+        return {"status": "unavailable", "reasonCode": error.code, "message": str(error),
+                "areaId": body["areaId"], "kind": body["reference"].get("targetKind"),
+                "records": [], "sources": [], "authorizedSources": [],
+                "errors": [{"code": error.code, "message": str(error)}], "cachePolicy": "no-store"}
