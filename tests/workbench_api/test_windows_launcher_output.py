@@ -113,10 +113,22 @@ def test_all_tracked_launchers_have_early_safe_diagnostics():
     assert set(tracked) == set(LAUNCHERS)
     for relative in LAUNCHERS:
         text = (ROOT / relative).read_text(encoding="utf-8")
-        banner = text.index('echo "[launcher] %~f0"')
-        assert "Purpose:" in text and "CWD:" in text
+        command = (
+            'echo [launcher] command: "%ComSpec%" /d /c "%~f0" '
+            '[forwarded arguments: REDACTED]'
+        )
+        banner = text.index(command)
+        echoes = [line.strip() for line in text.splitlines()
+                  if line.lstrip().lower().startswith("echo")]
+        assert echoes[0] == command
+        assert 'set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"' in text
+        assert 'set "WB_DIAG_BOOTSTRAP_PURPOSE=' in text
+        bootstrap = text.index(' -Bootstrap')
+        assert banner < text.index("\ntitle ") < bootstrap
+        assert 'set "WB_DIAG_TITLE=' in text
+        assert 'set "WB_DIAG_TITLE_PORTS=' in text
         if "setkeys.bat" in text:
-            assert banner < text.index('if exist "C:\\snet\\setkeys.bat"')
+            assert bootstrap < text.index('if exist "C:\\snet\\setkeys.bat"')
             assert 'call "C:\\snet\\setkeys.bat" >nul 2>nul\n@echo off' in text
         assert "EnableDelayedExpansion" not in text
         assert not any("%*" in line for line in text.splitlines() if line.lstrip().startswith("echo"))
@@ -128,6 +140,47 @@ def test_all_tracked_launchers_have_early_safe_diagnostics():
     assert not any(line.lower().startswith("setlocal") for line in vite.splitlines())
 
 
+def test_diagnostics_use_only_the_attached_console_and_headless_fallbacks():
+    helper = (ROOT / HELPER).read_text(encoding="utf-8")
+    assert "param([switch] $Bootstrap)" in helper
+    assert "[Console]::IsOutputRedirected" in helper
+    assert "'CONOUT$', 0x40000000, 3, [IntPtr]::Zero, 3, 0" in helper
+    assert "WriteConsoleW" in helper
+    assert "CloseHandle" in helper
+    assert "[Console]::Out.WriteLine($safe)" in helper
+    assert "[Console]::Error.WriteLine($safe)" in helper
+    assert "Write-Diagnostic $command -AlreadyLogged" in helper
+    assert helper.index("Write-Diagnostic $command -AlreadyLogged") < helper.index(
+        "Write-Diagnostic ('[launcher] Purpose:"
+    )
+    for prohibited in (
+        "AllocConsole", "AttachConsole", "FreeConsole", "ShowWindow",
+        "Start-Process", "Add-Type", "Process.Start", "-WindowStyle",
+    ):
+        assert prohibited not in helper
+
+
+def test_service_titles_update_with_validated_ports_not_raw_arguments():
+    expected = {
+        "run_workbench.bat": "KILL_WEB_PORT;KILL_API_PORT",
+        "python/workbench_api_server/scripts/run_demo.bat": "WEB_PORT;API_PORT",
+        "python/workbench_api_server/scripts/run_api_server.bat": "API_PORT",
+        "python/workbench_api_server/scripts/run_vite_server.bat": "WEB_PORT",
+        "python/workbench_api_server/scripts/run_clawrouter.bat": "CLAWROUTER_PORT",
+        "python/workbench_api_server/scripts/run_omniroute.bat": "OMNIROUTE_PORT",
+    }
+    for relative, ports in expected.items():
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        assert f'set "WB_DIAG_TITLE_PORTS={ports}"' in source
+        for line in source.splitlines():
+            if line.lower().startswith("title "):
+                assert "%" not in line
+    helper = (ROOT / HELPER).read_text(encoding="utf-8")
+    assert "[Console]::Title = $title" in helper
+    assert "$value -match '^[0-9]{1,5}$'" in helper
+    assert "[int]$value -le 65535" in helper
+
+
 def test_demo_and_vite_never_echo_dynamic_urls_or_port_values_raw():
     for name in ("run_demo", "run_vite_server"):
         source = ROOT / f"python/workbench_api_server/scripts/{name}.bat"
@@ -136,6 +189,47 @@ def test_demo_and_vite_never_echo_dynamic_urls_or_port_values_raw():
             if line.lstrip().lower().startswith("echo")
         )
         assert not re.search(r"%(?:\w*URL\w*|\w*TARGET|\w*PORT|PORT_VALUE)%", echoes)
+
+
+def test_api_describe_mode_bypasses_credentials_and_bootstrap():
+    source = (ROOT / "python/workbench_api_server/scripts/run_api_server.bat").read_text(
+        encoding="utf-8"
+    )
+    branch = source.index('if /I "%~1"=="/describe" goto :describe')
+    assert branch < source.index(" -Bootstrap")
+    assert branch < source.index('if exist "C:\\snet\\setkeys.bat"')
+    describe = source.split("\n:describe\n", 1)[1]
+    assert 'echo [launcher] command: "%PYTHON_EXE%" "%~dp0run_api_server.py" --help' in describe
+    assert "title MeTTa Workbench API - Describe Only" in describe
+    assert '"%PYTHON_EXE%" "%~dp0run_api_server.py" --help\nexit /b %ERRORLEVEL%' in describe
+    for forbidden in ("setkeys", " -Bootstrap", "--host", "--port", "%*", "pip install", "start "):
+        assert forbidden not in describe
+
+
+def test_api_describe_executes_help_only_and_preserves_exit(sandbox):
+    _, caller, run = sandbox
+    result, records = run(
+        "python/workbench_api_server/scripts/run_api_server.bat",
+        "/describe --host ignored --port 9999", STUB_EXIT="19",
+    )
+    assert result.returncode == 19, result.stdout + result.stderr
+    assert len(records) == 1
+    assert Path(records[0]["args"][0]).name == "run_api_server.py"
+    assert records[0]["args"][1:] == ["--help"]
+    assert records[0]["cwd"] == str(caller)
+    assert records[0]["setupSecret"] == ""
+    assert result.stdout.splitlines()[0].endswith('" --help')
+    assert result.stdout.index("--help") < result.stdout.index("STUB_PYTHON")
+    assert "ignored" not in result.stdout
+
+
+def test_api_describe_missing_python_does_not_bootstrap(sandbox):
+    directory, _, run = sandbox
+    (directory / ".venv/Scripts/python.exe").unlink()
+    result, records = run("python/workbench_api_server/scripts/run_api_server.bat", "/describe")
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert not records
+    assert "will not create an environment" in result.stdout
 
 
 @pytest.fixture(scope="module")
@@ -241,6 +335,13 @@ def test_every_launcher_executes_only_stubs_with_visible_banner(sandbox, relativ
     result, records = run(relative, args)
     output = result.stdout + result.stderr
     assert "[launcher]" in output, output
+    first = result.stdout.splitlines()[0]
+    assert first.startswith('[launcher] command: "'), output
+    assert "\\cmd.exe\" /d /c \"" in first.casefold(), output
+    assert str(directory / relative) in first
+    assert first.endswith("[forwarded arguments: REDACTED]")
+    assert result.stdout.index("[launcher] command:") < result.stdout.index("[launcher] Purpose:")
+    assert result.stdout.index("[launcher] Purpose:") < result.stdout.index("[launcher] CWD:")
     assert str(directory / relative) in output
     assert str(caller) in output
     assert "never-show-this-secret" not in output

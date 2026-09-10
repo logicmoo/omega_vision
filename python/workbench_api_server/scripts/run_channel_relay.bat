@@ -1,8 +1,12 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: run the mailbox channel relay with its selected Python environment."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title Mailbox Channel Relay
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=run the mailbox channel relay with its selected Python environment."
+set "WB_DIAG_TITLE=Mailbox Channel Relay"
+set "WB_DIAG_TITLE_PORTS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
 set "RELAY_ROOT=%~1"
 if not defined RELAY_ROOT set "RELAY_ROOT=%~dp0..\..\..\..\mailbox_channel"
 set "RELAY_PYTHON=python"

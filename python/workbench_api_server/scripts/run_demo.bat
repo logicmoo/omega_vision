@@ -1,8 +1,12 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: bootstrap the repository environment and launch the local workbench services."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title MeTTa Workbench Development Bootstrap
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=bootstrap the repository environment and launch the local workbench services."
+set "WB_DIAG_TITLE=MeTTa Workbench Development Bootstrap"
+set "WB_DIAG_TITLE_PORTS=WEB_PORT;API_PORT"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
 @echo off
 if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
@@ -58,7 +62,6 @@ set "CHANNEL_RELAY_PORT=46667"
 set "CHANNEL_RELAY_URL=http://127.0.0.1:%CHANNEL_RELAY_PORT%"
 set "CHANNEL_RELAY_DIR=%REPO_ROOT%\..\mailbox_channel"
 
-title MeTTaSymbolicLearnerWorkbench %BIND_IP%:%WEB_PORT%
 echo.
 echo  MeTTaSymbolicLearnerWorkbench - local development
 echo  -----------------------------------------------

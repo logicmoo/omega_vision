@@ -1,8 +1,13 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: run the workbench API bootstrap process."
-echo "[launcher] CWD: %CD%"
+if /I "%~1"=="/describe" goto :describe
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title MeTTa Workbench API
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=run the workbench API bootstrap process."
+set "WB_DIAG_TITLE=MeTTa Workbench API"
+set "WB_DIAG_TITLE_PORTS=API_PORT"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
 @echo off
 if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
@@ -14,7 +19,6 @@ set "API_PORT=%~2"
 if not defined API_PORT set "API_PORT=8000"
 set "PYTHON_EXE=%REPO_ROOT%\.venv\Scripts\python.exe"
 
-title MeTTa Workbench API %BIND_IP%:%API_PORT%
 cd /d "%ROOT%"
 doskey restart="%PYTHON_EXE%" "%ROOT%\scripts\run_api_server.py" --host %BIND_IP% --port %API_PORT%
 
@@ -53,3 +57,24 @@ echo  The command shown above is also available through the restart macro.
 echo ------------------------------------------------------------
 echo.
 exit /b %LAUNCH_EXIT_CODE%
+
+:describe
+for %%I in ("%~dp0..\..\..") do set "REPO_ROOT=%%~fI"
+set "PYTHON_EXE=%REPO_ROOT%\.venv\Scripts\python.exe"
+echo [launcher] command: "%PYTHON_EXE%" "%~dp0run_api_server.py" --help
+title MeTTa Workbench API - Describe Only
+set "WB_DIAG_TITLE=MeTTa Workbench API - Describe Only"
+set "WB_DIAG_TITLE_PORTS="
+set "WB_DIAG_EXE=%PYTHON_EXE%"
+set "WB_DIAG_TARGET=%~dp0run_api_server.py"
+set "WB_DIAG_DETAIL=--help"
+set "WB_DIAG_VARS=CD"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%REPO_ROOT%\scripts\windows_launcher_diagnostics.ps1"
+echo "[launcher] Purpose: describe API command options only; no credential setup, installation, or service startup."
+echo "[launcher] CWD: %CD%"
+if not exist "%PYTHON_EXE%" (
+  echo "[launcher] ERROR: Existing project Python is unavailable; describe mode will not create an environment."
+  exit /b 2
+)
+"%PYTHON_EXE%" "%~dp0run_api_server.py" --help
+exit /b %ERRORLEVEL%

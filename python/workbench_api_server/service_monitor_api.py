@@ -515,7 +515,7 @@ def _validated_environment(service_id: str, value: Any) -> dict[str, str]:
     return dict(value)
 
 
-def _record_api_launch(service_id: str, process: subprocess.Popen, cwd: Path, command: list[str]) -> None:
+def _record_api_launch(service_id: str, process: subprocess.Popen, cwd: Path, command: list[str], *, spawn_command: list[str] | None = None) -> None:
     from launch_diagnostics import redact_arguments
     try:
         entries = resources.read_config_json(PROCESS_LEDGER)
@@ -524,7 +524,11 @@ def _record_api_launch(service_id: str, process: subprocess.Popen, cwd: Path, co
     if not isinstance(entries, list):
         entries = []
     entries = [entry for entry in entries if isinstance(entry, dict) and entry.get("service") != service_id]
-    entries.append({"service": service_id, "pid": process.pid, "startedAtEpoch": time.time(), "cwd": str(cwd.resolve()), "rawCommand": redact_arguments(command), "terminationScope": "process-tree", "launchedBy": "workbench-api"})
+    entries.append({"service": service_id, "pid": process.pid, "parentPid": os.getpid(),
+                    "launcherPath": str(Path(__file__).resolve()), "startedAtEpoch": time.time(),
+                    "cwd": str(cwd.resolve()), "rawCommand": redact_arguments(command),
+                    "spawnCommand": redact_arguments(spawn_command or command),
+                    "terminationScope": "process-tree", "launchedBy": "workbench-api"})
     resources.make_directory(PROCESS_LEDGER.parent, parents=True, exist_ok=True)
     temporary = PROCESS_LEDGER.with_name(
         f".{PROCESS_LEDGER.name}.{os.getpid()}.{get_ident()}.tmp"
@@ -556,7 +560,7 @@ def launch_submitted_command(service_id: str, request: Request, body: dict[str, 
         executable_command = command
         if Path(command[0]).suffix.lower() in {".bat", ".cmd"}:
             executable_command = [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", *command]
-        from launch_diagnostics import announce_launch, configured_urls, console_command, redact_arguments
+        from launch_diagnostics import announce_launch, configured_urls, prepare_console_launch, redact_arguments
         declared = _read_managed_service_resources().get(service_id, {})
         metadata = {
             "identity": service_id,
@@ -569,11 +573,12 @@ def launch_submitted_command(service_id: str, request: Request, body: dict[str, 
             }, command, {**os.environ, **environment}),
         }
         announce_launch(executable_command, cwd, **metadata)
+        launch_environment = {**os.environ, **environment}
         if os.name == "nt":
-            executable_command = console_command(executable_command, cwd, **metadata)
-        process = subprocess.Popen(executable_command, cwd=cwd, env={**os.environ, **environment}, stdin=subprocess.DEVNULL, creationflags=flags, close_fds=False)
+            executable_command, launch_environment = prepare_console_launch(executable_command, cwd, launch_environment, **metadata)
+        process = subprocess.Popen(executable_command, cwd=cwd, env=launch_environment, stdin=subprocess.DEVNULL, creationflags=flags, close_fds=False)
         _PENDING_LAUNCHES[service_id] = (process.pid, time.monotonic())
-        _record_api_launch(service_id, process, cwd, command)
+        _record_api_launch(service_id, process, cwd, command, spawn_command=executable_command)
         return {"status": "started", "serviceId": service_id, "pid": process.pid, "rawCommand": redact_arguments(command), "terminationScope": "process-tree"}
 
 

@@ -14,6 +14,50 @@ values here.
 
 ## Current recovery state
 
+- Launcher activation bypass / visible-output gap (2026-09-10): the user
+  reported three blank consoles after API activation. The activation command
+  was raw `.venv\Scripts\python.exe ...run_api_server.py --host 127.0.0.1
+  --port 8000 *> contextual-memory-activated-api.log` through the detached
+  PowerShell tool, bypassing both the announced BAT and console wrapper.
+  Read-only ancestry: tool PowerShell 40676/conhost 832 -> PowerShell
+  32248/conhost 69696 -> Python 56660 -> 53236 -> 93708 -> API 13452,
+  created around epoch milliseconds 1789024074942-1789024075899.
+  These processes survived the user's closing the blank windows. This does not
+  establish ownership of all three closed windows; other-parent 97096 console
+  processes were explicitly not attributed or touched.
+  Source corrections now provide command-first headers/titles in all 14 BAT/CMD
+  entrypoints, pre-Python project shell announcements for visible services,
+  private JSON argv transport with original-environment restoration, direct
+  raw-API console diagnostics before slow imports, and PID/parent/launcher/spawn
+  attribution in new receipts. A required visible bootstrap refuses to start
+  its child if its first command could not reach its attached console.
+  No service was restarted to test these corrections. Thirteen source/mocked
+  checks and two static inventory checks passed; the previous 104 native/stub
+  checks do NOT validate the bypassed activation or prove the new visible path.
+  Two explicitly authorized diagnostic attempts used terminal canvas provider
+  `connection:stdio-ba5b7e0c-eaf5-4356-bec1-7d75a4b243cb`, canvas type `terminal`:
+  first instance `omega-launcher-check`, title `Omega launcher check — no services`,
+  command `cmd.exe /d /c "C:\snet\PeTTa\repos\symbolic_ml_workbench\python\workbench_api_server\scripts\run_api_server.bat" /describe`;
+  second instance `omega-launcher-retained`, title
+  `Omega launcher check — retained output, no services`, same command with
+  `/d /q /k` instead of `/d /c`. Both open calls returned the specified instance
+  and input. For each, `read_terminal_output` with
+  `{"mode":"full","max_chars":12000}` twice returned
+  `Terminal not found or not running`. No cause, visible first line or exit
+  code was established. The second instance received `send_terminal_input`
+  `{"input":"exit","append_newline":true}`, returning `{"sent":true}`; this
+  acknowledgement alone is not proof of shell execution.
+  No third launch or tool-internals workaround was attempted. The final
+  read-only process check found no matching cmd `/describe` or Python
+  `run_api_server.py --help` survivor; API 13452 and Vite 74704 still listened
+  on 8000/5173. Existing services/data remained untouched. Visible diagnostic
+  acceptance stays explicitly incomplete; unrelated safe work need not wait.
+  Final source/mocked/documentation run: 35 passed, one real-child diagnostic
+  test deliberately deselected (no further visible/native attempts), and one
+  unrelated repository-wide Markdown failure because the newly uploaded
+  `Game_Object_Recognition (1).md` lacks a README backlink. The user's uploaded
+  original was preserved; it was not edited to satisfy an unrelated assertion.
+
 - Controlled activation (2026-09-10): the user explicitly accepted loss of the
   API's in-memory sessions. Rediscovered owned worker 75664 / supervisor 34316
   immediately before stopping their owned shell; Vite was not restarted.

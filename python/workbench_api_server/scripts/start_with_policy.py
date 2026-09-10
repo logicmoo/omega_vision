@@ -10,7 +10,7 @@ from threading import get_ident
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from launch_diagnostics import announce_launch, configured_logs, configured_urls, console_command, read_service_metadata, redact_arguments, redact_text
+from launch_diagnostics import announce_launch, configured_logs, configured_urls, prepare_console_launch, read_service_metadata, redact_arguments, redact_text
 
 ROOT = Path(__file__).resolve().parents[3]
 POLICY_PATH = (
@@ -23,7 +23,8 @@ PROCESS_LEDGER = ROOT / "runtime" / "run_workbench_processes.json"
 
 
 def _record_started_process(
-    service_id: str, process: subprocess.Popen, command: list[str], cwd: Path
+    service_id: str, process: subprocess.Popen, command: list[str], cwd: Path,
+    *, spawn_command: list[str] | None = None,
 ) -> None:
     PROCESS_LEDGER.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -36,9 +37,12 @@ def _record_started_process(
     entries.append({
         "service": service_id,
         "pid": process.pid,
+        "parentPid": os.getpid(),
+        "launcherPath": str(Path(__file__).resolve()),
         "startedAtEpoch": time.time(),
         "cwd": str(cwd.resolve()),
         "rawCommand": redact_arguments(command),
+        "spawnCommand": redact_arguments(spawn_command or command),
         "terminationScope": "process-tree",
     })
     temporary = PROCESS_LEDGER.with_name(
@@ -119,9 +123,11 @@ def main() -> int:
         announce_launch(args.command, args.cwd, **metadata)
         if stderr is not None:
             announce_launch(args.command, args.cwd, stream=stderr, **metadata)
-        command = console_command(args.command, args.cwd, **metadata) if os.name == "nt" and not policy["hiddenWindow"] else args.command
-        process = subprocess.Popen(command, cwd=args.cwd, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr, creationflags=flags, close_fds=False)
-        _record_started_process(args.service, process, list(args.command), args.cwd)
+        command, environment = args.command, dict(os.environ)
+        if os.name == "nt" and not policy["hiddenWindow"]:
+            command, environment = prepare_console_launch(args.command, args.cwd, environment, **metadata)
+        process = subprocess.Popen(command, cwd=args.cwd, env=environment, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr, creationflags=flags, close_fds=False)
+        _record_started_process(args.service, process, list(args.command), args.cwd, spawn_command=command)
     finally:
         if stdout:
             stdout.close()

@@ -89,10 +89,10 @@ def launch_banner(
     details: Mapping[str, str] | None = None,
 ) -> str:
     lines = [
+        f"[launch command] {display_command(command, cwd)}",
         f"[launch] {redact_text(label or identity)} [{redact_text(identity)}]",
         f"  Purpose: {redact_text(description or 'No description declared.')}",
         f"  Working directory: {redact_text(Path(cwd).resolve())}",
-        f"  Command: {display_command(command, cwd)}",
     ]
     for group, values in (("URL", urls), ("Log/output", logs), ("Detail", details)):
         for name, value in (values or {}).items():
@@ -119,6 +119,47 @@ def console_command(command: Sequence[str], cwd: Path | str, **metadata) -> list
           "--console --banner [redacted display metadata] -- [command above]", file=sys.stderr, flush=True)
     banner = base64.b64encode(launch_banner(command, cwd, **metadata).encode("utf-8")).decode("ascii")
     return [sys.executable, str(runner), "--console", "--banner", banner, "--", *child]
+
+
+def prepare_console_launch(
+    command: Sequence[str], cwd: Path | str, environment: Mapping[str, str], **metadata,
+) -> tuple[list[str], dict[str, str]]:
+    """The visible shell announces before Python; execution argv never enters shell text."""
+    shell = shutil.which("powershell.exe")
+    if not shell:
+        raise FileNotFoundError("Windows PowerShell is required for the announced console bootstrap")
+    if not command:
+        raise ValueError("A console child command is required")
+    program = Path(command[0])
+    resolved = str((Path(cwd) / program).resolve()) if program.is_absolute() or program.parent != Path(".") else shutil.which(command[0])
+    if not resolved or not Path(resolved).is_file():
+        raise FileNotFoundError(2, "Console child executable was not found", command[0])
+    script = Path(__file__).parent / "scripts" / "run_announced_console.ps1"
+    runner = script.with_name("run_announced_command.py")
+    metadata = {**metadata, "details": {
+        **(metadata.get("details") or {}),
+        "bootstrap runner": display_command([sys.executable, str(runner), "--environment"], cwd),
+    }}
+    keys = ("WB_CONSOLE_BANNER", "WB_CONSOLE_TITLE", "WB_CONSOLE_PYTHON", "WB_CONSOLE_RUNNER",
+            "WB_CONSOLE_PAYLOAD", "WB_CONSOLE_REQUIRE_VISIBLE", "WB_CONSOLE_READY")
+    title = f"{metadata.get('label') or metadata['identity']} [{metadata['identity']}]"
+    urls = metadata.get("urls") or {}
+    if urls.get("service origin"):
+        title += " - " + urls["service origin"]
+    launch_environment = dict(environment)
+    launch_environment.update({
+        "WB_CONSOLE_BANNER": launch_banner(command, cwd, **metadata),
+        "WB_CONSOLE_TITLE": redact_text(title),
+        "WB_CONSOLE_PYTHON": sys.executable,
+        "WB_CONSOLE_RUNNER": str(runner),
+        "WB_CONSOLE_REQUIRE_VISIBLE": "1",
+        "WB_CONSOLE_READY": "0",
+        "WB_CONSOLE_PAYLOAD": json.dumps({
+            "argv": [resolved, *command[1:]],
+            "restoreEnvironment": {key: environment.get(key) for key in keys},
+        }),
+    })
+    return [shell, "-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(script)], launch_environment
 
 
 def read_service_metadata(directory: Path, service_id: str) -> dict:

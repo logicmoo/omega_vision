@@ -1,8 +1,12 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: launch the configured ClawRouter proxy through managed execution."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title ClawRouter Local Proxy
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=launch the configured ClawRouter proxy through managed execution."
+set "WB_DIAG_TITLE=ClawRouter Local Proxy"
+set "WB_DIAG_TITLE_PORTS=CLAWROUTER_PORT"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
 @echo off
 if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
@@ -10,7 +14,6 @@ if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; it
 set "CLAWROUTER_PORT=%~1"
 if not defined CLAWROUTER_PORT set "CLAWROUTER_PORT=3456"
 
-title ClawRouter %CLAWROUTER_PORT%
 cd /d "%~dp0..\..\.."
 
 where npx.cmd >nul 2>nul

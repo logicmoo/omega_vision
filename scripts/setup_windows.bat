@@ -1,8 +1,12 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: select Python and prepare the repository development environment."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title Workbench Windows Environment Setup
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=select Python and prepare the repository development environment."
+set "WB_DIAG_TITLE=Workbench Windows Environment Setup"
+set "WB_DIAG_TITLE_PORTS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1" -Bootstrap
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
 @echo off
 if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."

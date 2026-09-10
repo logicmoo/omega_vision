@@ -1,8 +1,12 @@
 @echo off
 setlocal DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: download the official VB-CABLE package and open its interactive installer."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title VB-CABLE Official Installer
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=download the official VB-CABLE package and open its interactive installer."
+set "WB_DIAG_TITLE=VB-CABLE Official Installer"
+set "WB_DIAG_TITLE_PORTS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1" -Bootstrap
 REM install_vb_cable.bat
 REM
 REM Downloads and launches the OFFICIAL VB-CABLE virtual audio cable

@@ -1,8 +1,12 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: ensure OmniRoute is available and launch its managed gateway."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title OmniRoute Local Gateway
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=ensure OmniRoute is available and launch its managed gateway."
+set "WB_DIAG_TITLE=OmniRoute Local Gateway"
+set "WB_DIAG_TITLE_PORTS=OMNIROUTE_PORT"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
 @echo off
 if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."
@@ -17,7 +21,6 @@ rem Workbench API normally uses 8000) cannot create a second listener there.
 set "PORT=%OMNIROUTE_PORT%"
 set "DASHBOARD_PORT=%OMNIROUTE_PORT%"
 
-title OmniRoute %OMNIROUTE_PORT%
 cd /d "%~dp0..\..\.."
 
 if not exist "%OMNIROUTE_CMD%" (

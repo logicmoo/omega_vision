@@ -1,10 +1,47 @@
 from __future__ import annotations
 
+import sys
+
+
+def _early_console_command() -> None:
+    """The raw entrypoint must also identify itself when stderr is redirected."""
+    arguments = []
+    remaining = iter(sys.argv[1:])
+    for value in remaining:
+        flag, equals, inline = value.partition("=")
+        if flag in {"--host", "--port"}:
+            argument = inline if equals else next(remaining, "")
+            safe = argument and all(char.isascii() and (char.isalnum() or char in ".-:") for char in argument)
+            arguments.extend((flag, argument if safe else "[REDACTED]"))
+        elif value in {"-h", "--help"}:
+            arguments.append(value)
+        else:
+            arguments.append("[argument withheld]")
+    text = f'[launch command] "{sys.executable}" "{__file__}" {" ".join(arguments)}\n'
+    output = sys.stderr
+    if sys.platform == "win32":
+        try:
+            output = open("CONOUT$", "w", encoding="utf-8", errors="replace")
+        except OSError:
+            pass
+    try:
+        print(text, end="", file=output, flush=True)
+    finally:
+        if output is not sys.stderr:
+            output.close()
+    if sys.platform == "win32":
+        import ctypes
+        title = "Workbench API - describe only (no services)" if any(arg in {"-h", "--help"} for arg in sys.argv[1:]) else "Workbench API - bootstrap"
+        ctypes.windll.kernel32.SetConsoleTitleW(title)
+
+
+if __name__ == "__main__":
+    _early_console_command()
+
 import argparse
 import os
 from pathlib import Path
 import subprocess
-import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -58,6 +95,10 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8000, type=int)
     args = parser.parse_args()
+    if os.name == "nt":
+        import ctypes
+        from launch_diagnostics import redact_text
+        ctypes.windll.kernel32.SetConsoleTitleW(redact_text(f"Workbench API - {args.host}:{args.port}"))
     announce_launch([sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]], Path.cwd(),
                     identity="workbench-api", description=parser.description,
                     urls={"API": f"http://{args.host}:{args.port}", "health": f"http://{args.host}:{args.port}/workbench/health"})

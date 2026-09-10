@@ -1,8 +1,12 @@
 @echo off
 setlocal DisableDelayedExpansion
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: validate the staged diff and commit using the local message file."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title Workbench Staged Commit
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=validate the staged diff and commit using the local message file."
+set "WB_DIAG_TITLE=Workbench Staged Commit"
+set "WB_DIAG_TITLE_PORTS="
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0windows_launcher_diagnostics.ps1" -Bootstrap
 if exist "C:\snet\setkeys.bat" call "C:\snet\setkeys.bat" >nul 2>nul
 @echo off
 if errorlevel 1 echo "[launcher] Warning: credential setup returned an error; its output is withheld."

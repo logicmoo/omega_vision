@@ -1,7 +1,11 @@
 @echo off
-echo "[launcher] %~f0"
-echo "[launcher] Purpose: run the Vite frontend through the managed command launcher."
-echo "[launcher] CWD: %CD%"
+echo [launcher] command: "%ComSpec%" /d /c "%~f0" [forwarded arguments: REDACTED]
+title MeTTa Workbench Vite Frontend
+set "WB_DIAG_BOOTSTRAP_SCRIPT=%~f0"
+set "WB_DIAG_BOOTSTRAP_PURPOSE=run the Vite frontend through the managed command launcher."
+set "WB_DIAG_TITLE=MeTTa Workbench Vite Frontend"
+set "WB_DIAG_TITLE_PORTS=WEB_PORT"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\..\scripts\windows_launcher_diagnostics.ps1" -Bootstrap
 rem Intentionally do not SETLOCAL here.  These variables must remain in this
 rem child command window after Vite is stopped so `restart` uses the same
 rem host, port, and API target.
@@ -20,7 +24,6 @@ set "WORKBENCH_WEB_HOST=%BIND_IP%"
 set "WORKBENCH_WEB_PORT=%WEB_PORT%"
 set "WORKBENCH_API_TARGET=%API_TARGET%"
 
-title MeTTa Workbench Vite Dev Server %BIND_IP%:%WEB_PORT%
 cd /d "%ROOT%\frontend\apps\workbench"
 doskey restart=npm run dev
 

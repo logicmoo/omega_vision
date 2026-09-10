@@ -44,6 +44,19 @@ Other explicit invalid IDs must remain errors. Changing this preference must not
 navigate or discard the current editor. Do not globally force a workspace in
 backend storage or API schemas.
 
+## Agent-driven service launch visibility
+
+Use the project's announced, titled launch path for future service starts.
+Do not start a service as raw Python with all output redirected through an
+opaque detached PowerShell transport. A child banner cannot identify a separate
+transport-owned outer console. The first controllable visible output must name
+the actual command with safely redacted arguments, before Python/application
+bootstrap; purpose, identity, cwd, configured URLs and logs follow.
+Use only supported identifiable terminal/launcher routes. Do not modify unrelated
+consoles or tool internals, silently relaunch closed windows, infer success from
+an accepted open request, or repeat a visible diagnostic without authorization.
+Respect existing service/session state when investigating launch failures.
+
 
 \## Codex TODO ownership and recovery
 

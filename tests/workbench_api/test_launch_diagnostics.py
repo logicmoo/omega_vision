@@ -95,7 +95,7 @@ def test_policy_launch_announces_before_spawn_and_uses_child_console_or_existing
         "label": "Actual plugin", "description": "Declared purpose.", "port": 1234, "healthPath": "/health",
     })
     recorded = []
-    monkeypatch.setattr(starter, "_record_started_process", lambda *args: recorded.append(args))
+    monkeypatch.setattr(starter, "_record_started_process", lambda *args, **kwargs: recorded.append(args))
     original = [sys.executable, "child.py", "--token", "private-value"]
     monkeypatch.setattr(sys, "argv", ["start_with_policy.py", "--service", "plugin", "--cwd", str(tmp_path), "--", *original])
     def spawn(command, **kwargs):
@@ -106,9 +106,9 @@ def test_policy_launch_announces_before_spawn_and_uses_child_console_or_existing
             assert command == original
             assert "Declared purpose" in (tmp_path / "runtime" / "logs" / "plugin.stderr.log").read_text()
         elif sys.platform == "win32":
-            assert Path(command[1]).name == "run_announced_command.py"
-            assert command[command.index("--") + 1:] == original
-            assert "Declared purpose" in base64.b64decode(command[command.index("--banner") + 1]).decode()
+            assert Path(command[-1]).name == "run_announced_console.ps1"
+            assert json.loads(kwargs["env"]["WB_CONSOLE_PAYLOAD"])["argv"] == original
+            assert "Declared purpose" in kwargs["env"]["WB_CONSOLE_BANNER"]
         return SimpleNamespace(pid=71)
     monkeypatch.setattr(starter.subprocess, "Popen", spawn)
     assert starter.main() == 0
@@ -120,7 +120,7 @@ def test_visible_managed_launch_passes_real_metadata_into_console_before_spawn(t
     monkeypatch.setattr(monitor, "_definitions", lambda _: (definition,))
     monkeypatch.setattr(monitor, "_read_managed_service_resources", lambda: {})
     monkeypatch.setattr(monitor, "_port_open", lambda _: False)
-    monkeypatch.setattr(monitor, "_record_api_launch", lambda *args: None)
+    monkeypatch.setattr(monitor, "_record_api_launch", lambda *args, **kwargs: None)
     monkeypatch.setattr(monitor, "_PENDING_LAUNCHES", {})
     request = Request({"type": "http", "client": ("127.0.0.1", 1), "server": ("127.0.0.1", 8000), "scheme": "http", "path": "/", "headers": []})
     original = [sys.executable, "omniroute-worker.py", "--port", "9989", "--api-key", "secret-value"]
@@ -128,8 +128,8 @@ def test_visible_managed_launch_passes_real_metadata_into_console_before_spawn(t
         assert "Real configured purpose" in capsys.readouterr().err
         assert kwargs["cwd"] == tmp_path
         if sys.platform == "win32":
-            assert command[command.index("--") + 1:] == original
-            banner = base64.b64decode(command[command.index("--banner") + 1]).decode()
+            assert json.loads(kwargs["env"]["WB_CONSOLE_PAYLOAD"])["argv"] == original
+            banner = kwargs["env"]["WB_CONSOLE_BANNER"]
             assert "9989/ready" in banner and "secret-value" not in banner
         return SimpleNamespace(pid=71)
     monkeypatch.setattr(monitor.subprocess, "Popen", spawn)
@@ -192,6 +192,9 @@ def test_process_receipt_does_not_persist_secret_command_arguments(tmp_path, mon
     command = [sys.executable, "worker.py", "--api-key", "private-argument"]
     starter._record_started_process("worker", SimpleNamespace(pid=71), command, tmp_path)
     assert "private-argument" not in ledger.read_text()
+    receipt = json.loads(ledger.read_text())[0]
+    assert receipt["parentPid"] and receipt["launcherPath"].endswith("start_with_policy.py")
+    assert receipt["spawnCommand"] == diagnostics.redact_arguments(command)
     assert command[-1] == "private-argument"
 
 
@@ -215,3 +218,54 @@ def test_visible_console_uses_its_own_console_device_before_child_spawn(monkeypa
     monkeypatch.setattr(runner.subprocess, "Popen", spawn)
     encoded = base64.b64encode(b"visible child banner\n").decode()
     assert runner.main(["--console", "--banner", encoded, "--", "safe-child"]) == 23
+
+
+def test_project_shell_bootstrap_announces_before_python_and_does_not_parse_execution_argv(tmp_path):
+    if sys.platform != "win32":
+        pytest.skip("Windows shell bootstrap")
+    original = [sys.executable, "space & bang!.py", "", "quote\"value", "%literal%", "--token", "private-value"]
+    command, environment = diagnostics.prepare_console_launch(
+        original, tmp_path, {"KEEP": "original", "WB_CONSOLE_TITLE": "prior"},
+        identity="worker", label="Actual worker", description="Actual purpose",
+        urls={"service origin": "http://127.0.0.1:8111"},
+    )
+    script = Path(command[-1]).read_text()
+    assert environment["WB_CONSOLE_BANNER"].splitlines()[0].startswith("[launch command]")
+    assert "private-value" not in environment["WB_CONSOLE_BANNER"]
+    assert "8111" in environment["WB_CONSOLE_TITLE"]
+    assert json.loads(environment["WB_CONSOLE_PAYLOAD"])["argv"] == original
+    assert script.index("& $diagnostics -PreparedConsole") < script.index("[Diagnostics.Process]::Start")
+    console = (ROOT / "scripts" / "windows_launcher_diagnostics.ps1").read_text()
+    assert "CONOUT$" in console and "[Console]::Title" in console
+    assert "Write-ConsoleOrError $line" in console
+    assert "WB_CONSOLE_PAYLOAD" not in script
+    assert "$start.UseShellExecute = $false" in script
+    assert environment["WB_CONSOLE_REQUIRE_VISIBLE"] == "1"
+    assert script.index("$env:WB_CONSOLE_READY -ne '1'") < script.index("[Diagnostics.Process]::Start")
+
+
+def test_environment_runner_restores_caller_environment_and_forwards_once(tmp_path, monkeypatch, capsys):
+    runner = load_script("run_announced_command.py")
+    arguments = ["safe-child", "", "a&b", "bang!", "%literal%", "--token", "private-value"]
+    monkeypatch.setenv("WB_CONSOLE_PAYLOAD", json.dumps({
+        "argv": arguments, "restoreEnvironment": {"WB_CONSOLE_PAYLOAD": None, "WB_CONSOLE_TITLE": "original"},
+    }))
+    monkeypatch.setenv("WB_CONSOLE_TITLE", "temporary")
+    calls = []
+    def spawn(command):
+        import os
+        calls.append(command)
+        assert "WB_CONSOLE_PAYLOAD" not in os.environ
+        assert os.environ["WB_CONSOLE_TITLE"] == "original"
+        return SimpleNamespace(wait=lambda: 37)
+    monkeypatch.setattr(runner.subprocess, "Popen", spawn)
+    assert runner.main(["--environment"]) == 37
+    assert calls == [arguments]
+    output = capsys.readouterr()
+    assert "private-value" not in output.out + output.err
+
+
+def test_raw_api_entrypoint_announces_before_slow_imports_without_protocol_stdout():
+    source = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_api_server.py").read_text()
+    assert source.index("    _early_console_command()") < source.index("import argparse")
+    assert "[launch command]" in source and "CONOUT$" in source and "SetConsoleTitleW" in source

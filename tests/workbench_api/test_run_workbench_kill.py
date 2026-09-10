@@ -37,7 +37,7 @@ def test_launcher_routes_mailbox_relay_through_startup_policy_and_pid_ledger() -
     assert "--service mailbox_server" in demo
     assert "mailbox-server.cmd" in demo
     assert "PROCESS_LEDGER" in starter
-    assert "_record_started_process(args.service, process, list(args.command), args.cwd)" in starter
+    assert "_record_started_process(args.service, process, list(args.command), args.cwd, spawn_command=command)" in starter
     assert '"rawCommand": redact_arguments(command)' in starter
     assert '"terminationScope": "process-tree"' in starter
     service = (ROOT / "workspaces" / "shared_library_system" / "design" / "services" / "channel_relay.managed_service.metta").read_text(encoding="utf-8")
@@ -125,7 +125,8 @@ def test_api_submitted_commands_forward_only_service_allowlisted_environment() -
     assert '"omniroute": {"PORT", "DASHBOARD_PORT"}' in monitor
     assert '"workbench-web": {"WORKBENCH_WEB_HOST", "WORKBENCH_WEB_PORT", "WORKBENCH_API_TARGET"}' in monitor
     assert '"mailbox_server": {"PYTHONPATH"}' in monitor
-    assert "env={**os.environ, **environment}" in monitor
+    assert "launch_environment = {**os.environ, **environment}" in monitor
+    assert "env=launch_environment" in monitor
     demo = (ROOT / "python" / "workbench_api_server" / "scripts" / "run_demo.bat").read_text(encoding="utf-8")
     assert len(re.findall(r'^\s*"%WORKBENCH_PYTHON%" "%ROOT%wait_for_managed_service\.py"', demo, re.MULTILINE)) == 3
     waiter = (ROOT / "python" / "workbench_api_server" / "scripts" / "wait_for_managed_service.py").read_text(encoding="utf-8")
