@@ -160,7 +160,7 @@ def test_duplicate_and_delete_invalidate_and_preserve_shared_identity(
     assert not copied.exists() and original.exists()
 
 
-@pytest.mark.parametrize("operation", ["clear", "retain", "purge", "dedupe"])
+@pytest.mark.parametrize("operation", ["clear", "retain", "dedupe"])
 def test_bulk_removals_only_invalidate_real_mutations(
     play, omega_repository, invalidations, operation,
 ):
@@ -172,8 +172,6 @@ def test_bulk_removals_only_invalidate_real_mutations(
         mutate = lambda: play.clear_recordings(workspaceId="workspace", gameId="game")
     elif operation == "retain":
         mutate = lambda: play.retain_largest_recordings(workspaceId="workspace", gameId="game", keep=0)
-    elif operation == "purge":
-        mutate = lambda: play._purge_prior_import(omega_repository, "game", "source")
     else:
         mutate = lambda: play._dedupe_recordings_in(omega_repository, old.parent)
     mutate()

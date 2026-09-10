@@ -1328,60 +1328,17 @@ def _list_recording_files(root: Path) -> list[dict[str, Any]]:
 
 
 def _purge_prior_import(root: Path, game_dir: str, rel_path: str) -> int:
-    """Remove level dirs + savepoints from an earlier import of the same source file.
-
-    Makes re-importing idempotent: clicking Import again on a file that was
-    already converted replaces its artifacts instead of piling up duplicates.
-    Checks the canonical data/recordings/<game> and legacy container
-    locations, since an earlier import may predate this fix.
-    """
-    removed = 0
-    for game_root in _game_dirs_for(root, game_dir):
-        for level_dir in _iter_recording_dirs(game_root):
-            manifest_path = level_dir / "recording.json"
-            if not manifest_path.is_file():
-                continue
-            try:
-                manifest = resources.read_config_json(manifest_path)
-            except (OSError, json.JSONDecodeError):
-                continue
-            if manifest.get("imported_from") == rel_path:
-                with visual_sequence_list_mutation(root):
-                    resources.delete_tree(level_dir)
-                removed += 1
-        savepoints_path = game_root / "savepoints.json"
-        with _savepoints_lock:
-            entries = _load_savepoints(savepoints_path)
-            kept = [entry for entry in entries if entry.get("imported_from") != rel_path]
-            if len(kept) != len(entries):
-                resources.write_config_json(
-                    savepoints_path,
-                    kept,
-                    ensure_ascii=False,
-                    trailing_newline=False,
-                )
-    return removed
+    """Compatibility name: ordinary imports must never purge prior history."""
+    from omega_vision.services.recording_import_safety import require_new_import
+    require_new_import(root, _game_dirs_for(root, game_dir), rel_path)
+    return 0
 
 
 def _purge_prior_movelist_import(root: Path, game_dir: str, rel_path: str) -> int:
-    """Movelist-only counterpart to _purge_prior_import: since this mode
-    never writes Recording directories, only savepoints.json needs
-    de-duplicating for a re-import of the same source."""
-    removed = 0
-    for game_root in _game_dirs_for(root, game_dir):
-        savepoints_path = game_root / "savepoints.json"
-        with _savepoints_lock:
-            entries = _load_savepoints(savepoints_path)
-            kept = [entry for entry in entries if entry.get("imported_from") != rel_path]
-            removed += len(entries) - len(kept)
-            if len(kept) != len(entries):
-                resources.write_config_json(
-                    savepoints_path,
-                    kept,
-                    ensure_ascii=False,
-                    trailing_newline=False,
-                )
-    return removed
+    """Keep existing move-list history unless replacement is explicitly approved."""
+    from omega_vision.services.recording_import_safety import require_new_import
+    require_new_import(root, _game_dirs_for(root, game_dir), rel_path)
+    return 0
 
 
 def _import_recording_as_movelist(root: Path, rel_path: str, label: str | None) -> dict[str, Any]:
@@ -1617,7 +1574,8 @@ def _write_imported_recording(
         container = _game_write_dir(root, game_dir)
         attempt_index += 1
         directory = container / _import_instance_dir_name(container, import_base_name, attempt_index)
-        resources.make_directory(directory)
+        from omega_vision.services.recording_import_safety import claim_import_directory
+        claim_import_directory(directory)
         current_dir = directory
         level_dirs.append(directory)
         level_moves = []
@@ -2058,7 +2016,8 @@ def _write_imported_release_run(
         container = _game_write_dir(root, game_dir)
         attempt_index += 1
         directory = container / _import_instance_dir_name(container, import_base_name, attempt_index)
-        resources.make_directory(directory)
+        from omega_vision.services.recording_import_safety import claim_import_directory
+        claim_import_directory(directory)
         current_dir = directory
         level_dirs.append(directory)
         level_moves = []
