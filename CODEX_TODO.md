@@ -14,6 +14,41 @@ values here.
 
 ## Current recovery state
 
+- Controlled activation (2026-09-10): the user explicitly accepted loss of the
+  API's in-memory sessions. Rediscovered owned worker 75664 / supervisor 34316
+  immediately before stopping their owned shell; Vite was not restarted.
+  New API worker 13452 is healthy and initially reports zero game sessions.
+  The recorded LS20 manifest and pooler-control SHA-256 values are unchanged.
+  No game session was recreated, recording re-imported, data migrated or
+  historical output repaired by the activation. Config-only area GET returns
+  all 15 fixed/context/session/legacy choices with unloaded counts; warmed
+  response was 107ms (the first request during startup/context work was 11.188s).
+  Clean user-context UI acceptance is now in progress on isolated page 3;
+  user page 1 and its URL remain untouched.
+
+- Existing-app UI visibility/navigation candidate (validated source; final live
+  acceptance pending): two independent family switches and per-item controls
+  use the real menu/workflow/plugin registry; common Settings remains reachable.
+  Hidden visited editors retain state with suspended effects. Invalid raw JSON
+  in a real Operations document survived hide/reveal exactly without a save.
+  Intake and Frames/Filters are combined on Video Import, retaining the rich
+  controls, selector/Refresh and Preprocessing placement. One Temporal canvas
+  opens after the actual Recognition context without changing URL or scroll;
+  opening used only the existing read-only execution-read transport.
+  Acceptance identified and corrected delayed Activity-disconnect writes,
+  stale legacy navigation overriding explicit menu switches, and unintended
+  game-link import/session restoration. All URL restoration is now read-only;
+  actual Import/Load/Start/Watch actions remain explicit. Deferred workflow
+  initialization no longer replaces retained children on reveal.
+  Missing workspace selects ARC3 Random Player; explicit `default` redirection
+  is governed by the default-checked Settings preference, without navigating
+  current drafts when toggled. Other invalid explicit workspaces remain errors.
+  The frozen UI slice passes 89 Node tests, TypeScript/production build and
+  66 navigation source-contract tests. Inspector-foundation additions are a
+  separate slice. Final clean no-mutation browser acceptance is still held for
+  authorized API activation; prior successful partial checks do not substitute
+  for that final pass.
+
 - UI navigation/import safety incident (2026-09-10; acceptance held): an
   ordinary restored Video Import URL emitted unrequested
   `POST /workbench/arc3-play/import-recording` and `/sessions` (both 201).

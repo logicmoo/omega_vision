@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
+import {useContextReset} from "../lib/useContextReset";
 import {useCollapsingHeaderWheel} from "../lib/collapsingHeaderWheel";
 import {DEFAULT_TREE_VISIBILITY_RULES,type TreeRelationshipMode,type TreeVisibilityRules,useArtifactTreeFilter} from "./useArtifactTreeFilter";
 import {RepeatSwitch,TreeViewControls} from "./TreeViewControls";
@@ -37,7 +38,7 @@ export function OperationLibraryEditor({workspaceId,sourceLanguage}:{workspaceId
  const[categoryCommand,setCategoryCommand]=useState<ArtifactTreeCommand>(null),[visibilityRules,setVisibilityRules]=useState<TreeVisibilityRules>(DEFAULT_TREE_VISIBILITY_RULES);
  const {treeRef,treeFilter,setTreeFilter,showParents,setShowParents,treeKinds}=useArtifactTreeFilter(visibilityRules);
  const load=async()=>{const next=await request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/snapshot`) as Snapshot;setSnapshot(next);return next};
- useEffect(()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(r=>setError(String(r)))},[workspaceId]);
+ useContextReset(workspaceId,()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(r=>setError(String(r)))});
  const enabledModels=(snapshot?.models||[]).filter(row=>row.document&&(row.resolved?.enabled??row.document.enabled!==false));
  const prompts=snapshot?.prompts||[];
  const promptProfiles=snapshot?.promptLibrary?.hierarchy?.promptProfiles||[];

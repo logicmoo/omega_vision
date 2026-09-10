@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useContextReset } from "@app/lib/useContextReset";
 import { postSemanticMemoryAction } from "./SemanticExecutionApi";
 import {
   compareHypotheses, createRequestScope, errorMessage, isRecord, isUninitializedCanonicalLog, latestEvaluation, observeSemanticJobs, record, records,
@@ -50,6 +51,7 @@ export type SemanticEventsPanelProps = {
   onUpdated?: () => void;
   refreshKey?: string | number;
   defaultOpen?: boolean;
+  selectedFrameId?: string;
 };
 
 type ResourceState = {
@@ -84,6 +86,7 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
   const [actionResult, setActionResult] = useState<SemanticRecord | null>(null);
   const [plan, setPlan] = useState<SemanticPlan | null>(null);
   const [selectedFrame, setSelectedFrame] = useState("");
+  useContextReset(props.selectedFrameId || "", () => setSelectedFrame(props.selectedFrameId || ""));
   const [selectedCandidate, setSelectedCandidate] = useState("");
   const [evaluation, setEvaluation] = useState<SemanticRecord | null>(null);
   const [replayOpen, setReplayOpen] = useState(false);
@@ -162,7 +165,7 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
     }
   }
 
-  useEffect(() => {
+  useContextReset(JSON.stringify([workspaceId, sequenceId, firstN, visionModelId, contextReady]), () => {
     scope.current.invalidate();
     readScope.current.invalidate();
     reading.current = false;
@@ -176,6 +179,12 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
     setReplayFrameCount("");
     setActionError("");
     setActionResult(null);
+  });
+  useEffect(() => {
+    reading.current = false;
+    mutating.current = false;
+    setBusy(false);
+    setLoading(false);
     return () => { scope.current.invalidate(); readScope.current.invalidate(); };
   }, [workspaceId, sequenceId, firstN, visionModelId, contextReady]);
 

@@ -10,6 +10,10 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { ChatDock } from "../components/ChatDock";
+import { MenuVisibilityBoundary, MenuVisibilityDialog, MenuVisibilityRecovery } from "../components/MenuVisibilityBoundary";
+import { VisibilityMenuContext } from "../components/MenuVisibilitySettings";
+import { buildVisibilityMenu, isMenuItemVisible, isMenuRouteVisible, menuItemForRoute, normalizeMenuSubview, pageMenuId, pluginMenuId, workflowMenuId } from "../lib/menuVisibility";
+import { resolveVideoImportShellDestination, videoImportUrlForSubview } from "@omega_vision_ui/components/VideoImportNavigationUrl";
 import { PageUiTools } from "../components/PageUiTools";
 import { PddlPlanImportPanel } from "../components/PddlPlanImportPanel";
 import { relationshipIds } from "../components/resourceRelationships";
@@ -23,7 +27,7 @@ import { LIVE_UI_COMMAND_EVENT, LIVE_UI_STYLE_PROPERTIES, type LiveUiCommand } f
 import { markAllWorkbenchPageSessionsForRestart, readWorkbenchPageSession, writeWorkbenchPageSession } from "../lib/pageSessionState";
 import { rememberWorkspaceLastPage, resolveWorkspaceOpeningPage } from "../lib/workspacePagePreferences";
 import { acknowledgeUiRestartRecovery, failUiRestart, getUiRestartStatus, onUIRestart, permitUiReload, registerOnUIRestart, useUiRestartStatus } from "../lib/uiRestartLifecycle";
-import { updateUserUiPreferences, useUserUiPreferences } from "../lib/uiPreferences";
+import { readUserUiPreferences, updateUserUiPreferences, useUserUiPreferences } from "../lib/uiPreferences";
 import { PAGE_PROCESS_ACTIVITY_EVENT, RESTART_PENDING_CHANGE_EVENT, RESTART_PENDING_CLEARED_EVENT, RESTART_PENDING_REQUEST_EVENT, WORKBENCH_PRESENCE_EVENT, clearRestartPending, reportRestartPendingChange, requestRestartPending, useWorkbenchPresence, type PageProcessActivity, type RestartPendingRequest, type WorkbenchPresence } from "../lib/pageProcessActivity";
 import { pushGlobalStatus, useGlobalStatus } from "../lib/globalStatus";
 import {
@@ -561,15 +565,13 @@ const viewFromLocation = (): View | null => {
   if (value === "recognitiondemos" || value === "recognition-demos" || value === "sanity" || value === "sanity-tests" || value === "sanitytests" || value === "demos") return "recognitionDemos";
   return [...WORKBENCH_VIEWS].find((candidate) => candidate.toLowerCase() === value) || null;
 };
-/** Remembers the last workspace that actually loaded, so a link that omits
- * ?workspace= (an external plugin page opened in a new tab, for example)
- * resumes it instead of forcing the chooser. */
+/** Last-loaded UI metadata does not override the default for links without a workspace. */
 const LAST_WORKSPACE_STORAGE_KEY = "workbench.lastWorkspaceId";
 const rememberWorkspaceId = (workspaceId: string) => {
   try {
     localStorage.setItem(LAST_WORKSPACE_STORAGE_KEY, workspaceId);
   } catch {
-    // Storage can be unavailable (private browsing, quota); the chooser is the fallback.
+    // Remembering UI metadata is optional when browser storage is unavailable.
   }
 };
 const forgetWorkspaceId = () => {
@@ -579,19 +581,27 @@ const forgetWorkspaceId = () => {
     // Nothing to clean up if storage was never available.
   }
 };
-const workspaceFromLocation = () => {
-  const explicit = new URLSearchParams(window.location.search).get("workspace")?.trim();
-  if (explicit) return explicit;
-  try {
-    return localStorage.getItem(LAST_WORKSPACE_STORAGE_KEY)?.trim() || "default";
-  } catch {
-    return "default";
-  }
+const workspaceIdForNavigation = (requested: string | null) => {
+  if (requested === null) return "arc3_random_player";
+  const explicit = requested.trim();
+  return explicit === "default" && readUserUiPreferences().redirectDefaultWorkspaceToArc3
+    ? "arc3_random_player"
+    : explicit;
 };
-const workspaceOpeningViewFromLocation = (inheritedWorkspaceIds: string[] = []): View => {
+const workspaceFromLocation = () =>
+  workspaceIdForNavigation(new URLSearchParams(window.location.search).get("workspace"));
+const canonicalizeWorkspaceLocation = (workspaceId: string) => {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("workspace") === workspaceId) return;
+  url.searchParams.set("workspace", workspaceId);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+};
+const workspaceOpeningViewFromLocation = (
+  inheritedWorkspaceIds: string[] = [],
+  workspaceId = workspaceFromLocation(),
+): View => {
   const explicitView = viewFromLocation();
   if (explicitView) return explicitView;
-  const workspaceId = workspaceFromLocation();
   if (!workspaceId) return "overview";
   const preferred = resolveWorkspaceOpeningPage(workspaceId, inheritedWorkspaceIds);
   return WORKBENCH_VIEWS.has(preferred as View) ? preferred as View : "setup";
@@ -706,7 +716,7 @@ const PLUGIN_MENU_COLLAPSE_THRESHOLD = 5;
 
 export const NAVIGATION_V2: Array<{
   group: "WORKSPACE" | "WORKFLOWS" | "OMEGA VISION" | "CAPABILITIES" | "KNOWLEDGE" | "RUNTIME" | "SYSTEM" | "PLUGINS";
-  items: Array<{ label: string; view: View; glyph: string; subview?: string }>;
+  items: Array<{ label: string; view: View; glyph: string; subview?: string; action?: string }>;
 }> = [
   {
     group: "WORKSPACE",
@@ -733,11 +743,11 @@ export const NAVIGATION_V2: Array<{
     group: "OMEGA VISION",
     items: [
       { label: "Video Import", view: "videoImport", subview: "sources", glyph: "▷" },
-      { label: "Frames & Filters", view: "videoImport", subview: "frames", glyph: "▤" },
       { label: "Game Recordings", view: "videoImport", subview: "games", glyph: "⊞" },
       { label: "Objects", view: "videoImport", subview: "objects", glyph: "◍" },
       { label: "Sprite View", view: "videoImport", subview: "sprite-view", glyph: "◳" },
       { label: "Recognition", view: "videoImport", subview: "recognition", glyph: "❖" },
+      { label: "Temporal events & learned rules", view: "videoImport", subview: "recognition", action: "temporal-events", glyph: "◷" },
       { label: "Demos", view: "recognitionDemos", glyph: "✦" },
     ],
   },
@@ -789,6 +799,18 @@ export const NAVIGATION_V2: Array<{
     items: [{ label: "Plugins", view: "plugins", glyph: "⬡" }],
   },
 ];
+const MODEL_MENU_ITEMS = [
+  { view: "llms", subview: "browse", label: "Browse Models" },
+  { view: "llms", subview: "discover", label: "Discover Public Properties" },
+  { view: "llms", subview: "override", label: "Override" },
+] as const;
+const WORKFLOW_TOPBAR_ITEMS = [
+  { view: "editor", label: "Workflow Editor" },
+  { view: "workflowRuns", label: "Workflow Runs" },
+  { view: "artifacts", label: "Artifact explorer" },
+  { view: "evidence", label: "Evidence & provenance" },
+  { view: "checks", label: "Checks" },
+] as const;
 const viewLabel = (view: View) =>
   NAVIGATION_V2.flatMap((section) => section.items).find(
     (item) => item.view === view,
@@ -1059,10 +1081,23 @@ export function FilesystemWorkbenchPage() {
   const breadcrumbNavigation = useRef(false);
   const loadingWorkspaceId = useRef<string | null>(null);
   const currentWorkspaceId = useRef<string | null>(null);
+  // Capture policy at navigation time; toggling Settings must not reinterpret an open editor.
+  const requestedWorkspace = useRef<{ id: string; attempted?: boolean } | null>({ id: workspaceFromLocation() });
+  const workspaceLoadGeneration = useRef(0);
   /** The view that was active right before showWorkspaceChooser() opened the
    * chooser overlay, so cancelling (or re-picking the same workspace) can
    * return there instead of just landing on the workspace's default page. */
   const preChooserView = useRef<View | null>(null);
+  const [visibilitySettingsOpen, setVisibilitySettingsOpen] = useState(false);
+  const retainedHiddenPage = useRef(false);
+  const visitedPage = useRef<string | null>(null);
+  const retainedPageUrl = useRef(window.location.href);
+  const allowLeavingRetainedPage = () => {
+    if (!retainedHiddenPage.current) return true;
+    if (!window.confirm("This hidden page retains its in-tab editor state, which may include unsaved edits. Cancel and re-enable it in Menu settings to save first. Continue and discard that retained page state?")) return false;
+    retainedHiddenPage.current = false;
+    return true;
+  };
   const setView = (
     next: View,
     options?: {
@@ -1070,6 +1105,7 @@ export function FilesystemWorkbenchPage() {
       pluginPage?: PluginMenuEntry;
     },
   ) => {
+    if (!allowLeavingRetainedPage()) return;
     setViewState(next);
     if (next === "states") {
       setWorkflowPaneFocus("runs");
@@ -1085,6 +1121,7 @@ export function FilesystemWorkbenchPage() {
       url.searchParams.set("llmsPage", options?.llmsPage || llmsTopMenuMode);
     else url.searchParams.delete("llmsPage");
     if (next === "pluginPage" && options?.pluginPage) {
+      setPluginPage(options.pluginPage);
       url.searchParams.set("pluginId", options.pluginPage.pluginId);
       url.searchParams.set("pluginPage", options.pluginPage.id);
     } else if (next !== "pluginPage") {
@@ -1106,6 +1143,7 @@ export function FilesystemWorkbenchPage() {
     kind: "operation" | "model" | "datatype" | "goal" | "plan" | "context",
     id: string,
   ) => {
+    if (!allowLeavingRetainedPage()) return;
     const next: View =
       kind === "operation"
         ? "operations"
@@ -1140,6 +1178,7 @@ export function FilesystemWorkbenchPage() {
     [humanValues, setHumanValues] = useState<Record<string, unknown>>({}),
     [humanDraftLoaded, setHumanDraftLoaded] = useState(false),
     [humanDraftStatus, setHumanDraftStatus] = useState("");
+  const persistedHumanDraft = useRef("");
   const [preflightStateOverrides, setPreflightStateOverrides] = useState<
     Record<string, Partial<PreflightStateValue>>
   >({});
@@ -1345,14 +1384,14 @@ export function FilesystemWorkbenchPage() {
       if (["spriteviewer", "sprite-viewer", "sprite-view"].includes(legacyView || "") || navRoot === "sprite-view") {
         return "sprite-view";
       }
-      return ["finish", "advanced"].includes(subview) || ["finish", "advanced"].includes(navRoot)
+      return ["frames", "finish", "advanced"].includes(subview) || ["frames", "finish", "advanced"].includes(navRoot)
         ? "sources"
         : subview || null;
     },
   );
   useEffect(() => {
     const onChanged = (event: Event) =>
-      setActiveNavSubview(String((event as CustomEvent).detail || "") || null);
+      setActiveNavSubview(normalizeMenuSubview(String((event as CustomEvent).detail || "")) || null);
     window.addEventListener("workbench:subview-changed", onChanged);
     return () => window.removeEventListener("workbench:subview-changed", onChanged);
   }, []);
@@ -1366,6 +1405,42 @@ export function FilesystemWorkbenchPage() {
     );
     if (restored) setPluginPage(restored);
   }, [pluginMenu, pluginPage, view]);
+  const visibilityMenu = useMemo(() => buildVisibilityMenu([
+    ...NAVIGATION_V2,
+    { group: "CAPABILITIES", items: MODEL_MENU_ITEMS },
+    { group: "WORKFLOWS", items: WORKFLOW_TOPBAR_ITEMS },
+  ], workflowPageDefinitions, pluginMenu), [workflowPageDefinitions, pluginMenu]);
+  const visibleMenuIds = new Set(visibilityMenu.filter(item => isMenuItemVisible(item, uiPreferences)).map(item => item.id));
+  const routeVisible = (target: View, subview?: string) => isMenuRouteVisible(visibilityMenu, { view: target, subview }, uiPreferences);
+  const activeMenuRoute = {
+    view, subview: view === "llms" ? llmsTopMenuMode : activeNavSubview || undefined,
+    pluginId: new URLSearchParams(window.location.search).get("pluginId") || undefined,
+    pluginPageId: new URLSearchParams(window.location.search).get("pluginPage") || undefined,
+  };
+  const pageVisible = isMenuRouteVisible(visibilityMenu, activeMenuRoute, uiPreferences);
+  const activeVisibilityItem = menuItemForRoute(visibilityMenu, activeMenuRoute);
+  const navigationSections = [
+    ...NAVIGATION_V2,
+    ...[...new Set(visibilityMenu.map(item => item.group))]
+      .filter(group => !NAVIGATION_V2.some(section => section.group === group))
+      .map(group => ({ group, items: [] })),
+  ].filter(section => section.items.some(item => visibleMenuIds.has(pageMenuId(item.view, item.subview, item.action)))
+    || workflowPageDefinitions.some(item => visibilityMenu.some(menu => menu.id === workflowMenuId(item.id) && menu.group === section.group && visibleMenuIds.has(menu.id)))
+    || pluginMenu.some(item => item.group === section.group && visibleMenuIds.has(pluginMenuId(item.pluginId, item.id))));
+  useEffect(() => {
+    if (pageVisible) visitedPage.current = view;
+    retainedHiddenPage.current = !pageVisible && visitedPage.current === view;
+    retainedPageUrl.current = window.location.href;
+  }, [pageVisible, view, activeNavSubview]);
+  useEffect(() => {
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (!retainedHiddenPage.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, []);
   const b1b2PageDefinitionForPlay = workflowPageDefinitions.find(
     (definition) => definition.routeView === "arc3B1B2Pipeline",
   );
@@ -1416,14 +1491,14 @@ export function FilesystemWorkbenchPage() {
     const section = NAVIGATION_V2.find((entry) =>
       entry.items.some((item) => item.view === view),
     );
-    return section?.items || [];
-  }, [view]);
+    return section?.items.filter(item => visibleMenuIds.has(pageMenuId(item.view, item.subview, item.action))) || [];
+  }, [view, uiPreferences]);
   const orderedSectionTopbarItems = useMemo(() => {
     if (!sectionTopbarItems.length) return [];
-    const current = sectionTopbarItems.find((item) => item.view === view);
-    const others = sectionTopbarItems.filter((item) => item.view !== view);
+    const current = sectionTopbarItems.find((item) => item.view === view && !item.action && (!item.subview || item.subview === (activeNavSubview || "sources")));
+    const others = sectionTopbarItems.filter((item) => item !== current);
     return current ? [current, ...others] : sectionTopbarItems;
-  }, [sectionTopbarItems, view]);
+  }, [sectionTopbarItems, view, activeNavSubview]);
   const openOverviewShortcut = (anchorId: "overview-top" | "overview-counts" | "overview-inheritance") => {
     setView("overview");
     const url = new URL(window.location.href);
@@ -1439,16 +1514,16 @@ export function FilesystemWorkbenchPage() {
         { key: "overview", label: "Overview", active: true, onClick: () => openOverviewShortcut("overview-top") },
         { key: "overview-counts", label: "Counts", onClick: () => openOverviewShortcut("overview-counts") },
         { key: "overview-inheritance", label: "Inheritance", onClick: () => openOverviewShortcut("overview-inheritance") },
-        { key: "overview-workflows", label: "Open Workflow", onClick: () => setView("currentWorkflow") },
+        ...(routeVisible("currentWorkflow") ? [{ key: "overview-workflows", label: "Open Workflow", onClick: () => setView("currentWorkflow") }] : []),
       ];
     }
     return orderedSectionTopbarItems.map((item) => ({
-      key: `section-topbar:${item.view}${item.subview ? `:${item.subview}` : ""}`,
+      key: pageMenuId(item.view, item.subview, item.action),
       label: item.label,
-      active: item.view === view && (!item.subview || (activeNavSubview || "sources") === item.subview),
+      active: !item.action && item.view === view && (!item.subview || (activeNavSubview || "sources") === item.subview),
       onClick: () => openNavigationItem(item),
     }));
-  }, [view, orderedSectionTopbarItems, activeNavSubview]);
+  }, [view, orderedSectionTopbarItems, activeNavSubview, uiPreferences]);
   const setLeftColumnAccordionMode = (mode: AccordionDisplayMode) => {
     setWorkflowLeftColumnDisplayMode(mode);
     setSelectedStageDisplayMode(mode);
@@ -1621,7 +1696,7 @@ export function FilesystemWorkbenchPage() {
   }, [workspace?.id, workflow?.id, workflow?.generation?.englishDescriptionPath]);
   useEffect(() => {
     if (
-      view !== "englishWorkflow" ||
+      !pageVisible || view !== "englishWorkflow" ||
       !workspace ||
       !workflow ||
       workflow?.generation?.englishDescriptionPath
@@ -1649,6 +1724,7 @@ export function FilesystemWorkbenchPage() {
       cancelled = true;
     };
   }, [
+    pageVisible,
     view,
     workspace?.id,
     workflow?.id,
@@ -1656,7 +1732,7 @@ export function FilesystemWorkbenchPage() {
     workflowPath,
   ]);
   useEffect(() => {
-    if (!run || ["completed", "failed", "cancelled"].includes(run.status))
+    if (!pageVisible || !run || ["completed", "failed", "cancelled"].includes(run.status))
       return;
     const timer = window.setInterval(
       () =>
@@ -1666,16 +1742,20 @@ export function FilesystemWorkbenchPage() {
       1000,
     );
     return () => window.clearInterval(timer);
-  }, [run?.id, run?.status]);
-  const perform = async (work: () => Promise<void>) => {
+  }, [pageVisible, run?.id, run?.status]);
+  const perform = async (
+    work: () => Promise<void>,
+    isCurrent = () => true,
+    ownsBusyState = isCurrent,
+  ) => {
     setBusy(true);
     setError(null);
     try {
       await work();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
+      if (isCurrent()) setError(reason instanceof Error ? reason.message : String(reason));
     } finally {
-      setBusy(false);
+      if (ownsBusyState()) setBusy(false);
     }
   };
   const refreshSnapshot = async () => {
@@ -1687,8 +1767,14 @@ export function FilesystemWorkbenchPage() {
     setSnapshot(next);
     return next;
   };
-  const loadWorkspaceById = (workspaceId: string) =>
-    perform(async () => {
+  const loadWorkspaceById = (workspaceId: string) => {
+    const intent = requestedWorkspace.current;
+    if (intent) intent.attempted = true;
+    const generation = ++workspaceLoadGeneration.current;
+    const isCurrent = () => requestedWorkspace.current === intent && workspaceLoadGeneration.current === generation;
+    loadingWorkspaceId.current = workspaceId;
+    return perform(async () => {
+      if (!workspaceId) throw new Error("A workspace ID is required.");
       const [snapshotPayload, implementationPayload, operationPayload, modelPayload] =
         await Promise.all([
           request(
@@ -1698,17 +1784,14 @@ export function FilesystemWorkbenchPage() {
           request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/operations`),
           request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/models`),
         ]);
+      if (!isCurrent()) return;
       const next = snapshotPayload as unknown as Snapshot;
+      if (next.workspace.id !== workspaceId)
+        throw new Error(`Requested workspace "${workspaceId}" does not match the returned workspace "${next.workspace.id}".`);
       setWorkspace(next.workspace);
       currentWorkspaceId.current = next.workspace.id;
       rememberWorkspaceId(next.workspace.id);
-      const workspaceUrl = new URL(window.location.href);
-      workspaceUrl.searchParams.set("workspace", next.workspace.id);
-      window.history.replaceState(
-        null,
-        "",
-        `${workspaceUrl.pathname}${workspaceUrl.search}${workspaceUrl.hash}`,
-      );
+      canonicalizeWorkspaceLocation(next.workspace.id);
       setSnapshot(next);
       setImplementations(
         (implementationPayload.implementations || []) as EngineImplementation[],
@@ -1748,7 +1831,7 @@ export function FilesystemWorkbenchPage() {
       const restoredView =
         explicitView && explicitView !== "changeWorkspace"
           ? explicitView
-          : workspaceOpeningViewFromLocation(next.workspace.effectiveIncludes || []);
+          : workspaceOpeningViewFromLocation(next.workspace.effectiveIncludes || [], next.workspace.id);
       if (first?.document) {
         setWorkflowPath(first.path);
         setWorkflowSource(JSON.stringify(first.document, null, 2));
@@ -1774,6 +1857,9 @@ export function FilesystemWorkbenchPage() {
       setRun(null);
       setSelectedArtifactId(null);
       setValidation(null);
+      setLlmsTopMenuMode(llmsPageFromLocation());
+      setActiveNavSubview(resolveVideoImportShellDestination(window.location.href).subview);
+      setPluginPage(null);
       void engine("/capabilities")
         .then((payload) =>
           setCapabilities(
@@ -1798,38 +1884,47 @@ export function FilesystemWorkbenchPage() {
           )
           .catch(() => undefined);
       }
+    }, isCurrent, () => workspaceLoadGeneration.current === generation).finally(() => {
+      if (workspaceLoadGeneration.current !== generation) return;
+      loadingWorkspaceId.current = null;
+      if (requestedWorkspace.current !== intent) loadRequestedWorkspace();
     });
-  const loadWorkspace = (item: Workspace) => loadWorkspaceById(item.id);
+  };
+  const loadWorkspace = (item: Workspace) => {
+    const id = workspaceIdForNavigation(item.id);
+    requestedWorkspace.current = { id };
+    return loadWorkspaceById(id);
+  };
   const loadRequestedWorkspace = () => {
-    const requested = workspaceFromLocation();
+    const intent = requestedWorkspace.current;
+    if (!intent) return;
+    const requested = intent.id;
+    if (!requested) {
+      setError("A workspace parameter was supplied without a workspace ID.");
+      return;
+    }
+    if (requested === currentWorkspaceId.current) {
+      canonicalizeWorkspaceLocation(requested);
+      return;
+    }
     if (
-      !requested ||
-      requested === currentWorkspaceId.current ||
       loadingWorkspaceId.current !== null ||
-      // A direct call already in flight (e.g. switchToWorkspace()'s
-      // closeWorkspace() + loadWorkspace() pair) sets `busy` in the same
-      // synchronous tick/batch that nulls `workspace`, which is what would
-      // otherwise trigger THIS effect too -- without this guard, closing the
-      // outgoing workspace races a second, unwanted load of whatever
-      // workspaceFromLocation() falls back to (the remembered/default
-      // workspace) against the actually-requested target.
+      intent.attempted ||
       busy
     )
       return;
     const match = workspaces.find((item) => item.id === requested);
-    if (!match && workspaces.length) return;
-    loadingWorkspaceId.current = requested;
-    void loadWorkspaceById(match?.id || requested).finally(() => {
-      if (loadingWorkspaceId.current === requested)
-        loadingWorkspaceId.current = null;
-      if (workspaceFromLocation() !== currentWorkspaceId.current)
-        loadRequestedWorkspace();
-    });
+    if (!match && workspaces.length) {
+      setError(`Workspace "${requested}" is not available.`);
+      return;
+    }
+    void loadWorkspaceById(match?.id || requested);
   };
   useEffect(() => {
     loadRequestedWorkspace();
-  }, [workspaces, workspace?.id]);
+  }, [workspaces, workspace?.id, busy]);
   const showWorkspaceChooser = () => {
+    if (!allowLeavingRetainedPage()) return;
     const url = new URL(window.location.href);
     [
       "resource",
@@ -1868,7 +1963,7 @@ export function FilesystemWorkbenchPage() {
     setViewState(
       preChooserView.current ||
         (workspace
-          ? workspaceOpeningViewFromLocation(workspace.effectiveIncludes || [])
+          ? workspaceOpeningViewFromLocation(workspace.effectiveIncludes || [], workspace.id)
           : "overview"),
     );
     preChooserView.current = null;
@@ -1902,6 +1997,7 @@ export function FilesystemWorkbenchPage() {
     );
     setWorkspace(null);
     currentWorkspaceId.current = null;
+    requestedWorkspace.current = null;
     forgetWorkspaceId();
     setSnapshot(null);
     setRun(null);
@@ -1914,12 +2010,13 @@ export function FilesystemWorkbenchPage() {
    * skipped entirely when re-picking the workspace that's already loaded
    * (closeWorkspaceChooser() handles that with no teardown at all). */
   const switchToWorkspace = (item: Workspace) => {
+    const targetId = workspaceIdForNavigation(item.id);
     if (!workspace) {
       // Nothing loaded yet (fresh visit) -- nothing to lose, nothing to confirm.
       loadWorkspace(item);
       return;
     }
-    if (item.id === workspace.id) {
+    if (targetId === workspace.id) {
       closeWorkspaceChooser();
       return;
     }
@@ -1929,7 +2026,7 @@ export function FilesystemWorkbenchPage() {
         : "";
     if (
       !window.confirm(
-        `Switch to workspace "${item.label}"? Unsaved edits in "${workspace.label}" will be lost.${runWarning}`,
+        `Switch to workspace "${workspaces.find(candidate => candidate.id === targetId)?.label || targetId}"? Unsaved edits in "${workspace.label}" will be lost.${runWarning}`,
       )
     )
       return;
@@ -2575,15 +2672,29 @@ export function FilesystemWorkbenchPage() {
     return () => window.removeEventListener("workbench:open-docs", openDocs);
   }, []);
   useEffect(() => {
-    const restoreLocation = () => {
-      setViewState(workspaceOpeningViewFromLocation());
-      setLlmsTopMenuMode(llmsPageFromLocation());
+    const restoreLocation = (event: PopStateEvent) => {
+      if (!allowLeavingRetainedPage()) {
+        event.stopImmediatePropagation();
+        window.history.replaceState(window.history.state, "", retainedPageUrl.current);
+        return;
+      }
+      const requested = workspaceFromLocation();
+      if (
+        requestedWorkspace.current?.id !== requested ||
+        (requestedWorkspace.current.attempted && currentWorkspaceId.current !== requested && loadingWorkspaceId.current === null)
+      ) requestedWorkspace.current = { id: requested };
       loadRequestedWorkspace();
+      if (requested !== currentWorkspaceId.current) return;
+      setViewState(workspaceOpeningViewFromLocation([], requested));
+      setLlmsTopMenuMode(llmsPageFromLocation());
+      setActiveNavSubview(resolveVideoImportShellDestination(window.location.href).subview);
+      setPluginPage(null);
     };
-    window.addEventListener("popstate", restoreLocation);
-    return () => window.removeEventListener("popstate", restoreLocation);
+    window.addEventListener("popstate", restoreLocation, true);
+    return () => window.removeEventListener("popstate", restoreLocation, true);
   }, [workspaces, workspace?.id]);
   useEffect(() => {
+    if (!workspace) return;
     if (view !== "overview") return;
     const url = new URL(window.location.href);
     const parametersToRemove = [
@@ -2632,6 +2743,7 @@ export function FilesystemWorkbenchPage() {
     setHumanDraftStatus("Loading saved draft…");
     void engine(`/runs/${run.id}/steps/${selectedStepId}/draft`)
       .then((payload) => {
+        persistedHumanDraft.current = JSON.stringify([run.id, selectedStepId, payload.draft?.values || {}]);
         setHumanValues(
           (payload.draft?.values || {}) as Record<string, unknown>,
         );
@@ -2649,31 +2761,35 @@ export function FilesystemWorkbenchPage() {
   }, [run?.id, selectedStepId, selectedRuntime?.status]);
   useEffect(() => {
     if (
-      !run ||
+      !pageVisible || !run ||
       !selectedStepId ||
       selectedRuntime?.status !== "waiting" ||
       !humanDraftLoaded
     )
       return;
+    const contentKey = JSON.stringify([run.id, selectedStepId, humanValues]);
+    if (persistedHumanDraft.current === contentKey) return;
     setHumanDraftStatus("Saving draft…");
     const timer = window.setTimeout(() => {
       void engine(`/runs/${run.id}/steps/${selectedStepId}/draft`, {
         method: "PUT",
         body: JSON.stringify(humanValues),
       })
-        .then((payload) =>
+        .then((payload) => {
+          persistedHumanDraft.current = contentKey;
           setHumanDraftStatus(
             `Draft saved · ${String(payload.draft?.updatedAt || "")
               .replace("T", " ")
               .slice(0, 19)}`,
-          ),
-        )
+          );
+        })
         .catch((reason) =>
           setHumanDraftStatus(`Draft save failed · ${String(reason)}`),
         );
     }, 500);
     return () => window.clearTimeout(timer);
   }, [
+    pageVisible,
     humanValues,
     humanDraftLoaded,
     run?.id,
@@ -2684,8 +2800,11 @@ export function FilesystemWorkbenchPage() {
   if (!workspace || view === "changeWorkspace") {
     const visibleWorkspaces = workspaces.filter((item) => !item.hidden);
     return (
+      <VisibilityMenuContext.Provider value={visibilityMenu}>
       <main className="workbench-shell">
+        {visibilitySettingsOpen && <MenuVisibilityDialog onClose={() => setVisibilitySettingsOpen(false)} />}
         <section className="workspace-gate">
+          <button type="button" onClick={() => setVisibilitySettingsOpen(true)}>Menu settings / recovery</button>
           <div className="brand-lockup">
             <span className="brand-mark">M</span>
             <div>
@@ -2857,6 +2976,7 @@ export function FilesystemWorkbenchPage() {
           )}
         </section>
       </main>
+      </VisibilityMenuContext.Provider>
     );
   }
 
@@ -3322,20 +3442,33 @@ export function FilesystemWorkbenchPage() {
         view === "editor" ||
         view === "workflowRuns"
       : target === view;
-  const navItemSelected = (item: { view: View; subview?: string }) =>
+  const navItemSelected = (item: { view: View; subview?: string; action?: string }) =>
     navSelected(item.view) &&
+    !item.action &&
     (!item.subview || (activeNavSubview || "sources") === item.subview);
-  const openNavigationItem = (item: { view: View; subview?: string }) => {
+  const openNavigationItem = (item: { view: View; subview?: string; action?: string }) => {
+    if (!allowLeavingRetainedPage()) return;
+    if (item.action === "temporal-events" && view === "videoImport" && activeNavSubview === "recognition") {
+      window.dispatchEvent(new CustomEvent("workbench:open-temporal-events"));
+      return;
+    }
+    if (item.action === "temporal-events") {
+      pushGlobalStatus("Open Recognition and select a frame or section, then open Temporal events & learned rules below that context.", "menu");
+      return;
+    }
     if (item.subview) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("subview", item.subview);
+      const url = new URL(item.view === "videoImport"
+        ? videoImportUrlForSubview(window.location.href, item.subview)
+        : window.location.href);
+      if (item.view !== "videoImport") url.searchParams.set("subview", item.subview);
       window.history.replaceState(window.history.state, "", url);
-      setActiveNavSubview(item.subview);
+      setActiveNavSubview(item.view === "videoImport" ? resolveVideoImportShellDestination(url.href).subview : item.subview);
       window.dispatchEvent(new CustomEvent("workbench:set-subview", { detail: item.subview }));
     }
     setView(item.view);
   };
   const returnToBreadcrumb = (entry: BreadcrumbEntry, index: number) => {
+    if (!allowLeavingRetainedPage()) return;
     breadcrumbNavigation.current = true;
     setViewTrailIndex(index);
     window.history.replaceState(null, "", entry.url);
@@ -3348,7 +3481,9 @@ export function FilesystemWorkbenchPage() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
+    <VisibilityMenuContext.Provider value={visibilityMenu}>
     <main className={`workbench ${debugUiEnabled ? "tsx-debug-enabled" : ""}`} data-view={view}>
+      {visibilitySettingsOpen && <MenuVisibilityDialog onClose={() => setVisibilitySettingsOpen(false)} />}
       {debugUiEnabled && <TsxSourceLocationPopup />}
       {restartDeferred && (
         <section
@@ -3605,7 +3740,7 @@ export function FilesystemWorkbenchPage() {
               </button>
             </div>
           </div>
-          {NAVIGATION_V2.map((section) => (
+          {navigationSections.map((section) => (
             <div className={`rail-section${collapsedNavigationGroups[section.group] ? " is-collapsed" : ""}`} key={section.group}>
               <button
                 type="button"
@@ -3619,9 +3754,8 @@ export function FilesystemWorkbenchPage() {
               </button>
               {!collapsedNavigationGroups[section.group] && (
                 <>
-              {(section.group === "WORKFLOWS" || section.group === "OMEGA VISION") &&
-                workflowNavigationEntries
-                  .filter((entry) => entry.menuGroup === section.group)
+              {workflowNavigationEntries
+                  .filter((entry) => entry.menuGroup === section.group && visibleMenuIds.has(workflowMenuId(entry.id)))
                   .map((entry) => {
                   const target = WORKBENCH_VIEWS.has(
                     entry.definition.routeView as View,
@@ -3643,9 +3777,9 @@ export function FilesystemWorkbenchPage() {
                     </button>
                   );
                 })}
-              {section.items.map((item) => (
+              {section.items.filter(item => visibleMenuIds.has(pageMenuId(item.view, item.subview, item.action))).map((item) => (
                 <button
-                  key={item.label}
+                  key={pageMenuId(item.view, item.subview, item.action)}
                   title={item.label}
                   data-navigation-label={item.label}
                   className={`rail-icon ${navItemSelected(item) ? "selected" : ""}`}
@@ -3657,7 +3791,7 @@ export function FilesystemWorkbenchPage() {
               ))}
               {(() => {
                 const sectionPluginEntries = pluginMenu.filter(
-                  (entry) => entry.group === section.group,
+                  (entry) => entry.group === section.group && visibleMenuIds.has(pluginMenuId(entry.pluginId, entry.id)),
                 );
                 const hasSelectedEntry = sectionPluginEntries.some(
                   (entry) =>
@@ -3688,7 +3822,6 @@ export function FilesystemWorkbenchPage() {
                               : ""
                           }`}
                           onClick={() => {
-                            setPluginPage(entry);
                             setView("pluginPage", { pluginPage: entry });
                           }}
                         >
@@ -3721,6 +3854,8 @@ export function FilesystemWorkbenchPage() {
             </div>
           ))}
           <div className="rail-bottom">
+            <button type="button" className="rail-icon" onClick={() => setVisibilitySettingsOpen(true)} title="Menu settings / recovery"><span>⚙</span><small>Menu settings</small></button>
+            <button type="button" className="rail-icon" onClick={() => setView("setup")} title="Common Settings"><span>⚙</span><small>Settings / recovery</small></button>
             <button
               className="rail-icon"
               onClick={showWorkspaceChooser}
@@ -3756,6 +3891,7 @@ export function FilesystemWorkbenchPage() {
             }
           }}
         />
+        <MenuVisibilityBoundary key={`browser:${view}`} visible={pageVisible}>
         <aside className="stages-panel">
           <div className="panel-label">
             <span>RESOURCE BROWSER</span>
@@ -3801,6 +3937,7 @@ export function FilesystemWorkbenchPage() {
           </div>
           </section>
         </aside>
+        </MenuVisibilityBoundary>
         <section
           className={`main-stage workflow-columns-${workflowColumnsStackDisplayMode} workflow-left-column-${workflowLeftColumnDisplayMode} workflow-right-column-${workflowRightColumnDisplayMode}`}
           style={
@@ -3810,60 +3947,37 @@ export function FilesystemWorkbenchPage() {
             } as CSSProperties
           }
         >
+          {!pageVisible && <MenuVisibilityRecovery label={activeVisibilityItem.label} />}
+          <MenuVisibilityBoundary key={view} visible={pageVisible}>
           <nav className="view-tabs">
             {view === "llms" ? (
-              <>
-                <button
-                  className={llmsTopMenuMode === "browse" ? "active" : ""}
-                  onClick={() => {
-                    setLlmsTopMenuMode("browse");
-                    setView("llms", { llmsPage: "browse" });
-                  }}
-                >
-                  Browse Models
-                </button>
-                <button
-                  className={llmsTopMenuMode === "discover" ? "active" : ""}
-                  onClick={() => {
-                    setLlmsTopMenuMode("discover");
-                    setView("llms", { llmsPage: "discover" });
-                  }}
-                >
-                  Discover Public Properties
-                </button>
-                <button
-                  className={llmsTopMenuMode === "override" ? "active" : ""}
-                  onClick={() => {
-                    setLlmsTopMenuMode("override");
-                    setView("llms", { llmsPage: "override" });
-                  }}
-                >
-                  Override
-                </button>
-              </>
+              MODEL_MENU_ITEMS.filter(item => visibleMenuIds.has(pageMenuId(item.view, item.subview))).map(item =>
+                <button key={item.subview} className={llmsTopMenuMode === item.subview ? "active" : ""} onClick={() => setView("llms", { llmsPage: item.subview })}>{item.label}</button>)
             ) : workflowTopbarActive ? (
               <>
-                <button
+                {routeVisible("editor") && <button
                   className={`workflow-focus-tab ${workflowCombinedView && workflowPaneFocus === "editor" ? "active" : ""}`}
                   onClick={() => {
+                    if (!allowLeavingRetainedPage()) return;
                     setWorkflowPaneFocus("editor");
                     setWorkflowEditorPercent(66.667);
                     setView("canvas");
                   }}
                 >
                   Workflow Editor
-                </button>
-                <button
+                </button>}
+                {routeVisible("workflowRuns") && <button
                   className={`workflow-focus-tab ${workflowCombinedView && workflowPaneFocus === "runs" ? "active" : ""}`}
                   onClick={() => {
+                    if (!allowLeavingRetainedPage()) return;
                     setWorkflowPaneFocus("runs");
                     setWorkflowEditorPercent(33.333);
                     setView("canvas");
                   }}
                 >
                   Workflow Runs
-                </button>
-                {workflowNavigationEntries.map(({ definition }) => {
+                </button>}
+                {workflowNavigationEntries.filter(entry => visibleMenuIds.has(workflowMenuId(entry.id))).map(({ definition }) => {
                   const target = WORKBENCH_VIEWS.has(definition.routeView as View)
                     ? (definition.routeView as View)
                     : null;
@@ -3878,24 +3992,24 @@ export function FilesystemWorkbenchPage() {
                     </button>
                   ) : null;
                 })}
-                <button
+                {routeVisible("artifacts") && <button
                   className={view === "artifacts" ? "active" : ""}
                   onClick={() => setView("artifacts")}
                 >
                   Artifact explorer <span>{run?.artifacts.length || 0}</span>
-                </button>
-                <button
+                </button>}
+                {routeVisible("evidence") && <button
                   className={view === "evidence" ? "active" : ""}
                   onClick={() => setView("evidence")}
                 >
                   Evidence & provenance <span>{run?.events.length || 0}</span>
-                </button>
-                <button
+                </button>}
+                {routeVisible("checks") && <button
                   className={view === "checks" ? "active" : ""}
                   onClick={() => setView("checks")}
                 >
                   Checks
-                </button>
+                </button>}
               </>
             ) : (
               pageTopbarSwitches.map((item) => (
@@ -4890,9 +5004,11 @@ export function FilesystemWorkbenchPage() {
               />
             )}
           </Suspense>
+          </MenuVisibilityBoundary>
         </section>
         <div className="topbar-panel-restore-stack">
           <div className="topbar-global-actions" data-stack-scope="global">
+            <button type="button" className="topbar-panel-restore" onClick={() => setVisibilitySettingsOpen(true)}>Menu settings / recovery</button>
             <button
               type="button"
               className="topbar-panel-restore server-restart-button"
@@ -5121,6 +5237,7 @@ export function FilesystemWorkbenchPage() {
           onPointerDown={beginInspectorResize}
           onDoubleClick={() => setInspectorWidth(310)}
         />
+        <MenuVisibilityBoundary key={`inspector:${view}`} visible={pageVisible}>
         <aside className="inspector">
           <div className="inspector-head">
             <span>{relationshipView ? "DOCUMENTATION" : "LIVE INSPECTOR"}</span>
@@ -5274,6 +5391,7 @@ export function FilesystemWorkbenchPage() {
             </div>
           )}
         </aside>
+        </MenuVisibilityBoundary>
       </section>
       <footer>
         <span>
@@ -5295,7 +5413,8 @@ export function FilesystemWorkbenchPage() {
         <span>{enabledModelCount} enabled models/presets</span>
         <span className="footer-right">filesystem workspace</span>
       </footer>
-      <ChatDock onOpenFullPage={() => setView("chat")} />
+      <MenuVisibilityBoundary visible={routeVisible("chat")}><ChatDock onOpenFullPage={() => setView("chat")} /></MenuVisibilityBoundary>
     </main>
+    </VisibilityMenuContext.Provider>
   );
 }

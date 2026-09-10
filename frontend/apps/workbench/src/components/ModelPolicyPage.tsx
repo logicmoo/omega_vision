@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
+import {useContextReset} from "../lib/useContextReset";
 import "../styles/model_policy_todo.css";
 import "../styles/benchmark_catalog.css";
 
@@ -55,7 +56,7 @@ export function ModelPolicyPage({workspaceId,onOpenModels,mode="policy"}:{worksp
  const[backends,setBackends]=useState<BackendRecord[]>([]),[discoveryBackend,setDiscoveryBackend]=useState(""),[discovered,setDiscovered]=useState<DiscoveredModel[]>([]),[discoveredSelected,setDiscoveredSelected]=useState<Set<string>>(new Set()),[showBackendCreator,setShowBackendCreator]=useState(false),[backendDraft,setBackendDraft]=useState({id:"",label:"",provider:"openai",baseUrl:"",apiKeyEnvironmentVariable:""});
  const load=async()=>{try{const[body,backendBody]=await Promise.all([jsonRequest(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/model-policy`),jsonRequest(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/backends`)]);setPayload(body);const rows=(backendBody.backends||[]) as BackendRecord[];setBackends(rows);setDiscoveryBackend(current=>current&&rows.some(row=>row.document?.id===current)?current:(rows.find(row=>row.document?.enabled!==false)?.document?.id||""));setError(null)}catch(reason){setError(String(reason))}};
  useEffect(()=>{void load()},[workspaceId]);
- useEffect(()=>{setRuleDrafts(null)},[workspaceId,payload?.registry.policy?.id]);
+ useContextReset(JSON.stringify([workspaceId,payload?.registry.policy?.id]),()=>{setRuleDrafts(null)});
  const modelRows=useMemo(()=>(payload?.registry.models||[]).map(model=>({...model,policy:drafts[model.id]||policyOf(model.policy)})),[payload,drafts]);
  const capabilityOptions=useMemo(()=>[...new Set(modelRows.flatMap(model=>Object.entries(model.capabilities||{}).filter(([,enabled])=>enabled).map(([key])=>key)))].sort(),[modelRows]);
  const typeOptions=useMemo(()=>[...new Set(modelRows.map(modelType))].sort(),[modelRows]);

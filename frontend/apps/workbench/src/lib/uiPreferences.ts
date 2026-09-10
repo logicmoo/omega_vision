@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from "react";
+import { DEFAULT_MENU_VISIBILITY, parseMenuVisibility, type MenuVisibilityPreferences } from "./menuVisibility";
 
 export type ResourceSourceFileControlsPlacement = "above" | "below";
 
 export type GenerationsView = "fullest" | "full" | "compact";
 
-export type UserUiPreferences = {
+export type UserUiPreferences = MenuVisibilityPreferences & {
+  redirectDefaultWorkspaceToArc3: boolean;
   resourceSourceFileControlsPlacement: ResourceSourceFileControlsPlacement;
   /** Whether the per-page "UI Config" strip (PageUiTools) is shown at all. */
   pageUiToolsVisible: boolean;
@@ -18,6 +20,8 @@ export const USER_UI_PREFERENCES_STORAGE_KEY = "metta-workbench.user-ui-preferen
 export const USER_UI_PREFERENCES_CHANGED_EVENT = "workbench:user-ui-preferences-changed";
 
 export const DEFAULT_USER_UI_PREFERENCES: UserUiPreferences = {
+  ...DEFAULT_MENU_VISIBILITY,
+  redirectDefaultWorkspaceToArc3: true,
   resourceSourceFileControlsPlacement: "above",
   pageUiToolsVisible: true,
   generationsVisible: true,
@@ -32,6 +36,8 @@ function parseUserUiPreferences(source: string | null): UserUiPreferences {
   try {
     const candidate = JSON.parse(source) as Partial<UserUiPreferences>;
     return {
+      ...parseMenuVisibility(candidate),
+      redirectDefaultWorkspaceToArc3: candidate.redirectDefaultWorkspaceToArc3 !== false,
       resourceSourceFileControlsPlacement:
         candidate.resourceSourceFileControlsPlacement === "below" ? "below" : "above",
       pageUiToolsVisible: candidate.pageUiToolsVisible !== false,
@@ -66,7 +72,12 @@ export function writeUserUiPreferences(preferences: UserUiPreferences): void {
 }
 
 export function updateUserUiPreferences(patch: Partial<UserUiPreferences>): void {
-  writeUserUiPreferences({ ...readUserUiPreferences(), ...patch });
+  const current = readUserUiPreferences();
+  writeUserUiPreferences({
+    ...current,
+    ...patch,
+    menuItemVisibility: { ...current.menuItemVisibility, ...patch.menuItemVisibility },
+  });
 }
 
 function subscribeUserUiPreferences(listener: () => void): () => void {

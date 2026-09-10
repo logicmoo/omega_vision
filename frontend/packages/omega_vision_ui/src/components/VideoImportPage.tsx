@@ -1,10 +1,16 @@
-import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useContext, useEffect, useId, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { MenuVisibilityBoundary, useMenuSurfaceLifecycle } from "@app/components/MenuVisibilityBoundary";
+import { VisibilityMenuContext } from "@app/components/MenuVisibilitySettings";
+import { isMenuRouteVisible, pageMenuId } from "@app/lib/menuVisibility";
+import { useUserUiPreferences } from "@app/lib/uiPreferences";
+import { useContextReset } from "@app/lib/useContextReset";
 import { pushGlobalStatus } from "@app/lib/globalStatus";
 import { ColoredTagCombobox, type ColoredTag, type ColoredTagDescription } from "@app/components/ColoredTagCombobox";
 import { SpriteViewerPage } from "@app/components/SpriteViewerPage";
 import { memoryRequest, memorySessionId, NOWHERE_LIMITS_NOTICE } from "@app/components/MemorySession";
 import { MemorySetupHost } from "@app/components/MemorySetupHost";
 import { SemanticEventsPanel } from "./SemanticEventsPanel";
+import { RecognitionTemporalCanvas } from "./RecognitionTemporalCanvas";
 import { createSemanticExecutionApi } from "./SemanticExecutionApi";
 import { SuperControl } from "@app/components/UniversalArtifactEditor";
 import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
@@ -30,6 +36,7 @@ import {
   navigationSlug,
   resolveRecognitionNavigation,
   resolveVideoImportShellDestination,
+  videoImportUrlForSubview,
   urlWithNavigation,
   type RecognitionNavigationTab,
   type RecognitionNavigationTransform,
@@ -97,12 +104,11 @@ type ExtractedImageSource = {
 type VideoImportSubview = VideoImportShellSubview;
 type RecordingHistoryMode = "none" | "push" | "replace";
 const VIDEO_IMPORT_SUBVIEWS: Array<{ id: VideoImportSubview; label: string }> = [
-  { id: "sources", label: "1 · Sources" },
-  { id: "frames", label: "2 · Frames & Filters" },
-  { id: "games", label: "3 · Games" },
-  { id: "objects", label: "4 · Objects" },
-  { id: "sprite-view", label: "5 · Sprite View" },
-  { id: "recognition", label: "6 · Recognition" },
+  { id: "sources", label: "1 · Video Import" },
+  { id: "games", label: "2 · Games" },
+  { id: "objects", label: "3 · Objects" },
+  { id: "sprite-view", label: "4 · Sprite View" },
+  { id: "recognition", label: "5 · Recognition" },
 ];
 type FilterEntry = {
   id: string; title: string; filter: string; description?: string;
@@ -1921,6 +1927,30 @@ function Section({ id, title, meta, extra, open, pinned, autoCollapse, onToggle,
 
 export type VideoImportChainSummaryStep = { index: number; label: string; detail: string };
 
+type VisibleCleanupEpoch = { context: string; reconnected: boolean };
+
+function prepareVisibleContextCleanup(
+  latest: { current: VisibleCleanupEpoch | null },
+  context: string,
+  lifecycle: { readonly paused: boolean; readonly suspensionEpoch: number },
+  prepare: () => (() => void) | undefined,
+): () => void {
+  if (latest.current?.context === context) latest.current.reconnected = true;
+  const epoch = { context, reconnected: false };
+  const suspensionEpoch = lifecycle.suspensionEpoch;
+  latest.current = epoch;
+  return () => {
+    if (lifecycle.paused || lifecycle.suspensionEpoch !== suspensionEpoch) return;
+    const flush = prepare();
+    if (!flush) return;
+    // Activity/StrictMode reconnects effects in the same turn. Capture the old
+    // context now, but flush only if this was a real exit, not effect replay.
+    queueMicrotask(() => {
+      if (!epoch.reconnected && !lifecycle.paused && lifecycle.suspensionEpoch === suspensionEpoch) flush();
+    });
+  };
+}
+
 export function VideoImportPage({
   workspaceId,
   workspaceLabel,
@@ -1944,50 +1974,51 @@ export function VideoImportPage({
   onChainSummaryChange?: (steps: VideoImportChainSummaryStep[]) => void;
 }) {
   const initialShellDestination = useRef(resolveVideoImportShellDestination(window.location.href));
+  const pageLifecycle = useMenuSurfaceLifecycle();
+  const pageRoot = useRef<HTMLElement>(null);
+  const menuItems = useContext(VisibilityMenuContext);
+  const menuPreferences = useUserUiPreferences();
+  const subviewVisible = (subview: string) => isMenuRouteVisible(menuItems, { view: "videoImport", subview }, menuPreferences);
+  const temporalEventsVisible = subviewVisible("recognition") && menuPreferences.menuItemVisibility[pageMenuId("videoImport", "recognition", "temporal-events")] !== false;
   const [activeSubview, setActiveSubview] = useState<VideoImportSubview>(
     initialShellDestination.current.subview,
   );
   const [integratedFocusRequest, setIntegratedFocusRequest] = useState<VideoImportIntegratedFocus>(
     initialShellDestination.current.focus,
   );
-  const selectSubview = (subview: VideoImportSubview) => {
-    const destination = { subview, focus: null };
-    const nextUrl = canonicalVideoImportShellUrl(window.location.href, destination);
+  const selectSubview = (subview: string) => {
+    const nextUrl = videoImportUrlForSubview(window.location.href, subview);
+    const destination = resolveVideoImportShellDestination(nextUrl);
     window.history.replaceState(window.history.state, "", nextUrl);
-    setActiveSubview(subview);
-    setIntegratedFocusRequest(null);
-    if (subview === "recognition") {
+    setActiveSubview(destination.subview);
+    setIntegratedFocusRequest(destination.focus);
+    if (destination.subview === "recognition") {
       recognitionNavigationAppliedRef.current = "";
       setRecognitionNavigationPath(navigationPathFromUrl(nextUrl));
     }
     // Keep the app nav rail/topbar highlight in sync with the page's own tabs.
-    window.dispatchEvent(new CustomEvent("workbench:subview-changed", { detail: subview }));
+    window.dispatchEvent(new CustomEvent("workbench:subview-changed", { detail: destination.subview }));
   };
   useEffect(() => {
+    const destination = resolveVideoImportShellDestination(window.location.href);
     const canonical = canonicalVideoImportShellUrl(
       window.location.href,
-      initialShellDestination.current,
+      destination,
     );
     if (canonical !== window.location.href) {
       window.history.replaceState(window.history.state, "", canonical);
     }
+    setActiveSubview(destination.subview);
+    setIntegratedFocusRequest(destination.focus);
+    if (destination.subview === "recognition") setRecognitionNavigationPath(navigationPathFromUrl(canonical));
     window.dispatchEvent(new CustomEvent("workbench:subview-changed", {
-      detail: initialShellDestination.current.subview,
+      detail: destination.subview,
     }));
     // Stage pages in the app nav address this component through ?subview=;
     // honor switches and legacy destinations while the page is already mounted.
     const onExternal = (event: Event) => {
       const detail = String((event as CustomEvent).detail || "").toLowerCase();
-      const url = new URL(window.location.href);
-      url.searchParams.set("subview", detail);
-      const destination = resolveVideoImportShellDestination(url.toString());
-      setActiveSubview(destination.subview);
-      setIntegratedFocusRequest(destination.focus);
-      window.history.replaceState(
-        window.history.state,
-        "",
-        canonicalVideoImportShellUrl(window.location.href, destination),
-      );
+      selectSubview(detail);
     };
     const onHistory = () => {
       const destination = resolveVideoImportShellDestination(window.location.href);
@@ -2213,7 +2244,7 @@ export function VideoImportPage({
   });
   useEffect(() => {
     if (!integratedFocusRequest) return;
-    const sectionId = "config";
+    const sectionId = integratedFocusRequest === "frames" ? "inputs" : "config";
     setCollapsedMap((current) => ({ ...current, [sectionId]: false }));
     const reveal = () => document.querySelector(`[data-section="${sectionId}"]`)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2232,26 +2263,40 @@ export function VideoImportPage({
     busy ? "Video Import model/image operation" : "Video Import background job",
   );
   const jobDone = useRef<(final: JobState) => void>(() => undefined);
-  const pollTimer = useRef(0);
-  const concurrentPollTimersRef = useRef(new Map<string, number>());
-  const watchJob = (jobId: string, kind: string, onDone: (final: JobState) => void) => {
-    window.clearInterval(pollTimer.current);
-    jobDone.current = onDone;
-    pollTimer.current = window.setInterval(async () => {
+  const jobPolls = useRef(new Map<string, { poll: () => Promise<void>; timer?: number }>());
+  const awaitedJobTicks = useRef(new Set<() => void>());
+  const pollingGeneration = useRef(0);
+  const stopJobPoll = (key: string) => {
+    window.clearInterval(jobPolls.current.get(key)?.timer);
+    jobPolls.current.delete(key);
+  };
+  const observeJob = (key: string, jobId: string, kind: string, onState: (state: JobState) => void, onDone: (state: JobState) => void) => {
+    stopJobPoll(key);
+    const poll = async () => {
+      const generation = pollingGeneration.current;
+      const current = () => generation === pollingGeneration.current && jobPolls.current.get(key)?.poll === poll && !pageLifecycle.paused;
+      if (!current()) return;
       try {
         const payload = (await api(`extract/status?jobId=${encodeURIComponent(jobId)}`)) as unknown as Omit<JobState, "kind">;
-        const next = { ...payload, kind } as JobState;
-        setJob(next);
+        if (!current()) return;
+        const next = { ...payload, kind };
+        onState(next);
         if (payload.state !== "running") {
-          window.clearInterval(pollTimer.current);
-          if (payload.state === "done") jobDone.current(next);
+          stopJobPoll(key);
+          if (payload.state === "done") onDone(next);
           else setError(payload.error || `${kind} failed`);
         }
       } catch (reason) {
-        window.clearInterval(pollTimer.current);
+        if (!current()) return;
+        stopJobPoll(key);
         setError(reason instanceof Error ? reason.message : String(reason));
       }
-    }, 500);
+    };
+    jobPolls.current.set(key, { poll, timer: window.setInterval(poll, 500) });
+  };
+  const watchJob = (jobId: string, kind: string, onDone: (final: JobState) => void) => {
+    jobDone.current = onDone;
+    observeJob("primary", jobId, kind, setJob, next => jobDone.current(next));
   };
   const watchConcurrentJob = (
     jobId: string,
@@ -2260,43 +2305,44 @@ export function VideoImportPage({
     onDone: (final: JobState) => void,
   ) => {
     setCurrentJob({ id: jobId, kind, state: "running", done: 0, total: 1, elapsedSeconds: 0, etaSeconds: 0 });
-    const existing = concurrentPollTimersRef.current.get(kind);
-    if (existing) window.clearInterval(existing);
-    const timer = window.setInterval(async () => {
-      try {
-        const payload = (await api(`extract/status?jobId=${encodeURIComponent(jobId)}`)) as unknown as Omit<JobState, "kind">;
-        const next = { ...payload, kind } as JobState;
-        setCurrentJob(next);
-        if (payload.state !== "running") {
-          window.clearInterval(timer);
-          concurrentPollTimersRef.current.delete(kind);
-          if (payload.state === "done") onDone(next);
-          else setError(payload.error || `${kind} failed`);
-        }
-      } catch (reason) {
-        window.clearInterval(timer);
-        concurrentPollTimersRef.current.delete(kind);
-        setError(reason instanceof Error ? reason.message : String(reason));
-      }
-    }, 500);
-    concurrentPollTimersRef.current.set(kind, timer);
+    observeJob(kind, jobId, kind, setCurrentJob, onDone);
   };
-  useEffect(() => () => {
-    for (const timer of concurrentPollTimersRef.current.values()) window.clearInterval(timer);
-    concurrentPollTimersRef.current.clear();
+  useEffect(() => {
+    for (const entry of jobPolls.current.values()) {
+      if (entry.timer === undefined) entry.timer = window.setInterval(entry.poll, 500);
+    }
+    for (const tick of awaitedJobTicks.current) tick();
+    return () => {
+      pollingGeneration.current += 1;
+      for (const entry of jobPolls.current.values()) {
+        window.clearInterval(entry.timer);
+        entry.timer = undefined;
+      }
+    };
   }, []);
   const awaitJob = (jobId: string, kind: string, onTick?: (state: JobState) => void) =>
     new Promise<JobState>((resolve, reject) => {
+      let timer: number | undefined;
+      let reading = false;
       const tick = async () => {
+        if (pageLifecycle.paused || reading) return;
+        window.clearTimeout(timer);
+        reading = true;
         try {
           const payload = (await api(`extract/status?jobId=${encodeURIComponent(jobId)}`)) as unknown as JobState;
+          if (pageLifecycle.paused) return;
           setJob({ ...payload, kind });
           onTick?.(payload);
           if (stopRef.current) void api("extract/cancel", { jobId }).catch(() => undefined);
-          if (payload.state === "running") { window.setTimeout(tick, 500); return; }
+          if (payload.state === "running") { timer = window.setTimeout(tick, 500); return; }
+          awaitedJobTicks.current.delete(tick);
           if (payload.state === "done") resolve(payload); else reject(new Error(payload.error || `${kind} failed`));
-        } catch (reason) { reject(reason instanceof Error ? reason : new Error(String(reason))); }
+        } catch (reason) {
+          awaitedJobTicks.current.delete(tick);
+          reject(reason instanceof Error ? reason : new Error(String(reason)));
+        } finally { reading = false; }
       };
+      awaitedJobTicks.current.add(tick);
       void tick();
     });
   const stopEverything = () => {
@@ -2585,8 +2631,7 @@ export function VideoImportPage({
     if (sceneJob?.state === "running") void api("extract/cancel", { jobId: sceneJob.id }).catch(() => undefined);
     if (frameExtractionJob?.state === "running") void api("extract/cancel", { jobId: frameExtractionJob.id }).catch(() => undefined);
     if (captionJob?.state === "running") void api("extract/cancel", { jobId: captionJob.id }).catch(() => undefined);
-    for (const timer of concurrentPollTimersRef.current.values()) window.clearInterval(timer);
-    concurrentPollTimersRef.current.clear();
+    for (const key of jobPolls.current.keys()) if (key !== "primary") stopJobPoll(key);
     setMarkers(selected?.scenes || []); setCaptions(selected?.captions || []); setCaptionSource(selected?.captionSource || ""); setSegments(selected?.segments || []); setSelection(null);
     setFrames([]); setPlayerTime(0); setPlayerDuration(0); setJob(null); setSceneJob(null); setFrameExtractionJob(null); setCaptionJob(null); setPicked(null); setKept(null); setMemberInputPaths(new Set()); setSelectedWorkflowGalleryPaths(new Set());
     if (autoClearDataRef.current) { setOutput([]); setTrail([]); setProbes([]); setMembers([]); setMemberInventories([]); setMemberScenes({}); setGallery(null); }
@@ -2628,9 +2673,7 @@ export function VideoImportPage({
     });
   const clearSceneDetection = () => {
     if (sceneJob?.state === "running") void api("extract/cancel", { jobId: sceneJob.id }).catch(() => undefined);
-    const timer = concurrentPollTimersRef.current.get("scenes");
-    if (timer) window.clearInterval(timer);
-    concurrentPollTimersRef.current.delete("scenes");
+    stopJobPoll("scenes");
     setSceneJob(null);
     persistMarkers([]);
     say("scene detection cleared; next scan starts from the beginning");
@@ -2653,9 +2696,7 @@ export function VideoImportPage({
     });
   const clearCaptions = () => {
     if (captionJob?.state === "running") void api("extract/cancel", { jobId: captionJob.id }).catch(() => undefined);
-    const timer = concurrentPollTimersRef.current.get("captions");
-    if (timer) window.clearInterval(timer);
-    concurrentPollTimersRef.current.delete("captions");
+    stopJobPoll("captions");
     setCaptionJob(null);
     setCaptions([]);
     setCaptionSource("");
@@ -3433,6 +3474,8 @@ export function VideoImportPage({
   const preprocEditRevision = useRef(0);
   const preprocSavedRevision = useRef(0);
   const preprocLoadedContext = useRef("");
+  const preprocLoadedRetry = useRef(-1);
+  const preprocCleanupEpoch = useRef<VisibleCleanupEpoch | null>(null);
   const preprocContextReady = preprocLoaded && preprocLoadedContext.current === preprocContext;
   const preprocDrafts = useRef(new Map<string, ChainStep[]>());
   const asChainSteps = (raw: unknown): ChainStep[] =>
@@ -3442,6 +3485,23 @@ export function VideoImportPage({
       params: Object.fromEntries(Object.entries(step?.params || {}).map(([key, value]) => [key, String(value)])),
     }));
   useEffect(() => {
+    const visibleCleanup = prepareVisibleContextCleanup(
+      preprocCleanupEpoch, JSON.stringify([preprocContext, preprocLoadRetry]), pageLifecycle,
+      () => {
+        const pending = preprocPendingSave.current;
+        return pending ? () => {
+          pending();
+          if (preprocPendingSave.current === pending) preprocPendingSave.current = null;
+        } : undefined;
+      },
+    );
+    const suspendCleanup = () => {
+      if (preprocSaveTimer.current !== null) window.clearTimeout(preprocSaveTimer.current);
+      visibleCleanup();
+    };
+    if (preprocLoadedContext.current === preprocContext && preprocLoadedRetry.current === preprocLoadRetry) {
+      return suspendCleanup;
+    }
     setPreprocChain([]);
     preprocChainRef.current = [];
     setPreprocLoaded(false);
@@ -3451,7 +3511,10 @@ export function VideoImportPage({
     let cancelled = false;
     void (async () => {
       try {
+        // An outgoing visible context enqueues its final save in a microtask.
+        await Promise.resolve();
         await preprocSaveQueue.current;
+        if (cancelled) return;
         const payload = await api(`preprocessing-chain?workspaceId=${encodeURIComponent(workspaceId)}&sequenceId=${encodeURIComponent(preprocSequenceId)}`);
         if (cancelled) return;
         const draft = preprocDrafts.current.get(preprocContext);
@@ -3460,6 +3523,7 @@ export function VideoImportPage({
         setPreprocChain(steps);
         setPreprocEffectivelyOriginal(Boolean(payload.effectivelyOriginal));
         preprocLoadedContext.current = preprocContext;
+        preprocLoadedRetry.current = preprocLoadRetry;
         preprocSavedRevision.current = draft ? preprocEditRevision.current - 1 : preprocEditRevision.current;
         if (draft) setPreprocError("Unsaved draft restored. Retry saving this chain.");
         else if (payload.errors?.length) setPreprocError(payload.errors.join("; "));
@@ -3470,10 +3534,7 @@ export function VideoImportPage({
     })();
     return () => {
       cancelled = true;
-      if (preprocSaveTimer.current !== null) window.clearTimeout(preprocSaveTimer.current);
-      // Flush the old sequence's pending save before changing contexts.
-      preprocPendingSave.current?.();
-      preprocPendingSave.current = null;
+      suspendCleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, preprocSequenceId, preprocLoadRetry]);
@@ -3548,12 +3609,12 @@ export function VideoImportPage({
   const [preprocPreview, setPreprocPreview] = useState<{ before: string; after: string; label: string; sourceSignature: string } | null>(null);
   const [preprocPreviewBusy, setPreprocPreviewBusy] = useState(false);
   const preprocPreviewAbort = useRef<AbortController | null>(null);
-  useEffect(() => {
+  useContextReset(preprocContext, () => {
     setPreprocFrameOffset(0);
     setPreprocFramePath("");
     setPreprocFrames([]);
     setPreprocFrameTotal(0);
-  }, [preprocContext]);
+  });
   useEffect(() => {
     if (!preprocSequenceId || !visualSequenceReady || collapsedMap.preprocessing !== false) return;
     const controller = new AbortController();
@@ -3593,12 +3654,13 @@ export function VideoImportPage({
       if (!controller.signal.aborted) setPreprocPreviewBusy(false);
     }
   }, [workspaceId, preprocSequenceId, preprocChain, preprocFramePath]);
-  useEffect(() => {
+  const preprocPreviewContext = JSON.stringify([preprocChain, preprocContext, preprocFramePath, collapsedMap.preprocessing]);
+  useContextReset(preprocPreviewContext, () => {
     preprocPreviewAbort.current?.abort();
     setPreprocPreviewBusy(false);
     setPreprocPreview(null);
-    return () => { preprocPreviewAbort.current?.abort(); };
-  }, [preprocChain, preprocContext, preprocFramePath, collapsedMap.preprocessing]);
+  });
+  useEffect(() => () => { preprocPreviewAbort.current?.abort(); }, []);
   const [pendingVisualSequence, setPendingVisualSequence] = useState<{
     entry: VisualSequenceCatalogEntry;
     historyMode: RecordingHistoryMode;
@@ -3929,16 +3991,20 @@ export function VideoImportPage({
   const directPollers = useRef<Array<AbortController | null>>([null, null]);
   const directWorkspaceRef = useRef(workspaceId);
   directWorkspaceRef.current = workspaceId;
-  useEffect(() => {
-    let cancelled = false;
-    setDirectComposites([]);
-    setDirectCatalogError("");
+  const directCallsRef = useRef(directCalls);
+  directCallsRef.current = directCalls;
+  useContextReset(workspaceId, () => {
     setDirectCalls([{ jobId: "", active: false, note: "" }, { jobId: "", active: false, note: "" }]);
     setDirectChoices(["parts_extraction_0/python_opencv", "turtle_programs/turtle_programs_prolog"]);
     try {
       const saved = JSON.parse(localStorage.getItem(`videoImport.directChoices:${workspaceId}`) || "null");
       if (Array.isArray(saved) && saved.length === 2 && saved.every((value) => typeof value === "string")) setDirectChoices(saved);
     } catch { /* browser preferences are optional */ }
+  });
+  useEffect(() => {
+    let cancelled = false;
+    setDirectComposites([]);
+    setDirectCatalogError("");
     void api(`transform-composites?workspaceId=${encodeURIComponent(workspaceId)}`)
       .then((payload) => { if (!cancelled) setDirectComposites(payload.composites); })
       .catch((reason) => { if (!cancelled) setDirectCatalogError(String(reason)); });
@@ -3946,6 +4012,11 @@ export function VideoImportPage({
       cancelled = true;
       directPollers.current.forEach((controller) => controller?.abort());
     };
+  }, [workspaceId]);
+  useEffect(() => {
+    directCallsRef.current.forEach((call, slot) => {
+      if (call.active && call.jobId) void monitorDirectCall(slot, call.jobId);
+    });
   }, [workspaceId]);
   const chooseDirectComposite = (slot: number, value: string) => {
     const next = directChoices.map((choice, index) => index === slot ? value : choice);
@@ -4298,6 +4369,7 @@ export function VideoImportPage({
   const restoredRef = useRef(false);
   const restoreStartedRef = useRef(false);
   const userTouchedRef = useRef(false);
+  const savedSnapshotContent = useRef("");
   const buildSnapshot = () => ({
     v: 1,
     at: new Date().toISOString(),
@@ -4602,10 +4674,12 @@ export function VideoImportPage({
       // progress. The poller below keeps the client display in sync instead.
       if (pipelineRunningRef.current) return;
       const state = buildSnapshot();
+      const content = JSON.stringify({ ...state, at: undefined });
+      if (savedSnapshotContent.current === content) return;
       // localStorage can't hold the full (cached) snapshot — store the slim one.
       try { localStorage.setItem(snapshotKey, JSON.stringify(buildSlimSnapshot())); } catch { /* quota */ }
       // Mirror the full state (with cache) into the image repository via the API.
-      void api("page-state", { workspaceId, state }).catch(() => undefined);
+      void api("page-state", { workspaceId, state }).then(() => { savedSnapshotContent.current = content; }).catch(() => undefined);
     }, 900);
     return () => clearTimeout(timer);
   });
@@ -4614,15 +4688,21 @@ export function VideoImportPage({
   buildSnapshotRef.current = buildSnapshot;
   const buildSlimSnapshotRef = useRef(buildSlimSnapshot);
   buildSlimSnapshotRef.current = buildSlimSnapshot;
-  useEffect(() => () => {
-    if (!restoredRef.current) return;
-    const slim = buildSlimSnapshotRef.current();
-    try { localStorage.setItem(snapshotKey, JSON.stringify(slim)); } catch { /* quota */ }
-    // sendBeacon caps payloads (~64KB), so send the slim state — the full state
-    // was already mirrored by the debounced save above.
-    try { navigator.sendBeacon?.(`${API}/page-state`, new Blob([JSON.stringify({ workspaceId, state: slim })], { type: "application/json" })); } catch { /* best effort */ }
+  const snapshotCleanupEpoch = useRef<VisibleCleanupEpoch | null>(null);
+  useEffect(() => prepareVisibleContextCleanup(
+    snapshotCleanupEpoch, snapshotKey, pageLifecycle,
+    () => {
+      if (!restoredRef.current) return;
+      const slim = buildSlimSnapshotRef.current();
+      return () => {
+        try { localStorage.setItem(snapshotKey, JSON.stringify(slim)); } catch { /* quota */ }
+        // sendBeacon caps payloads (~64KB), so send the slim state — the full state
+        // was already mirrored by the debounced save above.
+        try { navigator.sendBeacon?.(`${API}/page-state`, new Blob([JSON.stringify({ workspaceId, state: slim })], { type: "application/json" })); } catch { /* best effort */ }
+      };
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  ), [workspaceId, snapshotKey]);
   // Headless server-side pipeline: prefer a websocket (real-time push of the
   // server's status + log, and a channel for button commands), with automatic
   // fallback to HTTP polling if the socket can't connect. Either way the STATUS
@@ -5593,8 +5673,7 @@ export function VideoImportPage({
     });
     if (autoClearDataRef.current && (output.length || trail.length || members.length)) clearStaleResults("chain edited");
   };
-  useEffect(() => {
-    let cancelled = false;
+  useContextReset(workspaceId, () => {
     inheritedModelRef.current = "";
     memberModelTouchedRef.current = false;
     allCallsModelTouchedRef.current = false;
@@ -5615,6 +5694,9 @@ export function VideoImportPage({
     setTurtlePngModel("");
     setInheritedModelId("");
     setModelPreferenceSource("");
+   });
+   useEffect(() => {
+    let cancelled = false;
     const mergeModels = (incoming: ModelChoice[]) => {
       setModels((current) => {
         const byId = new Map(current.map((model) => [model.id, model]));
@@ -9365,7 +9447,7 @@ export function VideoImportPage({
     </Section>
   ) : null;
   return (
-    <section className="resource-view video-import-page vi2" data-subview={activeSubview} onClickCapture={handleImageContextClick} onPointerMove={handleImageZoomPointer} onPointerLeave={() => { hoveredImageRef.current = null; setAltImageZoom(null); setHoverImageContext(null); }}>
+    <section ref={pageRoot} className="resource-view video-import-page vi2" data-subview={activeSubview} onClickCapture={handleImageContextClick} onPointerMove={handleImageZoomPointer} onPointerLeave={() => { hoveredImageRef.current = null; setAltImageZoom(null); setHoverImageContext(null); }}>
       <div className="video-import-topbar">
         <div className="video-import-topbar-head">
           <div className="video-import-topbar-name">
@@ -9376,13 +9458,14 @@ export function VideoImportPage({
           <span className="video-import-topbar-desc">Rebuilt from its own build prompt: import → timeline → the preview stack for building filter chains → probes and entity strips → materialize. A Visual Sequence may contain one image or many from standalone imports, collections, movies, or games. Every gallery collapses, every step interrupts.</span>
         </div>
         <nav className="video-import-human-nav" aria-label="Video Import steps">
-          {VIDEO_IMPORT_SUBVIEWS.map((entry) => (
+          {VIDEO_IMPORT_SUBVIEWS.filter(entry => subviewVisible(entry.id)).map((entry) => (
             <button key={entry.id} type="button" className={activeSubview === entry.id ? "is-active" : ""} aria-current={activeSubview === entry.id ? "page" : undefined} onClick={() => selectSubview(entry.id)}>{entry.label}</button>
           ))}
+          {activeSubview === "recognition" && temporalEventsVisible && <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workbench:open-temporal-events"))}>Temporal events &amp; learned rules</button>}
         </nav>
       </div>
 
-      {["recognition", "objects", "frames"].includes(activeSubview) && imageSetList.length > 0 && (
+      {["recognition", "objects", "sources"].includes(activeSubview) && imageSetList.length > 0 && (
         <div className="video-import-sequence-setup">
           <div className="video-import-imageset-bar">
             {renderImageSetSelector(activeSubview === "objects" ? "objects" : "recognition")}
@@ -9530,6 +9613,7 @@ export function VideoImportPage({
           </section>
         </div>
       )}
+      <MenuVisibilityBoundary visible={subviewVisible("sprite-view")}>
       <div
         className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}
         aria-hidden={activeSubview === "sprite-view" ? undefined : "true"}
@@ -9538,9 +9622,12 @@ export function VideoImportPage({
           sequenceId={preprocSequenceId} sequenceReady={visualSequenceReady && Boolean(preprocSequenceId)}
           active={activeSubview === "sprite-view"} />} />
       </div>
+      </MenuVisibilityBoundary>
 
-      {(activeSubview === "recognition" || activeSubview === "objects") && (
+      <RecognitionTemporalCanvas root={pageRoot} active={activeSubview === "recognition"} enabled={temporalEventsVisible} sequenceId={preprocSequenceId} frameId={expandedReduceId || ""}>
         <SemanticEventsPanel
+          defaultOpen
+          selectedFrameId={expandedReduceId || ""}
           workspaceId={workspaceId} sequenceId={preprocSequenceId}
           firstN={todoPreviewCount} visionModelId={effectiveDescriberModel || inheritedModelId}
           contextReady={visualSequenceReady && !(activeSubview === "objects" && objectsShowLive)}
@@ -9559,7 +9646,7 @@ export function VideoImportPage({
           }}
           onUpdated={() => { void refreshReduceManifest(); }}
         />
-      )}
+      </RecognitionTemporalCanvas>
       <Section {...section("intake", "INTAKE", `${videos.length} video(s) in the library`)}>
         <div className="vi2-body">
           <div className="video-import-row">

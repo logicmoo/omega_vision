@@ -236,13 +236,20 @@ def test_navigation_views_are_deep_linkable_for_visual_acceptance() -> None:
     compact = "".join(source.split())
     assert 'new URLSearchParams(window.location.search)' in source
     assert 'url.searchParams.set("view",next==="canvas"?"workflows":next)' in compact
-    assert 'window.addEventListener("popstate",restoreLocation)' in compact
+    assert 'window.addEventListener("popstate",restoreLocation,true)' in compact
+    assert 'window.removeEventListener("popstate",restoreLocation,true)' in compact
+    assert 'event.stopImmediatePropagation()' in compact
     assert 'constexplicitView=viewFromLocation()' in compact
     assert 'explicitView&&explicitView!=="changeWorkspace"' in compact
     assert 'setViewState(restoredView)' in compact
-    assert 'workspaceOpeningViewFromLocation(next.workspace.effectiveIncludes||[])' in compact
+    assert 'workspaceOpeningViewFromLocation(next.workspace.effectiveIncludes||[],next.workspace.id)' in compact
     assert 'constrequested=workspaceFromLocation()' in compact
+    assert 'requestedWorkspace.current={id:requested}' in compact
+    assert 'constintent=requestedWorkspace.current' in compact
+    assert 'constrequested=intent.id' in compact
     assert 'requested===currentWorkspaceId.current' in compact
+    assert 'canonicalizeWorkspaceLocation(requested)' in compact
+    assert 'if(requestedWorkspace.current!==intent)loadRequestedWorkspace()' in compact
     assert 'loadRequestedWorkspace()' in compact
     assert 'loadingWorkspaceId.current!==null' in compact
     assert 'onClick={showWorkspaceChooser}' in compact

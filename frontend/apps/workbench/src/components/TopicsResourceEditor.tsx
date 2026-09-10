@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useContextReset } from "../lib/useContextReset";
 import { useCollapsingHeaderWheel } from "../lib/collapsingHeaderWheel";
 import { jsonDocumentToMetta } from "../lib/mettaResourceCodec";
 import { ArtifactTreeBranch } from "./ArtifactTreeBranch";
@@ -62,7 +63,7 @@ export function TopicsResourceEditor({ workspaceId }: { workspaceId: string }) {
     setLoaded(true);
     return next;
   };
-  useEffect(() => {
+  useContextReset(workspaceId, () => {
     setSelectedKey(null); setSource(""); setDirty(false);
     void load().then((loadedRecords) => {
       const requested = new URLSearchParams(window.location.search).get("resource");
@@ -86,7 +87,7 @@ export function TopicsResourceEditor({ workspaceId }: { workspaceId: string }) {
         setStatus(`Virtual topic "${requested}" — save to make it a first-class topic.`); setError(null);
       }
     }).catch((reason) => setError(String(reason)));
-  }, [workspaceId]);
+  });
 
   const grouped = useMemo(() => {
     const groups = new Map<string, TopicRecord[]>();

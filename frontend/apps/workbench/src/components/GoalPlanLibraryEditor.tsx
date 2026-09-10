@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useContextReset } from "../lib/useContextReset";
 import type { JSX } from "react";
 import { HierarchyResourceEditor } from "./HierarchyResourceEditor";
 import { ArtifactTreeBranch } from "./ArtifactTreeBranch";
@@ -49,7 +50,7 @@ export function GoalPlanLibraryEditor({ workspaceId, family }: { workspaceId: st
     setPayload(next);
     return next;
   };
-  useEffect(() => { setOpenDocs([]); setActiveKey(null); setCompareKey(null); void load().catch(reason => setError(String(reason))); }, [workspaceId, family]);
+  useContextReset(JSON.stringify([workspaceId, family]), () => { setOpenDocs([]); setActiveKey(null); setCompareKey(null); void load().catch(reason => setError(String(reason))); });
 
   const specifications = payload?.hierarchy.specifications || [];
   const variants = payload?.hierarchy.variants || [];

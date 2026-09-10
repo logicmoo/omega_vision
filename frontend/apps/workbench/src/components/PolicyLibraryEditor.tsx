@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useContextReset } from "../lib/useContextReset";
 import { ArtifactTreeBranch } from "./ArtifactTreeBranch";
 import { HierarchyResourceEditor } from "./HierarchyResourceEditor";
 import {ResourceSourceEditor} from "./ResourceSourceEditor";
@@ -20,7 +21,7 @@ async function request(path:string,init?:RequestInit){const response=await fetch
 export function PolicyLibraryEditor({workspaceId}:{workspaceId:string}){
  const[payload,setPayload]=useState<Payload|null>(null),[openDocs,setOpenDocs]=useState<OpenDocument[]>([]),[activeKey,setActiveKey]=useState<string|null>(null),[compareKey,setCompareKey]=useState<string|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState<string|null>(null);
  const load=async()=>{const next=await request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/policies`) as Payload;setPayload(next);return next};
- useEffect(()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(reason=>setError(String(reason)))},[workspaceId]);
+ useContextReset(workspaceId,()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(reason=>setError(String(reason)))});
  const roots=useMemo(()=>[...(payload?.hierarchy.roots||[])].sort((a,b)=>String(a.document?.label||a.path).localeCompare(String(b.document?.label||b.path))),[payload]);
  const implementationsByResource=payload?.hierarchy.implementedByResource||{};
  const open=(record:RecordFile)=>{const key=recordKey(record);setOpenDocs(current=>current.some(doc=>doc.key===key)?current:[...current,{key,record,source:record.document?JSON.stringify(record.document,null,2):"",dirty:false}]);setActiveKey(key)};

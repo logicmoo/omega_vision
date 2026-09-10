@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useMenuSurfaceLifecycle } from "@app/components/MenuVisibilityBoundary";
+import { useContextReset } from "@app/lib/useContextReset";
 import { type WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import { Arc3B1B2PipelinePage, type ModelChoice, type WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
 import { useTaskRegistry } from "@app/taskRegistry";
@@ -155,6 +157,7 @@ export function Arc3PlayPage({
   onB1B2PageDefinitionSaved,
   onRecordingChanged,
 }: Props) {
+  const pageLifecycle = useMenuSurfaceLifecycle();
   const [games, setGames] = useState<GameInfo[]>([]);
   const [gamesLoading, setGamesLoading] = useState(false);
   const [session, setSession] = useState<PlaySessionSnapshot | null>(null);
@@ -187,6 +190,11 @@ export function Arc3PlayPage({
   const [replayScript, setReplayScript] = useState<ReplayOp[] | null>(null);
   const [replayPos, setReplayPos] = useState(0);
   const [replayPlaying, setReplayPlaying] = useState(false);
+  const replayIntentEpoch = useRef<number | null>(null);
+  const toggleReplay = () => {
+    replayIntentEpoch.current = pageLifecycle.suspensionEpoch;
+    setReplayPlaying(playing => !playing);
+  };
   const [replaySpeedMs, setReplaySpeedMs] = useState(300);
   const [timelineHover, setTimelineHover] = useState<number | null>(null);
   const [selectedGameId, setSelectedGameId] = useState("");
@@ -279,7 +287,7 @@ export function Arc3PlayPage({
     }
   }, []);
 
-  // Resuming a save-point (or fast-forwarding an auto-imported recording)
+  // Resuming a save-point (or fast-forwarding an imported recording)
   // used to drop straight into the ending state with no way to look back.
   // Populate the timeline from the resumed session's own replay log instead
   // -- positioned at the end (so play continues live from where it left
@@ -310,76 +318,14 @@ export function Arc3PlayPage({
     };
   }, [loadGames]);
 
-  // Deep-link support: the games gallery page's "Play & Record" button
-  // navigates here with ?game=<shortId>. This preselects the picker AND
-  // turns Filter on for that game AND refreshes the games catalog, then
-  // tries to auto-resume the game's most recent progress: first the
-  // latest matching IMPORTABLES recording (auto-imported, which itself
-  // creates a save-point), else the latest matching RESTART-POINT
-  // (save-point) for the game -- so a double-click from the gallery lands
-  // you back where you left off rather than a blank new session. Runs
-  // once per page load (guarded against React StrictMode's dev-only
-  // double-invoke); if neither a recording nor a save-point exists, the
-  // picker/filter still land correctly and the effect below falls back
-  // to the first catalog game if this id turns out to be invalid/unknown.
-  const deepLinkHandledRef = useRef(false);
-  useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("game");
-    if (!requested) return;
-    setSelectedGameId(requested);
-    setFilterGameId(requested);
-    if (deepLinkHandledRef.current) return;
-    deepLinkHandledRef.current = true;
-    void loadGames(true);
-    void (async () => {
-      try {
-        const [savepointsPayload, recordingsPayload] = await Promise.all([
-          request(`/workbench/arc3-play/savepoints?workspaceId=${encodeURIComponent(workspaceId)}`),
-          request(`/workbench/arc3-play/recordings?workspaceId=${encodeURIComponent(workspaceId)}`),
-        ]);
-        const freshSavepoints = (savepointsPayload.savepoints as PlaySavepoint[]) || [];
-        const freshRecordings = (recordingsPayload.recordings as PlayRecording[]) || [];
-        setSavepoints(freshSavepoints);
-        setRecordings(freshRecordings);
-
-        const matchingRecordings = freshRecordings.filter((recording) => recording.gameId === requested);
-        const lastRecording = matchingRecordings[matchingRecordings.length - 1];
-        let savepointId: string | null = null;
-        if (lastRecording) {
-          // Best-effort: a stale/unparseable importable must not block
-          // opening the game fresh, so fall through to save-points on error.
-          try {
-            const imported = await request("/workbench/arc3-play/import-recording", {
-              method: "POST",
-              body: JSON.stringify({ workspaceId, path: lastRecording.path }),
-            });
-            savepointId = (imported.savepoint as { id?: string } | undefined)?.id || null;
-            const refreshed = await request(`/workbench/arc3-play/savepoints?workspaceId=${encodeURIComponent(workspaceId)}`);
-            setSavepoints((refreshed.savepoints as PlaySavepoint[]) || []);
-          } catch (importReason) {
-            setImportNote(
-              `auto-resume skipped ${lastRecording.name}: ` +
-                (importReason instanceof Error ? importReason.message : String(importReason)),
-            );
-          }
-        }
-        if (!savepointId) {
-          // Savepoints are already newest-first from the server, so the
-          // first match here is the most recent restart-point.
-          savepointId = freshSavepoints.find((point) => point.game_directory === requested)?.id || null;
-        }
-        if (!savepointId) return;
-        const payload = await request("/workbench/arc3-play/sessions", {
-          method: "POST",
-          body: JSON.stringify({ workspaceId, savepointId }),
-        });
-        applyResumedSession(payload.session as PlaySessionSnapshot);
-      } catch (reason) {
-        setError(reason instanceof Error ? reason.message : String(reason));
-      }
-    })();
-  }, []);
-
+  // URLs restore selection only. Importing or starting/resuming a session
+  // requires an explicit control action in both standalone and embedded players.
+  const requestedGame = new URLSearchParams(window.location.search).get("game") || "";
+  useContextReset(JSON.stringify([workspaceId, requestedGame]), () => {
+    if (!requestedGame) return;
+    setSelectedGameId(requestedGame);
+    setFilterGameId(requestedGame);
+  });
   useEffect(() => {
     if (!games.length) return;
     if (selectedGameId && games.some((game) => (game.short_id || game.game_id) === selectedGameId)) return;
@@ -390,9 +336,9 @@ export function Arc3PlayPage({
   // session's effective path (server-authoritative; blank when it's on
   // the default data/recordings/<game>/ location, so "Set" only submits
   // an explicit override).
-  useEffect(() => {
+  useContextReset(JSON.stringify([session?.id, session?.recordingsPath, session?.recordingsPathIsDefault]), () => {
     setRecordingsPathDraft(session && !session.recordingsPathIsDefault ? session.recordingsPath || "" : "");
-  }, [session?.id, session?.recordingsPath, session?.recordingsPathIsDefault]);
+  });
 
   // Single-flight: loadSavepoints piggybacks this after every mutation and the
   // page mounts fire it twice; the walk is the expensive call, so concurrent
@@ -785,11 +731,17 @@ export function Arc3PlayPage({
   // freezes at the current position and Play resumes from right there.
   useEffect(() => {
     if (!replayPlaying || !replayScript || busy) return;
+    const suspensionEpoch = pageLifecycle.suspensionEpoch;
+    if (pageLifecycle.paused || replayIntentEpoch.current !== suspensionEpoch) {
+      setReplayPlaying(false);
+      return;
+    }
     if (replayPos >= replayScript.length) {
       setReplayPlaying(false);
       return;
     }
     const timer = window.setTimeout(() => {
+      if (pageLifecycle.paused || pageLifecycle.suspensionEpoch !== suspensionEpoch) return;
       void stepReplay();
     }, replaySpeedMs);
     return () => window.clearTimeout(timer);
@@ -1716,7 +1668,7 @@ export function Arc3PlayPage({
                     className={`arc3-play-action watch ${replayPlaying ? "down" : ""}`}
                     disabled={busy || session.closed || (!replayPlaying && replayPos >= replayScript.length)}
                     title={replayPlaying ? "Pause the replay (stays at the current move)" : "Watch: auto-step from the current move"}
-                    onClick={() => setReplayPlaying((playing) => !playing)}
+                    onClick={toggleReplay}
                   >
                     {replayPlaying ? "Ⅱ Pause" : "▶ Watch replay"}
                   </button>

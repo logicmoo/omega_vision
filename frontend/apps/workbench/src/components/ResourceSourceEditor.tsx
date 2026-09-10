@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useContextReset } from "../lib/useContextReset";
 import type { CSSProperties, ReactNode } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import type { Extension } from "@codemirror/state";
@@ -651,7 +652,7 @@ export function ResourceSourceEditor({
     });
   };
 
-  useEffect(() => {
+  useContextReset(value, () => {
     if (value === emittedJson.current) {
       emittedJson.current = null;
       if (sourceModel.current === "raw" && format === "metta") {
@@ -693,7 +694,7 @@ export function ResourceSourceEditor({
         onValidityChange?.(false);
       }
     }
-  }, [value]);
+  });
 
   useEffect(() => {
     if (!revealLine) return;

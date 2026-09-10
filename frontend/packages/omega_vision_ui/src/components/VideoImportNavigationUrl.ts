@@ -9,7 +9,7 @@ export type VideoImportShellSubview =
   | "objects"
   | "sprite-view"
   | "recognition";
-export type VideoImportIntegratedFocus = "advanced" | null;
+export type VideoImportIntegratedFocus = "advanced" | "frames" | null;
 
 export interface VideoImportShellDestination {
   subview: VideoImportShellSubview;
@@ -87,9 +87,11 @@ export function resolveVideoImportShellDestination(href: string): VideoImportShe
   if (["finish", "videoimportfinish"].includes(view) || subview === "finish" || root === "finish") {
     return { subview: "sources", focus: null };
   }
+  if (subview === "frames" || root === "frames") {
+    return { subview: "sources", focus: "frames" };
+  }
   const visible = new Set<VideoImportShellSubview>([
     "sources",
-    "frames",
     "games",
     "objects",
     "sprite-view",
@@ -123,6 +125,16 @@ export function canonicalVideoImportShellUrl(
     url.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
   }
   return url.toString();
+}
+
+export function videoImportUrlForSubview(href: string, subview: string): string {
+  const requested = new URL(href);
+  requested.searchParams.set("view", "videoImport");
+  requested.searchParams.set("subview", subview);
+  // A new menu choice supersedes the old page's navigation, but canonicalizing
+  // the original URL still preserves valid Recognition detail and other context.
+  requested.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
+  return canonicalVideoImportShellUrl(href, resolveVideoImportShellDestination(requested.toString()));
 }
 
 export function inspectorNavigationSlug(transform: RecognitionNavigationTransform): string {

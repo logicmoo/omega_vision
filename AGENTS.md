@@ -28,6 +28,22 @@ worktree unless subsequently explicitly requested. The coordinating implementati
 session alone owns shared Git staging/commits and server restarts. Inspector
 children own only their dedicated allowlisted files.
 
+## User-facing UI acceptance context
+
+Use `workspace=arc3_random_player` for this user's menu inventory, browser
+reproduction, screenshots and acceptance. Preserve the other URL, game,
+recording, navigation and subview state; do not navigate the user's active
+page unnecessarily. Deliberate isolated cross-workspace data/default-alias tests
+are not substitutes for accepting the user's actual menu. This is UI/config
+context only; workspaces still never partition Omega data.
+
+The requested navigation default is ARC3 Random Player when no workspace is
+supplied. A default-checked Settings preference controls redirecting the explicit
+`workspace=default` alias there; disabling it honors that explicit workspace.
+Other explicit invalid IDs must remain errors. Changing this preference must not
+navigate or discard the current editor. Do not globally force a workspace in
+backend storage or API schemas.
+
 
 \## Codex TODO ownership and recovery
 

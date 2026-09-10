@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
+import {useContextReset} from "../lib/useContextReset";
 import {HierarchyResourceEditor} from "./HierarchyResourceEditor";
 import {ArtifactTreeBranch} from "./ArtifactTreeBranch";
 import {implementedByResource,implementsResource,inheritsFromResource,relationshipIds} from "./resourceRelationships";
@@ -27,7 +28,7 @@ async function request(path:string,init?:RequestInit){const response=await fetch
 export function PromptLibraryEditor({workspaceId}:{workspaceId:string}){
  const[payload,setPayload]=useState<PromptPayload|null>(null),[openDocs,setOpenDocs]=useState<OpenDocument[]>([]),[activeKey,setActiveKey]=useState<string|null>(null),[compareKey,setCompareKey]=useState<string|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState<string|null>(null);
  const load=async()=>{const next=await request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/prompts`) as PromptPayload;setPayload(next);return next};
- useEffect(()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(reason=>setError(String(reason)))},[workspaceId]);
+ useContextReset(workspaceId,()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(reason=>setError(String(reason)))});
  const hierarchy=payload?.promptLibrary?.hierarchy;
  const prompts=hierarchy?.prompts||payload?.prompts||[];
  const implementations=hierarchy?.promptImplementations||[];

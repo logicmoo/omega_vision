@@ -110,11 +110,11 @@ test("memory uses page-lifetime state, independent saved preferences and attribu
   assert.match(host, /signal\.aborted \|\| current !== readGeneration\.current/);
 });
 
-test("active existing viewer and semantic panel are additive mounts", () => {
+test("existing viewer is retained and one semantic panel opens in the Recognition canvas", () => {
   const page = readFileSync(new URL("./VideoImportPage.tsx", import.meta.url), "utf8");
   assert.match(page, /<SpriteViewerPage memorySetup={<MemorySetupHost/);
-  assert.match(page, /activeSubview === "recognition" \|\| activeSubview === "objects"/);
-  assert.match(page, /<SemanticEventsPanel/);
+  assert.match(page, /<RecognitionTemporalCanvas[^>]*active=\{activeSubview === "recognition"\}/);
+  assert.equal((page.match(/<SemanticEventsPanel\b/g) || []).length, 1);
   assert.match(page, /firstN={todoPreviewCount}/);
   assert.match(page, /onSelectFrame=\{\(frameId\) =>/);
   assert.match(page, /selectExtractionNavigationRow\(frameId, true\)/);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useContextReset } from "../lib/useContextReset";
 import type { WorkflowPageDefinition } from "./WorkflowPageHost";
 import { ResourceSourceEditor } from "./ResourceSourceEditor";
 
@@ -81,14 +82,7 @@ export function WorkflowPageSourceEditor({ workspaceId, pageId, disabled = false
     }
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      await loadSource(false);
-      if (cancelled) return;
-    })();
-    return () => { cancelled = true; };
-  }, [workspaceId, pageId]);
+  useContextReset(JSON.stringify([workspaceId, pageId]), () => { void loadSource(false); });
 
   useEffect(() => {
     let cancelled = false;

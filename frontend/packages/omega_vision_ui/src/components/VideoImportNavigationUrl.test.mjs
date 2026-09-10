@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   canonicalVideoImportShellUrl,
@@ -7,6 +8,7 @@ import {
   navigationSlug,
   resolveRecognitionNavigation,
   resolveVideoImportShellDestination,
+  videoImportUrlForSubview,
   urlWithNavigation,
 } from "./VideoImportNavigationUrl.ts";
 
@@ -105,4 +107,50 @@ test("legacy Finish falls back to Sources while Advanced retains its section", (
   assert.equal(migrated.searchParams.get("subview"), "sources");
   assert.equal(migrated.searchParams.has("nav"), false);
   assert.equal(migrated.searchParams.get("recording"), "run");
+});
+
+test("legacy Frames links open the combined import page at its real frame section without losing context", () => {
+  for (const suffix of ["subview=frames", "nav=Frames", "subview=sources&nav=frames"]) {
+    const href = `http://localhost:5173/?view=videoImport&workspace=demo&game=ls20&recording=run&filter=a&filter=b&${suffix}`;
+    const destination = resolveVideoImportShellDestination(href);
+    assert.deepEqual(destination, { subview: "sources", focus: "frames" });
+    const canonical = new URL(canonicalVideoImportShellUrl(href, destination));
+    assert.equal(canonical.searchParams.get("subview"), "sources");
+    assert.equal(canonical.searchParams.get("nav"), "frames");
+    assert.equal(canonical.searchParams.get("recording"), "run");
+    assert.equal(canonical.searchParams.get("game"), "ls20");
+    assert.deepEqual(canonical.searchParams.getAll("filter"), ["a", "b"]);
+    assert.deepEqual(resolveVideoImportShellDestination(canonical.href), destination);
+  }
+});
+
+test("explicit menu switches supersede legacy nav while preserving sequence, repeated parameters and history", () => {
+  const original = "http://localhost:5173/?workspace=arc3_random_player&view=videoImport&subview=sources&gen=1&game=ls20&recording=20260718-154544_attempt8&nav=frames&filter=a&filter=b#context";
+  for (const nav of ["frames", "advanced", "sprite-view", "finish"]) {
+    const previous = new URL(original);
+    previous.searchParams.set("nav", nav);
+    for (const subview of ["sources", "games", "objects", "sprite-view", "recognition"]) {
+      const next = new URL(videoImportUrlForSubview(previous.href, subview));
+      assert.deepEqual(resolveVideoImportShellDestination(next.href), { subview, focus: null });
+      assert.equal(next.searchParams.get("nav"), subview === "sprite-view" ? "sprite-view" : null);
+      for (const key of ["workspace", "gen", "game", "recording", "filter"]) {
+        assert.deepEqual(next.searchParams.getAll(key), previous.searchParams.getAll(key), key);
+      }
+      assert.equal(next.hash, previous.hash);
+      assert.equal(previous.searchParams.get("nav"), nav);
+    }
+  }
+  assert.deepEqual(resolveVideoImportShellDestination(original), { subview: "sources", focus: "frames" });
+  const detail = urlWithNavigation(original, ["extractions", "frame_000007", "prolog", "parts_extraction_0-python_opencv"]);
+  assert.deepEqual(navigationPathFromUrl(videoImportUrlForSubview(detail, "recognition")), navigationPathFromUrl(detail));
+});
+
+test("shell menus and mounted page switches use the same explicit-navigation helper", () => {
+  const read = path => readFileSync(new URL(path, import.meta.url), "utf8");
+  const shell = read("../../../../apps/workbench/src/pages/FilesystemWorkbenchPage.tsx");
+  const page = read("./VideoImportPage.tsx");
+  assert.match(shell, /videoImportUrlForSubview\(window\.location\.href, item\.subview\)/);
+  assert.match(page, /const selectSubview = \(subview: string\) => \{\s*const nextUrl = videoImportUrlForSubview\(window\.location\.href, subview\)/);
+  assert.match(page, /const onExternal = \(event: Event\) => \{[\s\S]*?selectSubview\(detail\)/);
+  assert.match(page, /useEffect\(\(\) => \{\s*const destination = resolveVideoImportShellDestination\(window\.location\.href\);[\s\S]*?setActiveSubview\(destination\.subview\)/);
 });

@@ -1,4 +1,4 @@
-import { Component, Fragment, useEffect, useMemo, useState, type CSSProperties, type ErrorInfo, type ReactNode, type Ref } from "react";
+import { Component, Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode, type Ref } from "react";
 import {
   ThreeStateAccordionMember,
   ThreeStateAccordionStack,
@@ -173,6 +173,7 @@ export function WorkflowPageHost({
   const [initAttempts, setInitAttempts] = useState<Record<string, number>>({});
   const [componentOverrides, setComponentOverrides] = useState<Record<string, string>>({});
   const [initializationPassReady, setInitializationPassReady] = useState(!deferComponentInitialization);
+  const initializedContext = useRef("");
   const componentOptions = useMemo(
     () => componentRegistry ? Object.keys(componentRegistry).sort((left, right) => left.localeCompare(right)) : [],
     [componentRegistry],
@@ -185,12 +186,18 @@ export function WorkflowPageHost({
   );
 
   useEffect(() => {
+    const context = JSON.stringify([deferComponentInitialization, definition.id, definition.renderer]);
+    if (initializedContext.current === context) return;
     if (!deferComponentInitialization) {
+      initializedContext.current = context;
       setInitializationPassReady(true);
       return;
     }
     setInitializationPassReady(false);
-    const handle = window.requestAnimationFrame(() => setInitializationPassReady(true));
+    const handle = window.requestAnimationFrame(() => {
+      initializedContext.current = context;
+      setInitializationPassReady(true);
+    });
     return () => window.cancelAnimationFrame(handle);
   }, [deferComponentInitialization, definition.id, definition.renderer]);
 

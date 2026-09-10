@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from "react";
+import {useContextReset} from "../lib/useContextReset";
 import type { JSX } from "react";
 import {HierarchyResourceEditor} from "./HierarchyResourceEditor";
 import {ArtifactTreeBranch} from "./ArtifactTreeBranch";
@@ -105,7 +106,7 @@ export function LlmModelsEditor({workspaceId,catalogMode="models",topMenuMode="b
  const[splitOrientation,setSplitOrientation]=useState<"left"|"right"|"up"|"down">("right");
  const[enablementRequest,setEnablementRequest]=useState<EnablementRequest|null>(null);
  const load=async()=>{const next=await request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/snapshot`) as Snapshot;setSnapshot(next);return next};
- useEffect(()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(r=>setError(String(r)))},[workspaceId]);
+ useContextReset(workspaceId,()=>{setOpenDocs([]);setActiveKey(null);setCompareKey(null);void load().catch(r=>setError(String(r)))});
  const systems=useMemo(()=>snapshot?.systems||[],[snapshot]);const backends=useMemo(()=>(snapshot?.backends||[]).filter(isLlmBackend),[snapshot]);const nodes=catalogMode==="systems"?[]:snapshot?.models||[];
  const enabledWorkerModels=useMemo(()=>nodes.filter(row=>row.document&&row.document.enabled!==false).map(row=>({id:row.document!.id,label:row.document!.label||row.document!.id})),[nodes]);
  useEffect(()=>{if(!overrideWorkerModelId&&enabledWorkerModels[0]?.id)setOverrideWorkerModelId(enabledWorkerModels[0].id)},[enabledWorkerModels,overrideWorkerModelId]);
@@ -177,7 +178,7 @@ export function LlmModelsEditor({workspaceId,catalogMode="models",topMenuMode="b
  useEffect(()=>{if(catalogMode!=="models"||topMenuMode!=="discover")return;const activeDocument=active?.record.document as ModelResource|undefined;const backendId=(activeDocument?.kind==="backend"?activeDocument.id:(backends[0]?.document?.id||""));if(!backendId)return;if(!discovery||discovery.backendId!==backendId){void pullModels(backendId);return}const suggested=new Set(discovery.models.filter(model=>model.status==="new"||model.status==="changed").map(model=>model.id));if(suggested.size&&discoverySelection.size===0)setDiscoverySelection(suggested)},[catalogMode,topMenuMode,active?.key,backends,discovery?.backendId]);
  const loadOverrideDocument=async()=>{setOverrideStatus("");try{const payload=await request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/file?path=${encodeURIComponent(MODEL_OVERRIDE_PATH)}`);const loaded=parseJsonObject(String(payload.file?.content||""));if(loaded&&loaded.kind==="model_overridden_properties"&&loaded.id==="model_overridden_properties"&&loaded.models&&typeof loaded.models==="object"){setOverrideSource(`${JSON.stringify(loaded,null,2)}\n`);setOverrideDirty(false);return}}catch{}setOverrideSource(DEFAULT_MODEL_OVERRIDE_SOURCE);setOverrideDirty(false)};
  const saveOverrideDocument=()=>perform(async()=>{const parsed=parseJsonObject(overrideSource);if(!parsed)throw new Error("Override document must be valid JSON.");if(parsed.kind!=="model_overridden_properties"||parsed.id!=="model_overridden_properties"||!parsed.models||typeof parsed.models!=="object")throw new Error("Override document must include kind/id/models for model_overridden_properties.");const normalized=`${JSON.stringify(parsed,null,2)}\n`;await request(`/workbench/workspaces/${encodeURIComponent(workspaceId)}/file`,{method:"PUT",body:JSON.stringify({path:MODEL_OVERRIDE_PATH,content:normalized})});setOverrideSource(normalized);setOverrideDirty(false);setOverrideStatus("Overrides saved to design/models/model_overridden_properties.json.");await load()});
- useEffect(()=>{if(catalogMode==="models"&&topMenuMode==="override"){void loadOverrideDocument()}},[catalogMode,topMenuMode,workspaceId]);
+ useContextReset(JSON.stringify([catalogMode,topMenuMode,workspaceId]),()=>{if(catalogMode==="models"&&topMenuMode==="override"){void loadOverrideDocument()}});
  const relationshipParentIds=(document:ModelResource,mode:TreeRelationshipMode)=>relationshipIds(
   mode==="implementation"
    ? ("implements" in document?document.implements:undefined)
