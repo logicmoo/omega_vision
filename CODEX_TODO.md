@@ -12,6 +12,27 @@ handoff checkpoints. Contributors may add tasks, correct stale facts, and mark
 accepted work complete. Never place credentials, tokens, or secret `.env`
 values here.
 
+## Current Git workflow - local main only (2026-09-10)
+
+All work must stay in the user's existing local checkout:
+`C:\snet\PeTTa\repos\symbolic_ml_workbench`, on `main`. Authorized commits go
+directly to that local primary branch (`master` only where it is the primary
+branch). Never create or use feature/code branches, agent-owned checkouts, or
+additional worktrees. Do not switch this checkout away from `main`, create PRs,
+or push remotely as part of this workflow.
+
+This user instruction supersedes older feature-branch, PR, and worktree
+directions in this ledger and `AGENTS.md`. Historical checkout/branch references
+below are evidence only, not instructions to reuse, recreate, or delete them.
+Preserve all existing edits, files, history, and paused-work boundaries.
+
+The obsolete Systems feature-branch PR task has been removed. Its branch is
+absent locally and on origin; `main` already contains the Systems catalog
+(`a979d4a7d`) and dedicated configuration/execution UI (`1b058b010`) commits.
+No merge or branch deletion was performed for this cleanup, and no branch was
+recreated. This documentation-only task does not resume paused implementation,
+research, or services.
+
 ## Current recovery state
 
 - Launcher activation bypass / visible-output gap (2026-09-10): the user
@@ -1825,10 +1846,10 @@ values here.
   in `docs/design/WORKFLOW_ACCORDION_MAP.md`. When the user names an
   accordion, place the requested control inside that exact existing member.
 
-- Canonical checkout: `C:\snet\PeTTa\repos\symbolic_learner_workbench`
-- Active branch: `codex/workbench-navigation-v2`
-- Remote branch: not configured for the current local branch
-- Latest validated commit before this ledger update: `24ff5a79`
+- Canonical checkout: `C:\snet\PeTTa\repos\symbolic_ml_workbench`
+- Active branch: `main` in the user's existing local checkout
+- Remote tracking branch: `origin/main` (informational; no push authorized)
+- Historical validated commit from the earlier checkpoint: `24ff5a79`
   (`Add model policy history aggregation`)
 - Python environment: one repository-root `.venv` containing all optional
   ARC3, workbench, test, notebook, and integration dependencies
@@ -2543,8 +2564,6 @@ values here.
 - [x] Retain the shared universal hierarchy/editor shell while giving Systems a
   dedicated rich configuration panel and generic resource-operation runner.
   Systems no longer enter the model/preset configurator or model-only runner.
-- [ ] Open a draft pull request for `codex/systems-menu`, normally targeting
-  `codex/workbench-navigation-v2` so the Systems diff remains focused.
 
 ## Runtime recovery
 
@@ -2617,7 +2636,7 @@ Get-NetTCPConnection -State Listen -LocalPort 5173,8000 |
 Stop only the PIDs currently listening on those two ports and only after
 confirming they belong to this checkout's Vite and Uvicorn commands.
 
-## Checkout cleanup still pending
+## Historical checkout inventory - no cleanup authorized
 
 The damaged historical checkout may still exist physically at
 `C:\symbolic_learner_arc3_codex`, with a temporary alias at
@@ -2625,14 +2644,16 @@ The damaged historical checkout may still exist physically at
 worktree may also remain at
 `C:\snet\PeTTa\repos\symbolic_learner_workbench_systems`.
 
-Do not delete or move these paths while Codex, Vite, Uvicorn, an editor, or a
-terminal holds them open. Before cleanup, verify worktree registrations with:
+Do not use these historical paths for new work, or delete or move them as part
+of this ledger cleanup. Any future explicitly authorized directory cleanup must
+first account for open processes and worktree registrations in the user's
+current checkout:
 
 ```powershell
-git -C C:\snet\PeTTa\repos\symbolic_learner_workbench worktree list
+git -C C:\snet\PeTTa\repos\symbolic_ml_workbench worktree list
 ```
 
-Preserve the canonical checkout and its `codex/workbench-navigation-v2` branch.
+Preserve the user's canonical checkout and its `main` branch.
 
 ## Generic insertable inspection gallery checkpoint
 
