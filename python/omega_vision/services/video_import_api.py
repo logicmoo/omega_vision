@@ -2303,7 +2303,11 @@ def _scan_set_images(d: Path) -> list[Path]:
 
 def _resolve_set_dir(root: Path, base_rel: str) -> Path:
     """Resolve an image set in the one authorized home without overlay fallback."""
-    return _safe_workspace_child(root, base_rel)
+    from omega_vision.inherited_source_overlay import retired_sequence_location
+    directory = _safe_workspace_child(root, base_rel)
+    if retired_sequence_location(directory.relative_to(_vision_data_root(root))):
+        raise HTTPException(410, "This sequence root is retired. Select a recordings or curated Visual Sequence; no fallback was used.")
+    return directory
 
 
 def _opencv_visual_groups_from_prolog(text: str) -> list[dict[str, Any]]:
@@ -2637,8 +2641,6 @@ def _unit_transform_fields(root: Path, unit_dir: Path, sequence_root: Path) -> d
 _FRAME_SET_FAMILIES = (
     ("recordings", "Sequence Sets · Recordings", "2-recordings"),
     ("arc3_games/recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
-    ("arc_recordings", "Sequence Sets · Games", "2-arc"),
-    ("vision_frames/arc_recordings", "Sequence Sets · Games", "2-arc"),  # legacy layout
     ("curated", "Sequence Sets · Curated", "1-curated"),
     ("arc3_games/curated", "Sequence Sets · Curated", "1-curated"),  # legacy layout
     ("curated_data", "Sequence Sets · Curated", "1-curated"),
@@ -4703,7 +4705,7 @@ def import_curated_image_source(body: dict[str, Any] = Body(...)) -> dict[str, A
 
 
 @router.get("/arc-recordings")
-def list_arc_recordings(workspaceId: str) -> dict[str, Any]:
+def list_recordings(workspaceId: str) -> dict[str, Any]:
     root = _workspace_root(workspaceId)
     recordings: list[dict[str, Any]] = []
     for game_root in _all_game_dirs(root):
@@ -6059,7 +6061,7 @@ def _sequence_root_for(root: Path, sequence_id: str) -> Path:
         if sid.startswith("data/"):
             directory = _resolve_set_dir(root, sid)
         else:
-            directory = _safe_workspace_child(root, sid)
+            directory = _resolve_set_dir(root, sid)
         relative = tuple(part.lower() for part in directory.relative_to(_vision_data_root(root).resolve()).parts)
         if any(is_memory_directory(part) for part in relative):
             raise HTTPException(status_code=400, detail="Memory areas are not Visual Sequences")
@@ -9274,7 +9276,9 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 def _semantic_stage_ids() -> set[str]:
     return {f"{transformation}/{doer}" for (transformation, doer), runner in _SEQUENCE_TRANSFORMS.items()
-            if getattr(runner, "__module__", "") == "omega_vision.services.video_import_semantics"}
+            if getattr(runner, "__module__", "") in {
+                "omega_vision.services.video_import_semantics", "omega_vision.services.video_import_abduction",
+            }}
 
 
 @router.get("/semantic/execution")
@@ -9371,8 +9375,8 @@ def _semantic_execution(workspaceId: str, sequenceId: str, response: Response, f
     response.headers["Cache-Control"] = "no-store"
     return {
         "ordered": catalog["ordered"], "frameCount": len(selected), "frames": frames,
-        "stages": [{"id": stage, "label": stage.replace("_0/", " / ").replace("_", " "),
-                    "description": "Explicit registered stage; dependencies stay within First N.",
+        "stages": [{"id": stage, "label": definitions[stage].get("label") or stage.replace("_0/", " / ").replace("_", " "),
+                    "description": definitions[stage].get("description") or "Explicit registered stage; dependencies stay within First N.",
                     "llm": definitions[stage].get("type") in {"llm", "p_shot"}} for stage in sorted(stages)],
         "todos": todos, "jobs": jobs, "outputs": outputs, "artifacts": artifacts, "errors": errors,
         "unavailableStorage": unavailable_legacy_storage(root),
@@ -9479,3 +9483,8 @@ from omega_vision.services import video_import_semantics as _semantic_stages  # 
 
 _semantic_stages.register_transforms(_SEQUENCE_TRANSFORMS, _TRANSFORM_METADATA)
 router.include_router(_semantic_stages.router)
+
+from omega_vision.services import video_import_abduction as _abduction_stages  # noqa: E402
+
+_abduction_stages.register_transforms(_SEQUENCE_TRANSFORMS, _TRANSFORM_METADATA)
+router.include_router(_abduction_stages.router)

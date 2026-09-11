@@ -141,8 +141,9 @@ function LookupTree({ kind, catalog, selection, onChange, disabled }: {
 export function MemorySetup(props: MemorySetupProps) {
   const { catalog, contextKey } = props;
   const id = useId();
-  const currentContext = useRef(contextKey);
-  currentContext.current = contextKey;
+  const currentContext = useRef({ key: contextKey, pending: false });
+  if (currentContext.current.key !== contextKey) currentContext.current = { key: contextKey, pending: false };
+  useEffect(() => () => { currentContext.current = { key: currentContext.current.key, pending: false }; }, []);
   const [base, setBase] = useState(props.preferences);
   const [draft, setDraft] = useState(props.preferences);
   const [pending, setPending] = useState(false);
@@ -176,20 +177,24 @@ export function MemorySetup(props: MemorySetupProps) {
   const busy = pending || props.loading || contextKey !== context;
   const error = props.error || localError;
   const run = async (operation: () => Promise<void> | void) => {
-    const source = contextKey;
+    const source = currentContext.current;
+    if (busy || source.pending) return;
+    source.pending = true;
     setPending(true);
     setLocalError(null);
     try { await operation(); }
     catch (failure) { if (currentContext.current === source) setLocalError(failure instanceof Error ? failure.message : String(failure)); }
-    finally { if (currentContext.current === source) setPending(false); }
+    finally {
+      if (currentContext.current === source) { source.pending = false; setPending(false); }
+    }
   };
-  const persist = async (next: MemoryPreferences, disclosureOnly = false) => {
-    if (!base) return;
-    const source = contextKey;
+  const persist = async (next: MemoryPreferences) => {
+    if (!base || !catalog || unavailable || busy) return;
+    const source = currentContext.current;
     const saved = await props.onSave(next, base.revision);
     if (currentContext.current !== source) return;
     setBase(saved);
-    setDraft(previous => disclosureOnly && previous ? { ...previous, expanded: saved.expanded, revision: saved.revision } : saved);
+    setDraft(saved);
   };
   const discard = () => {
     setBase(props.preferences);
@@ -204,7 +209,6 @@ export function MemorySetup(props: MemorySetupProps) {
           if (!base || !draft) return;
           const expanded = !draft.expanded;
           setDraft({ ...draft, expanded });
-          void run(() => persist({ ...base, expanded }, true));
         }}>
         <span aria-hidden="true">{draft?.expanded ? '⌄' : '›'}</span>
         <strong>Memory Setup</strong>
@@ -252,8 +256,8 @@ export function MemorySetup(props: MemorySetupProps) {
         })}
       </div>}
       <div className="memory-setup__footer">
-        <button type="button" disabled={!draft || !dirty || !!busy} onClick={() => {
-          if (!draft) return;
+        <button type="button" disabled={!draft || !dirty || !catalog || unavailable || !!busy} onClick={() => {
+          if (!draft || !catalog || unavailable) return;
           const next = { ...draft };
           for (const kind of ['shape', 'object'] as const) next[kind] = { ...draft[kind],
             recentLookIn: addLocations(draft[kind].lookIn, draft[kind].recentLookIn).slice(0, 20) };

@@ -3,7 +3,7 @@ import { useContextReset } from "@app/lib/useContextReset";
 import { postSemanticMemoryAction } from "./SemanticExecutionApi";
 import {
   compareHypotheses, createRequestScope, errorMessage, isRecord, isUninitializedCanonicalLog, latestEvaluation, observeSemanticJobs, record, records,
-  savedSourceReferences, selectionAfterRefresh, semanticJson, semanticOutputDetail, semanticUrl, strings, text, type SemanticPlan, type SemanticRecord,
+  savedSourceReferences, scopedCandidateBody, selectionAfterRefresh, semanticJson, semanticOutputDetail, semanticUrl, strings, text, type SemanticPlan, type SemanticRecord,
 } from "./SemanticEventsModel";
 import {
   SemanticArtifact, SemanticCandidateDetail, SemanticEpisodes, SemanticEventLog,
@@ -56,8 +56,10 @@ export type SemanticEventsPanelProps = {
 
 type ResourceState = {
   candidates?: SemanticRecord[];
+  ruleContext?: { frameId: string; proposalFrameId: string; frames: Array<{ frameId: string; levelId: string | null; frameOrder: number }> };
   canonical?: SemanticRecord;
   hypotheses?: SemanticRecord[];
+  abductions?: SemanticRecord[];
   episodes?: SemanticRecord[];
   execution?: SemanticExecutionState;
 };
@@ -88,6 +90,8 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
   const [selectedFrame, setSelectedFrame] = useState("");
   useContextReset(props.selectedFrameId || "", () => setSelectedFrame(props.selectedFrameId || ""));
   const [selectedCandidate, setSelectedCandidate] = useState("");
+  const [ruleFrameId, setRuleFrameId] = useState("");
+  const [proposalFrameId, setProposalFrameId] = useState("");
   const [evaluation, setEvaluation] = useState<SemanticRecord | null>(null);
   const [replayOpen, setReplayOpen] = useState(false);
   const [supersede, setSupersede] = useState(false);
@@ -105,8 +109,51 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
     const request = readScope.current.capture();
     reading.current = true;
     setLoading(true);
+    const ruleContextRequest = (async () => {
+        const requestedFrame = ruleFrameId || props.selectedFrameId || "";
+        const payload = record(await semanticJson(
+          `${semanticUrl("/memory/recording-context", workspaceId, sequenceId)}${requestedFrame ? `&frameId=${encodeURIComponent(requestedFrame)}` : ""}`,
+          { signal: request.signal },
+        ));
+        const frames = records(payload.frames, "recording frames").map(frame => {
+          if (typeof frame.frameId !== "string" || typeof frame.frameOrder !== "number"
+              || (frame.levelId !== null && typeof frame.levelId !== "string")) throw new Error("Invalid recording frame context.");
+          return { frameId: frame.frameId, levelId: frame.levelId, frameOrder: frame.frameOrder };
+        });
+        const current = frames.find(frame => frame.frameId === payload.selectedFrameId);
+        const origin = frames.find(frame => frame.frameId === (proposalFrameId || current?.frameId));
+        if (!current || !origin || origin.frameOrder > current.frameOrder) throw new Error("Proposal frame must be the current or an earlier manifest frame.");
+        const ruleContext = { frameId: current.frameId, proposalFrameId: origin.frameId, frames };
+        if (request.current()) setData(previous => ({ ...previous, ruleContext }));
+        return ruleContext;
+    })();
     const tasks: Array<[keyof ResourceState, () => Promise<unknown>]> = [
-      ["candidates", async () => records(record(await semanticJson(semanticUrl("/candidates", workspaceId), { signal: request.signal })).candidates, "candidates")],
+      ["candidates", async () => {
+        const current = await ruleContextRequest;
+        return records(record(await semanticJson(
+          `${semanticUrl("/candidates", workspaceId, sequenceId)}&frameId=${encodeURIComponent(current.frameId)}&proposalFrameId=${encodeURIComponent(current.proposalFrameId)}`,
+          { signal: request.signal },
+        )).candidates, "candidates");
+      }],
+      ["abductions", async () => {
+        const current = await ruleContextRequest;
+        const value = record(await semanticJson(
+          `${semanticUrl("/abductions", workspaceId, sequenceId)}&frameId=${encodeURIComponent(current.frameId)}`,
+          { signal: request.signal },
+        ));
+        if (value.authoritative !== false) throw new Error("Abductive explanations must be non-authoritative.");
+        const entries = records(value.entries, "abduction snapshots");
+        for (const entry of entries) {
+          const result = record(entry.result, "abduction result");
+          if (entry.authoritative !== false || result.authoritative !== false) throw new Error("Stored abduction snapshot must remain non-authoritative.");
+          for (const hypothesis of records(result.hypotheses, "abductive hypotheses")) {
+            if (hypothesis.authoritative !== false) throw new Error("Abductive hypothesis cannot be an observed fact.");
+            record(hypothesis.rule, "explaining rule");
+            record(hypothesis.observed_effect, "observed effect");
+          }
+        }
+        return entries;
+      }],
       ["canonical", async () => {
         const value = record(await semanticJson(semanticUrl("/events", workspaceId, sequenceId), { signal: request.signal }));
         records(value.entries, "canonical entries");
@@ -165,7 +212,7 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
     }
   }
 
-  useContextReset(JSON.stringify([workspaceId, sequenceId, firstN, visionModelId, contextReady]), () => {
+  useContextReset(JSON.stringify([workspaceId, sequenceId, firstN, visionModelId, contextReady, ruleFrameId, proposalFrameId, props.selectedFrameId]), () => {
     scope.current.invalidate();
     readScope.current.invalidate();
     reading.current = false;
@@ -179,6 +226,8 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
     setReplayFrameCount("");
     setActionError("");
     setActionResult(null);
+    setData(previous => { const next = { ...previous }; delete next.candidates; delete next.abductions; delete next.ruleContext; return next; });
+    setSelectedCandidate("");
   });
   useEffect(() => {
     reading.current = false;
@@ -190,14 +239,14 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
 
   useEffect(() => {
     if (expanded && ready) void refresh();
-  }, [expanded, ready, firstN, visionModelId, props.refreshKey]);
+  }, [expanded, ready, firstN, visionModelId, props.refreshKey, ruleFrameId, proposalFrameId, props.selectedFrameId]);
 
   const activeJobs = data.execution?.jobs.some((job) => ["running", "starting", "queued"].includes(text(job.state))) ?? false;
   useEffect(() => {
     if (!expanded || !ready || !activeJobs || errors.execution) return;
     const timer = window.setInterval(() => void refresh(), 2500);
     return () => window.clearInterval(timer);
-  }, [expanded, ready, activeJobs, errors.execution, firstN, visionModelId]);
+  }, [expanded, ready, activeJobs, errors.execution, firstN, visionModelId, ruleFrameId, proposalFrameId, props.selectedFrameId]);
 
   async function act(operation: (signal: AbortSignal) => Promise<SemanticRecord>, clearPlan = true) {
     if (!ready || mutating.current) return;
@@ -246,9 +295,13 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
   const postCandidate = (action: string, candidate: SemanticRecord, body: SemanticRecord) =>
     act(async (signal) => {
       const path = `/candidates/${encodeURIComponent(text(candidate.candidate_id))}/${action}`;
-      if (action === "evaluate" || action === "deployment") return postSemanticMemoryAction(path, body, signal);
+      const scoped = scopedCandidateBody(action, candidate.kind, body, {
+        workspaceId, sequenceId, frameId: data.ruleContext?.frameId || "",
+        proposalFrameId: data.ruleContext?.proposalFrameId || "",
+      });
+      if (action === "evaluate" || action === "deployment") return postSemanticMemoryAction(path, scoped, signal);
       return record(await semanticJson(semanticUrl(path, workspaceId), {
-        method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(scoped),
       }));
     });
   const candidates = data.candidates;
@@ -282,7 +335,7 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
     onToggle={(event) => setExpanded(event.currentTarget.open)}>
     <summary><strong>Temporal events &amp; learned rules</strong><small>
       {execution ? `${execution.frameCount} frames · ${execution.todos.length} TODOs` : "Open to load saved semantic evidence"}
-      {candidates && ` · ${candidates.length} workspace candidates`}
+      {candidates && ` · ${candidates.length} scoped candidates`}
       {activeJobs && " · work in progress"}
     </small></summary>
     <div className="semantic-events-body" aria-busy={loading}>
@@ -299,9 +352,10 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
         {actionResult && <details open><summary>Actual server response</summary>
           <SemanticJson value={actionResult} label="Semantic action result" /></details>}
         <section aria-labelledby={`${id}-actions`}>
-          <h3 id={`${id}-actions`}>Run deduction or induction</h3>
+          <h3 id={`${id}-actions`}>Run deduction, induction, or abduction</h3>
           <p>Applying authored or promoted rules is <strong>deduction</strong>. Learning a new rule is <strong>induction</strong>.
-            Neither LLM hypotheses nor proposed rules become authoritative events automatically.</p>
+            Explaining an observed effect by possible earlier causes is <strong>abduction</strong>.
+            Neither abductive explanations, LLM hypotheses, nor proposed rules become authoritative events automatically.</p>
           {execution ? <>
             <p>{execution.ordered ? "Ordered sequence. The first frame is an initial boundary, not an event pair."
               : "Not applicable: this sequence is unordered. No adjacent-pair TODOs or LLM calls may be created."}</p>
@@ -377,6 +431,28 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
           {data.episodes && <SemanticEpisodes episodes={data.episodes} onSelectFrame={selectFrame} onInspect={setInspected} />}
         </details>
 
+        <details open><summary>Abductive event explanations · hypotheses{data.abductions && ` · ${data.abductions.length} saved snapshots`}</summary>
+          <p>Grounded backward inference uses accepted, causally available rules to explain observed effects.
+            Missing antecedents and exception absence remain assumptions. Rankings are search preferences, not probabilities.
+            Saved snapshots retain their original evidence and rule versions; they are not automatically revalidated or promoted.</p>
+          {data.abductions?.length === 0 && <p>No abductive explanations saved for this frame. Review the registered event abduction stage to run it explicitly.</p>}
+          {data.abductions?.map((entry, index) => {
+            const result = record(entry.result, "abduction result");
+            return <section key={text(entry.entryUid ?? index)} aria-label="Saved abduction snapshot">
+              <p>Search outcome: {text(result.outcome)}</p>
+              <SemanticTable label="Grounded non-authoritative explanations" headings={["Observed effect", "Possible causes / assumptions", "Rule / status", "Provenance"]}>
+                {records(result.hypotheses, "abductive hypotheses").map(hypothesis => <tr key={text(hypothesis.hypothesis_id)}>
+                  <td>{text(record(hypothesis.observed_effect).term)}<small>{text(hypothesis.observed_event_id)}</small></td>
+                  <td>{text(hypothesis.causes)}<small>Assumptions: {text(hypothesis.assumptions)}</small></td>
+                  <td>{text(record(hypothesis.rule).candidate_id)}<small>{text(hypothesis.status)}</small></td>
+                  <td><button type="button" onClick={() => setInspected(hypothesis)}>Inspect explanation and evidence</button></td>
+                </tr>)}
+              </SemanticTable>
+              <button type="button" onClick={() => setInspected(entry)}>Inspect full hypothesis snapshot</button>
+            </section>;
+          })}
+        </details>
+
         <details><summary>LLM hypotheses · advisory{data.hypotheses && ` · ${data.hypotheses.length} audit records`}</summary>
           {data.hypotheses?.length === 0 && <p>No saved LLM hypothesis records. Deduce events (LLM) requires explicit confirmation.</p>}
           {data.hypotheses && data.hypotheses.length > 0 && <SemanticTable label="LLM hypotheses compared with canonical deductions"
@@ -397,9 +473,21 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
           </SemanticTable>}
         </details>
 
-        <details open><summary>Candidate rules · workspace scope{candidates && ` · ${candidates.length}`}</summary>
-          <p>All scopes and versions remain inspectable. Evaluation and promotion use server evidence gates; no bypass controls are provided.</p>
-          {candidates?.length === 0 && <p>The workspace candidate store contains no rules.</p>}
+        <details open><summary>Candidate rules · frame memory{candidates && ` · ${candidates.length}`}</summary>
+          <p>Proposal history stays in its generating frame. Evaluation and explicit promotion use the selected current frame and server evidence gates;
+            approved references go to this recording's level STM, never automatically to LTM.</p>
+          {data.ruleContext && <div className="semantic-events-toolbar">
+            <label>Current rule frame<select aria-label="Current rule frame" value={data.ruleContext.frameId}
+              onChange={event => { setRuleFrameId(event.target.value); setProposalFrameId(""); }}>
+              {data.ruleContext.frames.map(frame => <option key={frame.frameId} value={frame.frameId}>{frame.frameId} · level {frame.levelId ?? "unavailable"}</option>)}
+            </select></label>
+            <label>Proposal frame<select aria-label="Proposal frame" value={data.ruleContext.proposalFrameId}
+              onChange={event => setProposalFrameId(event.target.value)}>
+              {data.ruleContext.frames.filter(frame => frame.frameOrder <= (data.ruleContext?.frames.find(item => item.frameId === data.ruleContext?.frameId)?.frameOrder ?? -1))
+                .map(frame => <option key={frame.frameId} value={frame.frameId}>{frame.frameId}</option>)}
+            </select></label>
+          </div>}
+          {candidates?.length === 0 && <p>The selected frame contains no rule proposals.</p>}
           {candidates && candidates.length > 0 && <SemanticTable label="Persisted candidate rules" headings={["Candidate / kind", "Scope / version", "Lifecycle", "Support / contradictions", "Action"]}>
             {candidates.map((item) => <tr key={text(item.candidate_id)} aria-selected={item.candidate_id === selectedCandidate}>
               <td><code>{text(item.candidate_id)}</code><small>{text(item.kind)}</small></td>
@@ -414,7 +502,8 @@ function SemanticEventsPanelContext(props: SemanticEventsPanelProps) {
               else void postCandidate(action, item, { workspaceId, ...(action === "reject" ? review : {}) });
             }} />}
           {evaluation && <SemanticCandidateEvaluation key={text(evaluation.candidate_id)} candidate={evaluation}
-            workspaceId={workspaceId} sequenceId={sequenceId} busy={busy} onCancel={() => setEvaluation(null)}
+            workspaceId={workspaceId} sequenceId={sequenceId} frameId={data.ruleContext?.frameId || ""}
+            proposalFrameId={data.ruleContext?.proposalFrameId || ""} busy={busy} onCancel={() => setEvaluation(null)}
             onCreateDeployment={(body) => void postCandidate("deployment", evaluation, body)}
             onEvaluate={(body) => void postCandidate("evaluate", evaluation, body)} />}
         </details>

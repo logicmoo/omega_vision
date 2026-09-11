@@ -26,21 +26,12 @@ _PY_DIR = _REPO_ROOT / "python"
 if str(_PY_DIR) not in sys.path:
     sys.path.insert(0, str(_PY_DIR))
 
-_LS20_DIR = next(
-    (
-        candidate
-        for candidate in (
-            _REPO_ROOT / "data" / "omega_vision" / "arc_recordings"
-            / "data-arc3_games-recordings-ls20-saved_001",
-            # Legacy pre-flatten location, still readable.
-            _REPO_ROOT / "data" / "omega_vision" / "vision_frames" / "arc_recordings"
-            / "data-arc3_games-recordings-ls20-saved_001",
-        )
-        if candidate.is_dir()
-    ),
-    _REPO_ROOT / "data" / "omega_vision" / "arc_recordings"
-    / "data-arc3_games-recordings-ls20-saved_001",
-)
+def _selected_sequence_directory(sequence_id: str | None = None) -> Path:
+    from omega_vision.perception.visual_sequence_selection import load_selection
+    from omega_vision.services import video_import_api as api
+    identifier = sequence_id or load_selection(_REPO_ROOT)["visualSequenceId"]
+    reference = identifier if identifier.startswith("data/") else "data/" + identifier
+    return api._sequence_root_for(_REPO_ROOT, reference)
 
 
 def _now() -> str:
@@ -48,16 +39,29 @@ def _now() -> str:
 
 
 def _frame_ids(setdir: Path) -> list:
-    mf = setdir / "manifest.json"
-    order = []
-    if mf.is_file():
-        try:
-            order = [it["id"] for it in _json.loads(mf.read_text(encoding="utf-8")).get("items", [])]
-        except (OSError, _json.JSONDecodeError):
-            order = []
-    if not order:
-        order = sorted(p.stem for p in setdir.glob("*.png"))
-    return order
+    from omega_vision.services import video_import_api as api
+    from omega_vision.perception.contextual_memory import recording_context
+    if (setdir / "recording.json").is_file():
+        context = recording_context(_REPO_ROOT, setdir, None, select_first=True)
+        images = []
+        for moment in context.moments:
+            initial = moment.frame_id == "image" and moment.directory == setdir / "transforms" / "image"
+            images.append(setdir / "image.png" if initial else moment.directory / "image.png")
+        if not all(image.is_file() for image in images):
+            raise ValueError("An explicitly ordered recording image is missing")
+        return [image.relative_to(setdir).as_posix() for image in images]
+    images = api._resolve_set_images(setdir)
+    if not api._sequence_ordering(setdir, images)[0]:
+        raise ValueError("Phase 3 requires an explicitly ordered Visual Sequence")
+    return [image.relative_to(setdir).as_posix() for image in images]
+
+
+def _frame_image(setdir: Path, frame_id: str) -> Path:
+    from omega_vision.services import video_import_api as api
+    image = api._safe_workspace_child(_REPO_ROOT, api._data_rel_of(_REPO_ROOT, setdir / frame_id))
+    if not image.is_relative_to(setdir) or image not in api._resolve_set_images(setdir):
+        raise PermissionError("Phase 3 frame is not an input of the selected Visual Sequence")
+    return image
 
 
 def _frame_objects(setdir: Path, idv: str) -> list:
@@ -65,18 +69,11 @@ def _frame_objects(setdir: Path, idv: str) -> list:
     scale/rotation-normalised shape name), colour, and centroid position. Skips the
     background flood."""
     from omega_vision.perception import symbolic_arc as sa
-    png = next(iter(setdir.glob(f"{idv}.png")), None)
-    if not png:
-        return []
+    png = _frame_image(setdir, idv)
     idx, _hexpal, _cols, _rows = sa.decode_grid(str(png))
     bg = 0.33 * idx.shape[0] * idx.shape[1]
-    pj = setdir / "sym" / f"{idv}__prolog.parts.json"
-    parts = []
-    if pj.is_file():
-        try:
-            parts = _json.loads(pj.read_text(encoding="utf-8"))
-        except (OSError, _json.JSONDecodeError):
-            parts = []
+    extraction = sa.extract_frame(str(png), "phase3-observation")
+    parts = extraction.get("geom", [])
     objs = []
     for p in parts:
         off = p.get("off") or []
@@ -133,9 +130,9 @@ def run_live_phase3(n_probe: int = 12) -> dict:
         phase2_rule_inducer, phase2_rule_ranker, phase2_rule_executor,
     )
 
-    setdir = _LS20_DIR
-    if not setdir.is_dir():
-        return {"ok": False, "note": "ls20 recording set not found", "steps": []}
+    from omega_vision.services import video_import_api as api
+    setdir = _selected_sequence_directory()
+    sequence_id = api._data_rel_of(_REPO_ROOT, setdir)
     order = _frame_ids(setdir)
 
     # find three consecutive frames A,B,C where one object clearly moves A->B and
@@ -223,6 +220,7 @@ def run_live_phase3(n_probe: int = 12) -> dict:
     passed = bool(recorded_before_outcome and predicted_pos == pos_c)
     return {
         "ok": True,
+        "sequenceId": sequence_id,
         "passed": passed,
         "frames": {"A": chosen["a"], "B": chosen["b"], "C": chosen["c"]},
         "mover": {"shape": ident, "color": color},

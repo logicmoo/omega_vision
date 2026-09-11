@@ -10,6 +10,7 @@ canonical registry.
 from __future__ import annotations
 
 import sys
+import json
 import tempfile
 import threading
 import time
@@ -766,10 +767,10 @@ def _demo_phase3():
                 "result": res, "passed": False,
                 "description": "Live Phase 3 over ls20 frames (no trackable mover found)."}
     fr = res["frames"]
-    setdir = p3._LS20_DIR
+    setdir = p3._selected_sequence_directory(res["sequenceId"])
 
     def grid(idv, marks):
-        png = next(iter(setdir.glob(f"{idv}.png")), None)
+        png = p3._frame_image(setdir, idv)
         idx, hexpal, _c, _r = sa.decode_grid(str(png))
         return _grid_to_cells(idx, hexpal) + list(marks)
     pa = res["observed_move_AB"]["from"]; pb = res["observed_move_AB"]["to"]
@@ -909,19 +910,11 @@ def _demo_input_video():
                            "committed object, not re-minted per frame."}
 
 
-_ARC_SEQ_ROOTS = (
-    _REPO_ROOT / "data" / "omega_vision" / "arc_recordings",
-    # Legacy pre-flatten location, still readable.
-    _REPO_ROOT / "data" / "omega_vision" / "vision_frames" / "arc_recordings",
-)
-_LS20_DIR = _ARC_SEQ_ROOTS[0] / "data-arc3_games-recordings-ls20-saved_001"
-# Raw per-frame recordings (each frame is a numbered subfolder holding image.png).
-# The long "release run" ls20 playthroughs (hundreds of moves) live here, split
-# across attempt segments; we concatenate a base id's attempts into one sequence.
-_RAW_LS20_DIR = (_REPO_ROOT / "data" / "omega_vision"
-                 / "recordings" / "ls20")
+from omega_vision.perception.visual_sequence_selection import DEFAULT_VISUAL_SEQUENCE
 
-_ls20_selected: str | None = None   # user-chosen recording key (else default = longest)
+_ls20_selected: str | None = DEFAULT_VISUAL_SEQUENCE
+_visual_sequence_revision: str | None = None
+_demo_source_lock = threading.RLock()
 _ls20_recs_cache: list | None = None
 # Where the live-ls20 demo saves recognized object memory. Never canonical unless
 # the user explicitly picks it. "recording" = this recording's own isolated store
@@ -972,167 +965,105 @@ def _bust_recs_cache() -> None:
 
 
 def _recording_computed(key: str | None) -> bool:
-    """True if the recording already has committed part-graphs on disk — either in the
-    demo's OWN saved cache (recognition_demo_parts/<key>/sym) or, for reduced (vf)
-    recordings, in their native vision-frame sym/ dir — so a run reads them instead of
-    recomputing (that is what the '✓ computed' badge reports)."""
+    """Report existing demo-cache history without discovering alternate source roots."""
     if not key:
         return False
     dc = _demo_parts_root() / _safe_name(key) / "sym"
     if dc.is_dir() and next(dc.glob("*__prolog.parts.json"), None) is not None:
         return True
-    if key.startswith("vf:"):
-        for root in _ARC_SEQ_ROOTS:
-            sub = root / key[3:]
-            if (sub / "sym").is_dir() and next((sub / "sym").glob("*__prolog.parts.json"), None) is not None:
-                return True
     return False
 
 
-def _ls20_base(name: str) -> str:
-    """Strip the '_attempt<N>_size<M>' / '_size<M>' segment suffix to get the run id."""
-    import re
-    return re.sub(r"_size_\d+$", "", re.sub(r"_attempt\d+_size_\d+$", "", name))
-
-
-def _ls20_attempt_key(name: str) -> tuple:
-    import re
-    a = re.search(r"_attempt(\d+)", name)
-    s = re.search(r"_size_(\d+)", name)
-    return (int(a.group(1)) if a else 0, int(s.group(1)) if s else 0)
-
-
-def _raw_base_frames(dirs: list, with_action: bool = False) -> list:
-    """Ordered (displayId, image.png, action) for a raw recording base: attempts in
-    order, then each attempt's frame subfolders -- numeric names first in numeric
-    order, then free-form named steps (foo/, bar/) alphabetically. `action`
-    is the move (incoming_action) that produced the frame — read only when asked, so
-    listing recordings stays cheap."""
-    import json as _json
-    out: list = []
-    for d in sorted(dirs, key=lambda p: _ls20_attempt_key(p.name)):
-        subs = [c for c in d.iterdir() if c.is_dir() and (c / "image.png").is_file()]
-        for c in sorted(subs, key=lambda p: (0, int(p.name), "") if p.name.isdigit() else (1, 0, p.name.lower())):
-            img = c / "image.png"
-            action = None
-            if with_action:
-                sj = c / "state.json"
-                if sj.is_file():
-                    try:
-                        action = _json.loads(sj.read_text(encoding="utf-8")).get("incoming_action")
-                    except (OSError, _json.JSONDecodeError):
-                        action = None
-            out.append((f"{d.name}#{c.name}", str(img), action))
-    return out
-
-
 def _ls20_recordings() -> list:
-    """Every selectable game recording: the reduced sequence-set dirs (fast, may
-    have committed part-graphs) plus every game's raw playthroughs under
-    data/recordings/<game>/ (concatenated across attempt segments). Cached for
-    the session."""
-    global _ls20_recs_cache
-    if _ls20_recs_cache is not None:
-        return _ls20_recs_cache
-    recs: list = []
-    seen_vf: set = set()
-    for root in _ARC_SEQ_ROOTS:
-        if not root.is_dir():
-            continue
-        for sub in sorted(root.iterdir()):
-            if sub.is_dir() and sub.name not in seen_vf:
-                n = len(list(sub.glob("*.png")))
-                if n >= 2:
-                    seen_vf.add(sub.name)
-                    short = (sub.name
-                             .replace("data-recordings-", "")
-                             .replace("data-arc3_games-recordings-", ""))
-                    # 'computed' = extracted per-frame part-graphs are cached on disk
-                    # (native or demo-saved), so a run skips extraction. Induction
-                    # still runs at runtime regardless.
-                    recs.append({"key": "vf:" + sub.name, "label": f"reduced · {short} · {n} frames",
-                                 "count": n, "computed": _recording_computed("vf:" + sub.name)})
-    games_root = _RAW_LS20_DIR.parent
-    if games_root.is_dir():
-        for game_dir in sorted(p for p in games_root.iterdir() if p.is_dir()):
-            groups: dict = {}
-            for sub in game_dir.iterdir():
-                if sub.is_dir():
-                    groups.setdefault(_ls20_base(sub.name), []).append(sub)
-            for base, dirs in sorted(groups.items()):
-                frames = _raw_base_frames(dirs)
-                if len(frames) >= 2:
-                    # raw runs ship no committed graphs, but the demo can SAVE the parts it
-                    # extracts (recognition_demo_parts) so a re-run skips extraction.
-                    key = f"raw:{game_dir.name}/{base}"
-                    recs.append({"key": key,
-                                 "label": f"raw run · {game_dir.name} · {base} · {len(frames)} frames",
-                                 "count": len(frames), "computed": _recording_computed(key)})
-    recs.sort(key=lambda r: r["count"], reverse=True)
-    _ls20_recs_cache = recs
-    return recs
+    """The same shared catalog used by the visible Visual Sequence selectors."""
+    from omega_vision.services import video_import_api as api
+    entries, _, _ = api.visual_sequence_options(_REPO_ROOT, lambda: api._list_image_sets(_REPO_ROOT))
+    return [{"key": entry["id"], "label": entry["label"], "count": entry["imageCount"],
+             "computed": bool(entry.get("reducedCount"))}
+            for entry in entries if entry["id"].startswith(("recordings/", "curated/"))]
 
 
 def _resolve_ls20(key: str | None) -> tuple:
     """(ordered [(displayId, pngPath)], committedDir | None, label) for a recording key."""
-    if key and key.startswith("vf:"):
-        for root in _ARC_SEQ_ROOTS:
-            sub = root / key[3:]
-            if not sub.is_dir():
-                continue
-            import json as _json
-            order: list = []
-            mf = sub / "manifest.json"
-            if mf.is_file():
-                try:
-                    order = [it["id"] for it in _json.loads(mf.read_text(encoding="utf-8")).get("items", [])]
-                except (OSError, _json.JSONDecodeError):
-                    order = []
-            if not order:
-                order = sorted(p.stem for p in sub.glob("*.png"))
-            entries = []
-            for idv in order:
-                p = next(iter(sub.glob(f"{idv}.png")), None)
-                if p:
-                    entries.append((idv, str(p), None))
-            label = (sub.name
-                     .replace("data-recordings-", "")
-                     .replace("data-arc3_games-recordings-", ""))
-            return entries, sub, label
-    if key and key.startswith("raw:"):
-        spec = key[4:]
-        game, _, base = spec.partition("/")
-        if not base:
-            # Legacy ls20-only keys had no game segment.
-            game, base = "ls20", spec
-        game_root = _RAW_LS20_DIR.parent / game
-        if game_root.is_dir():
-            dirs = [d for d in game_root.iterdir() if d.is_dir() and _ls20_base(d.name) == base]
-            return _raw_base_frames(dirs, with_action=True), None, f"{game} · {base}"
-    return [], None, ""
+    from omega_vision.services import video_import_api as api
+    from omega_vision.perception.visual_sequence_selection import _identifier
+    if not key:
+        return [], None, ""
+    _identifier(key)
+    directory = api._sequence_root_for(_REPO_ROOT, "data/" + key)
+    entries = []
+    for image in api._resolve_set_images(directory):
+        image = api._safe_workspace_child(_REPO_ROOT, api._data_rel_of(_REPO_ROOT, image))
+        if not image.is_relative_to(directory):
+            raise PermissionError("Demo frame escapes its selected Visual Sequence")
+        state_path = api._safe_workspace_child(
+            _REPO_ROOT, api._data_rel_of(_REPO_ROOT, image.parent / "state.json"),
+        )
+        state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.is_file() else {}
+        entries.append((image.relative_to(directory).as_posix(), str(image), state.get("incoming_action")))
+    return entries, None, key
 
 
 def _current_ls20_key() -> str | None:
-    """The selected recording key if still valid, else the longest reduced recording
-    (fast default), else the longest overall."""
+    """Return the explicit shared source; never choose a longest-source fallback."""
     with _demo_lock:
-        sel = _ls20_selected
-    recs = _ls20_recordings()
-    if not recs:
-        return None
-    if sel and any(r["key"] == sel for r in recs):
-        return sel
-    vf = [r for r in recs if r["key"].startswith("vf:")]
-    pool = vf or recs
-    return max(pool, key=lambda r: r["count"])["key"]
+        return _ls20_selected
 
 
 def set_ls20_source(key: str | None) -> None:
     """Choose which ls20 recording the live-ls20 demo plays."""
-    global _ls20_selected
-    with _demo_lock:
+    from omega_vision.perception._event_journal import ConflictError
+    global _ls20_selected, _visual_sequence_revision
+    with _demo_source_lock, _demo_lock:
+        if _demo_state["running"]:
+            raise ConflictError("Stop the active demo run before changing its source")
         _ls20_selected = key or None
+        _visual_sequence_revision = None
         _touch_play_locked()          # push fresh state so the UI reflects the choice at once
+
+
+def set_visual_sequence_source(identifier: str, workspace_id: str, expected_revision: str) -> None:
+    """Update the explicit demo source without starting work or changing memory settings."""
+    from omega_vision.services import video_import_api as api
+    from omega_vision.perception.visual_sequence_selection import _identifier, selection_guard
+    from omega_vision.perception._event_journal import ConflictError
+    global _ls20_selected, _visual_sequence_revision, _live_preview, _live_preview_done
+    identifier = _identifier(identifier)
+    root = api._workspace_root(workspace_id)
+    entries = api._cached_visual_catalog(workspace_id, None, None, False)
+    if sum(entry["id"] == identifier for entry in entries) != 1:
+        raise ValueError("Demo Visual Sequence is unavailable or ambiguous")
+    api._sequence_root_for(root, "data/" + identifier)
+    with _demo_source_lock, selection_guard(root, identifier, expected_revision), _live_preview_lock, _demo_lock:
+        if _ls20_selected == identifier:
+            _visual_sequence_revision = expected_revision
+            _touch_play_locked()
+            return
+        if _demo_state["running"]:
+            raise ConflictError("Stop the active demo run before changing its source")
+        _ls20_selected = identifier
+        _visual_sequence_revision = expected_revision
+        _live_preview, _live_preview_done = None, False
+        _play.pop("live-ls20", None)
+        previous = (_demo_state.get("results") or {}).get("demos", [])
+        retained = [demo for demo in previous if demo.get("id") != "live-ls20"]
+        _demo_state["results"] = {"demos": retained, "total": len(retained),
+                                  "passed": sum(bool(demo.get("passed")) for demo in retained)}
+        _touch_play_locked()
+
+
+def with_visual_sequence_context(workspace_id: str, identifier: str, revision: str, operation):
+    from omega_vision.services import video_import_api as api
+    from omega_vision.perception.visual_sequence_selection import selection_guard
+    from omega_vision.perception._event_journal import ConflictError
+    if not isinstance(workspace_id, str) or not workspace_id:
+        raise ValueError("workspaceId and the expected shared sequence/revision are required")
+    root = api._workspace_root(workspace_id)
+    with _demo_source_lock, selection_guard(root, identifier, revision):
+        with _demo_lock:
+            if _ls20_selected != identifier or _visual_sequence_revision != revision:
+                raise ConflictError("Demo source is not synchronized with the requested selection")
+        return operation()
 
 
 def set_ls20_write(value: bool) -> None:
@@ -1178,6 +1109,12 @@ def _demo_live_ls20_sequence():
 
     key = _current_ls20_key()
     entries, committed_dir, source_label = _resolve_ls20(key)
+    shared_selection = bool(key and not key.startswith(("raw:", "vf:")))
+    if shared_selection and len(entries) > 1:
+        from omega_vision.services import video_import_api as api
+        directory = api._sequence_root_for(_REPO_ROOT, "data/" + key)
+        if not api._sequence_ordering(directory, [Path(entry[1]) for entry in entries])[0]:
+            raise ValueError("Temporal demos require an explicitly ordered Visual Sequence")
     if not entries:
         return {"id": "live-ls20", "group": "Live sequence (real data)",
                 "title": "Live ls20 recording — recognition over time", "panels": [],
@@ -1353,7 +1290,7 @@ def _demo_live_ls20_sequence():
     parts_saved = 0
     parts_status = (f"read {read_from_disk} frame graphs from cache"
                     if read_from_disk else "no part-graphs")
-    if to_save:
+    if to_save and not shared_selection:
         try:
             symdir = demo_cache / "sym"
             symdir.mkdir(parents=True, exist_ok=True)
@@ -1382,8 +1319,9 @@ def _demo_live_ls20_sequence():
         "base": _demo_root / "_base_",
         "canonical": Path(sa.memory_dir()),
     }
-    target = _targets.get(store_mode)
-    memory_store = "none (ephemeral — nothing written)"
+    target = None if shared_selection else _targets.get(store_mode)
+    memory_store = ("Observation-only demo; use Recognition's native MeTTa memory stages to save memory"
+                    if shared_selection else "none (ephemeral — nothing written)")
     memory_identities = memory_shapes = 0
     if target is not None and frame_results:
         try:
@@ -1567,41 +1505,13 @@ _DEMO_CATALOG = [
 ]
 
 
-def _preview_live_ls20():
-    """The raw first ls20 frame as an INPUT MAP: the decoded scene with no
-    recognition overlay at all (nothing recognized yet). Cheap -- one png decode,
-    no part-graph, no scoring -- so it is a safe 'unstarted' preview. Uses the same
-    (longest) recording the live demo plays."""
-    import json as _json
+def _preview_live_ls20(source_key: str | None = None):
+    """Preview only the selected source's first image, without recognition or work."""
     from omega_vision.perception import symbolic_arc as sa
-    setdir = None
-    root = _LS20_DIR.parent
-    if root.is_dir():
-        best_n = -1
-        for sub in sorted(root.glob("*ls20*")):
-            if sub.is_dir():
-                n = len(list(sub.glob("*.png")))
-                if n > best_n:
-                    best_n, setdir = n, sub
-    if setdir is None:
-        setdir = _LS20_DIR
-    if not setdir.is_dir():
+    entries, _, _ = _resolve_ls20(source_key if source_key is not None else _current_ls20_key())
+    if not entries:
         return None
-    order = []
-    mf_path = setdir / "manifest.json"
-    if mf_path.is_file():
-        try:
-            order = [it["id"] for it in _json.loads(mf_path.read_text(encoding="utf-8")).get("items", [])]
-        except (OSError, _json.JSONDecodeError):
-            order = []
-    if not order:
-        order = sorted(p.stem for p in setdir.glob("*.png"))
-    if not order:
-        return None
-    idv = order[0]
-    png = next(iter(setdir.glob(f"{idv}.png")), None)
-    if not png:
-        return None
+    idv, png, _ = entries[0]
     idx, hexpal, _c, _r = sa.decode_grid(str(png))
     base = [(x, y, "object", hexpal[int(idx[y, x])])
             for y in range(idx.shape[0]) for x in range(idx.shape[1])]
@@ -1610,31 +1520,34 @@ def _preview_live_ls20():
 
 _live_preview = None
 _live_preview_done = False
+_live_preview_key: str | None = None
 _live_preview_lock = threading.Lock()
 
 
-def _live_preview_cached():
+def _live_preview_cached(source_key: str | None = None):
     """Compute the live-ls20 input-map preview once and cache it (one png decode)."""
-    global _live_preview, _live_preview_done
+    global _live_preview, _live_preview_done, _live_preview_key
+    source_key = source_key if source_key is not None else _current_ls20_key()
     with _live_preview_lock:
-        if _live_preview_done:
+        if _live_preview_done and _live_preview_key == source_key:
             return _live_preview
     try:
-        pv = _preview_live_ls20()
+        pv = _preview_live_ls20(source_key)
     except Exception:  # noqa: BLE001
         pv = None
     with _live_preview_lock:
         _live_preview = pv
+        _live_preview_key = source_key
         _live_preview_done = True
     return pv
 
 
-def demo_catalog() -> list:
+def demo_catalog(source_key: str | None = None) -> list:
     """The list of available sanity tests (id/group/title) WITHOUT running them, so
     the page can show them as 'not run yet' cards that are individually runnable.
     live-ls20 carries a cheap raw input-map `preview` for its unstarted card; other
     tests fall back to a blank map on the page until run."""
-    live_pv = _live_preview_cached()
+    live_pv = _live_preview_cached(source_key)
     out = []
     for c in _DEMO_CATALOG:
         entry = dict(c)
@@ -1840,6 +1753,8 @@ def get_demo_state() -> dict:
     decides frame advancement itself."""
     with _demo_lock:
         st = dict(_demo_state)
+        selected_source = _ls20_selected
+        selected_revision = _visual_sequence_revision
         res = st.get("results") or {"demos": [], "total": 0, "passed": 0}
         demos = [{**d, "frameIndex": _cur_index_locked(d.get("id", "")),
                   "playing": _is_playing_locked(d.get("id", ""))} for d in res.get("demos", [])]
@@ -1848,16 +1763,18 @@ def get_demo_state() -> dict:
     # Enrich the (cached) recordings list with FRESH per-recording flags so the chooser
     # badges stay correct: hasMemory = an object-memory store exists; computed = the
     # extracted part-graphs are cached on disk (native or demo-saved).
-    import re as _re
-    root = _demo_mem_root()
     recs = []
-    for r in _ls20_recordings():
-        store = root / _re.sub(r"[^A-Za-z0-9_.-]", "_", r.get("key", ""))
-        recs.append({**r, "hasMemory": store.is_dir(), "computed": _recording_computed(r.get("key"))})
+    if selected_source and selected_source.startswith(("raw:", "vf:")):
+        root = _demo_mem_root()
+        for r in _ls20_recordings():
+            store = root / _safe_name(r.get("key", ""))
+            recs.append({**r, "hasMemory": store.is_dir(), "computed": _recording_computed(r.get("key"))})
     return {"demos": demos, "total": res.get("total", 0), "passed": res.get("passed", 0),
-            "catalog": demo_catalog(), "coverage": todo_coverage(), "running": st["running"],
+            "catalog": demo_catalog(selected_source), "coverage": todo_coverage(), "running": st["running"],
             "anyPlaying": any_playing, "playEpoch": epoch,
-            "ls20Recordings": recs, "ls20Source": _current_ls20_key(),
+            "ls20Recordings": recs, "ls20Source": selected_source,
+            "visualSequenceId": (selected_source if selected_source and not selected_source.startswith(("raw:", "vf:")) else None),
+            "visualSequenceRevision": selected_revision,
             "ls20StoreMode": _ls20_store_mode,
             "startedAt": st["startedAt"], "finishedAt": st["finishedAt"], "only": st["only"]}
 
@@ -1892,11 +1809,22 @@ def _run_job(only: str | None, gen: int, stepped: bool = False) -> None:
                 _demo_state["finishedAt"] = _now()
 
 
-def start_demo_run(only: str | None = None, stepped: bool = False) -> dict:
+def start_demo_run(only: str | None = None, stepped: bool = False, *,
+                   workspace_id: str | None = None, visual_sequence_id: str | None = None,
+                   expected_revision: str | None = None) -> dict:
     """Kick off a background server run and return immediately. PREEMPTS any run
     already in progress (its stale generation makes it discard its result) so Run
     and Run step 1 always restart cleanly from the beginning. The page observes
     progress via get_demo_state(). `stepped` starts the demo PAUSED at frame 0."""
+    if only is None or only == "live-ls20":
+        return with_visual_sequence_context(
+            workspace_id, visual_sequence_id, expected_revision,
+            lambda: _begin_demo_run(only, stepped),
+        )
+    return _begin_demo_run(only, stepped)
+
+
+def _begin_demo_run(only: str | None, stepped: bool) -> dict:
     global _demo_gen
     with _demo_lock:
         _demo_gen += 1                    # preempt/cancel any in-flight run
@@ -1931,6 +1859,9 @@ def _wipe_demo_memory(only: str | None) -> None:
     (recording -> its own dir, base -> the shared base); clear-all wipes the whole
     object_memory_demo root. Only ever touches object_memory_demo/* — the canonical
     registry is NEVER deleted (even in canonical mode)."""
+    selected = _current_ls20_key()
+    if selected and not selected.startswith(("raw:", "vf:")):
+        return
     try:
         import shutil  # noqa: PLC0415
         import re as _re  # noqa: PLC0415

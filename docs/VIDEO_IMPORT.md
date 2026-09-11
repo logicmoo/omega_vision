@@ -7,6 +7,9 @@ a video you have the rights to into a playable ARC3 game recording: import →
 timeline editing → frame extraction → a **preview system** for building
 filter chains → entity extraction from input images → materialize.
 
+For the memory layout and both explanations of deduction, induction, and
+abduction, see [Recognition & Memory Help](design/OMEGA_STORAGE_BOUNDARY.md).
+
 ## Sequence Sets and Image Sets
 
 The page's outputs follow one vocabulary:

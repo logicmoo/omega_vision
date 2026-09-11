@@ -12,7 +12,7 @@ from omega_vision.perception.memory_locations import (
     AuthorizedMemoryRoot, MemoryLocations, NOWHERE, _id, _record_type, _validate_payload,
 )
 from omega_vision.perception.metta_memory import (
-    DATABASE_FILES, PLANNED_DATABASE_FILES, MeTTaMemoryDatabase, is_memory_directory,
+    DATABASE_FILES, PLANNED_DATABASE_FILES, MeTTaMemoryDatabase, initial_recording_state, is_memory_directory,
 )
 from omega_vision.perception.memory_references import normalize_reference, reference_schema
 from omega_vision.perception.observation_identity import content_hash
@@ -131,18 +131,27 @@ class RecordingContext:
     def frame_area(self, moment: Moment | None = None) -> Path:
         return (moment or self.current).directory / "memory"
 
+    def game_area(self) -> Path:
+        return self.root / "recordings" / self.game_directory / "memory_game_all"
+
+    def ltm_area(self) -> Path:
+        if self.current.level_id is None:
+            raise ContextUnavailable("missing_level", "The selected move has no explicit level")
+        return self.root / "recordings" / self.game_directory / f"memory_level_{self.current.level_id}_ltm"
+
     def stm_area(self) -> Path:
         if self.current.level_id is None:
             raise ContextUnavailable("missing_level", "The selected move has no explicit level")
         return self.directory / f"memory_level_{self.current.level_id}_stm"
 
 
-def recording_context(root: Path, directory: Path, frame_id: str | None) -> RecordingContext:
+def recording_context(root: Path, directory: Path, frame_id: str | None, *,
+                      select_first: bool = False) -> RecordingContext:
     home = storage_path(root)
     relative = directory.relative_to(home)
     if len(relative.parts) != 3 or relative.parts[0] != "recordings":
         raise ContextUnavailable("unsupported_hierarchy", "A canonical game/recording context is required")
-    if not frame_id:
+    if not frame_id and not select_first:
         raise ContextUnavailable("missing_frame", "Select an actual frame; no last-frame default is inferred")
     manifest_path = storage_path(home, *relative.parts, "recording.json")
     if not manifest_path.is_file():
@@ -158,7 +167,16 @@ def recording_context(root: Path, directory: Path, frame_id: str | None) -> Reco
     if not isinstance(moves, list) or not moves:
         raise ContextUnavailable("missing_order", "A nonempty explicit ordered moves array is required")
     moments = []
-    for order, move in enumerate(moves):
+    initial = initial_recording_state(home, directory)
+    if initial is not None:
+        if initial.get("game_id", game) != game:
+            raise ContextUnavailable("incompatible_initial_game", "Initial observation and recording game identities disagree")
+        level = _segment(initial["level"], "level") if initial.get("level") is not None else None
+        unit_dir = storage_path(home, *relative.parts, "transforms", "image")
+        if unit_dir != directory / "transforms" / "image":
+            raise PermissionError("Initial observation transform unit was redirected")
+        moments.append(Moment("image", unit_dir, level, 0))
+    for move in moves:
         if not isinstance(move, dict) or not isinstance(move.get("directory"), str):
             raise ContextUnavailable("invalid_order", "Every ordered move needs its actual directory")
         reference = move["directory"]
@@ -174,10 +192,11 @@ def recording_context(root: Path, directory: Path, frame_id: str | None) -> Reco
         if not target.is_dir():
             raise ContextUnavailable("missing_frame_directory", "An explicitly ordered frame directory is missing")
         level = _segment(move["level"], "level") if move.get("level") is not None else None
-        moments.append(Moment(target.name, target, level, order))
+        moments.append(Moment(target.name, target, level, len(moments)))
     if len({moment.frame_id for moment in moments}) != len(moments):
         raise ContextUnavailable("invalid_order", "Duplicate frame directories do not define an unambiguous predecessor")
-    current = next((moment for moment in moments if moment.frame_id == frame_id), None)
+    current = moments[0] if frame_id is None and select_first else next(
+        (moment for moment in moments if moment.frame_id == frame_id), None)
     if current is None:
         raise ContextUnavailable("frame_not_in_order", "Selected frame is not in the explicit recording order")
     return RecordingContext(home, directory, "data/" + relative.as_posix(), game,
@@ -246,10 +265,9 @@ class ContextualMemory:
     def native_areas(self, context: RecordingContext | None = None) -> list[Path]:
         areas = [self.root / "memory_inherited", self.root / "recordings" / "memory_recordings"]
         if context:
-            game = self.root / "recordings" / context.game_directory
-            areas.append(game / "memory_game_all")
+            areas.append(context.game_area())
             if context.current.level_id is not None:
-                areas.extend([game / f"memory_level_{context.current.level_id}_ltm", context.stm_area()])
+                areas.extend([context.ltm_area(), context.stm_area()])
             areas.append(context.frame_area())
         return areas
 

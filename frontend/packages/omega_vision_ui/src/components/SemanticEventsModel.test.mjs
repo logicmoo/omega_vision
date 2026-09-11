@@ -4,8 +4,32 @@ import { readFileSync } from "node:fs";
 import {
   assessmentLabel, compareHypotheses, createRequestScope, entryChannel, entryFrames, groupingDeploymentRequest, groupingDeploymentSource,
   episodeDuration, isUninitializedCanonicalLog, observeSemanticJobs, planConfirmationError, promotionBlocker, records,
-  savedSourceReferences, selectionAfterRefresh, SemanticApiError, semanticJson, semanticOutputDetail, semanticUrl,
+  savedSourceReferences, scopedCandidateBody, selectionAfterRefresh, SemanticApiError, semanticJson, semanticOutputDetail, semanticUrl,
 } from "./SemanticEventsModel.ts";
+
+test("rule actions retain the current and generating frame instead of a workspace-global store", () => {
+  const context = { workspaceId: "editor", sequenceId: "data/recordings/ls20/run", frameId: "3", proposalFrameId: "1" };
+  const body = { workspaceId: "stale-editor", sequences: [{ sequenceId: "held-out", partition: "held_out" }] };
+  assert.deepEqual(scopedCandidateBody("evaluate", "event_transition", body, context), { ...body, ...context });
+  assert.deepEqual(scopedCandidateBody("evaluate", "grouping", {
+    trainingSequenceId: "training", sequenceId: "validation", partition: "held_out", labels: [],
+  }, context), { ...context, evaluationSequenceId: "validation", partition: "held_out", labels: [] });
+  assert.deepEqual(scopedCandidateBody("deployment", "grouping", {
+    trainingSequenceId: "training", trainingFrameId: "1", reviewer: "reviewer", reason: "evidence",
+  }, context), { ...context, reviewer: "reviewer", reason: "evidence" });
+  assert.throws(() => scopedCandidateBody("promote", "event_transition", {}, { ...context, frameId: "" }), /actual current frame/);
+});
+
+test("event abduction has a separate non-authoritative visible channel", () => {
+  const panel = readFileSync(new URL("./SemanticEventsPanel.tsx", import.meta.url), "utf8");
+  assert.match(panel, /semanticUrl\("\/abductions", workspaceId, sequenceId\)/);
+  assert.match(panel, /frameId=\$\{encodeURIComponent\(current\.frameId\)\}/);
+  assert.match(panel, /Abductive event explanations/);
+  assert.match(panel, /hypothesis\.authoritative !== false/);
+  assert.match(panel, /Run deduction, induction, or abduction/);
+  assert.match(panel, /Inspect explanation and evidence/);
+  assert.match(panel, /LLM hypotheses/);
+});
 
 test("deployment creation uses recorded training provenance without copying rule or promotion", () => {
   const candidate = {
@@ -40,7 +64,9 @@ test("active candidate review exposes distinct creation and shows Nowhere bounds
   assert.match(evaluation, /Training checkpoint frame ID/);
   assert.match(evaluation, /trainingFrameId: trainingFrame\.trim\(\)/);
   assert.match(evaluation, /No support or promotion is inherited/);
-  assert.match(evaluation, /groupingDeploymentSource\(candidate\) \|\| sequenceId/);
+  assert.match(evaluation, /const trainingSequence = sequenceId/);
+  assert.match(evaluation, /const trainingFrame = proposalFrameId/);
+  assert.match(evaluation, /scopedCandidateBody\("evaluate"/);
   for (const path of ["./SemanticEventsConfirmation.tsx", "./VideoImportPage.tsx", "../../../../apps/workbench/src/components/MemorySetupHost.tsx"]) {
     assert.match(read(path), /NOWHERE_LIMITS_NOTICE/);
   }

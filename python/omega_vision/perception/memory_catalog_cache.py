@@ -69,7 +69,7 @@ def _valid_metadata(value: Any) -> bool:
     for item in value["locations"]:
         if (
             not isinstance(item, dict) or set(item) - _LOCATION_KEYS
-            or item.get("format") not in {"memory_json", "legacy_shape", "legacy_object", "checkpoint"}
+            or item.get("format") not in {"memory_json", "memory_metta", "legacy_shape", "legacy_object", "checkpoint"}
             or item.get("scopeKind") not in {"global", "game", "level", "run"}
             or not all(isinstance(item.get(key), str) for key in (
                 "memoryLocationId", "providerRef", "workspaceId", "pathLabel",

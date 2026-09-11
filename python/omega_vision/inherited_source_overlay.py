@@ -15,6 +15,13 @@ OMEGA_PROVIDER_ID = "filesystem:omega_vision"
 OMEGA_STORAGE_ID = "omega_vision"
 DataLayer = tuple[str, "str | None", Path]
 
+def retired_sequence_location(relative: Path) -> bool:
+    """Retired sequence roots remain inventory/history only, never active sources."""
+    parts = tuple(part.casefold() for part in relative.parts)
+    if parts[:1] == ("vision_frames",):
+        parts = parts[1:]
+    return bool(parts and parts[0] in {"arc_recordings", "arc3_recordings"})
+
 
 def resolve_storage_path(path: Path) -> Path:
     """Normalize equivalent Windows device prefixes after resolving symlinks.

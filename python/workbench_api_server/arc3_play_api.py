@@ -145,7 +145,6 @@ _LEGACY_PATH_REWRITES = (
     ("data/arc3_games/importables/", "data/importables/"),
     ("data/arc3_games/curated/", "data/curated/"),
     ("data/vision_frames/video/", "data/video/"),
-    ("data/vision_frames/arc_recordings/", "data/arc_recordings/"),
     ("data/vision_frames/curated_data/", "data/curated_data/"),
     ("data/vision_frames/image_archives/", "data/image_archives/"),
     ("data/vision_frames/recognition_inputs/", "data/recognition_inputs/"),
@@ -2320,8 +2319,6 @@ def list_recording_dirs(workspaceId: str, gameId: str | None = None) -> dict[str
         families = [
             ("curated", "curated", "curated", {"videoimports", "recordings", "importables"}),
             ("arc3_games/curated", "curated", "curated", {"videoimports", "recordings", "importables"}),  # legacy layout
-            ("arc_recordings", "arc_recordings", "sequence-games", set()),
-            ("vision_frames/arc_recordings", "arc_recordings", "sequence-games", set()),  # legacy layout
             ("curated_data", "curated_data", "sequence-curated", set()),
             ("vision_frames/curated_data", "curated_data", "sequence-curated", set()),  # legacy layout
             ("video", "video", "sequence-movies", set()),

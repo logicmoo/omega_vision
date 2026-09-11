@@ -117,6 +117,7 @@ test("existing viewer is retained and one semantic panel opens in the Recognitio
   assert.equal((page.match(/<SemanticEventsPanel\b/g) || []).length, 1);
   assert.match(page, /firstN={todoPreviewCount}/);
   assert.match(page, /onSelectFrame=\{\(frameId\) =>/);
-  assert.match(page, /selectExtractionNavigationRow\(frameId, true\)/);
+  assert.match(page, /rowForExecutionFrame\(recognitionReduce\?\.items \|\| \[\], frameId\)/);
+  assert.match(page, /selectExtractionNavigationRow\(rowId, true\)/);
   assert.match(page, /data-frame-id=\{it\.id\}/);
 });

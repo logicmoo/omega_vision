@@ -9,6 +9,8 @@ import {
   visualSequenceLocationFromUrl,
   visualSequenceLocationMatchesUrl,
   visualSequenceProviderRef,
+  executionFrameForRow,
+  rowForExecutionFrame,
 } from "./VideoImportRecordingUrl.ts";
 
 const gameSequence = {
@@ -25,6 +27,14 @@ const stillSequence = {
   dir: "data/curated/single-image",
   kind: "curated",
 };
+
+test("frame context uses explicit unit metadata, never the display row spelling or sort position", () => {
+  const rows = [{ id: "image", unitId: "image" }, { id: "0_image", unitId: "0" }];
+  assert.equal(executionFrameForRow(rows, "0_image"), "0");
+  assert.equal(rowForExecutionFrame(rows, "0"), "0_image");
+  assert.equal(executionFrameForRow([{ id: "0_image" }], "0_image"), undefined);
+  assert.equal(rowForExecutionFrame([...rows, { id: "duplicate", unitId: "0" }], "0"), undefined);
+});
 
 test("stale selection effects cannot rewrite a newer browser history location", () => {
   const first = { recording: "curated/first" };

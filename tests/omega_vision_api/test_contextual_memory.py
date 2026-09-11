@@ -171,6 +171,238 @@ def test_scene_reads_only_recording_level_stm_strictly_before_current_frame(repo
     assert contexts[0].stm_area() != contexts[2].stm_area() != foreign.stm_area()
 
 
+def test_frozen_default_destinations_are_stable_across_frames_and_preference_snapshots(repository):
+    from omega_vision.perception.memory_locations import default_preference_snapshot
+    _, home = repository
+    directory = recording(home)
+    for frame in ("z-first", "a-second", "m-third", "b-fourth"):
+        (directory / frame / "image.png").write_bytes(b"fixture")
+    contexts = [recording_context(home, directory, frame) for frame in ("z-first", "a-second", "m-third")]
+    native = ContextualMemory(home, "first")
+    for context in contexts:
+        native.save(context.frame_area(), "shape", {"uid": f"frame-{context.current.order}"}, context=context)
+    with default_preference_snapshot():
+        for current in contexts:
+            locations, context = semantic._memory("first", current.sequence_id, current.current.frame_id)
+            preferences = locations.load_preferences(context)
+            for kind in ("shape", "object"):
+                assert preferences[kind]["saveTo"] == native.descriptor(current.stm_area(), kind, current)["memoryLocationId"]
+                frame_locations = {native.descriptor(frame.frame_area(), kind, frame)["memoryLocationId"] for frame in contexts}
+                assert not frame_locations.intersection(preferences[kind]["lookIn"])
+    units = api._sequence_execution_context(home, contexts[0].sequence_id, "first")[1]
+    api._persist_execution_memory_defaults(units[0], [semantic.OBJECTS])
+    for current in contexts[:2]:
+        locations, context = semantic._memory("second", current.sequence_id, current.current.frame_id)
+        preferences = locations.load_preferences(context)
+        for kind in ("shape", "object"):
+            saved = locations.save_record(kind, preferences[kind]["saveTo"],
+                                          {"uid": f"learned-{current.current.order}"}, context)
+            assert saved["source"]["registeredPath"] == current.stm_area().relative_to(home).as_posix()
+    earlier = native.inspect("contextual:scene", "shape", context_loader=lambda: contexts[1])
+    assert [entry["preferred"]["payload"]["uid"] for entry in earlier["records"]] == ["learned-0"]
+
+
+def test_explicit_frame_preference_is_preserved_not_retargeted_to_another_frame(repository):
+    _, home = repository
+    directory = recording(home)
+    for frame in ("z-first", "a-second", "m-third", "b-fourth"):
+        (directory / frame / "image.png").write_bytes(b"fixture")
+    first = recording_context(home, directory, "z-first")
+    native = ContextualMemory(home, "first")
+    locations, context = semantic._memory("first", first.sequence_id, first.current.frame_id)
+    preferences = locations.load_preferences(context)
+    preferences["shape"]["saveTo"] = native.descriptor(first.frame_area(), "shape", first)["memoryLocationId"]
+    saved = locations.save_preferences(context, preferences, expected_revision=preferences["revision"])
+    path = locations._preference_path(context)[1]
+    before = path.read_bytes()
+    later_locations, later_context = semantic._memory("second", first.sequence_id, "a-second")
+    assert later_locations.load_preferences(later_context) == saved
+    with pytest.raises(PermissionError, match="unregistered memory destination"):
+        later_locations.save_record("shape", saved["shape"]["saveTo"], {"uid": "must-not-move"}, later_context)
+    assert path.read_bytes() == before
+    assert not (directory / "a-second" / "memory" / "shapes_db.metta").exists()
+
+
+def test_initial_root_observation_keeps_real_unit_identity_and_causal_frame_order(repository):
+    from PIL import Image
+    _, home = repository
+    directory = recording(home)
+    Image.new("RGB", (2, 2), "black").save(directory / "image.png")
+    (directory / "state.json").write_text(json.dumps({
+        "step_count": 0, "incoming_action": None, "parent_node": None, "game_id": "game", "level": "1",
+    }))
+    for frame in ("z-first", "a-second", "m-third", "b-fourth"):
+        Image.new("RGB", (2, 2), "red").save(directory / frame / "image.png")
+    initial = recording_context(home, directory, "image")
+    assert [moment.frame_id for moment in initial.moments] == ["image", "z-first", "a-second", "m-third", "b-fourth"]
+    assert initial.frame_area() == directory / "transforms" / "image" / "memory"
+    assert initial.current.order == 0
+    store = ContextualMemory(home, "first")
+    record = store.save(initial.frame_area(), "shape", {"uid": "before-any-action"}, context=initial)
+    assert (initial.frame_area() / "shapes_db.metta").is_file()
+    after = recording_context(home, directory, "z-first")
+    assert after.current.order == 1
+    prior = store.inspect("contextual:previous-moment", "shape", context_loader=lambda: after)
+    assert prior["records"][0]["preferred"]["recordUid"] == record["recordUid"]
+    assert store.inspect("contextual:previous-moment", "shape", context_loader=lambda: initial)["reasonCode"] == "no_predecessor"
+    assert not (directory / "image").exists()
+    assert not (directory / "memory").exists()
+
+
+@pytest.mark.parametrize("state", [None, {}, {"step_count": 1}, {"step_count": 0, "incoming_action": "ACTION1"}])
+def test_unattributed_initial_root_image_cannot_acquire_frame_memory(repository, state):
+    _, home = repository
+    directory = recording(home)
+    (directory / "image.png").write_bytes(b"original")
+    if state is not None:
+        (directory / "state.json").write_text(json.dumps(state))
+    with pytest.raises(ValueError, match="Initial recording|pre-action"):
+        recording_context(home, directory, "image")
+    with pytest.raises(ValueError, match="Initial recording|pre-action"):
+        MeTTaMemoryDatabase(home, directory / "transforms" / "image" / "memory", "shape")
+    assert not (directory / "transforms").exists()
+
+
+@pytest.mark.parametrize("kind,filename", [
+    ("shape", "shapes_db.metta"), ("object", "objects_db.metta"),
+])
+@pytest.mark.parametrize("scope,relative", [
+    ("game-all", "memory_game_all"),
+    ("game-level-ltm", "memory_level_1_ltm"),
+    ("recording-level-stm", "recording-a/memory_level_1_stm"),
+    ("frame", "recording-a/a-second/memory"),
+])
+def test_explicit_area_saves_use_agreed_metta_layout_shared_across_workspaces(repository, kind, filename, scope, relative):
+    repository_root, home = repository
+    path = recording(home)
+    context = recording_context(home, path, "a-second")
+    app = FastAPI()
+    app.include_router(semantic.router)
+    with TestClient(app) as client:
+        body = {"kind": kind, "scope": scope, "payload": {"uid": "same-record"},
+                "sequenceId": context.sequence_id, "frameId": context.current.frame_id}
+        results = [client.post("/semantic/memory/save-area", json={**body, "workspaceId": workspace})
+                   for workspace in ("first", "second")]
+    assert all(result.status_code == 200 for result in results), [result.text for result in results]
+    assert results[0].json()["record"] == results[1].json()["record"]
+    expected = home / "recordings" / "game" / relative / filename
+    assert list(home.rglob("*.metta")) == [expected]
+    assert expected.read_text(encoding="utf-8").startswith("(")
+    assert len(MeTTaMemoryDatabase(home, expected.parent, kind).read()) == 1
+    assert not list((repository_root / "workspaces").rglob("*.metta"))
+    assert not list(home.rglob("memory_frame"))
+    assert not list(home.rglob("shape_db")) and not list(home.rglob("object_db"))
+
+
+@pytest.mark.parametrize("kind", ["shape", "object"])
+def test_selected_memory_http_read_keeps_frame_context_and_causal_cutoff(repository, monkeypatch, kind):
+    _, home = repository
+    directory = recording(home)
+    for frame in ("z-first", "a-second", "m-third", "b-fourth"):
+        (directory / frame / "image.png").write_bytes(b"fixture")
+    prior = recording_context(home, directory, "z-first")
+    current = recording_context(home, directory, "a-second")
+    store = ContextualMemory(home, "first")
+    old = store.save(prior.stm_area(), kind, {"uid": "prior"}, context=prior)
+    store.save(current.stm_area(), kind, {"uid": "current"}, context=current)
+    frame_record = store.save(current.frame_area(), kind, {"uid": "frame-current"}, context=current)
+    protected = {file: file.read_bytes() for file in home.rglob("*.metta")}
+    monkeypatch.setattr(MemoryLocations, "load_preferences", forbidden)
+    app = FastAPI()
+    app.include_router(semantic.router)
+    with TestClient(app) as client:
+        for record in (old, frame_record):
+            body = {"kind": kind, "locationIds": [record["source"]["memoryLocationId"]],
+                    "sequenceId": current.sequence_id, "frameId": current.current.frame_id}
+            results = [client.post("/semantic/memory/read", json={**body, "workspaceId": workspace})
+                       for workspace in ("first", "second")]
+            assert all(result.status_code == 200 for result in results), [result.text for result in results]
+            assert results[0].json() == results[1].json()
+            versions = [version for concept in results[0].json()["records"] for version in concept["versions"]]
+            assert [version["recordUid"] for version in versions] == [record["recordUid"]]
+            assert all(response.headers["Cache-Control"] == "no-store" for response in results)
+    assert all(file.read_bytes() == content for file, content in protected.items())
+    assert not (home / "runtime" / "memory-settings").exists()
+
+
+@pytest.mark.parametrize("scope", ["game-level-ltm", "recording-level-stm"])
+def test_level_area_save_rejects_missing_level_without_creating_an_area(repository, scope):
+    _, home = repository
+    path = recording(home)
+    manifest_path = path / "recording.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["moves"][0].pop("level")
+    manifest_path.write_text(json.dumps(manifest))
+    app = FastAPI()
+    app.include_router(semantic.router)
+    with TestClient(app) as client:
+        response = client.post("/semantic/memory/save-area", json={
+            "workspaceId": "first", "sequenceId": "data/recordings/game/recording-a",
+            "frameId": "z-first", "kind": "shape", "scope": scope, "payload": {"uid": "no-level"},
+        })
+    assert response.status_code == 422, response.text
+    assert not list(home.rglob("*.metta"))
+
+
+def test_recording_context_endpoint_uses_first_manifest_frame_without_scanning_images(repository, monkeypatch):
+    _, home = repository
+    path = recording(home)
+    before = list(home.rglob("*"))
+    monkeypatch.setattr(api, "_resolve_set_images", forbidden)
+    monkeypatch.setattr(api, "_sequence_execution_context", forbidden)
+    app = FastAPI()
+    app.include_router(semantic.router)
+    with TestClient(app) as client:
+        params = {"workspaceId": "first", "sequenceId": "data/recordings/game/recording-a"}
+        result = client.get("/semantic/memory/recording-context", params=params)
+        assert result.status_code == 200, result.text
+        assert result.headers["Cache-Control"] == "no-store"
+        assert result.json()["selectedFrameId"] == "z-first"
+        assert [frame["frameId"] for frame in result.json()["frames"]] == ["z-first", "a-second", "m-third", "b-fourth"]
+        same = client.get("/semantic/memory/recording-context", params={**params, "workspaceId": "second"})
+        assert same.json() == result.json()
+        explicit = client.get("/semantic/memory/recording-context", params={**params, "frameId": "m-third"})
+        assert explicit.json()["selectedFrameId"] == "m-third"
+        invalid = client.get("/semantic/memory/recording-context", params={**params, "frameId": "missing"})
+        assert invalid.status_code == 422
+        assert invalid.json()["detail"]["reasonCode"] == "frame_not_in_order"
+    assert list(home.rglob("*")) == before
+    assert path.is_dir()
+
+
+def test_native_lookup_cannot_lose_frame_context_to_read_current_or_future_stm(repository):
+    _, home = repository
+    directory = recording(home)
+    for frame in ("z-first", "a-second", "m-third", "b-fourth"):
+        (directory / frame / "image.png").write_bytes(b"fixture")
+    current = recording_context(home, directory, "a-second")
+    future = recording_context(home, directory, "b-fourth")
+    store = ContextualMemory(home, "first")
+    stm = store.save(current.stm_area(), "shape", {"uid": "current"}, context=current)
+    later = store.save(future.frame_area(), "shape", {"uid": "future"}, context=future)
+    locations, without_frame = semantic._memory("first", current.sequence_id)
+    found = locations._find(without_frame, stm["source"]["memoryLocationId"])
+    assert found[1]["format"] == "memory_metta"
+    cached = list((home / ".cache" / "memory-catalog").glob("*.json"))
+    assert cached and all('"payload"' not in path.read_text(encoding="utf-8") for path in cached)
+    with pytest.raises(PermissionError, match="explicit recording and frame"):
+        locations._records(*found)
+    app = FastAPI()
+    app.include_router(semantic.router)
+    with TestClient(app) as client:
+        body = {"workspaceId": "first", "sequenceId": current.sequence_id, "kind": "shape"}
+        missing = client.post("/semantic/memory/read", json={
+            **body, "locationIds": [stm["source"]["memoryLocationId"]],
+        })
+        assert missing.status_code == 422 and missing.json()["detail"]["records"] == []
+        assert "explicit recording and frame" in missing.text
+        wrong_time = client.post("/semantic/memory/read", json={
+            **body, "frameId": current.current.frame_id, "locationIds": [later["source"]["memoryLocationId"]],
+        })
+        assert wrong_time.status_code == 422 and wrong_time.json()["detail"]["records"] == []
+        assert "future frame" in wrong_time.text
+
+
 @pytest.mark.parametrize("mutation,code", [
     (lambda doc: doc.pop("moves"), "missing_order"),
     (lambda doc: doc["moves"].append(doc["moves"][0]), "invalid_order"),

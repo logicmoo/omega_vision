@@ -1206,6 +1206,9 @@ def _implementation_revision(step: str) -> dict[str, Any]:
 def runtime_revision(unit: Mapping[str, Any], step: str | tuple[str, str]) -> str | None:
     """Read the mutable rule/selection inputs before task staleness and confirmation checks."""
     composite = "/".join(step) if isinstance(step, tuple) else step
+    from omega_vision.services import video_import_abduction
+    if composite == video_import_abduction.STEP:
+        return video_import_abduction.runtime_revision(unit)
     if composite in {PARTS, TEMPORAL}:
         return content_hash({"stage": composite, "implementation": _implementation_revision(composite)})
     if composite not in {EVENTS, GROUPING, OBJECTS}:
@@ -1629,12 +1632,16 @@ def _memory(workspace_id: str, sequence_id: str | None, frame_id: str | None = N
 
         def _destinations(self, mount, context):
             old = super()._destinations(mount, context)
-            if getattr(self, "_legacy_defaults_only", False):
-                return old
             native, current = self._native()
-            return old + [(native.descriptor(area, kind, current), area / filename)
-                          for area in native.native_areas(current)
-                          for kind, filename in (("shape", "shapes_db.metta"), ("object", "objects_db.metta"))]
+            areas = native.native_areas(current)
+            if getattr(self, "_native_defaults_only", False):
+                # Preferences are shared by recording/level. A physical frame
+                # destination must be selected explicitly, never frozen as its default.
+                areas = [area for area in areas if area.name != "memory"]
+            destinations = [(native.descriptor(area, kind, current), area / filename)
+                            for area in areas
+                            for kind, filename in (("shape", "shapes_db.metta"), ("object", "objects_db.metta"))]
+            return destinations if getattr(self, "_native_defaults_only", False) else old + destinations
 
         def _records(self, mount, location, path):
             if location["format"] == "memory_metta":
@@ -1644,11 +1651,20 @@ def _memory(workspace_id: str, sequence_id: str | None, frame_id: str | None = N
                 else:
                     native, current = self._native()
                 filters = {}
-                if current:
-                    if current.current.level_id is not None and path.parent == current.stm_area():
+                if not getattr(self, "_building_native_catalog", False) and (
+                    path.parent.name == "memory" or path.parent.name.endswith("_stm")
+                ):
+                    if current is None:
+                        raise PermissionError("Frame and STM memory reads require an explicit recording and frame")
+                    if path.parent.name.endswith("_stm"):
+                        if current.current.level_id is None or path.parent != current.stm_area():
+                            raise PermissionError("STM memory does not belong to the selected recording and level")
                         filters["before"] = current.current.order
-                    elif path.parent == current.frame_area():
-                        filters["exact"] = current.current.order
+                    else:
+                        moment = next((item for item in current.moments if item.directory == path.parent.parent), None)
+                        if moment is None or moment.order > current.current.order:
+                            raise PermissionError("Frame memory is outside the selected recording or is from a future frame")
+                        filters["exact"] = moment.order
                 return native.read(path.parent, location["memoryKinds"][0], current, **filters)[0]
             return super()._records(mount, location, path)
 
@@ -1659,9 +1675,14 @@ def _memory(workspace_id: str, sequence_id: str | None, frame_id: str | None = N
                 result = super()._catalog_metadata(*args, **kwargs)
             finally:
                 self._building_native_catalog = previous
-            if getattr(self, "_legacy_defaults_only", False):
-                result = {**result, "locations": [item for item in result["locations"]
-                                                  if item["format"] != "memory_metta"]}
+            if getattr(self, "_native_defaults_only", False):
+                native, current = self._native()
+                shared_areas = {area for area in native.native_areas(current) if area.name != "memory"}
+                result = {**result, "locations": [
+                    location for location in result["locations"]
+                    if location["format"] != "memory_metta"
+                    or Path(location["pathLabel"]).parent in shared_areas
+                ]}
             return result
 
         def save_record(self, kind, destination_id, payload, context, **kwargs):
@@ -1752,11 +1773,11 @@ def _memory(workspace_id: str, sequence_id: str | None, frame_id: str | None = N
                     raise ValueError("Conflicting historical sequence/workspace preferences require explicit selection or migration")
                 if historical:
                     return historical[0]
-            self._legacy_defaults_only = True
+            self._native_defaults_only = True
             try:
                 return super().load_preferences(context)
             finally:
-                self._legacy_defaults_only = False
+                self._native_defaults_only = False
 
     return OmegaMemoryLocations(authorized_memory_roots(workspace_id)), context
 
@@ -1861,6 +1882,55 @@ def _memory_write_summary(preferences: Mapping[str, Any], kind: str, records) ->
             "records": [_memory_reference(record) for record in records]}
 
 
+@router.get("/visual-sequence-selection")
+@_http
+def visual_sequence_selection(workspaceId: str, response: Response):
+    from omega_vision.perception.visual_sequence_selection import load_selection
+    response.headers["Cache-Control"] = "no-store"
+    return load_selection(_workspace(workspaceId))
+
+
+@router.put("/visual-sequence-selection")
+@_http
+def update_visual_sequence_selection(response: Response, body: dict[str, Any] = Body(...)):
+    from omega_vision.perception.visual_sequence_selection import save_selection
+    _fields(body, {"workspaceId", "visualSequenceId", "expectedRevision"})
+    root = _workspace(body["workspaceId"])
+
+    def validate(identifier):
+        entries = _api()._cached_visual_catalog(body["workspaceId"], None, None, False)
+        matches = [entry for entry in entries if entry["id"] == identifier]
+        if len(matches) != 1:
+            raise ValidationError("Visual Sequence is unavailable or ambiguous in the shared catalog")
+        expected = _api()._safe_workspace_child(root, "data/" + identifier)
+        actual = _api()._sequence_root_for(root, matches[0].get("providerRef") or "data/" + identifier)
+        if actual != expected:
+            raise PermissionError("Visual Sequence catalog identity and provider path disagree")
+
+    response.headers["Cache-Control"] = "no-store"
+    return save_selection(root, body["visualSequenceId"], body["expectedRevision"], validate=validate)
+
+
+@router.get("/memory/recording-context")
+@_http
+def memory_recording_context(workspaceId: str, sequenceId: str, response: Response,
+                            frameId: str | None = None):
+    from omega_vision.perception.contextual_memory import ContextUnavailable, recording_context
+    root = _workspace(workspaceId)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        directory = _api()._sequence_root_for(root, sequenceId)
+        context = recording_context(root, directory, frameId, select_first=frameId is None)
+    except ContextUnavailable as error:
+        raise HTTPException(422, {"reasonCode": error.code, "message": str(error)}) from error
+    return {
+        "schemaVersion": 1, "sequenceId": context.sequence_id, "gameId": context.game_id,
+        "frames": [{"frameId": moment.frame_id, "levelId": moment.level_id, "frameOrder": moment.order}
+                  for moment in context.moments],
+        "selectedFrameId": context.current.frame_id,
+    }
+
+
 @router.get("/memory")
 @_http
 def memory_setup(workspaceId: str, response: Response, sequenceId: str | None = None,
@@ -1904,9 +1974,10 @@ def memory_preferences(response: Response, body: dict[str, Any] = Body(...)):
 @router.post("/memory/read")
 @_http
 def memory_read(response: Response, body: dict[str, Any] = Body(...)):
-    _fields(body, {"workspaceId", "kind", "locationIds"}, {"sequenceId", "memorySnapshot", "memorySessionId"})
+    _fields(body, {"workspaceId", "kind", "locationIds"}, {"sequenceId", "frameId", "memorySnapshot", "memorySessionId"})
     response.headers["Cache-Control"] = "no-store"
-    with _memory_access(body["workspaceId"], body.get("sequenceId"), browser_memory(body)) as (locations, context, volatile):
+    with _memory_access(body["workspaceId"], body.get("sequenceId"), browser_memory(body),
+                        frame_id=body.get("frameId")) as (locations, context, volatile):
         result = locations.read_selected(body["kind"], body["locationIds"], context, volatile=volatile)
     if result["errors"]:
         raise HTTPException(422, {"message": "One or more memory locations could not be read", **result})
@@ -2013,8 +2084,12 @@ def memory_save_area(response: Response, body: dict[str, Any] = Body(...)):
         area = context.frame_area()
     elif body["scope"] == "recording-level-stm":
         area = context.stm_area()
+    elif body["scope"] == "game-all":
+        area = context.game_area()
+    elif body["scope"] == "game-level-ltm":
+        area = context.ltm_area()
     else:
-        raise ValidationError("Explicit frame or recording-level-stm save scope is required")
+        raise ValidationError("Explicit frame, recording-level-stm, game-all or game-level-ltm save scope is required")
     response.headers["Cache-Control"] = "no-store"
     record = ContextualMemory(root, body["workspaceId"], mount=authorized_memory_roots(body["workspaceId"])[0]).save(
         area, body["kind"], body["payload"], context=context,

@@ -1,5 +1,8 @@
 import type { MemoryCatalog, MemoryKind, MemoryLocation } from "./MemorySetupModel";
 import type { RegionPoint } from "@omega_vision_ui/components/VisualRegionHighlightModel";
+import { INSPECTOR_RELATIONS, isInspectorKind, isInspectorRelation,
+  type InspectorKind, type InspectorRelation } from "./ShapeObjectInspectorTypeDisplay";
+export type { InspectorKind, InspectorRelation } from "./ShapeObjectInspectorTypeDisplay";
 
 export interface InspectorSource {
   providerRef: string;
@@ -7,6 +10,7 @@ export interface InspectorSource {
   memoryLocationId: string;
   scopeKind?: string;
   context?: unknown;
+  registeredPath?: string;
 }
 
 export interface InspectorRecord {
@@ -17,6 +21,13 @@ export interface InspectorRecord {
   payload: Record<string, unknown>;
   source: InspectorSource;
   origin?: unknown;
+  originalSource?: {
+    format: "metta";
+    path: string;
+    text: string;
+    entryUid: string;
+    readOnly: true;
+  };
 }
 
 export interface InspectorConcept {
@@ -31,17 +42,85 @@ export interface InspectorReadResult {
   errors: Array<{ message: string }>;
 }
 
+export type InspectorPhysicalArea = Omit<MemoryLocation, "counts" | "revision"> & {
+  counts: MemoryLocation["counts"] | null;
+  revision: string | null;
+  availability?: "not_loaded";
+};
+
+export interface InspectorConfiguredArea {
+  areaId: string;
+  areaType: "contextual" | "session" | "legacy";
+  label: string;
+  memoryKinds: string[];
+  plannedMemoryKinds?: InspectorKind[];
+  counts: Record<string, number | null>;
+  revision: null;
+  loadState: "not_loaded";
+  readOnly: true;
+  registeredPath?: string;
+  format?: string;
+}
+
+export type InspectorArea = InspectorPhysicalArea | InspectorConfiguredArea;
+
+export interface InspectorAreasResponse {
+  schemaVersion: 1;
+  areasRevision: string;
+  areas: InspectorConfiguredArea[];
+  kindSchemas?: Record<string, unknown>;
+  referenceSchema?: Record<string, unknown>;
+}
+
+export interface InspectorAuthorizedSource extends Omit<InspectorSource, "workspaceId"> {
+  workspaceId?: string;
+  memoryKind: InspectorKind;
+  capabilities?: { read: boolean; write?: boolean; reason?: string | null };
+  pathLabel?: string;
+  path?: string | null;
+  format?: string;
+  registeredPath?: string;
+  catalogProviderRef?: string;
+}
+
+export interface InspectorAreaReadResult extends InspectorReadResult {
+  areaId: string;
+  kind: InspectorKind;
+  status: "ready" | "unavailable";
+  reasonCode?: string | null;
+  message?: string;
+  authorizedSources: InspectorAuthorizedSource[];
+  sources?: unknown[];
+  revision: string | null;
+  cachePolicy: "no-store";
+  policyNotes?: string[];
+}
+
+export type InspectorAreaRead = (
+  areaId: string, kind: InspectorKind, signal: AbortSignal,
+) => Promise<InspectorAreaReadResult>;
+
+export type InspectorReferenceReadResult = InspectorAreaReadResult;
+
+export type InspectorReferenceRead = (
+  areaId: string, reference: TypedInspectorReference, signal: AbortSignal,
+) => Promise<InspectorReferenceReadResult>;
+
 export type InspectorRead = (
   kind: MemoryKind, locationIds: string[], signal: AbortSignal,
 ) => Promise<InspectorReadResult>;
 
-export interface ShapeReference extends InspectorSource {
+export interface TypedInspectorReference extends Omit<InspectorSource, "workspaceId"> {
+  workspaceId?: string;
+  targetKind: InspectorKind;
+  relation: InspectorRelation;
   recordUid: string;
   revision: string;
   memberTrackUid?: string;
   observationUid?: string;
 }
 
+export type ShapeReference = TypedInspectorReference & { targetKind: "shape" };
 export interface InspectorReference {
   key: string;
   value: unknown;
@@ -98,7 +177,7 @@ function finite(value: unknown): value is number {
 }
 
 export function stableIdentity(value: unknown): value is string {
-  return text(value) && !/^[rvwgo]\d+$/i.test(value);
+  return text(value) && !/^(?:[rsvwgioac]|gc|oc|cc)\d+$/i.test(value);
 }
 
 function sourceValue(value: unknown): value is InspectorSource {
@@ -106,21 +185,32 @@ function sourceValue(value: unknown): value is InspectorSource {
 }
 
 export function isInspectorRecord(value: unknown): value is InspectorRecord {
-  return objectValue(value) && text(value.recordUid) && text(value.revision)
+  return objectValue(value) && stableIdentity(value.recordUid) && text(value.revision)
     && (value.memoryKind === "shape" || value.memoryKind === "object")
-    && text(value.recordType) && objectValue(value.payload) && sourceValue(value.source);
+    && text(value.recordType) && objectValue(value.payload) && sourceValue(value.source)
+    && (value.originalSource === undefined || (objectValue(value.originalSource)
+      && value.originalSource.format === "metta" && text(value.originalSource.path)
+      && text(value.originalSource.text) && text(value.originalSource.entryUid) && value.originalSource.readOnly === true));
 }
 
 export function recordIdentity(record: InspectorRecord): string {
-  return JSON.stringify([record.memoryKind, record.source.providerRef,
-    record.source.memoryLocationId, record.recordUid, record.revision]);
+  return referenceIdentity(record.memoryKind, { ...record.source, recordUid: record.recordUid, revision: record.revision });
 }
 
-export function areaIdentity(area: MemoryLocation): string {
+export function referenceIdentity(kind: InspectorKind, reference: { providerRef: string; memoryLocationId: string; recordUid: string; revision: string }): string {
+  return JSON.stringify([kind, reference.providerRef, reference.memoryLocationId, reference.recordUid, reference.revision]);
+}
+
+export function isAncestorRecord(ancestors: ReadonlyArray<InspectorRecord>, record: InspectorRecord): boolean {
+  return ancestors.some(ancestor => recordIdentity(ancestor) === recordIdentity(record));
+}
+export function areaIdentity(area: InspectorArea): string {
+  if (isConfiguredInspectorArea(area)) return JSON.stringify(["configured", area.areaId]);
   return JSON.stringify([area.providerRef, area.memoryLocationId]);
 }
 
-export function sourceMatchesArea(source: InspectorSource, area: MemoryLocation): boolean {
+export function sourceMatchesArea(source: Pick<InspectorSource, "providerRef" | "memoryLocationId">, area: InspectorArea): boolean {
+  if (isConfiguredInspectorArea(area)) return false;
   // Nowhere retains the original provider provenance; exact record resolution still checks it.
   return source.memoryLocationId === area.memoryLocationId
     && (area.scopeKind === "volatile" || source.providerRef === area.providerRef);
@@ -131,32 +221,88 @@ export function inspectableAreas(catalog: MemoryCatalog | null): MemoryLocation[
     area.memoryKinds.some(kind => kind === "shape" || kind === "object"));
 }
 
-export function areaLabel(area: MemoryLocation): string {
+export function areaLabel(area: InspectorArea): string {
+  if (isConfiguredInspectorArea(area)) {
+    return area.areaType === "legacy" ? `Legacy compatibility: ${area.label}` : area.label;
+  }
   return [area.label, area.providerRef, area.workspaceId, area.scopeKind,
     area.context.gameId, area.context.levelId, area.context.runId, area.memoryLocationId]
     .filter(Boolean).join(" / ");
 }
 
-export function referenceValue(value: unknown): ShapeReference | null {
-  if (!sourceValue(value) || !objectValue(value) || !stableIdentity(value.recordUid) || !text(value.revision)) return null;
+export function isConfiguredInspectorArea(area: InspectorArea): area is InspectorConfiguredArea {
+  return "areaId" in area;
+}
+
+export function validateInspectorAreas(value: unknown): InspectorAreasResponse {
+  if (!objectValue(value) || value.schemaVersion !== 1 || !text(value.areasRevision)
+    || !Array.isArray(value.areas) || !value.areas.every(area =>
+      objectValue(area) && text(area.areaId) && text(area.label)
+      && ["contextual", "session", "legacy"].includes(String(area.areaType))
+      && Array.isArray(area.memoryKinds) && area.memoryKinds.every(text)
+      && (area.plannedMemoryKinds === undefined || (Array.isArray(area.plannedMemoryKinds) && area.plannedMemoryKinds.every(isInspectorKind)))
+      && objectValue(area.counts) && Object.values(area.counts).every(count => count === null)
+      && area.revision === null && area.loadState === "not_loaded" && area.readOnly === true
+      && (area.registeredPath === undefined || text(area.registeredPath))
+      && (area.format === undefined || text(area.format)))) {
+    throw new Error("Malformed configured-area metadata; inspection stopped.");
+  }
+  if (new Set(value.areas.map(area => area.areaId)).size !== value.areas.length) {
+    throw new Error("Configured-area metadata contains duplicate identities; inspection stopped.");
+  }
+  if ((value.kindSchemas !== undefined && !objectValue(value.kindSchemas))
+    || (value.referenceSchema !== undefined && !objectValue(value.referenceSchema))) {
+    throw new Error("Malformed configured-area schemas; inspection stopped.");
+  }
+  return { schemaVersion: 1, areasRevision: value.areasRevision, areas: value.areas,
+    ...(objectValue(value.kindSchemas) ? { kindSchemas: value.kindSchemas } : {}),
+    ...(objectValue(value.referenceSchema) ? { referenceSchema: value.referenceSchema } : {}) };
+}
+
+export function typedReferenceValue(
+  value: unknown, sourceKind?: InspectorKind, legacyShape = false,
+): TypedInspectorReference | null {
+  if (!objectValue(value) || !text(value.providerRef) || !text(value.memoryLocationId)
+    || !stableIdentity(value.recordUid) || !text(value.revision)
+    || (value.workspaceId !== undefined && !text(value.workspaceId))
+    || (value.registeredPath !== undefined && (!text(value.registeredPath)
+      || /[\\:]/.test(value.registeredPath) || value.registeredPath.split("/").some(part => !part || part === "." || part === "..")))
+    || (value.memberTrackUid !== undefined && !text(value.memberTrackUid))
+    || (value.observationUid !== undefined && !text(value.observationUid))) return null;
+  const targetKind = legacyShape && value.targetKind === undefined ? "shape" : value.targetKind;
+  const relation = legacyShape && value.relation === undefined ? "has_shape" : value.relation;
+  if (!isInspectorKind(targetKind) || !isInspectorRelation(relation)
+    || (legacyShape && (targetKind !== "shape" || relation !== "has_shape"))) return null;
+  const rule = INSPECTOR_RELATIONS[relation];
+  if (!rule.targets.includes(targetKind) || (sourceKind !== undefined
+    && (!isInspectorKind(sourceKind) || (rule.pairs && rule.pairs[sourceKind] !== targetKind)))) return null;
   return {
-    providerRef: value.providerRef, workspaceId: value.workspaceId, memoryLocationId: value.memoryLocationId,
+    targetKind, relation,
+    providerRef: value.providerRef, memoryLocationId: value.memoryLocationId,
     recordUid: value.recordUid, revision: value.revision,
+    ...(text(value.workspaceId) ? { workspaceId: value.workspaceId } : {}),
+    ...(text(value.registeredPath) ? { registeredPath: value.registeredPath } : {}),
     ...(text(value.memberTrackUid) ? { memberTrackUid: value.memberTrackUid } : {}),
     ...(text(value.observationUid) ? { observationUid: value.observationUid } : {}),
   };
 }
 
-export function exactReferencedRecord(concepts: InspectorConcept[], reference: ShapeReference): {
+export function referenceValue(value: unknown): ShapeReference | null {
+  const reference = typedReferenceValue(value);
+  return reference?.targetKind === "shape" ? { ...reference, targetKind: "shape" } : null;
+}
+
+export function exactReferencedRecord(concepts: InspectorConcept[], reference: TypedInspectorReference): {
   record: InspectorRecord; concept: InspectorConcept;
 } {
-  const key = recordIdentity({ ...reference, memoryKind: "shape", source: reference, recordType: "", payload: {} });
+  if (!typedReferenceValue(reference)) throw new Error("Unresolved reference: explicit valid kind and relation are required.");
+  const key = referenceIdentity(reference.targetKind, reference);
   const matches = concepts.flatMap(concept => concept.versions
     .filter(record => recordIdentity(record) === key).map(record => ({ record, concept })));
   if (matches.length !== 1) {
     throw new Error(matches.length
       ? "Ambiguous exact reference: multiple records claim this provider/location/revision."
-      : "Unresolved reference: the exact provider/location/shape revision is unavailable.");
+      : "Unresolved reference: the exact provider/location/kind/record revision is unavailable.");
   }
   return matches[0];
 }
@@ -168,19 +314,129 @@ export async function readInspectorArea(
   signal.throwIfAborted();
   const result = await read(kind, locationIds, signal);
   signal.throwIfAborted();
+  validateInspectorRecords(result, kind, record => locationIds.includes(record.source.memoryLocationId));
+  return result;
+}
+
+function validateInspectorRecords(
+  result: unknown, kind: InspectorKind, permitted: (record: InspectorRecord) => boolean,
+): void {
   if (!objectValue(result) || !Array.isArray(result.records) || !Array.isArray(result.errors)
     || !result.errors.every(error => objectValue(error) && typeof error.message === "string")
     || !result.records.every(concept => objectValue(concept) && text(concept.conceptUid)
       && typeof concept.conflict === "boolean" && isInspectorRecord(concept.preferred)
+      && concept.preferred.memoryKind === kind && permitted(concept.preferred)
       && Array.isArray(concept.versions) && concept.versions.length > 0
       && concept.versions.every(record => isInspectorRecord(record) && record.memoryKind === kind
-        && locationIds.includes(record.source.memoryLocationId))
-      && concept.versions.some(record => recordIdentity(record) === recordIdentity(concept.preferred)))) {
+        && permitted(record))
+      && concept.versions.some(record => sameJsonValue(record, concept.preferred)))) {
     throw new Error("Memory read returned malformed or out-of-area records; inspection stopped.");
   }
+}
+
+function sameJsonValue(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  if (Array.isArray(left)) return Array.isArray(right) && left.length === right.length
+    && left.every((value, index) => sameJsonValue(value, right[index]));
+  if (!objectValue(left) || !objectValue(right)) return false;
+  const keys = Object.keys(left);
+  return keys.length === Object.keys(right).length
+    && keys.every(key => Object.hasOwn(right, key) && sameJsonValue(left[key], right[key]));
+}
+
+function authorizedSource(value: unknown): value is InspectorAuthorizedSource {
+  return objectValue(value) && text(value.providerRef) && text(value.memoryLocationId)
+    && (value.workspaceId === undefined || text(value.workspaceId)) && isInspectorKind(value.memoryKind)
+    && (value.capabilities === undefined || (objectValue(value.capabilities) && typeof value.capabilities.read === "boolean"))
+    && (value.pathLabel === undefined || typeof value.pathLabel === "string")
+    && (value.path === undefined || value.path === null || text(value.path))
+    && (value.format === undefined || typeof value.format === "string");
+}
+
+function validateConfiguredResult(
+  result: InspectorAreaReadResult, area: InspectorConfiguredArea, kind: InspectorKind,
+): void {
+  if (!objectValue(result) || result.areaId !== area.areaId || result.kind !== kind
+    || !["ready", "unavailable"].includes(result.status) || result.cachePolicy !== "no-store"
+    || !Array.isArray(result.authorizedSources) || !result.authorizedSources.every(authorizedSource)
+    || (result.revision !== null && !text(result.revision))
+    || (result.reasonCode != null && typeof result.reasonCode !== "string")
+    || (result.message !== undefined && typeof result.message !== "string")
+    || (result.policyNotes !== undefined && (!Array.isArray(result.policyNotes) || !result.policyNotes.every(text)))) {
+    throw new Error("Malformed contextual-area response; inspection stopped.");
+  }
+  validateInspectorRecords(result, kind, record => result.authorizedSources.some(source =>
+    source.capabilities?.read !== false && source.memoryKind === record.memoryKind
+    && source.providerRef === record.source.providerRef
+    && source.memoryLocationId === record.source.memoryLocationId
+    && (!record.originalSource || typeof source.path !== "string" || record.originalSource.path === source.path)));
+  if (result.status === "unavailable" && result.records.length) {
+    throw new Error("An unavailable area returned records; inspection stopped.");
+  }
+  if (kind !== "shape" && kind !== "object" && result.status !== "unavailable") {
+    throw new Error(`The ${kind} payload schema is unsupported; inspection stopped.`);
+  }
+}
+
+/** Context and browser RAM remain exclusively in the caller's captured read-only transport. */
+export async function readConfiguredInspectorArea(
+  read: InspectorAreaRead, area: InspectorConfiguredArea, kind: InspectorKind, signal: AbortSignal,
+): Promise<InspectorAreaReadResult> {
+  signal.throwIfAborted();
+  if (!area.memoryKinds.includes(kind) && !area.plannedMemoryKinds?.includes(kind)) {
+    throw new Error("The configured area does not declare this record kind.");
+  }
+  const result = await read(area.areaId, kind, signal);
+  signal.throwIfAborted();
+  validateConfiguredResult(result, area, kind);
   return result;
 }
 
+export async function readConfiguredInspectorReference(
+  read: InspectorReferenceRead, area: InspectorConfiguredArea, reference: TypedInspectorReference, signal: AbortSignal,
+): Promise<InspectorReferenceReadResult> {
+  signal.throwIfAborted();
+  if (!typedReferenceValue(reference)) throw new Error("Invalid typed reference; inspection stopped.");
+  const result = await read(area.areaId, reference, signal);
+  signal.throwIfAborted();
+  validateConfiguredResult(result, area, reference.targetKind);
+  validateInspectorRecords(result, reference.targetKind, record =>
+    recordIdentity(record) === referenceIdentity(reference.targetKind, reference));
+  return result;
+}
+
+/** A legacy target is selectable only through an exact registration already supplied by the host. */
+export function configuredReferenceArea(
+  area: InspectorConfiguredArea, reference: TypedInspectorReference, areas: ReadonlyArray<InspectorArea>,
+): InspectorConfiguredArea {
+  if (area.areaType !== "legacy" || !reference.registeredPath) return area;
+  const matches = areas.filter((candidate): candidate is InspectorConfiguredArea =>
+    isConfiguredInspectorArea(candidate) && candidate.areaType === "legacy"
+    && candidate.registeredPath === reference.registeredPath);
+  if (matches.length !== 1) throw new Error("Unresolved reference: its exact legacy registration is unavailable or ambiguous.");
+  return matches[0];
+}
+
+export async function resolveConfiguredReference(
+  area: InspectorConfiguredArea, areas: ReadonlyArray<InspectorArea>, reference: TypedInspectorReference,
+  read: InspectorAreaRead | undefined, readReference: InspectorReferenceRead | undefined, signal: AbortSignal,
+): Promise<InspectorConcept[]> {
+  signal.throwIfAborted();
+  if (!typedReferenceValue(reference)) throw new Error("Invalid typed reference; inspection stopped.");
+  let result: InspectorAreaReadResult;
+  if (area.areaType !== "legacy") {
+    if (!read) throw new Error("Context-safe reference inspection is unavailable. No fallback was used.");
+    result = await readConfiguredInspectorArea(read, area, reference.targetKind, signal);
+  } else {
+    if (!readReference) throw new Error("Exact legacy-reference transport is unavailable. No discovery fallback was used.");
+    result = await readConfiguredInspectorReference(readReference,
+      configuredReferenceArea(area, reference, areas), reference, signal);
+  }
+  if (result.status === "unavailable") throw new Error(result.message || result.reasonCode || "Reference context is unavailable.");
+  if (result.errors.length) throw new Error(result.errors.map(item => item.message).join("; "));
+  exactReferencedRecord(result.records, reference);
+  return result.records;
+}
 function noGeometry(description: string, status: "missing" | "unsupported" = "missing"): ShapeGeometry {
   return { primitives: [], bounds: null, status, description };
 }
@@ -307,13 +563,14 @@ function facts(payload: Record<string, unknown>, predicate: string): Record<stri
       objectValue(fact) && fact.predicate === predicate && Array.isArray(fact.args)) : [];
 }
 
-function references(payload: Record<string, unknown>): InspectorReference[] {
+function references(payload: Record<string, unknown>, sourceKind: InspectorKind): InspectorReference[] {
   if (payload.shapeReferences === undefined) return [];
   const values = Array.isArray(payload.shapeReferences) ? payload.shapeReferences : [payload.shapeReferences];
   return values.map((value, index) => {
-    const reference = referenceValue(value);
+    const normalized = typedReferenceValue(value, sourceKind, true);
+    const reference = normalized?.targetKind === "shape" ? referenceValue(normalized) : null;
     return { key: `reference-${index}`, value, reference, reason: reference ? null
-      : "Unresolved: reference requires stable provider/location/record/revision and workspace provenance." };
+      : "Unresolved: shapeReferences requires shape/has_shape tags (or absent legacy tags), stable provider/location/record/revision, and valid optional provenance." };
   });
 }
 
@@ -364,7 +621,7 @@ export function inspectRecord(record: InspectorRecord): InspectorModel {
       notices.push("Unrecognized shape schema; only explicitly supported geometry fields are rendered.");
     }
   } else {
-    const refs = references(p);
+    const refs = references(p, record.memoryKind);
     const assigned = new Set<string>();
     if (Array.isArray(p.members)) p.members.forEach((member, index) => {
       const attributed = objectValue(member) ? refs.filter(({ reference }) => reference

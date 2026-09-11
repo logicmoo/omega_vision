@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { MemorySetup } from "./MemorySetup";
 import type { MemoryCatalog, MemoryKind, MemoryPreferences } from "./MemorySetupModel";
-import { NOWHERE } from "./MemorySetupModel";
+import { createMemoryPreferenceRequestGuard, NOWHERE } from "./MemorySetupModel";
 import { memoryRequest, NOWHERE_LIMITS_NOTICE, rotateMemorySession, useMemoryError, useMemoryRevision, useMemorySessionId } from "./MemorySession";
 import { ResourceSourceEditor } from "./ResourceSourceEditor";
 import { ShapeObjectInspectorBrowser } from "./ShapeObjectInspectorBrowser";
+import type { InspectorAreasResponse, InspectorAreaReadResult } from "./ShapeObjectInspector.model";
+import { VisualSequenceSelector } from "@omega_vision_ui/components/VisualSequenceSelector";
+import { useSharedVisualSequenceSelection } from "@omega_vision_ui/components/useSharedVisualSequenceSelection";
+import { loadVisualSequenceRecordingContext, type VisualSequenceRecordingContext } from "@omega_vision_ui/components/VisualSequenceRecordingContext";
 
 type SavedRecord = {
   recordUid: string;
@@ -16,12 +20,12 @@ type SavedRecord = {
 };
 type MemoryConcept = { conceptUid: string; preferred: SavedRecord; versions: SavedRecord[]; conflict: boolean };
 type ReadResult = { records: MemoryConcept[]; errors: Array<{ message: string }> };
-type Props = { workspaceId: string; sequenceId: string; active: boolean; sequenceReady?: boolean };
+type Props = { workspaceId: string; sequenceId: string; frameId?: string; active: boolean; sequenceReady?: boolean };
 const endpoint = "/workbench/video-import/semantic/memory";
 
 async function request<T>(url: string, signal: AbortSignal, body?: Record<string, unknown>, method = "POST"): Promise<T> {
   if (body && method === "POST") return memoryRequest<T>(url, body, signal, undefined,
-    url.endsWith("/read") || url.endsWith("/setup"));
+    url.endsWith("/read") || url.endsWith("/setup") || url.endsWith("/inspect-area") || url.endsWith("/inspect-reference"));
   const response = await fetch(url, {
     signal, cache: "no-store", ...(body ? {
       method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -35,19 +39,23 @@ async function request<T>(url: string, signal: AbortSignal, body?: Record<string
 export function MemorySetupHost(props: Props) {
   const session = useMemorySessionId(props.workspaceId);
   const sequenceReady = props.sequenceReady ?? Boolean(props.sequenceId);
-  return <MemorySetupContext key={`${props.workspaceId}|${sequenceReady ? props.sequenceId : ""}|${session}`}
-    {...props} sequenceId={sequenceReady ? props.sequenceId : ""} sequenceReady={sequenceReady} session={session} />;
+  return <MemorySetupContext key={`${props.workspaceId}|${session}`}
+    {...props} pageSequenceId={props.sequenceId} sequenceId={sequenceReady ? props.sequenceId : ""} sequenceReady={sequenceReady} session={session} />;
 }
 
-function MemorySetupContext({ workspaceId, sequenceId, active, sequenceReady, session }: Props & { session: string }) {
+function MemorySetupContext({ workspaceId, sequenceId, pageSequenceId, frameId, active, sequenceReady, session }: Props & { session: string; pageSequenceId: string }) {
   const memoryRevision = useMemoryRevision();
   const memoryError = useMemoryError(workspaceId);
-  const contextKey = `${workspaceId}|${sequenceId}|${session}`;
+  const contextKey = `${workspaceId}|${sequenceId}|${frameId || ""}|${session}`;
+  const currentContext = useRef(contextKey);
+  currentContext.current = contextKey;
   const controller = useRef(new AbortController());
-  const generation = useRef(0);
+  const preferenceRequests = useRef(createMemoryPreferenceRequestGuard());
   const readGeneration = useRef(0);
   const [catalog, setCatalog] = useState<MemoryCatalog | null>(null);
-  const [preferences, setPreferences] = useState<MemoryPreferences | null>(null);
+  const [loadedPreferences, setPreferences] = useState<MemoryPreferences | null>(null);
+  const [preferencesContext, setPreferencesContext] = useState("");
+  const preferences = preferencesContext === contextKey ? loadedPreferences : null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kind, setKind] = useState<MemoryKind>("shape");
@@ -56,25 +64,85 @@ function MemorySetupContext({ workspaceId, sequenceId, active, sequenceReady, se
   const [reading, setReading] = useState(false);
   const [recordError, setRecordError] = useState("");
   const [recordsOpen, setRecordsOpen] = useState(false);
-  const body = { workspaceId, sequenceId: sequenceId || undefined, memorySessionId: session };
+  const [areas, setAreas] = useState<InspectorAreasResponse | null>(null);
+  const [areasLoading, setAreasLoading] = useState(false);
+  const [areasError, setAreasError] = useState<string | null>(null);
+  const [areasReload, setAreasReload] = useState(0);
+  const body = { workspaceId, sequenceId: sequenceId || undefined, frameId: frameId || undefined, memorySessionId: session };
+  const sharedSelection = useSharedVisualSequenceSelection(workspaceId, active);
+  const pageFrame = pageSequenceId === `data/${sharedSelection.visualSequenceId}` ? frameId : undefined;
+  const frameSourceKey = JSON.stringify([workspaceId, sharedSelection.visualSequenceId, pageFrame]);
+  const [frameChoice, setFrameChoice] = useState<{ sourceKey: string; frameId?: string } | null>(null);
+  const requestedFrame = frameChoice?.sourceKey === frameSourceKey ? frameChoice.frameId : pageFrame;
+  const inspectorContextKey = JSON.stringify([workspaceId, sharedSelection.visualSequenceId, requestedFrame, session]);
+  const [recordingState, setRecordingState] = useState<{
+    key: string; value: VisualSequenceRecordingContext | null; error: string;
+  } | null>(null);
+  const [contextReload, setContextReload] = useState(0);
+  const recordingContext = recordingState?.key === inspectorContextKey ? recordingState.value : null;
+  const contextError = recordingState?.key === inspectorContextKey ? recordingState.error : "";
+  const inspectorBody = {
+    workspaceId, memorySessionId: session, sequenceId: recordingContext?.sequenceId,
+    frameId: recordingContext?.selectedFrameId,
+  };
+  useEffect(() => {
+    if (!active || !workspaceId || !sharedSelection.visualSequenceId) return;
+    const requestController = new AbortController();
+    void loadVisualSequenceRecordingContext(workspaceId, sharedSelection.visualSequenceId, requestedFrame, requestController.signal)
+      .then(value => {
+        if (!requestController.signal.aborted) setRecordingState({ key: inspectorContextKey, value, error: "" });
+      }).catch(failure => {
+        if (!requestController.signal.aborted) setRecordingState({ key: inspectorContextKey, value: null, error: String(failure) });
+      });
+    return () => requestController.abort();
+  }, [active, workspaceId, inspectorContextKey, contextReload]);
+  const requireAreaContext = (areaId: string) => {
+    if (["contextual:scene", "contextual:previous-moment", "contextual:current-moment"].includes(areaId) && !recordingContext) {
+      throw new Error(contextError || "Contextual memory unavailable while the recording frame is being validated. Saved-area browsing remains available.");
+    }
+  };
+
+  useEffect(() => {
+    if (!active || !workspaceId) return;
+    const requestController = new AbortController();
+    setAreasLoading(true);
+    setAreasError(null);
+    void request<InspectorAreasResponse>(
+      `${endpoint}/inspectable-areas?workspaceId=${encodeURIComponent(workspaceId)}`,
+      requestController.signal,
+    ).then(value => {
+      if (requestController.signal.aborted) return;
+      if (value.schemaVersion !== 1 || !Array.isArray(value.areas) || typeof value.areasRevision !== "string") {
+        throw new Error("Invalid configured memory-area response");
+      }
+      setAreas(value);
+    }).catch(failure => {
+      if (!requestController.signal.aborted) setAreasError(String(failure));
+    }).finally(() => {
+      if (!requestController.signal.aborted) setAreasLoading(false);
+    });
+    return () => requestController.abort();
+  }, [active, workspaceId, areasReload]);
 
   async function refresh(force = false) {
-    if (!active || !workspaceId) return;
+    if (!active || !workspaceId || !sequenceReady) return;
     const signal = controller.current.signal;
-    const current = ++generation.current;
+    const current = preferenceRequests.current.beginRead();
+    if (current === null) return;
     setLoading(true);
     setError(null);
     try {
       const value = await request<{ catalog: MemoryCatalog; preferences: MemoryPreferences }>(
         `${endpoint}/setup`, signal, { ...body, refresh: force },
       );
-      if (current !== generation.current || signal.aborted) return;
+      if (!preferenceRequests.current.isCurrent(current) || signal.aborted || currentContext.current !== contextKey) return;
       setCatalog(value.catalog);
       setPreferences(value.preferences);
+      setPreferencesContext(contextKey);
     } catch (failure) {
-      if (!signal.aborted && current === generation.current) setError(String(failure));
+      if (!signal.aborted && preferenceRequests.current.isCurrent(current) && currentContext.current === contextKey) setError(String(failure));
     } finally {
-      if (!signal.aborted && current === generation.current) setLoading(false);
+      if (!signal.aborted && preferenceRequests.current.isCurrent(current) && currentContext.current === contextKey) setLoading(false);
     }
   }
 
@@ -101,7 +169,7 @@ function MemorySetupContext({ workspaceId, sequenceId, active, sequenceReady, se
   useEffect(() => {
     controller.current = new AbortController();
     void refresh();
-    return () => { controller.current.abort(); generation.current += 1; readGeneration.current += 1; };
+    return () => { controller.current.abort(); preferenceRequests.current.reset(); readGeneration.current += 1; };
   }, [active, contextKey]);
   useEffect(() => { void refresh(); }, [memoryRevision]);
   useEffect(() => {
@@ -110,7 +178,7 @@ function MemorySetupContext({ workspaceId, sequenceId, active, sequenceReady, se
     readGeneration.current += 1;
     setReading(false);
     if (active && recordsOpen) void readRecords();
-  }, [active, recordsOpen, kind, preferences?.revision, memoryRevision]);
+  }, [active, recordsOpen, kind, preferences?.revision, memoryRevision, contextKey]);
 
   const copy = async (record: SavedRecord, destinationId: string) => {
     await request(`${endpoint}/copy`, controller.current.signal, {
@@ -138,17 +206,32 @@ function MemorySetupContext({ workspaceId, sequenceId, active, sequenceReady, se
       <p role="status">Browse authorized memory areas independently of a Visual Sequence.
         Select and validate a sequence to edit its Save To / Look In preferences or save copies.</p>
       <div className="memory-setup__actions">
-        <button type="button" disabled={loading || !workspaceId} onClick={() => void refresh(true)}>Refresh inspectable areas</button>
+        <button type="button" disabled={areasLoading || !workspaceId} onClick={() => setAreasReload(value => value + 1)}>Refresh inspectable areas</button>
         <button type="button" onClick={() => rotateMemorySession()}>Reset Nowhere browser memory</button>
       </div>
     </>}
-    {sequenceReady && <MemorySetup contextKey={contextKey} catalog={catalog} preferences={preferences}
+    {sequenceReady && <MemorySetup key={contextKey} contextKey={contextKey} catalog={preferences ? catalog : null} preferences={preferences}
       loading={loading} error={error || memoryError} onRefresh={() => refresh(true)}
       onSave={async (next, expectedRevision) => {
-        const saved = await request<MemoryPreferences>(`${endpoint}/preferences`, controller.current.signal,
-          { ...body, preferences: next, expectedRevision }, "PUT");
-        if (!controller.current.signal.aborted) setPreferences(saved);
-        return saved;
+        const signal = controller.current.signal;
+        if (signal.aborted || currentContext.current !== contextKey || !preferences) {
+          throw new Error("Memory context changed. Load its preferences before saving.");
+        }
+        const current = preferenceRequests.current.beginSave();
+        if (current === null) throw new Error("Memory preferences are already being saved.");
+        setLoading(true);
+        try {
+          const saved = await request<MemoryPreferences>(`${endpoint}/preferences`, signal,
+            { ...body, preferences: next, expectedRevision }, "PUT");
+          if (!signal.aborted && preferenceRequests.current.isCurrent(current) && currentContext.current === contextKey) {
+            setPreferences(saved);
+            setPreferencesContext(contextKey);
+          }
+          return saved;
+        } finally {
+          if (!signal.aborted && preferenceRequests.current.isCurrent(current) && currentContext.current === contextKey) setLoading(false);
+          preferenceRequests.current.finishSave(current);
+        }
       }}
       onResetVolatile={async () => {
         rotateMemorySession();
@@ -162,11 +245,40 @@ function MemorySetupContext({ workspaceId, sequenceId, active, sequenceReady, se
       }}
     />}
     {active && <ShapeObjectInspectorBrowser
-      contextKey={`${contextKey}|${memoryRevision}`}
-      catalog={catalog} loading={loading} error={error || memoryError}
+      contextKey={`${workspaceId}|${session}`}
+      readContextKey={`${inspectorContextKey}|${recordingContext?.selectedFrameId ?? "unavailable"}|${memoryRevision}`}
+      sequenceSelector={<>
+        <VisualSequenceSelector workspaceId={workspaceId} active={active} />
+        <div className="shape-inspector__controls">
+          <label>Frame <select aria-label="Visual Sequence frame" value={recordingContext?.selectedFrameId ?? requestedFrame ?? ""}
+            disabled={!recordingContext} onChange={event => setFrameChoice({ sourceKey: frameSourceKey, frameId: event.target.value })}>
+            {!recordingContext && <option value={requestedFrame ?? ""}>{requestedFrame !== undefined ? `${requestedFrame} · unavailable` : "No validated recording frame"}</option>}
+            {recordingContext?.frames.map(frame => <option key={frame.frameId} value={frame.frameId}>
+              {frame.frameId} · order {frame.frameOrder}{frame.levelId !== null ? ` · level ${frame.levelId}` : " · level unavailable"}
+            </option>)}
+          </select></label>
+          <button type="button" disabled={!sharedSelection.visualSequenceId.startsWith("recordings/")}
+            onClick={() => { setFrameChoice({ sourceKey: frameSourceKey }); setContextReload(value => value + 1); }}>Use first manifest frame</button>
+          {contextError && <button type="button" onClick={() => setContextReload(value => value + 1)}>Retry recording context</button>}
+          {recordingContext && <span>Game {recordingContext.gameId} · {recordingContext.selectedFrameId}
+            {requestedFrame === undefined ? " · first explicit manifest frame" : " · explicitly selected frame"}</span>}
+        </div>
+        {!recordingContext && <p role="status">{contextError || "Contextual memory unavailable until a canonical recording frame is validated."}
+          {" "}Noncontextual saved-area browsing does not require a Visual Sequence catalog.</p>}
+      </>}
+      areas={areas?.areas ?? []} areasRevision={areas?.areasRevision}
+      loading={areasLoading} error={areasError || memoryError}
       onRead={(memoryKind, locationIds, signal) => request<ReadResult>(
-        `${endpoint}/read`, signal, { ...body, kind: memoryKind, locationIds },
+        `${endpoint}/read`, signal, { ...inspectorBody, kind: memoryKind, locationIds },
       )}
+      onInspectArea={(areaId, memoryKind, signal) => {
+        requireAreaContext(areaId);
+        return request<InspectorAreaReadResult>(`${endpoint}/inspect-area`, signal, { ...inspectorBody, areaId, kind: memoryKind });
+      }}
+      onInspectReference={(areaId, reference, signal) => {
+        requireAreaContext(areaId);
+        return request<InspectorAreaReadResult>(`${endpoint}/inspect-reference`, signal, { ...inspectorBody, areaId, reference });
+      }}
       renderActions={(record) => <><button type="button"
         disabled={!sequenceReady || reading || !preferences || preferences[record.memoryKind].saveTo === record.source.memoryLocationId}
         onClick={() => void action(async () => {

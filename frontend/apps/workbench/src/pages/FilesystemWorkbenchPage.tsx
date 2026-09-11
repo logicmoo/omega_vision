@@ -4985,7 +4985,7 @@ export function FilesystemWorkbenchPage() {
               />
             )}{" "}
             {view === "googleMeet" && <GoogleMeetBridgePage />}{" "}
-        {view === "recognitionDemos" && <RecognitionDemosPage />}{" "}
+        {view === "recognitionDemos" && <RecognitionDemosPage workspaceId={workspace.id} />}{" "}
             {view === "pluginPage" && <PluginHostedPage entry={pluginPage} />}{" "}
             {view === "setup" && (
               <WorkspaceSettingsPanel
@@ -5278,7 +5278,9 @@ export function FilesystemWorkbenchPage() {
                     : view === "goals"
                     ? "goals"
                     : view === "videoImport"
-                      ? "videoImport"
+                      ? activeNavSubview === "recognition" ? "recognition" : "videoImport"
+                    : view === "recognitionDemos"
+                      ? "recognition"
                     : view === "googleMeet"
                       ? "googleMeet"
                     : view === "plans"

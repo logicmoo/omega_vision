@@ -10,6 +10,160 @@ The authoritative seven-point instruction is
 [AGENTS.md, Mandatory Omega Vision shared-storage contract](../../AGENTS.md#mandatory-omega-vision-shared-storage-contract-2026-09-10).
 Its recovery reference is maintained by the coordinator in `CODEX_TODO.md`.
 
+## Memory layout at a glance
+
+The game/recording layout below is relative to the one shared
+`<repository>\data\omega_vision\recordings` directory:
+
+```text
+<gameId>\
+  memory_game_all\
+  memory_level_<n>_ltm\
+  <recordingId>\
+    memory_level_<n>_stm\
+    0\memory\
+    1\memory\
+    2\memory\
+```
+
+`<n>` is an actual level identifier from the recording metadata. Frame IDs
+`0`, `1`, and `2` illustrate the layout; actual frame order comes from the
+recording's explicit manifest. Each native Shape/Object memory area uses
+`shapes_db.metta` and `objects_db.metta`, not singular record directories.
+Existing data is never automatically renamed, moved, or merged.
+
+Existing ARC recordings may also have a pre-action `image.png` at the
+recording root. Its explicit `state.json` must identify step zero with no
+incoming action. That observation retains the pipeline's `image` unit and
+uses `transforms\image\memory`; the numbered move directories are not renamed
+or reindexed. It precedes move `0` in causal order. Missing or contradictory
+initial-state metadata is an error, not permission to invent an observation.
+
+## Recognition: deduction, induction, and abduction
+
+### General explanation
+
+**Deduction applies a rule. Induction learns a rule. Abduction proposes an
+explanation.**
+
+Consider a game with a switch and a door:
+
+| Reasoning | Question | Example |
+|---|---|---|
+| **Deduction** | Given this rule and these facts, what follows? | "Pressing the switch opens the door. The switch was pressed. Therefore, the door opens." |
+| **Induction** | What general rule might explain repeated observations? | "Across several recordings, pressing the switch was followed by the door opening. Perhaps pressing this switch opens this door." |
+| **Abduction** | What could explain this particular observation? | "The door has opened. Perhaps someone pressed the switch, even though we did not see that happen." |
+
+**Deduction** guarantees its conclusion *if the premises are true and the
+inference is valid*.
+
+**Induction** produces a supported generalization, not a guarantee. More
+examples strengthen it; counterexamples may require narrowing or rejecting it.
+
+**Abduction** produces a plausible explanation, not proof. The door might
+instead have opened because of a key, a timer, or another mechanism. Several
+explanations may remain possible.
+
+In our memory system, we retain **observations as evidence**, use **deduction
+to derive consequences**, use **induction to propose reusable rules**, and use
+**abduction to propose explanations for observed changes**.
+
+Crucially, **"we observed the door open" must remain distinct from "we infer
+that the switch was pressed."**
+
+### How the visual system is divided
+
+The visual system is divided into four layers, rather than treating all
+recognition as the same kind of reasoning:
+
+| Layer | What it does here | Produces |
+|---|---|---|
+| **Observation / extraction** | Extracts regions, Shapes and Object observations from each frame, then measures differences between frames. | Visual evidence, identities and correspondences |
+| **Deduction** | Applies an existing rule to that evidence. For example, a matched Object's position changed, so a movement detector concludes `moved(O1)`. | Derived events, with the rule and evidence cited |
+| **Event abduction** | Works backwards from an observed change: "O1 disappeared; could occlusion explain that?" It retains alternatives such as leaving the scene. | Possible explanations and their assumptions, not established events |
+| **Induction** | Learns reusable rules from multiple examples. It learns both **visual evidence -> event detectors** and **event/action -> subsequent event rules**. | Candidate rules, support and counterexamples |
+
+For the transition **frame 0 -> frame 1**, the new evidence and reasoning
+belong to **frame 1's context**. They must not rewrite what frame 0 knew.
+Previous-frame evidence uses validated sequence ordering, not guessed filename
+or timestamp order.
+
+Within memory:
+
+- **Shapes and Objects** retain their own database records in the agreed
+  `shapes_db.metta` and `objects_db.metta` files.
+- **Deduction rules** are distinct from **induction procedures**: accepted
+  inference rules describe what follows, while induction procedures describe
+  how candidate rules are learned.
+- **Induced rules** remain proposals until explicitly approved. Proposals stay
+  in the generating frame's `memory`; explicit promotion goes to that
+  recording's level STM, not automatically to game-level LTM.
+- **Abductive explanations** remain separately identified hypotheses. They must
+  not become observed facts merely because we stored them.
+
+All persistent Omega data stays under the one shared
+`data\omega_vision` root; workspace switches do not divide memory or identities.
+For canonical game recordings, frame memory is
+`recordings\<gameId>\<recordingId>\<frameId>\memory`.
+**Nowhere** remains current-browser RAM only.
+
+**Implementation status:** deduction, induction, and bounded deterministic
+event abduction are implemented as separately registered stages. Abduction is
+not another name for event detection or an arbitrary LLM guess. It unifies an
+observed effect with an accepted transition/action-effect rule and grounds
+possible earlier antecedents using known entities and evidence. Unsupported
+rules, contradictions, unresolved variables, future evidence, and future rule
+publications cannot produce an accepted explanation.
+
+`event_abduction_0/deterministic` saves immutable, non-authoritative snapshots
+to the current frame's `memory\abduced_events.metta`. Each explanation carries
+its assumptions, observed evidence, rule version, temporal bounds, and source
+identity. Ranking favors fewer assumptions, more observed support and shorter
+delay; these ranks are not probabilities. Search budgets and truncation are
+reported explicitly. No explanation automatically approves a rule or becomes
+a canonical observed event.
+
+Abduction currently requires explicit persistent Shape/Object memory
+preferences and an actual ordered canonical recording/frame context.
+**Nowhere abduction is not supported:** it fails before hypothesis persistence,
+rather than caching browser payloads on the server. Induction-procedure AST
+publication, richer group/class/A schemas and unspecified Movie/Chapter/LTM
+policies remain separate limitations.
+
+### Using the shared memory controls
+
+Every Visual Sequence selector follows the same revisioned selection across
+pages, workspaces, tabs and windows. The default is the 14-frame Level 1 sequence
+`recordings/ls20/20260718-154544`, without `_2`. Selecting a sequence updates only
+selection metadata; it never imports, runs recognition, or starts a demo.
+
+The Shape/Object inspector shows a visible Visual Sequence control and an
+explicit manifest-frame selector. Inherited and registered saved-area browsing
+remains available independently of sequence loading. Area selection never
+changes **Save To** or **Look In**.
+
+Fresh recording/level preferences choose that recording's level STM as the
+default destination when an explicit level is available. A physical
+frame-memory location cannot accidentally become the whole level's default.
+Existing saved selections, including explicitly chosen frame destinations,
+remain unchanged; using one outside its frame reports it as unavailable rather
+than silently retargeting the write.
+
+Opening/collapsing Memory Setup and editing its controls changes only the
+draft. **Save** is the explicit persistence action and retains revision-conflict
+protection. Inspection, filtering and refreshing do not save preferences.
+
+The Temporal events panel provides separate deduction, induction and abduction
+actions, with review before execution. Candidate evaluation and promotion carry
+the selected current frame and generating proposal frame. Abductive explanations
+are displayed separately from canonical events and advisory LLM output.
+
+Demos uses the same selector. Its live-source demo is observation-only and
+does not write the old demo cache or registry; persistent memory generation
+belongs to Recognition's native stages. Source-sensitive demo actions carry the
+expected shared selection revision so a delayed command from another window
+cannot silently run a different sequence.
+
 ## Contextual memory design and implementation boundary
 
 The following later user decisions supersede the earlier native JSON memory
@@ -133,7 +287,7 @@ automatic onward promotion. Presence in a file never approves, promotes or execu
 Existing authored `.pl`/`.py` implementations and candidate histories are not
 moved or rewritten by this design discussion.
 
-### Validated Shape/Object foundation; activation pending
+### Shape/Object foundation and retained implementation history
 
 The current backend implements native Shape/Object MeTTa databases, independently
 locked/versioned writes, exact original selected-record source, direct registered
@@ -155,9 +309,9 @@ producers/readers and recursive/A rich payload rendering remain planned; typed
 reference tags do not manufacture those records. Historical records are retained,
 not silently migrated or treated as newly approved rules.
 
-Live activation is held while the existing API hosts unrelated game sessions.
-Do not restart it merely to validate these changes without coordinating the
-in-memory session impact.
+Coordinate API activation against current session state; never discard an
+unrelated in-memory game session to activate an update. The entries below retain
+historical evidence and are not current startup or migration instructions.
 
 ## Integrated main acceptance
 
@@ -243,7 +397,14 @@ recognition images and extracted archives use existing family subdirectories
 within `curated/`, not new top-level `recognition_*`, `video` or `arc_recordings`
 roots. Preview images and intake metadata remain support artifacts, not sequences.
 
-Legacy sequence families **inside** the home remain visible through explicit
+The obsolete `arc_recordings` and `arc3_recordings` roots, including their
+`vision_frames` variants, are retired from active selection and discovery.
+Sequence APIs reject those locations without remapping them or moving data.
+Demos and Phase 3 use the shared selected Visual Sequence instead of an old
+hard-coded ARC directory. Historical provenance and unavailable-storage
+inventory retain their original text.
+
+Other legacy sequence families **inside** the home remain visible through explicit
 read adapters. Catalog entries include `readOnly`, `migrationRequired` and a
 visible read-only label. Existing video frame directories remain usable for
 playback. Transform/todo/preprocessing/image-output writes to legacy sequence

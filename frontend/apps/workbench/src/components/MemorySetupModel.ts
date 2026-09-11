@@ -41,6 +41,22 @@ export interface MemoryPreferences {
   revision: string;
 }
 
+export function createMemoryPreferenceRequestGuard() {
+  let generation = 0;
+  let writing = false;
+  return {
+    beginRead: () => writing ? null : ++generation,
+    beginSave: () => {
+      if (writing) return null;
+      writing = true;
+      return ++generation;
+    },
+    isCurrent: (request: number) => request === generation,
+    finishSave: (request: number) => { if (request === generation) writing = false; },
+    reset: () => { ++generation; writing = false; },
+  };
+}
+
 export interface MemoryBranch {
   id: string;
   label: string;

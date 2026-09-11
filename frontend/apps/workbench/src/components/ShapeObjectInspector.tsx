@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ResourceSourceEditor } from "./ResourceSourceEditor";
 import { ShapeObjectInspectorPreview } from "./ShapeObjectInspectorPreview";
+import { formatInspectorType } from "./ShapeObjectInspectorTypeDisplay";
 import {
   exactReferencedRecord, inspectRecord, objectValue, recordIdentity,
   type InspectorConcept, type InspectorRecord, type InspectorReference, type ShapeReference,
@@ -87,7 +88,7 @@ function RecordPanel({ record, onResolveReference, onNavigate }: Pick<ShapeObjec
   const properties = Object.fromEntries(Object.entries(model.properties)
     .filter(([key]) => !["canonicalPoints", "points", "cells", "turtle", "forms", "members", "shapeReferences", ...historyFields].includes(key)));
   return <article className="shape-inspector__record">
-    <h4>{model.title}</h4>
+    <h4 title={record.recordUid}>{formatInspectorType(record.memoryKind, record.payload.alias)} / {model.title}</h4>
     <p><strong>{model.format}</strong> - {model.status}</p>
     {model.notices.map((notice, index) => <p key={index} role="note" className="shape-inspector__notice">{notice}</p>)}
     <InspectorProperties value={sourceSummary} label="Identity and source provenance" />
@@ -121,9 +122,16 @@ function RecordPanel({ record, onResolveReference, onNavigate }: Pick<ShapeObjec
       <details key={key}><summary>{key} ({Array.isArray(model.properties[key]) ? model.properties[key].length : "stored"})</summary>
         <InspectorProperties value={model.properties[key]} label={`Stored ${key}; not re-evaluated`} />
       </details>)}
-    <details><summary>Exact immutable source (JSON / MeTTa)</summary>
+    {record.originalSource ? <details><summary>Original stored MeTTa document</summary>
+      <p>{record.originalSource.path} / {record.originalSource.entryUid}</p>
+      <p>Text mode shows the supplied document unchanged. Converted views are projections, not stored bytes.</p>
+      <ResourceSourceEditor value={record.originalSource.text} onChange={() => undefined}
+        contentReadOnly defaultFormat="text" defaultTextLang="clojure" sourcePath={record.originalSource.path}
+        label="Original selected MeTTa document (read-only)" />
+    </details> : <p role="status">Original source document not supplied. The record below is a normalized projection, not original file bytes.</p>}
+    <details><summary>Normalized record projection (JSON / converted MeTTa)</summary>
       <ResourceSourceEditor value={JSON.stringify(record, null, 2)} onChange={() => undefined}
-        contentReadOnly defaultFormat="json" label="Exact memory record and original provenance" />
+        contentReadOnly defaultFormat="json" label="Normalized memory record and provenance (projection)" />
     </details>
   </article>;
 }

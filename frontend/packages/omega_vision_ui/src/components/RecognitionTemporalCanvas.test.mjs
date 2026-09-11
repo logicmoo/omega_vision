@@ -21,7 +21,7 @@ test("combined import page exposes the original intake, player and rich frame/fi
 test("one existing rich events panel opens in the current Recognition context without navigation or execution", () => {
   assert.equal((page.match(/<SemanticEventsPanel\b/g) || []).length, 1);
   assert.match(page, /<RecognitionTemporalCanvas[^>]*active=\{activeSubview === "recognition"\}/);
-  assert.match(page, /selectedFrameId=\{expandedReduceId \|\| ""\}/);
+  assert.match(page, /selectedFrameId=\{executionFrameForRow\(recognitionReduce\?\.items \|\| \[\], expandedReduceId \|\| ""\) \|\| ""\}/);
   assert.match(canvas, /anchor\.after\(host\)/);
   assert.match(canvas, /rememberedBounds\.bottom > top/);
   assert.match(canvas, /document\.elementFromPoint/);

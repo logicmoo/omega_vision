@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  NOWHERE, addLocations, flattenMemoryTree, memoryTree, preferencesEqual,
+  NOWHERE, addLocations, createMemoryPreferenceRequestGuard, flattenMemoryTree, memoryTree, preferencesEqual,
   selectionSummary, toggleLocations, triState, visibleWindow,
 } from './MemorySetupModel.ts';
 
@@ -96,4 +96,42 @@ test('workspace provenance does not partition shared tree identities or destinat
   assert.equal(summary.destination, 'Run Memory (run)');
   assert.equal(summary.unavailableDestination, false);
   assert.equal(memoryTree([other], 'shape', 'other-workspace')[0].locationIds[0], 'shared');
+});
+
+test('a preference save retires preceding setup reads and excludes concurrent reads and saves', () => {
+  const guard = createMemoryPreferenceRequestGuard();
+  const oldSetup = guard.beginRead();
+  const save = guard.beginSave();
+  assert.equal(guard.isCurrent(oldSetup), false);
+  assert.equal(guard.isCurrent(save), true);
+  assert.equal(guard.beginRead(), null);
+  assert.equal(guard.beginSave(), null);
+  guard.finishSave(save);
+  const nextSetup = guard.beginRead();
+  assert.equal(guard.isCurrent(save), false);
+  assert.equal(guard.isCurrent(nextSetup), true);
+});
+
+test('context resets retire old preference responses even after returning to the same context', () => {
+  const guard = createMemoryPreferenceRequestGuard();
+  const firstSave = guard.beginSave();
+  guard.reset();
+  const otherContextRead = guard.beginRead();
+  guard.reset();
+  const returningSave = guard.beginSave();
+  assert.equal(guard.isCurrent(firstSave), false);
+  assert.equal(guard.isCurrent(otherContextRead), false);
+  guard.finishSave(firstSave);
+  assert.equal(guard.beginRead(), null);
+  assert.equal(guard.isCurrent(returningSave), true);
+  guard.finishSave(returningSave);
+  assert.notEqual(guard.beginRead(), null);
+});
+
+test('newer setup requests supersede old results without mutating preferences', () => {
+  const guard = createMemoryPreferenceRequestGuard();
+  const oldSetup = guard.beginRead();
+  const newSetup = guard.beginRead();
+  assert.equal(guard.isCurrent(oldSetup), false);
+  assert.equal(guard.isCurrent(newSetup), true);
 });

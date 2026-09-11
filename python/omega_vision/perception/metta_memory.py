@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager, nullcontext
 import os
+import json
 from pathlib import Path
 from threading import local
 from typing import Any, Mapping
@@ -20,6 +21,7 @@ DATABASE_FILES = {
     "shape": "shapes_db.metta", "object": "objects_db.metta",
     "deduction": "deduction_rules.metta", "induction": "induction_rules.metta",
     "induced": "induced_rules.metta",
+    "hypothesis": "abduced_events.metta",
 }
 PLANNED_DATABASE_FILES = {
     "shape_group": "shape_groups_db.metta", "object_group": "object_groups_db.metta",
@@ -34,6 +36,27 @@ def is_memory_directory(name: str) -> bool:
     return (name in {"memory", "memory_inherited", "memory_recordings", "memory_game_all",
                      "object_memory", "shape_dir", "identity_dir"}
             or name.startswith(("memory_level_", "object_memory_")))
+
+
+def initial_recording_state(root: Path, directory: Path) -> dict[str, Any] | None:
+    """Validate the pre-action root image retained by existing ARC recordings."""
+    home = storage_path(root)
+    relative = directory.relative_to(home)
+    if len(relative.parts) != 3 or relative.parts[0] != "recordings":
+        return None
+    image = storage_path(root, *relative.parts, "image.png")
+    state_path = storage_path(root, *relative.parts, "state.json")
+    if image != directory / "image.png" or state_path != directory / "state.json":
+        raise PermissionError("Initial recording observation was redirected")
+    if not image.is_file():
+        return None
+    if not state_path.is_file():
+        raise ValueError("Initial recording image requires explicit state metadata")
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    if (not isinstance(state, dict) or type(state.get("step_count")) is not int or state["step_count"] != 0
+            or state.get("incoming_action") is not None or state.get("parent_node") is not None):
+        raise ValueError("Root recording image is not an explicit pre-action observation")
+    return state
 
 
 @contextmanager
@@ -88,9 +111,16 @@ class MeTTaMemoryDatabase:
             valid |= parts[3].startswith("memory_level_") and parts[3].endswith("_stm")
         if len(parts) == 5 and parts[0] == "recordings":
             valid |= parts[4] == "memory" and not is_memory_directory(parts[3])
+        initial = (len(parts) == 6 and parts[0] == "recordings"
+                   and parts[3:] == ("transforms", "image", "memory"))
+        if initial:
+            valid |= initial_recording_state(self.root, self.root.joinpath(*parts[:3])) is not None
         if not valid or self.area != area:
             raise PermissionError("Not a registered physical Omega memory area")
+        if role == "hypothesis" and not (initial or (len(parts) == 5 and parts[0] == "recordings" and parts[4] == "memory")):
+            raise PermissionError("Abduced event hypotheses belong only to current frame memory")
         self.role = role
+        self.initial = initial
         self.path = self._safe(self.area / DATABASE_FILES[role])
 
     def _safe(self, path: Path) -> Path:
@@ -142,7 +172,9 @@ class MeTTaMemoryDatabase:
             self._safe(self.path)
             self._safe(self.area / ".writer.lock")
             if len(self.area.relative_to(self.root).parts) >= 3 and not self.area.parent.is_dir():
-                raise PermissionError("Memory source context no longer exists; no directory is recreated")
+                if not self.initial or initial_recording_state(self.root, self.area.parents[2]) is None:
+                    raise PermissionError("Memory source context no longer exists; no directory is recreated")
+                self.area.parent.mkdir(parents=True, exist_ok=True)
             with writer_lock(self.area):
                 self._safe(self.path)
                 self._safe(self.area / ".writer.lock")

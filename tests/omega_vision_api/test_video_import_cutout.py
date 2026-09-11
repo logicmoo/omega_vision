@@ -846,7 +846,7 @@ def test_standard_stream_urls_and_arc_playback_import_include_move_prefix(
     Image.new("RGB", (10, 10), "green").save(curated / "frame_10.png")
     Image.new("RGB", (10, 10), "yellow").save(curated / "frame_2.png")
 
-    listing = video_import_api.list_arc_recordings("test")["recordings"]
+    listing = video_import_api.list_recordings("test")["recordings"]
     assert listing[0]["frames"] == 3
     assert listing[0]["path"].lower().startswith("data/recordings/")
     imported = video_import_api.import_arc_recording(

@@ -35,6 +35,201 @@ research, or services.
 
 ## Current recovery state
 
+### Completed memory implementation checkpoint (2026-09-12)
+
+This checkpoint supersedes the incomplete-status notes below, while preserving
+their incident history. Work remains in the user's existing local `main`.
+
+- Fixed recording/level default selection: current-frame locations remain
+  explicitly selectable, but cannot be frozen as defaults shared with other
+  frames. The defaults cache now contains only context-stable native choices.
+  Saved user preferences are not rewritten or silently retargeted.
+- Traced the unexpected preferences PUT to Memory Setup's disclosure handler,
+  which previously called Save. Disclosure now edits a draft only; explicit Save
+  retains conflict handling, duplicate-write protection and stale-response guards.
+- The native multi-frame active integration suite passed all 24 cases after
+  the default fix. Shared selector, inspector and reasoning frontend coverage
+  passed 135 cases and the active frontend builds.
+- Existing root-initial observations are implemented as the pipeline's
+  existing `image` unit (`transforms/image/memory`), gated by explicit step-zero
+  state. Numbered moves and old data stay in place; current/previous context
+  must match the same execution order.
+- User expressly authorized repairing only the stale `_2` directory references
+  in the selected unsuffixed recording's `recording.json`. Original manifest:
+  `data/omega_vision/runtime/recording-manifest-repairs/ls20-20260718-154544-b8336ea2d6ee448fb134c6399c12984a/recording.json`,
+  SHA-256 `16FCD28A918DF1A5364080E1C606D6B765380282C118E36FA069FBA2F3559E56`.
+  Only `level_directory` and the 13 `moves[].directory` references were changed.
+  No images, actions, timestamps, geometry, source recording or duplication were
+  merged/deleted/rewritten. The deferred duplication task is still deferred.
+- `OMEGA_STORAGE_BOUNDARY.md` now documents the implemented bounded abduction
+  stage and `abduced_events.metta`, scoped induction review, shared selection,
+  explicit preference Save and remaining unsupported domains. No claim is made
+  that Nowhere abduction, arbitrary learning-procedure ASTs, richer group/class/A
+  schemas or unspecified hierarchy/LTM policies have been implemented.
+- Completed real-dispatcher abduction first/repeat runs against extended
+  canonical logs. Immutable prefix receipts are authenticated against journal
+  history and current prefix evidence instead of requiring the latest whole
+  snapshot. Changed evidence is still rejected. Nowhere/missing preferences
+  make abduction unavailable for execution, not the entire execution inspector.
+- Focused combined Python coverage passed 277 cases; the full active integration
+  suite passed 24, additional prefix/repeat-abduction coverage passed 21, final
+  context/default coverage passed 83, and the final Demos observation suite
+  passed 6. Frontend memory/selector coverage passed 135 and the build completed.
+  The final focused review reported no significant remaining issue.
+- Activated via the existing visible API supervisor only after the live API
+  reported no game sessions or active demo. Vite and the deferred duplicate
+  data were not restarted or altered. Actual LS20 context returns 14 moments:
+  `image` at order 0, move `0` at order 1, through move `12` at order 13.
+- The browser tool's shared profile was occupied, so the user authorized a
+  separate temporary Chrome profile; no existing browser was terminated.
+  Actual `workspace=arc3_random_player` inspector and Demos tabs showed the
+  same canonical selection, enabled frame/source controls, and no automatic
+  run/import or preference PUT. Opening Memory Setup created only a draft;
+  selecting Previous Moment on the initial image returned `no_predecessor`
+  without changing Save To/Look In. Screenshots are retained in session
+  artifacts as `memory-final-inspector.png` and `memory-final-demos.png`.
+- This is the completion checkpoint for the scoped local-main source commit.
+  It does not claim completion of the deferred design domains or the separate
+  recording-duplication cleanup.
+
+### Obsolete ARC sequence roots retired (2026-09-11)
+
+At the user's request, remove active defaults, catalogue families and path
+rewrites for `arc_recordings` / `arc3_recordings` and nested variants.
+These names remain only in retirement guards, unavailable-storage inventory,
+negative regression fixtures and historical documentation/provenance.
+Demos and Phase 3 now resolve the shared selected source; previews no longer
+scan an obsolete directory or choose the longest unrelated recording.
+Cross-window selection reflection replaces stale sequence URL parameters while
+preserving the rest of the URL and without importing/running anything.
+No recording data or historical provenance was deleted or rewritten.
+The previously observed page-state JSON was already absent when checked;
+do not recreate or replace it merely to remove a historical reference.
+The focused retirement suite passed 80 Python cases and 29 Node cases, and the
+active frontend builds. At the final activation check neither port 8000 nor
+5173 had a listener and no API launcher process was found. No closed service
+was restarted. The cleanup is saved in this checkout and takes effect on the
+next authorized startup; it is not a claim of live acceptance or completion of
+the separately pending memory-default integration issue.
+
+### Live selector/source recovery checkpoint (2026-09-10)
+
+The user independently moved/restored the unsuffixed source and then explicitly
+approved `recordings/ls20/20260718-154544` as the shared default everywhere.
+The live catalog reports 14 frames, Level 1, writable canonical storage; the
+old `arc_recordings/data-recordings-ls20-20260718-154544` directory is absent.
+The shared preference was saved at version 1 under
+`data\omega_vision\preferences\visual_sequence_selection.json`. No recording
+files were changed for this default update. The earlier duplication/copy
+checkpoint below remains historical evidence, not permission to resume merging.
+
+The user approved API-only activation. The visible supervisor restarted the
+API without restarting Vite or requesting a pooler change. The new selection
+route now serves the real nonempty catalog (622 choices at the recovery check).
+Demos source synchronization now carries the expected shared revision, and
+source-sensitive Run/Play/Seek commands validate that binding. The corrected
+live WebSocket acknowledged the canonical unsuffixed source and its revision
+without a Run command; a freshly loaded Demos page had its Run control enabled.
+Older page instances can retain the earlier missing-argument/waiting state
+until reloaded. Source/result snapshots and preview cache keys are bound to
+the same captured sequence, preventing cross-window relabelling.
+
+Memory implementation remains in progress, not complete: the expanded native
+integration tests exposed frame-local default destinations being frozen into
+recording/level preferences. That cross-frame default issue still needs repair.
+The abduction stage, causal API integration, shared selector UI and related
+changes are uncommitted. Do not claim the whole memory workflow is finished.
+
+### Memory implementation resumed explicitly (2026-09-10, 20:55 +08:00)
+
+The user requested implementing the memory workflow now, including deduction,
+induction, and event abduction. Parent continues option-A native memory API
+wiring and shared selection/context endpoints. Bounded helpers
+`memory-abduction-engine` and `memory-selection-ui` own only their explicit
+core/adapter/test and frontend-selector allowlists in this same local checkout;
+parent alone owns staging/commits and service lifecycle. No helper may touch
+the deferred recording duplication or operator data.
+The visible inspector selector, Demos, and other Visual Sequence pickers must
+share one persisted selection across all browser windows. The confirmed
+legacy unsuffixed default remains read-only until the user resolves migration.
+Abductive explanations must be separate grounded hypotheses with assumptions,
+evidence, scope, and rule provenance, never auto-approved observed facts.
+This resumption does not authorize finishing the partial recording copy,
+stopping its active pooler, or silently discarding API sessions.
+
+### Recording duplication deferred by user (2026-09-10)
+
+The user will resolve the recording duplication later. Stop this migration:
+do not continue copying, overwrite more files, delete sources, or pause/restart
+the pooler to finish it without renewed authorization.
+
+The user had explicitly authorized copying
+`recordings/ls20/20260718-154544_2` into `recordings/ls20/20260718-154544`,
+preferring the `_2` geometry and archiving the destination's prior geometry.
+All 14 `_2` frames matched the selected legacy sequence pixel-for-pixel.
+The copy then stopped on a checksum mismatch at `7/todos.json`: the active
+transformation pooler is writing the `_2` recording (control command `run`).
+At the last read the destination contained 23 files, and `recording.json` had
+NOT been copied. This is a partial copy, not a completed migration or a new
+validated default. Do not refresh/relabel it as a complete recording.
+
+The original destination geometry was backed up and hash-verified at
+`data\omega_vision\runtime\recording-merges\ls20-20260718-154544-52ee3189ad724b61aef7acec421ef44f\before\transforms\image\parts_extraction_0\python_opencv\geometry.json`
+(SHA-256 `1AC40039DE2886F7F96375FA18B7DEC7C23BF27A86F9795B348B7210E34E06CC`).
+Neither `_2` nor the legacy `arc_recordings` source was deleted or modified by
+the copy operation. The pooler, API, and Vite were not stopped. Its active
+writes prevent claiming that the source stayed unchanged during copying.
+
+### Shared Visual Sequence selection confirmed (2026-09-10)
+
+All Visual Sequence combo boxes must share one selection across Recognition,
+Objects, Demos, the Shape/Object memory inspector, and all open Workbench browser
+tabs/windows. Do not partition that selection by workspace or give the inspector
+an independent first-available default.
+
+The user selected and confirmed the exact 14-frame browsing default
+`arc_recordings/data-recordings-ls20-20260718-154544` (provider reference
+`data/arc_recordings/data-recordings-ls20-20260718-154544`), WITHOUT `_2`.
+The shared catalog reports this historical sequence as read-only and requiring
+explicit migration for writes. The user explicitly accepted it as the shared
+browsing default. Do not substitute `recordings/ls20/20260718-154544_2`, copy or
+migrate the recording, or bypass contextual-memory/write restrictions.
+Unavailable recording/frame context must remain explicit.
+
+Selection changes must not start imports, recognition, models, or demo
+computation. Preserve unrelated page/subview state and independent memory
+Save To / Look In choices. Cross-tab/window synchronization and Demos/inspector
+selector integration remain pending implementation; identifying the default
+is not evidence that those controls already synchronize.
+
+### Recognition Help explanations (2026-09-10)
+
+At the user's follow-up request, both explanations now live in
+`docs/design/OMEGA_STORAGE_BOUNDARY.md` beside the explicit game/level/recording/
+frame memory tree, not in `docs/VIDEO_IMPORT.md`. Video Import Help retains a
+link rather than a duplicate. The existing right-side Help panel selects
+`Recognition & Memory` for the Recognition subview and Demos; other Video
+Import subviews retain their own help. Both the general switch/door comparison
+and the visual-system split preserve frame-local causality, proposal/approval
+distinctions, the agreed MeTTa layout, and the status that event abduction is
+still being designed. This does not mark the pending memory API wiring or
+Demos selector integration complete.
+
+### Memory layout reaffirmed (2026-09-10, 20:21 +08:00)
+
+The user confirmed retaining the earlier memory design, not replacing it with
+the intervening `memory_frame`/directory sketch. Under the shared
+`data\omega_vision\recordings\<gameId>` root, keep `memory_game_all`,
+`memory_level_<n>_ltm`, `<recordingId>\memory_level_<n>_stm`, and
+`<recordingId>\<frameId>\memory`. Memory areas retain the documented MeTTa
+database files, including `shapes_db.metta` and `objects_db.metta`, with separate
+group/class databases as specified in `docs/design/OMEGA_STORAGE_BOUNDARY.md`.
+Keep frame-local induced proposals, explicit promotion to that recording's
+level STM, strict-previous reads, and no automatic onward promotion or LTM copy.
+Do not implement `memory_frame`, singular `shape_db`/`object_db` directories,
+or a new `prev_frame_induction` directory based on the superseded sketch.
+No memory paths, files, or historical data were changed by this confirmation.
+
 ### Resumed TODO implementation (2026-09-10)
 
 The user requested resuming this TODO list after the local-main ledger cleanup.

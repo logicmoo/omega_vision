@@ -16,7 +16,7 @@ from ._event_journal import atomic_json, writer_lock
 from .observation_identity import content_hash
 
 VERSION = 1
-CATALOG_VERSION = "physical-sequence-options-v1"
+CATALOG_VERSION = "physical-sequence-options-v2"
 MAX_AGE_SECONDS = 300
 _LOG = logging.getLogger(__name__)
 _FIELDS = {

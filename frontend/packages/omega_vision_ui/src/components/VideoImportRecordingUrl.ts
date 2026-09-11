@@ -2,6 +2,18 @@ const RECORDING_QUERY_PARAMETER = "recording";
 const GAME_QUERY_PARAMETER = "game";
 const SAFE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
+type FrameIdentityRow = { id?: unknown; unitId?: unknown };
+
+export function executionFrameForRow(rows: readonly FrameIdentityRow[], rowId: string): string | undefined {
+  const matches = rows.filter(row => row.id === rowId && typeof row.unitId === "string" && row.unitId);
+  return matches.length === 1 && typeof matches[0].unitId === "string" ? matches[0].unitId : undefined;
+}
+
+export function rowForExecutionFrame(rows: readonly FrameIdentityRow[], frameId: string): string | undefined {
+  const matches = rows.filter(row => row.unitId === frameId && typeof row.id === "string" && row.id);
+  return matches.length === 1 && typeof matches[0].id === "string" ? matches[0].id : undefined;
+}
+
 export interface VisualSequenceCatalogEntry {
   id: string;
   visualSequenceId?: string;

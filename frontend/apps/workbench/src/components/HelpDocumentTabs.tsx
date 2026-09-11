@@ -8,6 +8,7 @@ type OpenedDocument={path:string;content:string};
 const docTabs:HelpTab[]=[
  {id:"theses",label:"Theses",repositoryPath:"docs/design/EXECUTIVE_VISION.md"},
  {id:"videoImport",label:"Video Import",repositoryPath:"docs/VIDEO_IMPORT.md"},
+ {id:"recognition",label:"Recognition & Memory",repositoryPath:"docs/design/OMEGA_STORAGE_BOUNDARY.md"},
  {id:"googleMeet",label:"Google Meet",repositoryPath:"docs/GOOGLE_MEET_BRIDGE.md"},
  {id:"overview",label:"Overview",path:"docs/system_overview.md"},
  {id:"goals",label:"Goals",path:"docs/goals.md"},

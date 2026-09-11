@@ -1,5 +1,28 @@
 export type SemanticRecord = Record<string, unknown>;
 
+export type SemanticRuleContext = {
+  workspaceId: string;
+  sequenceId: string;
+  frameId: string;
+  proposalFrameId: string;
+};
+
+export function scopedCandidateBody(
+  action: string, kind: unknown, body: SemanticRecord, context: SemanticRuleContext,
+): SemanticRecord {
+  if (Object.values(context).some(value => !value.trim())) {
+    throw new Error("Select an actual current frame and proposal frame before acting on a rule.");
+  }
+  if (action === "evaluate" && kind === "grouping") {
+    return { ...context, evaluationSequenceId: body.evaluationSequenceId ?? body.sequenceId,
+      partition: body.partition, labels: body.labels };
+  }
+  if (action === "deployment") {
+    return { ...context, reviewer: body.reviewer, reason: body.reason };
+  }
+  return { ...body, ...context };
+}
+
 export type SemanticPlan = {
   stageId: string;
   label: string;

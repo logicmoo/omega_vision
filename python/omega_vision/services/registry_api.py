@@ -9,7 +9,7 @@ import json
 import sys
 from pathlib import Path
 
-from fastapi import APIRouter, Body, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Body, HTTPException, Query, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
@@ -54,11 +54,20 @@ def recognition_demos_run(payload: dict | None = Body(default=None)) -> dict:
     running state immediately; the page observes results via GET. `only` reruns a
     single test by id."""
     from omega_vision.demos import recognition_demos as rd
+    from omega_vision.perception._event_journal import ConflictError
 
     only = None
     if isinstance(payload, dict) and payload.get("only"):
         only = str(payload["only"]).strip()
-    return rd.start_demo_run(only)
+    data = payload or {}
+    try:
+        return rd.start_demo_run(only, workspace_id=data.get("workspaceId"),
+                                 visual_sequence_id=data.get("visualSequenceId"),
+                                 expected_revision=data.get("expectedRevision"))
+    except ConflictError as error:
+        raise HTTPException(409, str(error)) from error
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 @router.post("/recognition/demos/stop")
@@ -136,19 +145,36 @@ async def recognition_demos_ws(websocket: WebSocket) -> None:
             did = msg.get("id")
             try:
                 if cmd == "run":
-                    await asyncio.to_thread(rd.start_demo_run, (str(did).strip() if did else None), bool(msg.get("stepped")))
+                    await asyncio.to_thread(
+                        rd.start_demo_run, (str(did).strip() if did else None), bool(msg.get("stepped")),
+                        workspace_id=msg.get("workspaceId"), visual_sequence_id=msg.get("visualSequenceId"),
+                        expected_revision=msg.get("expectedRevision"),
+                    )
                 elif cmd == "stop":
                     await asyncio.to_thread(rd.stop_demo_run)
                 elif cmd == "clear":
                     await asyncio.to_thread(rd.clear_demo_state, (str(did).strip() if did else None))
                 elif cmd == "play" and did:
-                    await asyncio.to_thread(rd.set_demo_play, str(did), bool(msg.get("playing", True)))
+                    if did == "live-ls20" and msg.get("playing", True):
+                        await asyncio.to_thread(rd.with_visual_sequence_context, msg.get("workspaceId"),
+                                                msg.get("visualSequenceId"), msg.get("expectedRevision"),
+                                                lambda: rd.set_demo_play(str(did), True))
+                    else:
+                        await asyncio.to_thread(rd.set_demo_play, str(did), bool(msg.get("playing", True)))
                 elif cmd == "seek" and did is not None and "index" in msg:
-                    await asyncio.to_thread(rd.seek_demo, str(did), int(msg.get("index", 0)))
+                    if did == "live-ls20":
+                        await asyncio.to_thread(rd.with_visual_sequence_context, msg.get("workspaceId"),
+                                                msg.get("visualSequenceId"), msg.get("expectedRevision"),
+                                                lambda: rd.seek_demo(str(did), int(msg.get("index", 0))))
+                    else:
+                        await asyncio.to_thread(rd.seek_demo, str(did), int(msg.get("index", 0)))
                 elif cmd == "select_source":
-                    # ONLY set the source — never auto-run. The user explicitly presses
-                    # Run / Run Stepped to load it (e.g. to step through the 410-move run).
-                    await asyncio.to_thread(rd.set_ls20_source, (str(msg.get("source")) if msg.get("source") else None))
+                    raise ValueError("Use the shared Visual Sequence selector with its expected revision")
+                elif cmd == "select_visual_sequence":
+                    if not isinstance(msg.get("visualSequenceId"), str) or not isinstance(msg.get("workspaceId"), str):
+                        raise ValueError("visualSequenceId and workspaceId are required")
+                    await asyncio.to_thread(rd.set_visual_sequence_source, msg["visualSequenceId"], msg["workspaceId"],
+                                            msg.get("expectedRevision"))
                 elif cmd == "set_write_memory":
                     await asyncio.to_thread(rd.set_ls20_write, bool(msg.get("value")))
                 elif cmd == "set_store_mode":

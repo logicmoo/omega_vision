@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw
 
+from omega_vision.perception.metta_memory import MeTTaMemoryDatabase
 from omega_vision.services import video_import_api as api
 from omega_vision.services import video_import_semantics as semantics
 from omega_vision.services import transform_task_pooler as pooler
@@ -28,17 +29,27 @@ def integrated(tmp_path, monkeypatch):
 
 
 def sequence(root, name="seq", count=3, ordered=True):
-    directory = root / "data" / "omega_vision" / "recordings" / name
+    directory = root / "data" / "omega_vision" / "recordings" / "integration" / name
     directory.mkdir(parents=True)
     if ordered:
-        (directory / "recording.json").write_text(json.dumps({"game_id": "integration", "level": 1}))
+        (directory / "recording.json").write_text(json.dumps({
+            "game_id": "integration", "level": "1",
+            "moves": [{"directory": f"frame_{index:06}", "level": "1"} for index in range(count)],
+        }), encoding="utf-8")
     for index in range(count):
-        path = directory / "image.png" if index == 0 else directory / str(index - 1) / "image.png"
+        path = directory / f"frame_{index:06}" / "image.png"
         path.parent.mkdir(parents=True, exist_ok=True)
         image = Image.new("RGB", (48, 32), "black")
         ImageDraw.Draw(image).rectangle((4 + index, 5, 14 + index, 18), fill="red")
         image.save(path)
-    return "data/recordings/" + name
+    return "data/recordings/integration/" + name
+
+
+def stored_memory_records(root, kind):
+    home = root / "data" / "omega_vision"
+    return [entry["record"] for path in home.rglob(f"{kind}s_db.metta")
+            for entry in MeTTaMemoryDatabase(home, path.parent, kind).read()
+            if entry["entryType"] == "memory_version"]
 
 
 def finish(client, job, expected="done"):
@@ -46,7 +57,10 @@ def finish(client, job, expected="done"):
     while time.monotonic() < deadline:
         value = client.get(f"/video-import/direct-calls/{job['id']}", params={"workspaceId": "w"}).json()
         if value["state"] not in {"running", "starting"}:
-            assert value["state"] == expected, value
+            assert value["state"] == expected, {
+                "state": value["state"], "error": value.get("error"),
+                "failures": [item for item in value["recent"] if item["status"] in {"error", "blocked"}],
+            }
             return value
         time.sleep(0.03)
     pytest.fail("Semantic execution did not finish")
@@ -80,10 +94,10 @@ def test_first_direct_plan_resolves_default_preferences_once_without_foreign_mem
         frame.mkdir(parents=True)
         (frame / "result.json").write_text("unrelated generated payload")
     mounts = [
-        memory.AuthorizedMemoryRoot("filesystem:omega_vision", "omega_vision", root / "workspace", "Shared", writable=True),
+        memory.AuthorizedMemoryRoot("filesystem:omega_vision", "omega_vision",
+                                    root / "data" / "omega_vision", "Shared", writable=True),
         memory.AuthorizedMemoryRoot("external", "w", external, "External recordings"),
     ]
-    mounts[0].root.mkdir()
     monkeypatch.setattr(semantics, "authorized_memory_roots", lambda _: mounts)
     discoveries = []
     discover = memory.MemoryLocations._discovered
@@ -105,6 +119,7 @@ def test_first_direct_plan_resolves_default_preferences_once_without_foreign_mem
     assert memory._DEFAULT_PREFERENCE_READS.get() is None
     assert not api._direct_jobs
     assert not list(root.rglob("todos.json")) and not list(root.rglob("*.memory.json"))
+    assert not stored_memory_records(root, "shape") and not stored_memory_records(root, "object")
     assert not (mounts[0].root / "runtime").exists()
     assert not list(root.rglob("meta.json"))
 
@@ -119,7 +134,8 @@ def test_real_cv_objects_events_and_inspectable_sources(integrated):
     job = finish(client, commit(client, body, preview, run=True))
     assert job["imageCount"] == 2
     assert not list(root.rglob("todos.json"))
-    assert not (root / "data" / "omega_vision" / "recordings" / "seq" / "1" / "event_log_0").exists()
+    units = api._sequence_execution_context(root, sequence_id, "w")[1]
+    assert not semantics._artifact(units[2], semantics.LOG).parent.exists()
     response = client.get("/video-import/semantic/execution", params={
         "workspaceId": "w", "sequenceId": sequence_id, "firstN": 2,
     })
@@ -131,13 +147,55 @@ def test_real_cv_objects_events_and_inspectable_sources(integrated):
     assert all(output["status"] == "done" and output["error"] is None and output["staleReason"] is None
                for output in state["outputs"])
     assert any(entry["path"].endswith("checkpoint.json") for entry in state["artifacts"])
-    units = api._sequence_execution_context(root, sequence_id, "w")[1]
     bundle = json.loads(semantics._artifact(units[0], semantics.IDENTITY, "observations.json").read_text())
     assert bundle["groups"]
     canonical = semantics._event_log(root, sequence_id).read()
     assert canonical["entries"][0]["assessment"] == "initial_observation"
     assert any(entry["kind"] == "transition_assessment" for entry in canonical["entries"])
     assert list((root / "data" / "omega_vision" / "runtime" / "temporal-checkpoints").glob("*.json"))
+
+
+def test_real_memory_pipeline_includes_root_initial_observation_without_reindexing_moves(integrated):
+    root, client = integrated
+    sequence_id = sequence(root, count=2)
+    directory = root / "data" / "omega_vision" / "recordings" / "integration" / "seq"
+    image = Image.new("RGB", (48, 32), "black")
+    ImageDraw.Draw(image).rectangle((3, 5, 13, 18), fill="red")
+    image.save(directory / "image.png")
+    (directory / "state.json").write_text(json.dumps({
+        "game_id": "integration", "level": "1", "step_count": 0, "incoming_action": None, "parent_node": None,
+    }))
+    body, preview = plan(client, sequence_id, first_n=3)
+    finish(client, commit(client, body, preview, run=True))
+    initial = semantics._inspection_context(root, sequence_id, "image")
+    first_move = semantics._inspection_context(root, sequence_id, "frame_000000")
+    assert initial.current.order == 0 and first_move.current.order == 1
+    assert [moment.frame_id for moment in first_move.moments] == ["image", "frame_000000", "frame_000001"]
+    grouping_body, grouping_plan = plan(client, sequence_id, stage=semantics.GROUPING, first_n=3)
+    finish(client, commit(client, grouping_body, grouping_plan, run=True))
+    records = stored_memory_records(root, "shape")
+    assert records and {record["causal"]["frameOrder"] for record in records} == {0, 1, 2}
+    assert all("memory_level_1_stm" in record["source"]["registeredPath"] for record in records)
+
+
+def test_dispatcher_abduction_runs_after_extended_log_and_repeats_without_rewriting_history(integrated):
+    from omega_vision.services import video_import_abduction
+    root, client = integrated
+    sequence_id = sequence(root, count=3)
+    body, preview = plan(client, sequence_id, first_n=3)
+    finish(client, commit(client, body, preview, run=True))
+    journal = semantics._event_log(root, sequence_id)
+    before = journal.read()
+    for _ in range(2):
+        body, preview = plan(client, sequence_id, stage=video_import_abduction.STEP, first_n=3)
+        finish(client, commit(client, body, preview, run=True))
+    assert journal.read() == before
+    home = root / "data" / "omega_vision"
+    databases = list(home.rglob("abduced_events.metta"))
+    assert len(databases) == 3
+    for path in databases:
+        entries = MeTTaMemoryDatabase(home, path.parent, "hypothesis").read()
+        assert len(entries) == 1 and entries[0]["authoritative"] is False
 
 
 @pytest.mark.parametrize("legacy_metadata", [False, True])
@@ -325,14 +383,14 @@ def test_semantic_confirmation_binds_mutable_runtime_inputs(integrated, monkeypa
 
 def test_ordinary_todo_confirmation_binds_mutable_runtime_inputs(integrated, monkeypatch):
     root, _client = integrated
-    sequence(root)
+    sequence_id = sequence(root)
     revision = ["before-review"]
     monkeypatch.setattr(semantics, "runtime_revision",
                         lambda _unit, step: revision[0] if step == semantics.EVENTS else None)
     monkeypatch.setattr(semantics, "_model", lambda *_args: (
         {}, "vision-test", {"backend": "test-provider", "resolved_model_hash": "unchanged-model"},
     ))
-    body = {"workspaceId": "w", "set": "recordings/seq", "firstN": 2, "planOnly": True,
+    body = {"workspaceId": "w", "set": sequence_id.removeprefix("data/"), "firstN": 2, "planOnly": True,
             "pipeline": [{"transformation": stage.split("/")[0], "doer": stage.split("/")[1]}
                          for stage in (semantics.EVENTS, semantics.LLM_EVENTS)]}
     with pytest.raises(HTTPException) as preview:
@@ -439,7 +497,8 @@ def test_real_direct_model_boundary_persists_audit_and_validates_ast(integrated,
         assert hypotheses[-1]["parsed"]["authoritative"] is False
     else:
         assert any(item.get("status") == "invalid" for item in hypotheses)
-    assert not (root / "data" / "omega_vision" / "recordings" / "seq" / "transforms" / "image" / "llm_event_deduction_0").exists()
+    first_unit = api._sequence_execution_context(root, sequence_id, "w")[1][0]
+    assert not semantics._artifact(first_unit, semantics.LLM_EVENTS).parent.exists()
 
 
 def test_promoted_rule_revision_invalidates_dependency_reuse(integrated, monkeypatch):
@@ -452,7 +511,7 @@ def test_promoted_rule_revision_invalidates_dependency_reuse(integrated, monkeyp
 
         def list(self, **_kwargs):
             return promoted
-    monkeypatch.setattr(semantics, "_store", lambda _: Rules())
+    monkeypatch.setattr(semantics, "_store", lambda _root, unit=None, *, require_context=True: Rules())
     calls = []
     def runner(_unit, out, options):
         calls.append(options["semanticContextRevision"])
@@ -551,20 +610,23 @@ def test_new_grouping_memory_honors_preferences_and_isolates_page_sessions(integ
     assert all(output["status"] == "stale" for output in another_page["outputs"]
                if output["composite"] == semantics.GROUPING)
     assert not list(root.rglob("*.memory.json"))
+    assert not stored_memory_records(root, "shape")
     reset = client.post(endpoint + "/reset", json=second)
     assert reset.status_code == 200, reset.text
     assert read(first)
     record = records[0]["preferred"]
     destination = next(item["memoryLocationId"] for item in setup["catalog"]["destinations"]
                        if "shape" in item["memoryKinds"] and item["memoryLocationId"] != "memory-nowhere"
-                       and item["capabilities"]["write"])
+                       and item["format"] == "memory_metta" and item["capabilities"]["write"])
     copied = client.post(endpoint + "/copy", json={
         **first, "kind": "shape", "sourceLocationId": "memory-nowhere",
         "recordUid": record["recordUid"], "destinationId": destination,
     })
     assert copied.status_code == 200, copied.text
     assert copied.json()["record"]["origin"]["recordUid"] == record["recordUid"]
-    assert list(root.rglob("*.memory.json"))
+    assert any(item["recordUid"] == copied.json()["record"]["recordUid"]
+               for item in stored_memory_records(root, "shape"))
+    assert not list(root.rglob("*.memory.json"))
     first.pop("memorySnapshot")
     assert client.post(endpoint + "/reset", json=first).status_code == 200
     assert not read(first)

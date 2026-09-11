@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { VisualSequenceSelector } from "./VisualSequenceSelector";
+import { useSharedVisualSequenceSelection, useVisualSequenceCatalog } from "./useSharedVisualSequenceSelection";
+import { requiresVisualSequenceConfirmation, visualSequenceConfirmationMessage } from "./VisualSequenceLoadGate";
+import { visualSequenceLocationForEntry } from "./VideoImportRecordingUrl";
 
 /**
  * Recognition Demos — runs the symbolic_arc Phase-2 acceptance behaviours
@@ -22,11 +26,10 @@ type CoverageRow = {
   implemented: "full" | "partial" | "none"; llmFree: "full" | "partial" | "none";
   demo: string | null; demoStatus: "demo" | "no-demo" | "not-done";
 };
-type Ls20Recording = { key: string; label: string; count: number; computed?: boolean; hasMemory?: boolean };
 type DemosResponse = {
   demos: Demo[]; total: number; passed: number; running?: boolean; catalog?: CatalogEntry[];
   coverage?: CoverageRow[]; only?: string | null; anyPlaying?: boolean; playEpoch?: number;
-  ls20Recordings?: Ls20Recording[]; ls20Source?: string | null; ls20StoreMode?: string;
+  visualSequenceId?: string; visualSequenceRevision?: string | null; sourceError?: string | null; visualSequenceError?: string | null;
 };
 
 const CELL = 16;
@@ -271,12 +274,11 @@ function CoverageSection({ rows, onRun }: { rows: CoverageRow[]; onRun: (id: str
   );
 }
 
-function DemoCard({ demo, onRun, onStep, onClear, onToggle, onSeek, running, flash, recordings, source, onSelectSource, storeMode, onSetStoreMode, pending }: {
+function DemoCard({ demo, onRun, onStep, onClear, onToggle, onSeek, running, flash, sourceReady = true }: {
   demo: Demo; onRun: (id: string) => void; onStep: (id: string) => void;
   onClear: (id: string) => void; onToggle: (id: string, playing: boolean) => void;
   onSeek: (id: string, index: number) => void; running: boolean; flash?: boolean;
-  recordings?: Ls20Recording[]; source?: string | null; onSelectSource?: (key: string) => void;
-  storeMode?: string; onSetStoreMode?: (v: string) => void; pending?: boolean;
+  sourceReady?: boolean;
 }) {
   const frames = (demo.frames && demo.frames.length ? demo.frames : demo.panels) || [];
   const notRun = !!demo.notRun;
@@ -294,57 +296,36 @@ function DemoCard({ demo, onRun, onStep, onClear, onToggle, onSeek, running, fla
           fontSize: 10.5, fontWeight: 800, letterSpacing: "0.04em", padding: "2px 8px", borderRadius: 5,
           background: notRun ? "rgba(148,163,184,0.16)" : demo.passed ? "rgba(139,212,80,0.18)" : "rgba(224,72,63,0.2)",
           color: notRun ? "#94a3b8" : demo.passed ? "#8bd450" : "#ff8b81",
-        }}>{running ? "COMPUTING" : pending ? "QUEUED" : notRun ? "NOT RUN" : demo.passed ? "PASS" : "FAIL"}</span>
+        }}>{!sourceReady ? "SOURCE UNAVAILABLE" : running ? "COMPUTING" : notRun ? "NOT RUN" : demo.passed ? "PASS" : "FAIL"}</span>
         <b style={{ flex: 1 }}>{demo.title}</b>
-        {running ? <span style={{ fontSize: 11, opacity: 0.6, marginRight: 2 }}>computing…</span>
-          : pending ? <span style={{ fontSize: 11, opacity: 0.6, marginRight: 2 }}>loading shortly… (re-pick to change)</span> : null}
-        <button type="button" onClick={() => onRun(demo.id)} style={btn}>▶ Run</button>
-        <button type="button" onClick={() => onStep(demo.id)} title="Restart, then step frame by frame"
+        {running ? <span style={{ fontSize: 11, opacity: 0.6, marginRight: 2 }}>computing…</span> : null}
+        <button type="button" disabled={!sourceReady} onClick={() => onRun(demo.id)} style={btn}>▶ Run</button>
+        <button type="button" disabled={!sourceReady} onClick={() => onStep(demo.id)} title="Restart, then step frame by frame"
           style={btn}>▶❙ Run Stepped</button>
         <button type="button" onClick={() => onToggle(demo.id, false)} disabled={notRun}
           title="Stop this demo's animation (freeze it where it is)" style={btn}>■ Stop</button>
         <button type="button" onClick={() => onClear(demo.id)} disabled={notRun && !running}
           title="Stop and clear back to the beginning" style={btn}>Clear</button>
       </div>
-      {demo.id === "live-ls20" && recordings && recordings.length ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5 }}>
-          <span style={{ opacity: 0.7 }}>Recording:</span>
-          <select value={source || ""} onChange={(e) => onSelectSource?.(e.target.value)}
-            style={{ fontSize: 11.5, padding: "3px 6px", borderRadius: 5, maxWidth: 460,
-                     background: "#0b1220", color: "#cfe", border: "1px solid #2a3346" }}>
-            {recordings.map((r) => (
-              <option key={r.key} value={r.key}>
-                {(r.computed ? "✓ computed" : "⏳ raw") + (r.hasMemory ? " · 🧠 has memory" : "") + " · " + r.label}
-              </option>
-            ))}
-          </select>
-          <span style={{ opacity: 0.5 }}>choose which game playthrough to learn from</span>
-          <label style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, opacity: 0.85 }}
-            title="Where recognized object memory is saved. none = ephemeral (nothing on disk); recording = this recording's own isolated store; base = a shared long-term demo brain that accumulates across ALL ls20 recordings; canonical = the real production registry (explicit).">
-            <span style={{ opacity: 0.7 }}>store:</span>
-            <select value={storeMode || "recording"} onChange={(e) => onSetStoreMode?.(e.target.value)}
-              style={{ fontSize: 11.5, padding: "3px 6px", borderRadius: 5,
-                       background: "#0b1220", color: "#cfe", border: "1px solid #2a3346" }}>
-              <option value="none">none (ephemeral)</option>
-              <option value="recording">this recording (isolated)</option>
-              <option value="base">shared long-term base</option>
-              <option value="canonical">canonical registry</option>
-            </select>
-          </label>
-        </div>
+      {demo.id === "live-ls20" ? (
+        <p role="note" style={{ margin: 0 }}>
+          Observation-only demo. The shared Visual Sequence above is the source; only Run or Run Stepped starts computation.
+          This path writes no legacy parts cache or demo/canonical object-memory registry. Persistent native memory is available
+          through Recognition’s real stages, not a demo store mode.
+        </p>
       ) : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center", flex: "0 0 auto" }}>
           {running
             ? <ComputingBox />
-            : pending
-              ? <ComputingBox label="loading shortly…" sub="re-pick within 5s to change your mind" spin={false} />
+            : !sourceReady
+              ? <p role="status">Results hidden until the selected Visual Sequence source is ready. Nothing runs automatically.</p>
               : notRun
                 ? (demo.preview ? <GridPanel panel={demo.preview} /> : <BlankMap />)
                 : <AnimatedGrid frames={frames} index={demo.frameIndex || 0} playing={!!demo.playing}
                     onToggle={(p) => onToggle(demo.id, p)} onSeek={(idx) => onSeek(demo.id, idx)} />}
-          {notRun && !running && !pending ? (
-            <PreRunControls onRun={() => onRun(demo.id)} onStep={() => onStep(demo.id)} disabled={running} />
+          {notRun && !running ? (
+            <PreRunControls onRun={() => onRun(demo.id)} onStep={() => onStep(demo.id)} disabled={running || !sourceReady} />
           ) : null}
         </div>
         <div style={{ flex: "1 1 240px", minWidth: 220, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -369,7 +350,14 @@ function DemoCard({ demo, onRun, onStep, onClear, onToggle, onSeek, running, fla
   );
 }
 
-export function RecognitionDemosPage() {
+export function RecognitionDemosPage({ workspaceId = "" }: { workspaceId?: string }) {
+  const sharedSelection = useSharedVisualSequenceSelection(workspaceId);
+  const sequences = useVisualSequenceCatalog(workspaceId);
+  const [approvedSource, setApprovedSource] = useState("");
+  const sourceEntry = sequences.entries.find(entry => entry.id === sharedSelection.visualSequenceId);
+  const sourceKey = sourceEntry ? `${sourceEntry.id}|${sourceEntry.imageCount}` : "";
+  const sourceNeedsConfirmation = !!sourceEntry && requiresVisualSequenceConfirmation(sourceEntry, approvedSource === sourceKey);
+  const sourceAllowed = !!sourceEntry && !!visualSequenceLocationForEntry(sourceEntry) && !sourceNeedsConfirmation && !sequences.error;
   const [data, setData] = useState<DemosResponse | null>(null);
   const [heads, setHeads] = useState<Record<string, number>>({});
   const [playingMap, setPlayingMap] = useState<Record<string, boolean>>({});
@@ -380,12 +368,20 @@ export function RecognitionDemosPage() {
   const [showTop, setShowTop] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const pendingRef = useRef<string[]>([]);
-  // Optimistic local mirrors of the two selects so the user's pick sticks instantly
-  // (the controlled value otherwise snaps back until the server confirms via state).
-  const [sourceSel, setSourceSel] = useState<string>("");
-  const [storeSel, setStoreSel] = useState<string>("");
-  const selectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [pendingCompute, setPendingCompute] = useState(false);
+  const [connection, setConnection] = useState(0);
+  const [connected, setConnected] = useState(false);
+  const [acknowledgedSource, setAcknowledgedSource] = useState("");
+  const [sourceError, setSourceError] = useState("");
+  const sentSource = useRef("");
+  const sentRevision = useRef("");
+  const desiredSource = useRef("");
+  const desiredRevision = useRef("");
+  desiredSource.current = sourceAllowed ? sharedSelection.visualSequenceId : "";
+  desiredRevision.current = sharedSelection.selection?.revision || "";
+  const sourceReady = connected && sourceAllowed && !!sharedSelection.visualSequenceId
+    && acknowledgedSource === sharedSelection.visualSequenceId
+    && data?.visualSequenceId === sharedSelection.visualSequenceId
+    && data?.visualSequenceRevision === sharedSelection.selection?.revision && !sourceError;
 
   // Server-OWNED animation over a WebSocket: the server decides each demo's current
   // frame (its playhead is advanced on the server) and PUSHES it; the page renders
@@ -400,15 +396,28 @@ export function RecognitionDemosPage() {
       const ws = new WebSocket(`${proto}://${window.location.host}/workbench/recognition/demos/ws`);
       wsRef.current = ws;
       ws.onopen = () => {
+        if (closed) return;
         setErr("");
+        setConnected(true);
+        setConnection(value => value + 1);
+        sentSource.current = "";
+        sentRevision.current = "";
+        setAcknowledgedSource("");
         const q = pendingRef.current;
         pendingRef.current = [];
         q.forEach((s) => { try { ws.send(s); } catch { /* noop */ } });
       };
       ws.onmessage = (ev) => {
+        if (closed || wsRef.current !== ws) return;
         let m: (DemosResponse & { type: string; heads?: Record<string, number>; playing?: Record<string, boolean>; error?: string });
         try { m = JSON.parse(ev.data); } catch { return; }
         if (m.type === "state") {
+          if (sentSource.current && m.visualSequenceId === desiredSource.current && sentSource.current === desiredSource.current
+              && m.visualSequenceRevision === desiredRevision.current && sentRevision.current === desiredRevision.current) {
+            const failure = m.sourceError || m.visualSequenceError || "";
+            setSourceError(failure);
+            setAcknowledgedSource(failure ? "" : m.visualSequenceId);
+          }
           setData(m);
           setRunning(!!m.running);
           const h: Record<string, number> = {};
@@ -426,9 +435,14 @@ export function RecognitionDemosPage() {
           setRunning(!!m.running);
         } else if (m.type === "error") {
           setErr(String(m.error || "error"));
+          setSourceError(String(m.error || "Demo source unavailable"));
+          setAcknowledgedSource("");
         }
       };
-      ws.onclose = () => { if (wsRef.current === ws) wsRef.current = null; if (!closed) retry = setTimeout(connect, 1000); };
+      ws.onclose = () => {
+        if (wsRef.current === ws) { wsRef.current = null; setConnected(false); setAcknowledgedSource(""); }
+        if (!closed) retry = setTimeout(connect, 1000);
+      };
       ws.onerror = () => { try { ws.close(); } catch { /* noop */ } };
     };
     connect();
@@ -438,41 +452,51 @@ export function RecognitionDemosPage() {
   // Commands are queued if the socket isn't open yet and flushed on open, so a click
   // right after load is never lost (and never shows a spurious "not connected").
   const send = useCallback((msg: Record<string, unknown>) => {
-    const s = JSON.stringify(msg);
+    const sourceSensitive = (msg.cmd === "run" && msg.id == null)
+      || (msg.id === "live-ls20" && ["run", "play", "seek"].includes(String(msg.cmd)));
+    const s = JSON.stringify(sourceSensitive ? {
+      ...msg, workspaceId, visualSequenceId: sharedSelection.visualSequenceId,
+      expectedRevision: sharedSelection.selection?.revision,
+    } : msg);
     const ws = wsRef.current;
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(s);
-    else pendingRef.current.push(s);
-  }, []);
+    else if ((msg.cmd === "run" || msg.cmd === "play" || msg.cmd === "seek") && (msg.id === "live-ls20" || msg.id == null)) {
+      setErr("Demo source disconnected. Reconnect and explicitly retry the action.");
+    } else pendingRef.current.push(s);
+  }, [workspaceId, sharedSelection.visualSequenceId, sharedSelection.selection?.revision]);
 
-  const clearPendingCompute = useCallback(() => {
-    if (selectTimerRef.current) { clearTimeout(selectTimerRef.current); selectTimerRef.current = null; }
-    setPendingCompute(false);
-  }, []);
-  const runOne = useCallback((id: string) => { clearPendingCompute(); send({ cmd: "run", id }); }, [send, clearPendingCompute]);
-  const stepOne = useCallback((id: string) => { clearPendingCompute(); send({ cmd: "run", id, stepped: true }); }, [send, clearPendingCompute]);
-  const runAll = useCallback(() => { clearPendingCompute(); send({ cmd: "run" }); }, [send, clearPendingCompute]);
+  useEffect(() => {
+    const ws = wsRef.current;
+    const id = sharedSelection.visualSequenceId;
+    const revision = sharedSelection.selection?.revision || "";
+    if (!sourceAllowed || !id) {
+      setAcknowledgedSource("");
+      if (sentSource.current !== id) sentSource.current = "";
+      return;
+    }
+    if (!ws || ws.readyState !== WebSocket.OPEN || !revision || (sentSource.current === id && sentRevision.current === revision)) return;
+    setAcknowledgedSource("");
+    setSourceError("");
+    sentSource.current = id;
+    sentRevision.current = revision;
+    ws.send(JSON.stringify({ cmd: "select_visual_sequence", visualSequenceId: id, workspaceId, expectedRevision: revision }));
+  }, [sharedSelection.visualSequenceId, sharedSelection.selection?.revision, sourceAllowed, connection, workspaceId]);
+  const runOne = useCallback((id: string) => {
+    if (id !== "live-ls20" || sourceReady) send({ cmd: "run", id });
+  }, [send, sourceReady]);
+  const stepOne = useCallback((id: string) => {
+    if (id !== "live-ls20" || sourceReady) send({ cmd: "run", id, stepped: true });
+  }, [send, sourceReady]);
+  const runAll = useCallback(() => { if (sourceReady) send({ cmd: "run" }); }, [send, sourceReady]);
   const stopAll = useCallback(() => send({ cmd: "stop" }), [send]);
-  const clearOne = useCallback((id: string) => { clearPendingCompute(); send({ cmd: "clear", id }); }, [send, clearPendingCompute]);
-  const clearAll = useCallback(() => { clearPendingCompute(); send({ cmd: "clear" }); }, [send, clearPendingCompute]);
-  const togglePlay = useCallback((id: string, playing: boolean) => send({ cmd: "play", id, playing }), [send]);
-  const seek = useCallback((id: string, index: number) => send({ cmd: "seek", id, index }), [send]);
-  // Picking a recording sets the source now, but DEBOUNCES the compute by 5s so you
-  // can change your mind and pick something else before it starts computing. It
-  // computes PAUSED (stepped) — never auto-plays.
-  const selectSource = useCallback((sourceKey: string) => {
-    setSourceSel(sourceKey);
-    send({ cmd: "select_source", source: sourceKey });
-    if (selectTimerRef.current) clearTimeout(selectTimerRef.current);
-    setPendingCompute(true);
-    selectTimerRef.current = setTimeout(() => {
-      selectTimerRef.current = null;
-      setPendingCompute(false);
-      send({ cmd: "run", id: "live-ls20", stepped: true });
-    }, 5000);
-  }, [send]);
-  const setStoreMode = useCallback((value: string) => { setStoreSel(value); send({ cmd: "set_store_mode", value }); }, [send]);
-  useEffect(() => { if (data?.ls20Source) setSourceSel(data.ls20Source); }, [data?.ls20Source]);
-  useEffect(() => { if (data?.ls20StoreMode) setStoreSel(data.ls20StoreMode); }, [data?.ls20StoreMode]);
+  const clearOne = useCallback((id: string) => send({ cmd: "clear", id }), [send]);
+  const clearAll = useCallback(() => send({ cmd: "clear" }), [send]);
+  const togglePlay = useCallback((id: string, playing: boolean) => {
+    if (!playing || id !== "live-ls20" || sourceReady) send({ cmd: "play", id, playing });
+  }, [send, sourceReady]);
+  const seek = useCallback((id: string, index: number) => {
+    if (id !== "live-ls20" || sourceReady) send({ cmd: "seek", id, index });
+  }, [send, sourceReady]);
 
   // Coverage-table ▶ buttons live far above the demo cards, so besides starting the
   // run we scroll the matching card into view and briefly highlight it — otherwise
@@ -495,13 +519,21 @@ export function RecognitionDemosPage() {
   // Merge the catalog (all available tests) with any results: tests that haven't
   // run yet appear as "not run" stub cards so the user can start them individually.
   // Then overlay the SERVER's live playhead (frame index + playing) for each demo.
-  const byId = new Map((data?.demos || []).map((d) => [d.id, d]));
+  const currentDemos = (data?.demos || []).map(d => d.id === "live-ls20"
+    && (!sourceReady || data?.visualSequenceId !== sharedSelection.visualSequenceId)
+    ? { ...d, panels: [], frames: [], preview: null, result: {}, passed: false, notRun: true, playing: false } : { ...d });
+  const byId = new Map(currentDemos.map((d) => [d.id, d]));
   const catalog = data?.catalog || [];
   const merged: Demo[] = catalog.map(
     (c) => byId.get(c.id) || { ...c, description: "", panels: [], frames: [], result: {}, passed: false, notRun: true },
   );
-  (data?.demos || []).forEach((d) => { if (!catalog.some((c) => c.id === d.id)) merged.push(d); });
+  currentDemos.forEach((d) => { if (!catalog.some((c) => c.id === d.id)) merged.push(d); });
   merged.forEach((d) => {
+    if (d.id === "live-ls20" && (!sourceReady || data?.visualSequenceId !== sharedSelection.visualSequenceId)) {
+      d.preview = null;
+      d.playing = false;
+      return;
+    }
     if (heads[d.id] !== undefined) d.frameIndex = heads[d.id];
     if (playingMap[d.id] !== undefined) d.playing = playingMap[d.id];
   });
@@ -518,7 +550,7 @@ export function RecognitionDemosPage() {
       style={{ padding: 16, overflow: "auto", height: "100%", position: "relative" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
         <h2 style={{ margin: 0 }}>Sanity Tests</h2>
-        {data && data.total ? (
+        {data && data.total && data.visualSequenceId === sharedSelection.visualSequenceId && sourceReady ? (
           <span style={{
             fontSize: 12, padding: "3px 9px", borderRadius: 6,
             background: data.passed === data.total ? "rgba(139,212,80,0.18)" : "rgba(224,72,63,0.2)",
@@ -526,7 +558,7 @@ export function RecognitionDemosPage() {
           }}>{data.passed}/{data.total} passing</span>
         ) : null}
         {running ? <span style={{ fontSize: 12, opacity: 0.7 }}>● running on server…</span> : null}
-        <button type="button" onClick={runAll} disabled={running}
+        <button type="button" onClick={runAll} disabled={running || !sourceReady}
           style={{ marginLeft: "auto", fontSize: 12, padding: "4px 12px", borderRadius: 6, cursor: "pointer" }}>
           {running ? "Running…" : "▶ Run all on server"}
         </button>
@@ -539,6 +571,20 @@ export function RecognitionDemosPage() {
           Clear all
         </button>
       </div>
+      <VisualSequenceSelector workspaceId={workspaceId}
+        onApproved={entry => setApprovedSource(`${entry.id}|${entry.imageCount}`)} />
+      {sourceNeedsConfirmation && sourceEntry && <p role="status">{visualSequenceConfirmationMessage(sourceEntry)}
+        <button type="button" onClick={() => setApprovedSource(sourceKey)}>Load selected source</button>
+      </p>}
+      {!sourceReady && <p role={sourceError ? "alert" : "status"}>{sourceError || sequences.error || (!sourceEntry && !sequences.loading
+        ? "The selected source is unavailable in the Visual Sequence catalog."
+        : "Waiting for the selected Visual Sequence source. No computation will start automatically.")}
+        {running && <> The existing server run has not been cancelled. Use Stop all explicitly before retrying source selection.</>}
+        {data?.visualSequenceId && data.visualSequenceId !== sharedSelection.visualSequenceId &&
+          <> Server source: <code>{data.visualSequenceId}</code>. Its sequence results are hidden, not relabelled as the shared selection.</>}
+        {sourceAllowed && connected && <button type="button" onClick={() => {
+          sentSource.current = ""; setConnection(value => value + 1);
+        }}>Retry source selection</button>}</p>}
       <p style={{ fontSize: 12, opacity: 0.7, marginTop: 0 }}>
         The server runs each real symbolic_arc Phase-2 acceptance behaviour (TODO Exhibit A Phase 2); this page only
         observes and animates the results. Legend: solid = visible/object,{" "}
@@ -558,15 +604,12 @@ export function RecognitionDemosPage() {
           <h3 style={{ margin: "8px 0", fontSize: 14, opacity: 0.85 }}>{group}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 12 }}>
             {demos.map((d) => {
-              const cardRunning = running && (data?.only == null || data?.only === d.id);
+              const cardRunning = running && (data?.only == null || data?.only === d.id) && (d.id !== "live-ls20" || sourceReady);
               return (
                 <DemoCard key={d.id} demo={d} onRun={runOne} onStep={stepOne}
                   onClear={clearOne} onToggle={togglePlay} onSeek={seek}
                   running={cardRunning} flash={flashId === d.id}
-                  recordings={data?.ls20Recordings} source={sourceSel || data?.ls20Source}
-                  onSelectSource={selectSource}
-                  storeMode={storeSel || data?.ls20StoreMode} onSetStoreMode={setStoreMode}
-                  pending={pendingCompute && d.id === "live-ls20"} />
+                  sourceReady={d.id !== "live-ls20" || sourceReady} />
               );
             })}
           </div>

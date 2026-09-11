@@ -169,6 +169,29 @@ def test_help_view_intercepts_repository_markdown_links() -> None:
     assert "event.preventDefault()" in shared
 
 
+def test_recognition_help_uses_memory_layout_document_with_both_reasoning_explanations() -> None:
+    components = ROOT / "frontend" / "apps" / "workbench" / "src" / "components"
+    help_source = (components / "HelpDocumentTabs.tsx").read_text(encoding="utf-8")
+    page_source = (components.parent / "pages" / "FilesystemWorkbenchPage.tsx").read_text(encoding="utf-8")
+    compact = "".join(page_source.split())
+    assert '{id:"recognition",label:"Recognition & Memory",repositoryPath:"docs/design/OMEGA_STORAGE_BOUNDARY.md"}' in help_source
+    assert 'view==="videoImport"?activeNavSubview==="recognition"?"recognition":"videoImport"' in compact
+    assert 'view==="recognitionDemos"?"recognition"' in compact
+    assert '{id:"videoImport",label:"Video Import",repositoryPath:"docs/VIDEO_IMPORT.md"}' in help_source
+    memory = repository_docs_api.read_repository_markdown("docs/design/OMEGA_STORAGE_BOUNDARY.md")["content"]
+    video = repository_docs_api.read_repository_markdown("docs/VIDEO_IMPORT.md")["content"]
+    for heading in ("## Memory layout at a glance", "### General explanation", "### How the visual system is divided"):
+        assert heading in memory
+        assert heading not in video
+    for path in ("memory_game_all\\", "memory_level_<n>_ltm\\", "memory_level_<n>_stm\\",
+                 "0\\memory\\", "1\\memory\\", "2\\memory\\"):
+        assert path in memory
+    assert "[Recognition & Memory Help](design/OMEGA_STORAGE_BOUNDARY.md)" in video
+    assert "event abduction are implemented as separately registered stages" in memory
+    assert "memory\\abduced_events.metta" in memory
+    assert "**Nowhere abduction is not supported:**" in memory
+
+
 def test_repository_markdown_index_and_ui_links(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(repository_docs_api, "REPOSITORY_ROOT", tmp_path)
     (tmp_path / "docs").mkdir()
