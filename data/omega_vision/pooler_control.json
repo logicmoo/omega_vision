@@ -1,7 +1,7 @@
 {
   "kind": "pooler_control",
   "command": "run",
-  "root": "data/omega_vision/recordings/ls20/20260718-154544",
+  "root": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\recordings\\ls20\\20260718-154544",
   "workers": 10,
   "interval": 5,
   "onlyTypes": [
@@ -9,5 +9,5 @@
     "ui"
   ],
   "skipTypes": [],
-  "updatedAt": "2026-09-08T16:09:51.598249Z"
+  "updatedAt": "2026-09-10T15:52:26.318449Z"
 }

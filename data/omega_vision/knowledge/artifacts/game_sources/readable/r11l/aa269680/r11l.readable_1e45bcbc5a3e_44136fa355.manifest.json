@@ -1,0 +1,75 @@
+{
+  "game_id": "r11l",
+  "directory_version": "aa269680",
+  "declared_game_id": "r11l-495a7899",
+  "title": "R11L",
+  "original_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\python\\workbench_api_server\\environment_files\\r11l\\aa269680\\r11l.py",
+  "original_sha256": "1e45bcbc5a3ec1af44c6d52c628e1b073a3dafaffce0695a0d10eb06a49f204c",
+  "readable_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\knowledge\\artifacts\\game_sources\\readable\\r11l\\aa269680\\r11l.readable_1e45bcbc5a3e_44136fa355.py",
+  "readable_sha256": "1e45bcbc5a3ec1af44c6d52c628e1b073a3dafaffce0695a0d10eb06a49f204c",
+  "classification": {
+    "provenance": "official-source-copyright",
+    "provenance_evidence": "ARC Prize Foundation MIT copyright header",
+    "obfuscation": "randomized-identifiers-and-literal-assets",
+    "randomized_function_candidates": [
+      "fungqqyodc",
+      "grygtayltb",
+      "zmefuddnua",
+      "vwznvtelzt",
+      "pprcmbqpwi",
+      "bdahxidrjf",
+      "tkdffrbsnv",
+      "eijzqlwbri",
+      "mfrvmbaujm",
+      "iciufrewti",
+      "trfdmyhcav",
+      "edebispaft",
+      "zznsngfkwo",
+      "dkhjddmkke",
+      "tpjhojnaoa"
+    ],
+    "encoded_or_dynamic_calls": []
+  },
+  "status": "annotated-original-obfuscation-unresolved",
+  "symbol_map": {},
+  "rejected_renames": [],
+  "unresolved_function_names": [
+    "fungqqyodc",
+    "grygtayltb",
+    "zmefuddnua",
+    "vwznvtelzt",
+    "pprcmbqpwi",
+    "bdahxidrjf",
+    "tkdffrbsnv",
+    "eijzqlwbri",
+    "mfrvmbaujm",
+    "iciufrewti",
+    "trfdmyhcav",
+    "edebispaft",
+    "zznsngfkwo",
+    "dkhjddmkke",
+    "tpjhojnaoa"
+  ],
+  "transforms": [
+    "byte-preserving copy",
+    "separate annotations; no source reformatting"
+  ],
+  "validation": {
+    "syntax": "AST parse passed; game not executed",
+    "inverse_token_reconstruction": "exact original text restored",
+    "inverse_ast": "identical after reversing name map",
+    "strings_comments_license": "unchanged",
+    "line_numbers": "preserved",
+    "source_bytes_unchanged_when_no_renames": true,
+    "behavioral_comparison": "NOT PERFORMED",
+    "semantic_equivalence": "NOT CLAIMED for renamed copies; no dynamic/reflection/external-client equivalence test",
+    "engine_entrypoints": "class names, on_set_level, step, public imports/APIs not renamed"
+  },
+  "limitations": [
+    "Original meaningful names cannot be recovered from randomized names alone.",
+    "Descriptive names are proposed from reviewed behavior, not recovered author names.",
+    "No encoded payload was executed or imported; suspicious calls, if present, are only listed.",
+    "Source-code copyright indicates attribution, not proof the locally installed version is unmodified upstream.",
+    "Existing engine string/tag/resource identifiers are intentionally retained."
+  ]
+}

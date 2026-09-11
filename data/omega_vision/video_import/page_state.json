@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "at": "2026-09-08T17:32:12.262003Z",
+  "at": "2026-09-11T18:13:17.588795Z",
   "selectedPath": "data/video_import/guess-the-201-animated-characters-3-seconds-each/video.mp4",
   "playerTime": 0,
   "markers": [
@@ -3428,7 +3428,7 @@
   "autoNext77": true,
   "collapsedMap": {
     "intake": true,
-    "config": false,
+    "config": true,
     "player": true,
     "prepass": true,
     "inputs": true,
@@ -3439,10 +3439,13 @@
     "members": true,
     "finish": true,
     "memberDescription": true,
-    "arc3Player": false,
-    "gameImport": true
+    "arc3Player": true,
+    "gameImport": true,
+    "preprocessing": true
   },
-  "pinnedMap": {},
+  "pinnedMap": {
+    "preprocessing": false
+  },
   "stateShards": {
     "memberInventories": "member_inventories.json",
     "modelResponseCache": "model_response_cache.json"

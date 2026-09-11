@@ -1,0 +1,93 @@
+{
+  "game_id": "s5i5",
+  "directory_version": "18d95033",
+  "declared_game_id": "s5i5-18d95033",
+  "title": "S5I5",
+  "original_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\python\\workbench_api_server\\environment_files\\s5i5\\18d95033\\s5i5.py",
+  "original_sha256": "c7451a12b6fca1e475ee2359dc81c7e919f7b41789391bda5fc1c85f8bd9c758",
+  "readable_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\knowledge\\artifacts\\game_sources\\readable\\s5i5\\18d95033\\s5i5.readable_c7451a12b6fc_e68abfb9c5.py",
+  "readable_sha256": "c69a570b264f1fa414a0beb225aa7027af84e03eb3d12236d379abbe50333170",
+  "classification": {
+    "provenance": "official-source-copyright",
+    "provenance_evidence": "ARC Prize Foundation MIT copyright header",
+    "obfuscation": "randomized-identifiers-and-literal-assets",
+    "randomized_function_candidates": [
+      "majwzvviix",
+      "fptcviopvo",
+      "twwpyjzobt",
+      "yhkntwvjfr",
+      "zhrkjlkeib",
+      "neurwiqfry",
+      "uiqzouvdxd",
+      "dxlryikffn",
+      "gnpdxxlhrp",
+      "nkkhgerxvq",
+      "qownxibuiy",
+      "eeyirqljyp",
+      "bhgumdfgqr"
+    ],
+    "encoded_or_dynamic_calls": []
+  },
+  "status": "partial-semantic-renaming",
+  "symbol_map": {
+    "uiqzouvdxd": {
+      "readable": "move_descendants",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "Recursively translate children, lines 2088-2092",
+      "original_lines": [
+        2088,
+        2092,
+        2136
+      ]
+    },
+    "eeyirqljyp": {
+      "readable": "rotate_descendants",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "Recursively rotate child assembly, lines 2145-2152",
+      "original_lines": [
+        2145,
+        2152,
+        2160,
+        2166,
+        2172,
+        2177
+      ]
+    }
+  },
+  "rejected_renames": [],
+  "unresolved_function_names": [
+    "majwzvviix",
+    "fptcviopvo",
+    "twwpyjzobt",
+    "yhkntwvjfr",
+    "zhrkjlkeib",
+    "neurwiqfry",
+    "dxlryikffn",
+    "gnpdxxlhrp",
+    "nkkhgerxvq",
+    "qownxibuiy",
+    "bhgumdfgqr"
+  ],
+  "transforms": [
+    "NAME-token-only replacements",
+    "separate annotations; no source reformatting"
+  ],
+  "validation": {
+    "syntax": "AST parse passed; game not executed",
+    "inverse_token_reconstruction": "exact original text restored",
+    "inverse_ast": "identical after reversing name map",
+    "strings_comments_license": "unchanged",
+    "line_numbers": "preserved",
+    "source_bytes_unchanged_when_no_renames": false,
+    "behavioral_comparison": "NOT PERFORMED",
+    "semantic_equivalence": "NOT CLAIMED for renamed copies; no dynamic/reflection/external-client equivalence test",
+    "engine_entrypoints": "class names, on_set_level, step, public imports/APIs not renamed"
+  },
+  "limitations": [
+    "Original meaningful names cannot be recovered from randomized names alone.",
+    "Descriptive names are proposed from reviewed behavior, not recovered author names.",
+    "No encoded payload was executed or imported; suspicious calls, if present, are only listed.",
+    "Source-code copyright indicates attribution, not proof the locally installed version is unmodified upstream.",
+    "Existing engine string/tag/resource identifiers are intentionally retained."
+  ]
+}

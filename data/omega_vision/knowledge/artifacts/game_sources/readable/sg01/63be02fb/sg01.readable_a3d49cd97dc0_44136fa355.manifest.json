@@ -1,0 +1,43 @@
+{
+  "game_id": "sg01",
+  "directory_version": "63be02fb",
+  "declared_game_id": "sg01-63be02fb",
+  "title": "Signal Lock",
+  "original_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\python\\workbench_api_server\\environment_files\\sg01\\63be02fb\\sg01.py",
+  "original_sha256": "a3d49cd97dc036b78e27843d3bed874e913c7d0ed3fe16b8729617e632da1bc8",
+  "readable_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\knowledge\\artifacts\\game_sources\\readable\\sg01\\63be02fb\\sg01.readable_a3d49cd97dc0_44136fa355.py",
+  "readable_sha256": "a3d49cd97dc036b78e27843d3bed874e913c7d0ed3fe16b8729617e632da1bc8",
+  "classification": {
+    "provenance": "custom-authored-style-unverified-origin",
+    "provenance_evidence": "No ARC Prize Foundation copyright in inspected header; meaningful local implementation/metadata needs game-level attribution",
+    "obfuscation": "already-readable-or-abbreviated-identifiers",
+    "randomized_function_candidates": [],
+    "encoded_or_dynamic_calls": []
+  },
+  "status": "already-readable-byte-identical",
+  "symbol_map": {},
+  "rejected_renames": [],
+  "unresolved_function_names": [],
+  "transforms": [
+    "byte-preserving copy",
+    "separate annotations; no source reformatting"
+  ],
+  "validation": {
+    "syntax": "AST parse passed; game not executed",
+    "inverse_token_reconstruction": "exact original text restored",
+    "inverse_ast": "identical after reversing name map",
+    "strings_comments_license": "unchanged",
+    "line_numbers": "preserved",
+    "source_bytes_unchanged_when_no_renames": true,
+    "behavioral_comparison": "NOT PERFORMED",
+    "semantic_equivalence": "NOT CLAIMED for renamed copies; no dynamic/reflection/external-client equivalence test",
+    "engine_entrypoints": "class names, on_set_level, step, public imports/APIs not renamed"
+  },
+  "limitations": [
+    "Original meaningful names cannot be recovered from randomized names alone.",
+    "Descriptive names are proposed from reviewed behavior, not recovered author names.",
+    "No encoded payload was executed or imported; suspicious calls, if present, are only listed.",
+    "Source-code copyright indicates attribution, not proof the locally installed version is unmodified upstream.",
+    "Existing engine string/tag/resource identifiers are intentionally retained."
+  ]
+}

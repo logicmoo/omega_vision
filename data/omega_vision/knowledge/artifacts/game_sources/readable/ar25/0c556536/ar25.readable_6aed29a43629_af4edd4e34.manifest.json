@@ -1,0 +1,109 @@
+{
+  "game_id": "ar25",
+  "directory_version": "0c556536",
+  "declared_game_id": "ar25-0c556536",
+  "title": "AR25",
+  "original_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\python\\workbench_api_server\\environment_files\\ar25\\0c556536\\ar25.py",
+  "original_sha256": "6aed29a43629d8f9537d3d84553cec095b5d0002225db1c407754ffd4343b694",
+  "readable_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\knowledge\\artifacts\\game_sources\\readable\\ar25\\0c556536\\ar25.readable_6aed29a43629_af4edd4e34.py",
+  "readable_sha256": "9374a8c8ef784da8cdfe14523cc3bcb4b856b086e352abc9e0059b5be19025bb",
+  "classification": {
+    "provenance": "official-source-copyright",
+    "provenance_evidence": "ARC Prize Foundation MIT copyright header",
+    "obfuscation": "randomized-identifiers-and-literal-assets",
+    "randomized_function_candidates": [
+      "zrufjlcqnq",
+      "unhkzxdpzn",
+      "unnombllbm",
+      "chfxwryseh",
+      "rhgjrwmsjf",
+      "vrkougbfel",
+      "tvqhikkvjs",
+      "siizypdewv",
+      "neimtgmbvs",
+      "omqcgseeyo",
+      "aeaxsuhcxw",
+      "wtcvufzwtg",
+      "tbwawidlvf",
+      "uksxuqpkcl",
+      "vuobbxcpia",
+      "xxwyofspas",
+      "skqtojxvbv",
+      "naxbskjmlg",
+      "nloqvbouxu",
+      "dspftbzaav",
+      "vplrhaovhr",
+      "frckrbsfcm",
+      "rwympgcizz"
+    ],
+    "encoded_or_dynamic_calls": []
+  },
+  "status": "partial-semantic-renaming",
+  "symbol_map": {
+    "tvqhikkvjs": {
+      "readable": "rotate_pixels_about_center",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "Rotate pixel array while preserving center, lines 1295-1307",
+      "original_lines": [
+        1295,
+        1765
+      ]
+    },
+    "vplrhaovhr": {
+      "readable": "all_targets_covered",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "Check target coverage, lines 1688-1696",
+      "original_lines": [
+        1376,
+        1688,
+        1768
+      ]
+    }
+  },
+  "rejected_renames": [],
+  "unresolved_function_names": [
+    "zrufjlcqnq",
+    "unhkzxdpzn",
+    "unnombllbm",
+    "chfxwryseh",
+    "rhgjrwmsjf",
+    "vrkougbfel",
+    "siizypdewv",
+    "neimtgmbvs",
+    "omqcgseeyo",
+    "aeaxsuhcxw",
+    "wtcvufzwtg",
+    "tbwawidlvf",
+    "uksxuqpkcl",
+    "vuobbxcpia",
+    "xxwyofspas",
+    "skqtojxvbv",
+    "naxbskjmlg",
+    "nloqvbouxu",
+    "dspftbzaav",
+    "frckrbsfcm",
+    "rwympgcizz"
+  ],
+  "transforms": [
+    "NAME-token-only replacements",
+    "separate annotations; no source reformatting"
+  ],
+  "validation": {
+    "syntax": "AST parse passed; game not executed",
+    "inverse_token_reconstruction": "exact original text restored",
+    "inverse_ast": "identical after reversing name map",
+    "strings_comments_license": "unchanged",
+    "line_numbers": "preserved",
+    "source_bytes_unchanged_when_no_renames": false,
+    "behavioral_comparison": "NOT PERFORMED",
+    "semantic_equivalence": "NOT CLAIMED for renamed copies; no dynamic/reflection/external-client equivalence test",
+    "engine_entrypoints": "class names, on_set_level, step, public imports/APIs not renamed"
+  },
+  "limitations": [
+    "Original meaningful names cannot be recovered from randomized names alone.",
+    "Descriptive names are proposed from reviewed behavior, not recovered author names.",
+    "No encoded payload was executed or imported; suspicious calls, if present, are only listed.",
+    "Source-code copyright indicates attribution, not proof the locally installed version is unmodified upstream.",
+    "Existing engine string/tag/resource identifiers are intentionally retained."
+  ]
+}

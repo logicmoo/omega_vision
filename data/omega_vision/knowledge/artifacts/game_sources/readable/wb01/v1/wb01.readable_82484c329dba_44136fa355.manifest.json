@@ -1,0 +1,43 @@
+{
+  "game_id": "wb01",
+  "directory_version": "v1",
+  "declared_game_id": "wb01-v1",
+  "title": "Wall Belt",
+  "original_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\python\\workbench_api_server\\environment_files\\wb01\\v1\\wb01.py",
+  "original_sha256": "82484c329dba4347e5eaaab251928668de0ddc9156b6f357814b049032dc09e8",
+  "readable_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\knowledge\\artifacts\\game_sources\\readable\\wb01\\v1\\wb01.readable_82484c329dba_44136fa355.py",
+  "readable_sha256": "82484c329dba4347e5eaaab251928668de0ddc9156b6f357814b049032dc09e8",
+  "classification": {
+    "provenance": "custom-authored-style-unverified-origin",
+    "provenance_evidence": "No ARC Prize Foundation copyright in inspected header; meaningful local implementation/metadata needs game-level attribution",
+    "obfuscation": "already-readable-or-abbreviated-identifiers",
+    "randomized_function_candidates": [],
+    "encoded_or_dynamic_calls": []
+  },
+  "status": "already-readable-byte-identical",
+  "symbol_map": {},
+  "rejected_renames": [],
+  "unresolved_function_names": [],
+  "transforms": [
+    "byte-preserving copy",
+    "separate annotations; no source reformatting"
+  ],
+  "validation": {
+    "syntax": "AST parse passed; game not executed",
+    "inverse_token_reconstruction": "exact original text restored",
+    "inverse_ast": "identical after reversing name map",
+    "strings_comments_license": "unchanged",
+    "line_numbers": "preserved",
+    "source_bytes_unchanged_when_no_renames": true,
+    "behavioral_comparison": "NOT PERFORMED",
+    "semantic_equivalence": "NOT CLAIMED for renamed copies; no dynamic/reflection/external-client equivalence test",
+    "engine_entrypoints": "class names, on_set_level, step, public imports/APIs not renamed"
+  },
+  "limitations": [
+    "Original meaningful names cannot be recovered from randomized names alone.",
+    "Descriptive names are proposed from reviewed behavior, not recovered author names.",
+    "No encoded payload was executed or imported; suspicious calls, if present, are only listed.",
+    "Source-code copyright indicates attribution, not proof the locally installed version is unmodified upstream.",
+    "Existing engine string/tag/resource identifiers are intentionally retained."
+  ]
+}

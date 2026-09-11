@@ -1,0 +1,149 @@
+{
+  "game_id": "ls20",
+  "directory_version": "9607627b",
+  "declared_game_id": "ls20-9607627b",
+  "title": "LS20",
+  "original_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\python\\workbench_api_server\\environment_files\\ls20\\9607627b\\ls20.py",
+  "original_sha256": "67cc85888eeef68f125cbb5f5fb158e9ca455d6bca46b171790f556fcabf934e",
+  "readable_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\knowledge\\artifacts\\game_sources\\readable\\ls20\\9607627b\\ls20.readable_67cc85888eee_d9066117f8.py",
+  "readable_sha256": "643057a3324ebf1e9c4392226fc77ade7c1e1fae401ab9c0f343570b2e2b5498",
+  "classification": {
+    "provenance": "official-source-copyright",
+    "provenance_evidence": "ARC Prize Foundation MIT copyright header",
+    "obfuscation": "randomized-identifiers-and-literal-assets",
+    "randomized_function_candidates": [
+      "kbkdzqocik",
+      "vytykscvhe",
+      "mfyzdfvxsm",
+      "nzukewekzr",
+      "wgxrzqzazj",
+      "ullzqnksoj",
+      "mfnyvivrar",
+      "monctmxmpp",
+      "qeoitwygzm",
+      "prpxgfxlcm",
+      "wgxrzqzazj",
+      "bkuguqrpvq",
+      "qrttfzbifu",
+      "npdjlrkhsg",
+      "fwtnsrvkrz",
+      "iiosonyanc",
+      "vtfcqjvbeo",
+      "uczkzlpcwg",
+      "nakogfhyus",
+      "wbcenorpju",
+      "mrznumynfe",
+      "txnfzvzetn",
+      "qetwzqzzik",
+      "vqfjzzkhid",
+      "bejndxqqzf",
+      "pbznecvnfr"
+    ],
+    "encoded_or_dynamic_calls": []
+  },
+  "status": "partial-semantic-renaming",
+  "symbol_map": {
+    "fwckfzsyc": {
+      "readable": "key_shape_index",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "StartShape and shape-cycle indexing, lines 1894-1896, 2019-2020",
+      "original_lines": [
+        1813,
+        1894,
+        1895,
+        2019,
+        2020,
+        2040
+      ]
+    },
+    "hiaauhahz": {
+      "readable": "key_color_index",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "StartColor lookup and color cycling, lines 1900-1902, 2018-2021",
+      "original_lines": [
+        1814,
+        1896,
+        1900,
+        1901,
+        1902,
+        2018,
+        2021,
+        2040
+      ]
+    },
+    "cklxociuu": {
+      "readable": "key_rotation_index",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "StartRotation and modulo-four rotation, lines 1906-1907, 2017-2022",
+      "original_lines": [
+        1815,
+        1906,
+        1907,
+        2017,
+        2022,
+        2040
+      ]
+    },
+    "bejndxqqzf": {
+      "readable": "key_matches_target",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "Conjunction of shape/color/rotation at target index, lines 2039-2040",
+      "original_lines": [
+        1884,
+        2030,
+        2039,
+        2044
+      ]
+    }
+  },
+  "rejected_renames": [],
+  "unresolved_function_names": [
+    "kbkdzqocik",
+    "vytykscvhe",
+    "mfyzdfvxsm",
+    "nzukewekzr",
+    "wgxrzqzazj",
+    "ullzqnksoj",
+    "mfnyvivrar",
+    "monctmxmpp",
+    "qeoitwygzm",
+    "prpxgfxlcm",
+    "wgxrzqzazj",
+    "bkuguqrpvq",
+    "qrttfzbifu",
+    "npdjlrkhsg",
+    "fwtnsrvkrz",
+    "iiosonyanc",
+    "vtfcqjvbeo",
+    "uczkzlpcwg",
+    "nakogfhyus",
+    "wbcenorpju",
+    "mrznumynfe",
+    "txnfzvzetn",
+    "qetwzqzzik",
+    "vqfjzzkhid",
+    "pbznecvnfr"
+  ],
+  "transforms": [
+    "NAME-token-only replacements",
+    "separate annotations; no source reformatting"
+  ],
+  "validation": {
+    "syntax": "AST parse passed; game not executed",
+    "inverse_token_reconstruction": "exact original text restored",
+    "inverse_ast": "identical after reversing name map",
+    "strings_comments_license": "unchanged",
+    "line_numbers": "preserved",
+    "source_bytes_unchanged_when_no_renames": false,
+    "behavioral_comparison": "NOT PERFORMED",
+    "semantic_equivalence": "NOT CLAIMED for renamed copies; no dynamic/reflection/external-client equivalence test",
+    "engine_entrypoints": "class names, on_set_level, step, public imports/APIs not renamed"
+  },
+  "limitations": [
+    "Original meaningful names cannot be recovered from randomized names alone.",
+    "Descriptive names are proposed from reviewed behavior, not recovered author names.",
+    "No encoded payload was executed or imported; suspicious calls, if present, are only listed.",
+    "Source-code copyright indicates attribution, not proof the locally installed version is unmodified upstream.",
+    "Existing engine string/tag/resource identifiers are intentionally retained."
+  ]
+}

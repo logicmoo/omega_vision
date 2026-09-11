@@ -33,7 +33,157 @@ No merge or branch deletion was performed for this cleanup, and no branch was
 recreated. This documentation-only task does not resume paused implementation,
 research, or services.
 
+## ARC game vocabulary - shared task plan (paused by user)
+
+Owner: **ARC game vocabulary**, project session
+`abbe3d4a-4d8e-47ce-884c-4772fbd65056`.
+The user explicitly stopped this session's research and selected this file as
+the shared planning place. This section consolidates this session's task list;
+it does not take ownership of other agents' implementation or launcher work.
+**Do not resume research, implementation, or deferred follow-ups without the
+user's instruction.** Completed milestones below are not a claim that all game
+semantics or every later recognition-document revision are understood.
+
+### Remaining work and explicit limits
+
+| Task | Status | Scope and recovery instruction |
+|---|---|---|
+| Explaining recognition-role shapes (`recognition-shape-appearance`) | Paused; source inspection started, answer not delivered | Answer the interrupted question, "and what shapes look that way", with a human-readable appearance table covering the nine new roles and five refinements. Distinguish actual rendered shapes, logical footprints, hidden state and relational configurations. Reuse the source findings below; do not restart the full catalog review. |
+| Reconciling the expanded recognition document | Deferred; a full new audit is not authorized by this plan | The updated attachment contains 108 broad roles and five refinement groups across 276 game rows. Comparison and explanation of the additions are complete, but this revision is NOT a fully source-corrected replacement for the accepted first-document audit. If requested, carry forward accepted corrections and review changed claims using exact installed versions. |
+| Publishing older-guide corrections | Deferred; preserve accepted reports | `Game_Object_Recognition.guide_followups.md` records 16 corrections/qualifications discovered during the first document audit. They have been flagged, not silently applied to the accepted guides. Any authorized revision must be versioned and retain existing citations. |
+| Fully explaining the remaining obfuscated semantics | Unresolved limits; no active work | The 31 partial/opaque versions now have v3 role/flow annotations, not full semantic deobfuscation. Use `readability_obstacles_v3.csv` for exact per-version gaps. Of 1,761 named functions, 226 have grounded roles, 27 have tentative counterpart proposals and 1,508 have structural-only contracts/flows. No identifier renames were applied in v3; do not treat unsafe renaming or unknown meanings as solved. Do not redo the 251 already-readable versions. |
+| Comparing original/copy gameplay behavior | Not performed; outside current authorization | Syntax, AST, token/byte preservation and static flow coverage do not constitute behavioral comparison. No game/engine/model execution is permitted merely to close this limitation. |
+
+### Completed milestones
+
+| Task ID | Completed work | Result and boundary |
+|---|---|---|
+| `all-game-guides` | Writing all installed-game guides | Accepted player-guide tables cover the confirmed 276 distinct IDs and account for 282 installed versions, with human controls, goals, visible entities, hidden mechanics and source-specific limits. This is the established inventory snapshot, not a new scan or a claim that every configured external root is covered. |
+| `readable-copies` | Deriving traceable readable sources | All 282 versions have traceable initial copies/manifests: 251 already-readable byte-identical copies, 14 partial transformations and 17 opaque/annotated copies. Coverage-complete does not mean fully deobfuscated. |
+| `vocabulary-table` | Completing the evidenced vocabulary table | Accepted 163-term table: 138 retained from the reviewed 140-term draft, with five corrections and two withheld terms, plus 25 supported distinctions. Keep the distinction between rendered entities and hidden mechanics. |
+| `final-coverage` | Auditing coverage and handing off | Delivered the complete guide/vocabulary tables and ontology analysis. No pending guide rows or unavailable source files in that accepted snapshot; residual semantic and visual limits remain explicitly recorded. |
+| `deeper-source-roles` | Explaining the 31 partial/opaque versions | Published immutable v3 comment-only derivatives for 31 versions / 25 IDs: 226 grounded method roles, 129 state roles, 1,711 keyed asset/data entries and indexing of 1,761 named functions plus 82 lambdas. Original symbols, APIs and existing citations remain intact. |
+| `deeper-source-validation` | Validating improved derivative coverage | Original-byte reconstruction, AST preservation, idempotence and all 16,489 structural statement records/branch contexts were accounted for. Exact per-version obstacles and confidence labels were delivered; no behavioral equivalence was claimed. |
+| `recognition-document-review` | Reconciling the first uploaded recognition document | Reviewed all 99 original families, 276 game rows, 1,711 mappings, seven cautions and six additional-version distinctions. The corrected document has 100 qualified concepts, 1,644 positive mappings and 386 audit records. Archive/snapshot provenance asserted by the attachment was not certified. |
+| `recognition-document-export` | Delivering the corrected document and audit | Corrected Markdown/CSV, family/assignment/source tables, audit and validation artifacts were accepted and opened by the coordinator. Original attachment and previously accepted reports remain unchanged. |
+| Updated-list comparison | Comparing the second attachment | Identified nine new broad roles, five refinement groups, four modified old families and 14 changed game rows; 262 rows were unchanged. This was a difference review, not a renewed full factual audit. |
+| New-classification explanation | Explaining the updated role names | Answered the user's question about the nine additions and five refinements, including that fields, representations, relationships and collections are not automatically physical objects. The follow-up about appearance was interrupted. |
+
+### Resume information for the interrupted appearance table
+
+The nine new roles are circuit probe/voltage readout (KV01/KV04), timing target
+window (SG01), guard detection region (SC01/ST01), visibility region/fog boundary
+(FG01), suction field/center/ring (SU15), paired content-swap regions (JW01),
+connected paint blob (GP04), fruit collision/merge group (SU15), and pending
+command queue (DL01).
+
+The five refinements are directional push-blast front (KA59), return-address/
+suspended-call marker (SB26), routine/instruction/target-tape cursors (SB26),
+hollow frame/crossbars/interior (RE86), and generated reflection instance (AR25).
+
+Existing static findings to preserve, not a completed appearance answer:
+
+- Under `python\workbench_api_server\environment_files`, ST01
+  `63be02fb\st01.py:210-229` constructs an up-to-three-cell-wide,
+  seven-cell-deep strip, not a widening triangular cone. Its overlay is drawn at
+  lines 81-93; bounds and the particular wall-scan behavior can truncate it.
+  SC01's detection region is not separately drawn.
+- FG01 uses Chebyshev distance for a square logical visibility footprint;
+  it is not a drawn circular fog object. SG01
+  `63be02fb\sg01.py:74-95` draws a one-pixel-high interval strip and a blue
+  one-pixel cursor below it. DL01 `63be02fb\dl01.py:21-64` uses two-pixel
+  directional marks and one-pixel empty slots, not full arrowhead artwork.
+- SU15 `1944f8ab\su15.py:1194-1215` draws a pixelated circular annulus using
+  squared distance and radius +/- 0.5. A collision/merge group is a configuration
+  of pieces, not evidence of a separately drawn enclosing shape.
+- SB26 `7fbdac44\sb26.py` has literal hollow-square prototypes for the return
+  marker (line 261, 6x6), instruction cursor (line 321, 6x6) and tape cursor
+  (line 37, 8x8). The routine cursor uses corner brackets (line 127);
+  lines 1119-1146 adjust frame width and preserve bracket gaps.
+- KA59 `38d34dbb\ka59.py` blast prototypes at lines 98/115/138 are opaque
+  3x3 patches in larger transparent masks; lines 629/649/675 use 6x3, 6x6
+  and 6x9 patches. They are not circular fireball artwork. The staged
+  action/position/rotation path is at lines 41335-41379.
+- KV01 `v1\kv01.py:90-119` encodes readings as colored pixels, not printed
+  fractions or a physical probe. Reuse accepted source legends for KV04,
+  JW01's paired rectangle outlines, GP04's connected painted-cell shapes,
+  RE86's hollow frames/crossbars and AR25's reflected silhouettes. Verify any
+  more specific artwork assertion before presenting it as fact.
+
+### Artifact register and protected inputs
+
+Existing reports remain at this local handoff base; the shared task status is
+now in **this file**, rather than only in the session-private task database:
+
+`C:\Users\dougl\.copilot\session-state\67557b60-4469-4dd3-ba92-bdf7d065e537\files`
+
+| Artifact set | Files relative to the handoff base |
+|---|---|
+| Accepted inventory and guides | `game_source_register.json`; `installed_game_guides.md`, `.csv`, `.json` |
+| Accepted vocabulary and ontology | `cross_game_vocabulary.md`, `.csv`, `.json`; `ontology_analysis.md` |
+| Initial source-copy coverage | `readable_coverage_manifest.json` |
+| Improved v3 readability | `readability_report_v3.md`; `readability_manifest_v3.json`; `readability_aliases_v3.csv`; `readability_obstacles_v3.csv`; `readability_functions_v3.json`; `readability_scope_supplement_v3.json`; `readability_validation_v3.json` |
+| Accepted first-document correction | `Game_Object_Recognition.corrected.md`, `.csv`; `Game_Object_Recognition.audit.md`, `.csv`, `.json`; `Game_Object_Recognition.families.csv`; `Game_Object_Recognition.assignments.csv`; `Game_Object_Recognition.sources.csv`; `Game_Object_Recognition.validation.json` |
+| Unapplied guide follow-ups | `Game_Object_Recognition.guide_followups.md` |
+
+The original attachment remains unchanged at
+`C:\Users\dougl\.copilot\workspaces\43cddb84-4e12-4a03-b6df-f72ca97033ab\attachments\b5558fbd-13c6-4e15-8d3a-6f7593c0a0ca-Game_Object_Recognition.md`;
+its exact hash is retained in the accepted audit artifacts.
+The updated attachment remains unchanged at
+`C:\Users\dougl\.copilot\workspaces\abbe3d4a-4d8e-47ce-884c-4772fbd65056\attachments\17c96956-38a5-4d75-b7d0-1f9bdd5b0aec-Game_Object_Recognition.md`
+(SHA256 `618aeebdb2b12ee0aef579dedb59ba8f2ba572d03116da9498c48e4316fe354c`).
+Do not assume similarly named later repository uploads are identical inputs.
+
+Derived sources stay only under
+`data\omega_vision\knowledge\artifacts\game_sources\readable\<game-id>\<version>`.
+Preserve all installed originals, metadata, accepted reports and v3 derivatives.
+Research is static-source-only: no games, engine imports, models, live APIs,
+servers, visible windows, new helpers, runtime/schema changes or Git operations.
+The current user authorization is limited to this shared planning-file update.
+If UI context is later relevant, use `workspace=arc3_random_player` without
+altering other URL state; it is not a data partition.
+Retain R/S/G/O/A/C distinctions, recursive Object parts, A with one or more
+members, and the separation of observed evidence from inferred hidden structure.
+No automatic ingestion of documentary roles into recognition classes/rules.
+
 ## Current recovery state
+
+### Miniature event recordings (2026-09-12)
+
+Created the user's requested loadable examples at
+`data\omega_vision\recordings\events_tests\<event_type>\<frame_number>`.
+There are 38 ordinary recordings with 122 RGB 64x48 frames: one example for each
+of the 25 registered instantaneous event types, one complete start/continue/end
+lifecycle for each of the 11 lasting relations, and no-material-change/unknown
+controls. This covers the current 58 event/phase vocabulary targets, not every
+possible real-world event or a claim that every target has a working detector.
+
+Each recording has `recording.json`, numbered `0\image.png`, `1\image.png`, etc.,
+matching `state.json` files, and a separate `expected_events.json`. All moments,
+including the baseline, are explicitly numbered; no duplicate root preview frame
+is added. `events_tests\suite.json` indexes the examples. The oracle includes
+frame pairs, expected terms, stable fixture entity names, pixel hashes, timing,
+scene annotations and evidence requirements. Grouping/lineage argument conventions
+are explicitly fixture-local, not a new runtime schema. Expectations and causal,
+depth or identity annotations are never injected as detections, accepted rules
+or memory. Recognition has not been run on these examples.
+
+The reproducible creator is
+`python -m omega_vision.evaluation.event_recordings` from this checkout.
+It uses shared path/lock/catalog helpers, reuses identical existing inputs, and
+refuses differing existing files or redirected destinations without overwriting.
+Generated recordings are local data under the existing ignore policy; the source
+cases and creator preserve the dataset definition for future regression tests.
+No existing recording, shared selection, preference or service was changed.
+
+The 14 focused regressions cover vocabulary/phase coverage, visible pixel changes,
+ordinary recording loaders, frame ordering, two-workspace shared identities,
+oracle separation, idempotence, existing-file preservation and write containment.
+Live `workspace=arc3_random_player` catalog, recording directory and import lists
+all expose the 38 cases; each initial frame loads through recording-context.
+The shared selection stayed `recordings/ls20/20260718-154544`. The user's active
+page was not navigated. Broader detector implementation and the previously
+deferred recording-duplication cleanup remain outside this dataset task.
 
 ### Completed memory implementation checkpoint (2026-09-12)
 
@@ -274,6 +424,55 @@ panel is now closed. Source integration is complete; live visible-window and
 user-context menu/inspector acceptance remain pending explicit launch
 authorization. No services, game sessions, reimports, or data repairs were
 started to complete this checkpoint.
+
+### Shared planning handoff - all work stopped (2026-09-10)
+
+The user selected this file as the shared planning place. All implementation,
+tests, browser acceptance and process launches are paused. Helpers have been
+told to stop; preserve every existing edit and artifact. The tasks below
+supersede older pending-status and running-process notes, not their evidence.
+Do not restart or resume anything automatically.
+
+**Runtime:** the hidden API had exited and the owned hidden Vite copy was
+stopped at the user's explicit request. The last check found no owned listeners
+on 8000/5173 and no surviving known API/Vite process trees. Visible terminals,
+unrelated processes and disk data were not removed. Future authorized launches
+must use visible Windows Command Prompt/DOS boxes, with a readable first line
+showing the actual Python/service command and port, never hidden copies.
+
+| Pending task | Current state and next authorized-work boundary |
+|---|---|
+| Visible CMD launch correction | Partial uncommitted changes select `cmd.exe`, keep Workbench API/web visible and add service/port text. Final test updates were blocked when plan mode began. Finish and validate only after renewed implementation authorization; do not launch services automatically. |
+| Launcher output receipt | A later read of existing `omega-launcher-check` recovered command-first `/describe` help output. Earlier reads had failed. No exit code was captured; reconcile this evidence without another diagnostic launch. |
+| Menu/combined-page acceptance | Source committed in `396ef78185eb4e9741837ce9d617b40aa33e9e35`: family/per-item visibility, recovery, preserved drafts, combined Video Import/Frames, contextual Temporal canvas, default-workspace preference and explicit-only game actions. Final acceptance remains incomplete; use `workspace=arc3_random_player`, never substitute another menu. |
+| Fixed contextual inspector | Backend committed in `ef8b32c073021c17332fe98afeb3b70bd14271bd`; host, six inspector files, tests and explicit frame-ID mapping remain uncommitted. Final source checks/build passed before stopping. Complete exact allowlist integration and read-only acceptance after authorization. |
+| Unexpected preferences write | Read-only inspector acceptance observed one `PUT /semantic/memory/preferences` without an intentional Save. Identify the exact trigger before claiming no-mutation acceptance; preserve evidence and do not mask it by changing user settings. |
+| Native reference example | Exact reference/cutoff behavior is model-covered; a genuine native attributed live sample is absent. Do not migrate outside-root records or fabricate a sample. |
+| Contextual hierarchy and LTM policy | Movie/Chapter ordering needs authoritative hierarchy metadata; additional LTM participation is unspecified. Keep unavailable results explicit, never infer folder/timestamp order or include current/future children. |
+| Scoped rule gaps | Induction-procedure AST/acceptance and cross-area immutable parent references for new cross-frame deployment remain undefined. Preserve existing proposal history, gates and current-recording level-STM promotion. |
+| New typed domains | Group/class producers/readers and recursive/A rich payload renderers remain planned. Preserve Shape-group versus Object-group membership, separate class identities, recursive Objects-as-parts, attributed Shapes and observed/inferred distinctions. Do not invent A storage or runtime entities. |
+| Display vocabulary | Uppercase stable markers and capitalized names are display-only; never rewrite IDs, paths or raw MeTTa/Prolog. Research uploads are not approved runtime schemas. |
+
+**Known evidence:** invalid Operations raw JSON survived hide/reveal without
+saving; the Temporal canvas followed its actual context without URL/scroll
+changes; corrected frame mapping uses manifest `unitId` (`0_image` -> `0`),
+not transient display order. Read-only acceptance saw no new import/session/game
+actions after the safety fixes, but the preferences PUT prevents a clean final
+inspector claim.
+
+**Committed safety/implementation checkpoints:** `dd6d6ebfe` rejects unconfirmed
+recording replacement; `de867627e` and `6a2d71877` contain launcher diagnostics;
+`37433ad99` established shared storage/inspection; `d902a99c3` implemented the
+combobox option-list cache. Preserve the earlier recording-regeneration incident
+and uncertain output-loss baseline; no automatic repair, reimport, rollback,
+migration or cleanup is authorized.
+
+**Ownership:** main coordinator owns this ledger, Git, servers and host seams.
+Frontend owner `a067a06c-0bc4-44cc-b40a-ced2b38ea46b`, backend
+`omega-storage-boundary`, and launcher/pool/read-only acceptance helpers are
+paused. Their exact earlier allowlists remain the handoff of record. No helper
+should create a competing plan. No PR, remote push, new branch/worktree or
+implementation resumption was requested by this planning handoff.
 
 - Launcher activation bypass / visible-output gap (2026-09-10): the user
   reported three blank consoles after API activation. The activation command

@@ -1,0 +1,67 @@
+{
+  "game_id": "tr87",
+  "directory_version": "cd924810",
+  "declared_game_id": "tr87-cd924810",
+  "title": "TR87",
+  "original_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\python\\workbench_api_server\\environment_files\\tr87\\cd924810\\tr87.py",
+  "original_sha256": "667edca43cf72b160e5a686a18669eb53a9ef3be2a3c583811920e89bac296a7",
+  "readable_source": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\knowledge\\artifacts\\game_sources\\readable\\tr87\\cd924810\\tr87.readable_667edca43cf7_940c68db05.py",
+  "readable_sha256": "ce511c5643d4b58b046e61633058548665540912eeac8c98e0363edfe2388f30",
+  "classification": {
+    "provenance": "official-source-copyright",
+    "provenance_evidence": "ARC Prize Foundation MIT copyright header",
+    "obfuscation": "randomized-identifiers-and-literal-assets",
+    "randomized_function_candidates": [
+      "wpbnovjwkv",
+      "pjqbnqnbsq",
+      "bsqsshqpox",
+      "iwbhnvdaao",
+      "qrkneeaawb",
+      "lonhgifaes"
+    ],
+    "encoded_or_dynamic_calls": []
+  },
+  "status": "partial-semantic-renaming",
+  "symbol_map": {
+    "iwbhnvdaao": {
+      "readable": "symbol_names_match",
+      "confidence": "high-source-derived-meaning",
+      "rationale": "Compare token names without rotation, lines 1107-1113",
+      "original_lines": [
+        1062,
+        1094,
+        1107
+      ]
+    }
+  },
+  "rejected_renames": [],
+  "unresolved_function_names": [
+    "wpbnovjwkv",
+    "pjqbnqnbsq",
+    "bsqsshqpox",
+    "qrkneeaawb",
+    "lonhgifaes"
+  ],
+  "transforms": [
+    "NAME-token-only replacements",
+    "separate annotations; no source reformatting"
+  ],
+  "validation": {
+    "syntax": "AST parse passed; game not executed",
+    "inverse_token_reconstruction": "exact original text restored",
+    "inverse_ast": "identical after reversing name map",
+    "strings_comments_license": "unchanged",
+    "line_numbers": "preserved",
+    "source_bytes_unchanged_when_no_renames": false,
+    "behavioral_comparison": "NOT PERFORMED",
+    "semantic_equivalence": "NOT CLAIMED for renamed copies; no dynamic/reflection/external-client equivalence test",
+    "engine_entrypoints": "class names, on_set_level, step, public imports/APIs not renamed"
+  },
+  "limitations": [
+    "Original meaningful names cannot be recovered from randomized names alone.",
+    "Descriptive names are proposed from reviewed behavior, not recovered author names.",
+    "No encoded payload was executed or imported; suspicious calls, if present, are only listed.",
+    "Source-code copyright indicates attribution, not proof the locally installed version is unmodified upstream.",
+    "Existing engine string/tag/resource identifiers are intentionally retained."
+  ]
+}

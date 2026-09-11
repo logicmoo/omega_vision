@@ -1,0 +1,30 @@
+{
+  "game_id": "mf01-v1",
+  "title": "Map-Reader Minefield",
+  "description": "The field looks uniform and safe. Read the map beside it (green = safe, red = mine), which mirrors the field row-for-row, and follow the safe path from the blue start to the yellow goal. Step on a mine = game over.",
+  "default_fps": 20,
+  "baseline_actions": [
+    40
+  ],
+  "tags": [
+    "static",
+    "minefield",
+    "navigation",
+    "map-reading"
+  ],
+  "local_dir": "environment_files/mf01/v1",
+  "date_created": "2026-09-05",
+  "training_metadata": {
+    "pcg_type": [],
+    "grid_range": [
+      16
+    ],
+    "action_space": 4,
+    "physics_rules": [
+      "movement",
+      "hazard"
+    ],
+    "reward_structure": "checkpoint-on-level-pass",
+    "episode_count": 1000000
+  }
+}
