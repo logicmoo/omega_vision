@@ -39,6 +39,43 @@ uses `transforms\image\memory`; the numbered move directories are not renamed
 or reindexed. It precedes move `0` in causal order. Missing or contradictory
 initial-state metadata is an error, not permission to invent an observation.
 
+## Version control and local live state
+
+This tracking change excludes exactly these live files under `data\omega_vision`:
+`pooler.lock`, `pooler_control.json`, `pooler_status.json`,
+`preferences\visual_sequence_selection.json`, and `video_import\page_state.json`.
+They contain local process state, current controls or editor selection, not
+portable shared defaults. The ignore rules do not exclude the whole Omega root
+or replace deliberate versioning decisions for datasets, rules and source code.
+
+The authorized change removes these five entries from Git's index only; current
+local files remain in place and earlier committed versions stay in history.
+Other existing checkouts should preserve any live copies they need before
+pulling the untracking commit: Git can remove an unchanged previously tracked
+copy during that update. Do not automatically restore historical values over
+current state or rewrite repository history.
+
+## Experimental composition and visibility helpers
+
+`composition_event_features.py` and `visibility_event_features.py` are versioned
+standalone groundwork, not registered runtime stages or API producers.
+
+The composition helper reuses the authored attachment/co-motion rule and tracks
+conservative formation/dissolution evidence without renaming Object identities.
+The visibility helper binds readable pixels to source images and measures a
+uniquely fitted inward border passage under an explicit rigid-clipping
+interpretation. Unknown or first-visible pixels do not establish physical
+creation, prior absence, a hidden path, or the same physical instance.
+
+Integration still requires independently verified criterion acceptance,
+complete measurement provenance (including final-G acceptance), and trusted
+source/checkpoint/coordinate references. The composition helper does not resolve
+or authenticate the criterion's `source_ref`. Supplied trust/completeness
+booleans and public content hashes are not substitutes for those producers.
+Membership lineage, directed carry support and controlled-actor binding are not
+implemented by these leaves. Their companion tests use explicit trusted-input
+fixtures and do not count as production acceptance or automatic rule promotion.
+
 ## Recognition: deduction, induction, and abduction
 
 ### General explanation

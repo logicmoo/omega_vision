@@ -15,6 +15,13 @@ data/omega_vision/video_import/**/*.avi
 data/omega_vision/video_import/**/*.m4v
 data/omega_vision/vision_frames/video
 
+# Live Omega process/editor state stays local; do not ignore the shared data root.
+/data/omega_vision/pooler.lock
+/data/omega_vision/pooler_control.json
+/data/omega_vision/pooler_status.json
+/data/omega_vision/preferences/visual_sequence_selection.json
+/data/omega_vision/video_import/page_state.json
+
 .tmp_pytest_*/
 # Python-generated files
 __pycache__/

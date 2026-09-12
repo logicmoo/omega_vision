@@ -148,6 +148,31 @@ No automatic ingestion of documentary roles into recognition classes/rules.
 
 ## Current recovery state
 
+### Git tracking separation approved (2026-09-12)
+
+The user approved keeping the five live Omega state files local and preserving
+the experimental source helpers in version control. Narrow root-anchored ignore
+rules cover only `pooler.lock`, `pooler_control.json`, `pooler_status.json`,
+`preferences/visual_sequence_selection.json`, and `video_import/page_state.json`
+under `data/omega_vision`. Remove their index entries only; retain the actual
+local files and all existing Git history. Do not ignore the entire shared root.
+
+The reviewed `composition_event_features.py`, `visibility_event_features.py` and
+`test_composition_event_features.py` are now maintained as experimental,
+standalone groundwork. They remain unregistered and unconnected to runtime
+dispatch. Criterion acceptance, complete upstream measurement provenance and
+trusted reference/coordinate producers are still required; supplied flags and
+content seals are not authentication. Tests do not establish those missing
+producers. No runtime activation, live memory transfer or data migration is part
+of this tracking change. Details and the existing-checkout preservation caveat
+are documented in `docs/design/OMEGA_STORAGE_BOUNDARY.md`.
+
+All five local state files remained present after index removal; the live status
+writer continued its normal updates. The 21 isolated helper tests passed.
+Ignore checks also confirmed that the helpers and neighboring configuration/data
+paths remain eligible for tracking. This change did not restart services, alter
+selection or write live memory.
+
 ### TODO follow-through accepted batch (2026-09-12)
 
 The user asked to take care of this ledger's remaining work. Continue in the

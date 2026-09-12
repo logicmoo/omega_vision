@@ -1,8 +1,0 @@
-{
-  "kind": "pooler_status",
-  "pid": 8440,
-  "state": "idle",
-  "root": "C:\\snet\\PeTTa\\repos\\symbolic_ml_workbench\\data\\omega_vision\\recordings\\ls20\\20260718-154544",
-  "workers": 10,
-  "heartbeatAt": "2026-09-11T18:53:36.383570+00:00"
-}
