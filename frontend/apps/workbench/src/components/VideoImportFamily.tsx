@@ -3,6 +3,7 @@ import { GenerationHost } from "./GenerationHost";
 import type { PageFamily } from "../lib/pageGenerations";
 import type { WorkflowPageDefinition } from "./WorkflowPageHost";
 import type { ModelChoice, WorkspaceFileRecord } from "@omega_vision_ui/components/Arc3B1B2PipelinePage";
+import type { VideoImportSurface } from "@omega_vision_ui/components/VideoImportNavigationUrl";
 
 /**
  * The Video Import page family ? the first page on the upgrade system.
@@ -38,6 +39,19 @@ const family: PageFamily = {
   ],
 };
 
+const sequencesFamily: PageFamily = { ...family, family: "visualSequences", title: "VISUAL SEQUENCES" };
+
+type VideoImportFamilyProps = {
+  workspaceId: string;
+  workspaceLabel?: string;
+  arc3PageDefinition?: WorkflowPageDefinition;
+  arc3B1B2PageDefinition?: WorkflowPageDefinition;
+  arc3B1B2Models?: ModelChoice[];
+  arc3B1B2Files?: WorkspaceFileRecord[];
+  onArc3B1B2PageDefinitionSaved?: () => Promise<unknown> | unknown;
+  onChainSummaryChange?: (steps: VideoImportChainSummaryStep[]) => void;
+};
+
 export function VideoImportFamily({
   workspaceId,
   workspaceLabel,
@@ -47,21 +61,14 @@ export function VideoImportFamily({
   arc3B1B2Files,
   onArc3B1B2PageDefinitionSaved,
   onChainSummaryChange,
-}: {
-  workspaceId: string;
-  workspaceLabel?: string;
-  arc3PageDefinition?: WorkflowPageDefinition;
-  arc3B1B2PageDefinition?: WorkflowPageDefinition;
-  arc3B1B2Models?: ModelChoice[];
-  arc3B1B2Files?: WorkspaceFileRecord[];
-  onArc3B1B2PageDefinitionSaved?: () => Promise<unknown> | unknown;
-  onChainSummaryChange?: (steps: VideoImportChainSummaryStep[]) => void;
-}) {
+  surface = "intake",
+}: VideoImportFamilyProps & { surface?: VideoImportSurface }) {
   return (
     <GenerationHost
-      family={family}
+      family={surface === "sequences" ? sequencesFamily : family}
       workspaceId={workspaceId}
       extraProps={{
+        surface,
         workspaceLabel,
         arc3PageDefinition,
         arc3B1B2PageDefinition,
@@ -72,4 +79,8 @@ export function VideoImportFamily({
       }}
     />
   );
+}
+
+export function VisualSequencesPage(props: VideoImportFamilyProps) {
+  return <VideoImportFamily {...props} surface="sequences" />;
 }

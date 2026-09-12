@@ -13,7 +13,7 @@ import { ChatDock } from "../components/ChatDock";
 import { MenuVisibilityBoundary, MenuVisibilityDialog, MenuVisibilityRecovery } from "../components/MenuVisibilityBoundary";
 import { VisibilityMenuContext } from "../components/MenuVisibilitySettings";
 import { buildVisibilityMenu, isMenuItemVisible, isMenuRouteVisible, menuItemForRoute, normalizeMenuSubview, pageMenuId, pluginMenuId, workflowMenuId } from "../lib/menuVisibility";
-import { resolveVideoImportShellDestination, videoImportUrlForSubview } from "@omega_vision_ui/components/VideoImportNavigationUrl";
+import { resolveVideoImportShellDestination, videoImportUrlForSubview, visualSequencesUrlForNavigation } from "@omega_vision_ui/components/VideoImportNavigationUrl";
 import { PageUiTools } from "../components/PageUiTools";
 import { PddlPlanImportPanel } from "../components/PddlPlanImportPanel";
 import { relationshipIds } from "../components/resourceRelationships";
@@ -166,6 +166,11 @@ const Arc3PlayPage = lazy(() =>
 const VideoImportPage = lazy(() =>
   import("../components/VideoImportFamily").then((module) => ({
     default: module.VideoImportFamily,
+  })),
+);
+const VisualSequencesPage = lazy(() =>
+  import("../components/VideoImportFamily").then((module) => ({
+    default: module.VisualSequencesPage,
   })),
 );
 const GoogleMeetBridgePage = lazy(() =>
@@ -440,6 +445,7 @@ type View =
   | "arc3B1B2Pipeline"
   | "arc3Play"
   | "videoImport"
+  | "visualSequences"
   | "recognitionDemos"
   | "arc3GamesGallery"
   | "chat"
@@ -499,6 +505,7 @@ const WORKBENCH_VIEWS: Set<View> = new Set([
   "arc3B1B2Pipeline",
   "arc3Play",
   "videoImport",
+  "visualSequences",
   "arc3GamesGallery",
   "chat",
   "workflowPageBuilder",
@@ -553,6 +560,7 @@ const viewFromLocation = (): View | null => {
   if (value === "b1-b2-pipeline" || value === "b1b2pipeline" || value === "arc3-b1-b2-pipeline") return "arc3B1B2Pipeline";
   if (value === "play" || value === "arc3-play" || value === "arc3play" || value === "play-record") return "arc3Play";
   if (value === "video-import" || value === "videoimport" || value === "youtube-import" || value === "video") return "videoImport";
+  if (value === "visual-sequences" || value === "visualsequences") return "visualSequences";
   if (value === "spriteviewer" || value === "sprite-viewer" || value === "sprite-view") return "videoImport";
   if (value === "advanced" || value === "vi-advanced" || value === "videoimportadvanced" || value === "finish" || value === "videoimportfinish") return "videoImport";
   if (value === "resource-atomspace" || value === "resourceatomspace" || value === "all-resources-atomspace") return "resourceAtomspace";
@@ -743,6 +751,7 @@ export const NAVIGATION_V2: Array<{
     group: "OMEGA VISION",
     items: [
       { label: "Video Import", view: "videoImport", subview: "sources", glyph: "▷" },
+      { label: "Visual Sequences", view: "visualSequences", glyph: "▧" },
       { label: "Game Recordings", view: "videoImport", subview: "games", glyph: "⊞" },
       { label: "Objects", view: "videoImport", subview: "objects", glyph: "◍" },
       { label: "Sprite View", view: "videoImport", subview: "sprite-view", glyph: "◳" },
@@ -824,6 +833,7 @@ const viewLabel = (view: View) =>
       arc3B1B2Pipeline: "B1 → B2 Pipeline",
       arc3Play: "Play & Record",
       videoImport: "Video Import",
+      visualSequences: "Visual Sequences",
       arc3GamesGallery: "ARC3 Games",
       workflowPageBuilder: "Workflow Page Builder",
       workflowRuns: "Workflow Runs",
@@ -1107,6 +1117,12 @@ export function FilesystemWorkbenchPage() {
   ) => {
     if (!allowLeavingRetainedPage()) return;
     setViewState(next);
+    if (next === "visualSequences") {
+      const url = visualSequencesUrlForNavigation(window.location.href);
+      window.history.replaceState(window.history.state, "", url);
+      setActiveNavSubview("recognition");
+      return;
+    }
     if (next === "states") {
       setWorkflowPaneFocus("runs");
       setWorkflowEditorPercent(33.333);
@@ -1379,6 +1395,7 @@ export function FilesystemWorkbenchPage() {
     () => {
       const parameters = new URLSearchParams(window.location.search);
       const legacyView = parameters.get("view")?.trim().toLowerCase();
+      if (legacyView === "visualsequences" || legacyView === "visual-sequences") return "recognition";
       const subview = parameters.get("subview")?.trim().toLowerCase() || "";
       const navRoot = parameters.get("nav")?.split(",")[0]?.trim().toLowerCase() || "";
       if (["spriteviewer", "sprite-viewer", "sprite-view"].includes(legacyView || "") || navRoot === "sprite-view") {
@@ -3448,7 +3465,7 @@ export function FilesystemWorkbenchPage() {
     (!item.subview || (activeNavSubview || "sources") === item.subview);
   const openNavigationItem = (item: { view: View; subview?: string; action?: string }) => {
     if (!allowLeavingRetainedPage()) return;
-    if (item.action === "temporal-events" && view === "videoImport" && activeNavSubview === "recognition") {
+    if (item.action === "temporal-events" && (view === "videoImport" || view === "visualSequences") && activeNavSubview === "recognition") {
       window.dispatchEvent(new CustomEvent("workbench:open-temporal-events"));
       return;
     }
@@ -3464,6 +3481,10 @@ export function FilesystemWorkbenchPage() {
       window.history.replaceState(window.history.state, "", url);
       setActiveNavSubview(item.view === "videoImport" ? resolveVideoImportShellDestination(url.href).subview : item.subview);
       window.dispatchEvent(new CustomEvent("workbench:set-subview", { detail: item.subview }));
+      if (item.view === "videoImport") {
+        setViewState(item.view);
+        return;
+      }
     }
     setView(item.view);
   };
@@ -4984,6 +5005,13 @@ export function FilesystemWorkbenchPage() {
                 onChainSummaryChange={setVideoImportChainSummary}
               />
             )}{" "}
+            {view === "visualSequences" && (
+              <VisualSequencesPage
+                workspaceId={workspace.id}
+                workspaceLabel={workspace.label}
+                onChainSummaryChange={setVideoImportChainSummary}
+              />
+            )}{" "}
             {view === "googleMeet" && <GoogleMeetBridgePage />}{" "}
         {view === "recognitionDemos" && <RecognitionDemosPage workspaceId={workspace.id} />}{" "}
             {view === "pluginPage" && <PluginHostedPage entry={pluginPage} />}{" "}
@@ -5272,6 +5300,7 @@ export function FilesystemWorkbenchPage() {
               }
             >
               <HelpDocumentTabs
+                sequenceWorkspaceId={pageVisible && (view === "visualSequences" || (view === "videoImport" && activeNavSubview === "recognition")) ? workspace.id : undefined}
                 preferred={
                   view === "pluginPage"
                     ? "pluginDoc"
@@ -5279,6 +5308,8 @@ export function FilesystemWorkbenchPage() {
                     ? "goals"
                     : view === "videoImport"
                       ? activeNavSubview === "recognition" ? "recognition" : "videoImport"
+                    : view === "visualSequences"
+                      ? "recognition"
                     : view === "recognitionDemos"
                       ? "recognition"
                     : view === "googleMeet"

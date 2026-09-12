@@ -30,6 +30,8 @@ export interface VisualSequenceCatalogEntry {
   level?: number | null;
   imageCount?: number;
   reducedCount?: number;
+  readOnly?: boolean;
+  migrationRequired?: boolean;
 }
 
 export interface VisualSequenceLocation {

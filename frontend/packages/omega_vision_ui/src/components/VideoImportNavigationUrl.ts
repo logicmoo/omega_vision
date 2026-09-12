@@ -1,7 +1,30 @@
 const NAVIGATION_QUERY_PARAMETER = "nav";
 const SAFE_NAVIGATION_SLUG = /^[a-z0-9][a-z0-9._-]*$/;
 
-export type RecognitionNavigationTab = "inputs" | "extractions";
+export const RECOGNITION_SEQUENCE_TABS = ["inputs", "extractions", "test-demo", "sprites"] as const;
+export type RecognitionNavigationTab = typeof RECOGNITION_SEQUENCE_TABS[number];
+export function isRecognitionNavigationTab(value: unknown): value is RecognitionNavigationTab {
+  return typeof value === "string" && RECOGNITION_SEQUENCE_TABS.some(tab => tab === value);
+}
+export function canonicalRecognitionNavigationTab(value: unknown): RecognitionNavigationTab | null {
+  if (value === "game-player") return "test-demo";
+  return isRecognitionNavigationTab(value) ? value : null;
+}
+function isRecognitionNavigationRoot(value: string): boolean {
+  return canonicalRecognitionNavigationTab(value) !== null;
+}
+export const SEQUENCE_VIEW_CHANGED_EVENT = "workbench:sequence-view-changed";
+export type VideoImportSurface = "intake" | "sequences";
+
+export function videoImportSurfaceFromUrl(href: string): VideoImportSurface | null {
+  const view = navigationSlug(new URL(href).searchParams.get("view") || "");
+  if (["visualsequences", "visual-sequences"].includes(view)) return "sequences";
+  if (["videoimport", "video-import", "youtube-import", "video",
+    "spriteviewer", "sprite-viewer", "sprite-view", "advanced", "vi-advanced",
+    "videoimportadvanced", "finish", "videoimportfinish"].includes(view)) return "intake";
+  return null;
+}
+
 export type VideoImportShellSubview =
   | "sources"
   | "frames"
@@ -63,12 +86,14 @@ export function navigationPathFromUrl(href: string): string[] {
 export function urlWithNavigation(href: string, path: readonly string[]): string {
   const url = new URL(href);
   const canonical = path.map(navigationSlug).filter((segment) => SAFE_NAVIGATION_SLUG.test(segment));
+  if (canonical[0] === "game-player") canonical[0] = "test-demo";
   if (canonical.length) url.searchParams.set(NAVIGATION_QUERY_PARAMETER, canonical.join(","));
   else url.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
   return url.toString();
 }
 
 export function resolveVideoImportShellDestination(href: string): VideoImportShellDestination {
+  if (videoImportSurfaceFromUrl(href) === "sequences") return { subview: "recognition", focus: null };
   const url = new URL(href);
   const view = navigationSlug(url.searchParams.get("view") || "");
   const subview = navigationSlug(url.searchParams.get("subview") || "");
@@ -90,6 +115,9 @@ export function resolveVideoImportShellDestination(href: string): VideoImportShe
   if (subview === "frames" || root === "frames") {
     return { subview: "sources", focus: "frames" };
   }
+  if (root === "game-player" && videoImportSurfaceFromUrl(href) === "intake") {
+    return { subview: "recognition", focus: null };
+  }
   const visible = new Set<VideoImportShellSubview>([
     "sources",
     "games",
@@ -110,18 +138,31 @@ export function canonicalVideoImportShellUrl(
   destination: VideoImportShellDestination,
 ): string {
   const url = new URL(href);
+  if (videoImportSurfaceFromUrl(href) === "sequences") {
+    url.searchParams.set("view", "visualSequences");
+    url.searchParams.set("subview", "recognition");
+    const navigation = navigationPathFromUrl(href);
+    const root = navigation.findIndex(isRecognitionNavigationRoot);
+    const path = root < 0 ? ["extractions"] : navigation.slice(root);
+    path[0] = canonicalRecognitionNavigationTab(path[0]) || "extractions";
+    return urlWithNavigation(url.href, path[0] === "extractions" ? path : path.slice(0, 1));
+  }
   url.searchParams.set("view", "videoImport");
   url.searchParams.set("subview", destination.subview);
   if (destination.focus) {
     url.searchParams.set(NAVIGATION_QUERY_PARAMETER, destination.focus);
   } else if (destination.subview === "sprite-view") {
     url.searchParams.set(NAVIGATION_QUERY_PARAMETER, "sprite-view");
-  } else if (
-    destination.subview === "recognition"
-    && !["inputs", "extractions"].includes(navigationPathFromUrl(href)[0] || "")
-  ) {
+  } else if (destination.subview === "recognition") {
+    const navigation = navigationPathFromUrl(href);
+    const root = navigation.findIndex(isRecognitionNavigationRoot);
+    if (root >= 0) {
+      const path = navigation.slice(root);
+      path[0] = canonicalRecognitionNavigationTab(path[0])!;
+      return urlWithNavigation(url.href, path[0] === "extractions" ? path : path.slice(0, 1));
+    }
     url.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
-  } else if (destination.subview !== "recognition") {
+  } else {
     url.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
   }
   return url.toString();
@@ -134,7 +175,24 @@ export function videoImportUrlForSubview(href: string, subview: string): string 
   // A new menu choice supersedes the old page's navigation, but canonicalizing
   // the original URL still preserves valid Recognition detail and other context.
   requested.searchParams.delete(NAVIGATION_QUERY_PARAMETER);
-  return canonicalVideoImportShellUrl(href, resolveVideoImportShellDestination(requested.toString()));
+  const context = new URL(href);
+  context.searchParams.set("view", "videoImport");
+  return canonicalVideoImportShellUrl(context.href, resolveVideoImportShellDestination(requested.toString()));
+}
+
+export function visualSequenceSpriteViewUrl(href: string): string {
+  return videoImportSurfaceFromUrl(href) === "sequences"
+    ? visualSequencesUrlForNavigation(href, ["sprites"])
+    : videoImportUrlForSubview(href, "sprite-view");
+}
+
+export function visualSequencesUrlForNavigation(href: string, path?: readonly string[]): string {
+  const url = new URL(href);
+  url.searchParams.set("view", "visualSequences");
+  return canonicalVideoImportShellUrl(
+    path ? urlWithNavigation(url.href, path) : url.href,
+    { subview: "recognition", focus: null },
+  );
 }
 
 export function inspectorNavigationSlug(transform: RecognitionNavigationTransform): string {
@@ -147,7 +205,7 @@ export function resolveRecognitionNavigation(
   defaultTab: RecognitionNavigationTab = "extractions",
 ): ResolvedRecognitionNavigation {
   const normalized = requestedPath.map(navigationSlug).filter(Boolean);
-  const rootIndex = normalized.findIndex((segment) => segment === "inputs" || segment === "extractions");
+  const rootIndex = normalized.findIndex(isRecognitionNavigationRoot);
   if (rootIndex < 0) {
     return {
       target: { tab: defaultTab },
@@ -158,12 +216,12 @@ export function resolveRecognitionNavigation(
     };
   }
 
-  const tab = normalized[rootIndex] as RecognitionNavigationTab;
+  const tab = canonicalRecognitionNavigationTab(normalized[rootIndex])!;
   let warning = rootIndex > 0
     ? `Ignored stale navigation prefix "${normalized.slice(0, rootIndex).join(",")}".`
     : "";
-  if (tab === "inputs") {
-    if (normalized.length > rootIndex + 1) warning ||= "Inputs has no deeper navigation target.";
+  if (tab !== "extractions") {
+    if (normalized.length > rootIndex + 1) warning ||= `${tab} has no deeper navigation target.`;
     return { target: { tab }, canonicalPath: [tab], warning };
   }
 

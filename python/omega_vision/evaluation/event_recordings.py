@@ -181,8 +181,8 @@ def _path(home: Path, parts: tuple[str, ...]) -> Path:
     return path
 
 
-def create_event_recordings(root: Path) -> dict[str, Any]:
-    home = vision_data_root(root)
+def event_recording_files() -> tuple[dict[tuple[str, ...], bytes], dict[str, Any]]:
+    """Build the immutable v1 inputs without touching storage."""
     cases = event_cases()
     validate_cases(cases)
     files = {path: data for case in cases for path, data in _case_files(case).items()}
@@ -204,6 +204,14 @@ def create_event_recordings(root: Path) -> dict[str, Any]:
         } for case in cases],
     }
     files[("recordings", GAME_ID, "suite.json")] = _json(inventory)
+    return files, inventory
+
+
+def publish_recording_files(root: Path, files: dict[tuple[str, ...], bytes]) -> dict[str, int]:
+    """Preflight an additive publication under the event suite's shared writer lock."""
+    home = vision_data_root(root)
+    if any(parts[:2] != ("recordings", GAME_ID) for parts in files):
+        raise ValueError("Event fixture publication is restricted to recordings/events_tests")
     lock_parts = ("locks", SUITE_ID)
     _path(home, (*lock_parts, ".writer.lock"))
     with writer_lock(_path(home, lock_parts)):
@@ -229,7 +237,13 @@ def create_event_recordings(root: Path) -> dict[str, Any]:
                     path.parent.mkdir(parents=True, exist_ok=True)
                     with path.open("xb") as stream:
                         stream.write(data)
-    return {**inventory, "createdFileCount": len(pending), "reusedFileCount": len(files) - len(pending)}
+    return {"createdFileCount": len(pending), "reusedFileCount": len(files) - len(pending)}
+
+
+def create_event_recordings(root: Path) -> dict[str, Any]:
+    vision_data_root(root)
+    files, inventory = event_recording_files()
+    return {**inventory, **publish_recording_files(root, files)}
 
 
 def main() -> None:

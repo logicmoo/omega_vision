@@ -18,6 +18,7 @@ from .observation_identity import content_hash
 VERSION = 1
 CATALOG_VERSION = "physical-sequence-options-v2"
 MAX_AGE_SECONDS = 300
+BUILD_WAIT_SECONDS = 180
 _LOG = logging.getLogger(__name__)
 _FIELDS = {
     "id", "visualSequenceId", "label", "dir", "providerRef", "imageCount",
@@ -114,7 +115,7 @@ def visual_sequence_options(
     target = _path(home, "choices.json")
     requested_at = time.time()
     _path(home, "choices.lock", ".writer.lock")
-    with writer_lock(_path(home, "choices.lock")):
+    def read_fresh():
         try:
             cached = json.loads(target.read_text(encoding="utf-8"))
         except FileNotFoundError:
@@ -138,6 +139,17 @@ def visual_sequence_options(
                 and (not refresh or cached["builtAt"] >= requested_at)
             ):
                 return cached["entries"], cached["revision"], "disk"
+        return None
+
+    # Atomic publication lets fresh readers bypass a potentially slow rebuild.
+    # Discovery is not an authorization grant; selected sources are revalidated.
+    fresh = read_fresh()
+    if fresh is not None:
+        return fresh
+    with writer_lock(_path(home, "choices.lock"), timeout=BUILD_WAIT_SECONDS):
+        fresh = read_fresh()
+        if fresh is not None:
+            return fresh
         for _ in range(3):
             generation = _generation(home)
             # Only this metadata projection is retained; never persist manifests,

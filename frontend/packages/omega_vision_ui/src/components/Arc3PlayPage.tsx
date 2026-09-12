@@ -4,6 +4,13 @@ import { useContextReset } from "@app/lib/useContextReset";
 import { type WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import { Arc3B1B2PipelinePage, type ModelChoice, type WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
 import { useTaskRegistry } from "@app/taskRegistry";
+import { loadVisualSequenceCatalog } from "./VisualSequenceCatalog";
+import { useSharedVisualSequenceSelection } from "./useSharedVisualSequenceSelection";
+import { requiresVisualSequenceConfirmation, visualSequenceConfirmationMessage } from "./VisualSequenceLoadGate";
+import { urlWithVisualSequence, visualSequenceLocationForEntry, type VisualSequenceCatalogEntry } from "./VideoImportRecordingUrl";
+import { Arc3VisualSequencePlayer } from "./Arc3VisualSequencePlayer";
+import { filterRecordingRows, parseRecordingStats, recordingCanReplay, recordingRows,
+  type RecordingDirInfo, type RecordingDirStats } from "./Arc3RecordingCatalog";
 import "../styles/arc3_play.css";
 
 type Props = {
@@ -98,22 +105,6 @@ type PlayRecording = {
   totalActions?: number | null;
 };
 
-type RecordingDirInfo = {
-  path: string;
-  absolutePath?: string | null;
-  name: string;
-  gameDirectory: string;
-  gameId?: string | null;
-  level?: string | null;
-  moveTotal?: number | null;
-  updatedAt?: string | null;
-  imported?: boolean;
-  hasManifest?: boolean;
-  sizeBytes?: number;
-  moveDirCount?: number;
-  avgMoveDirFiles?: number;
-};
-
 // Sort modes shared by the Recordings / Move-lists / Importables listboxes.
 type ListSortMode = "size" | "name" | "frames" | "framesAvgSubdirs";
 
@@ -172,7 +163,23 @@ export function Arc3PlayPage({
   const [recordingsPathDraft, setRecordingsPathDraft] = useState("");
   const [savepoints, setSavepoints] = useState<PlaySavepoint[]>([]);
   const [recordings, setRecordings] = useState<PlayRecording[]>([]);
-  const [recordingDirs, setRecordingDirs] = useState<RecordingDirInfo[]>([]);
+  const [recordingCatalog, setRecordingCatalog] = useState<VisualSequenceCatalogEntry[]>([]);
+  const [recordingStats, setRecordingStats] = useState<RecordingDirStats[]>([]);
+  const [recordingCatalogLoading, setRecordingCatalogLoading] = useState(true);
+  const [recordingCatalogError, setRecordingCatalogError] = useState("");
+  const [recordingStatsLoading, setRecordingStatsLoading] = useState(false);
+  const [recordingStatsError, setRecordingStatsError] = useState("");
+  const [recordingQuery, setRecordingQuery] = useState("");
+  const [loadedSequence, setLoadedSequence] = useState<VisualSequenceCatalogEntry | null>(null);
+  const [showSequencePlayer, setShowSequencePlayer] = useState(true);
+  const [sequenceLoading, setSequenceLoading] = useState(false);
+  const sharedSequence = useSharedVisualSequenceSelection(workspaceId);
+  const recordingDirs = useMemo(() => recordingRows(recordingCatalog, recordingStats), [recordingCatalog, recordingStats]);
+  const selectedSequence = recordingCatalog.find(entry => entry.id === sharedSequence.visualSequenceId);
+  const playerSequence = loadedSequence?.id === sharedSequence.visualSequenceId ? loadedSequence
+    : selectedSequence && !requiresVisualSequenceConfirmation(selectedSequence, false) ? selectedSequence : null;
+  const currentWorkspace = useRef(workspaceId);
+  currentWorkspace.current = workspaceId;
   const [recordingTab, setRecordingTab] = useState<"recordings" | "movelists" | "importables">("recordings");
   const [dirSortMode, setDirSortMode] = useState<ListSortMode>("name");
   const [savepointSortMode, setSavepointSortMode] = useState<ListSortMode>("name");
@@ -191,7 +198,16 @@ export function Arc3PlayPage({
   const [replayPos, setReplayPos] = useState(0);
   const [replayPlaying, setReplayPlaying] = useState(false);
   const replayIntentEpoch = useRef<number | null>(null);
+  const storedViewActive = useRef(showSequencePlayer);
+  storedViewActive.current = showSequencePlayer;
+  const enterStoredFrameView = () => {
+    storedViewActive.current = true;
+    replayIntentEpoch.current = null;
+    setReplayPlaying(false);
+    setShowSequencePlayer(true);
+  };
   const toggleReplay = () => {
+    if (storedViewActive.current) return;
     replayIntentEpoch.current = pageLifecycle.suspensionEpoch;
     setReplayPlaying(playing => !playing);
   };
@@ -294,6 +310,8 @@ export function Arc3PlayPage({
   // off) but fully scrubbable, so a slide/click on any tick steps back to
   // that point in the run.
   const applyResumedSession = useCallback((snap: PlaySessionSnapshot) => {
+    setLoadedSequence(null);
+    setShowSequencePlayer(false);
     setSession(snap);
     const script = (snap.replayLog || []).filter((op) => op.op === "step" || op.op === "reset");
     setReplayScript(script.length > 0 ? script : null);
@@ -340,22 +358,60 @@ export function Arc3PlayPage({
     setRecordingsPathDraft(session && !session.recordingsPathIsDefault ? session.recordingsPath || "" : "");
   });
 
-  // Single-flight: loadSavepoints piggybacks this after every mutation and the
-  // page mounts fire it twice; the walk is the expensive call, so concurrent
-  // requests just pile up server-side. Failures keep the previous listing.
-  const recordingDirsInFlight = useRef(false);
-  const loadRecordingDirs = useCallback(async () => {
-    if (recordingDirsInFlight.current) return;
-    recordingDirsInFlight.current = true;
+  const catalogRequest = useRef(0);
+  const loadRecordingDirs = useCallback(async (refresh = false) => {
+    const serial = ++catalogRequest.current;
+    setRecordingCatalogLoading(true);
+    setRecordingCatalogError("");
     try {
-      const payload = await request(`/workbench/arc3-play/recording-dirs?workspaceId=${encodeURIComponent(workspaceId)}`);
-      setRecordingDirs((payload.recordingDirs as RecordingDirInfo[]) || []);
-    } catch {
-      // keep whatever we had; a Rescan can retry explicitly
+      const entries = await loadVisualSequenceCatalog(workspaceId, refresh);
+      if (serial === catalogRequest.current && currentWorkspace.current === workspaceId) setRecordingCatalog(entries);
+    } catch (reason) {
+      if (serial === catalogRequest.current && currentWorkspace.current === workspaceId) {
+        setRecordingCatalogError(reason instanceof Error ? reason.message : String(reason));
+      }
     } finally {
-      recordingDirsInFlight.current = false;
+      if (serial === catalogRequest.current && currentWorkspace.current === workspaceId) setRecordingCatalogLoading(false);
     }
   }, [workspaceId]);
+
+  const statsRequest = useRef(0);
+  const loadRecordingStats = useCallback(async () => {
+    const serial = ++statsRequest.current;
+    setRecordingStatsLoading(true);
+    setRecordingStatsError("");
+    try {
+      const payload = await request(`/workbench/arc3-play/recording-dirs?workspaceId=${encodeURIComponent(workspaceId)}`);
+      const rows = parseRecordingStats(payload);
+      if (serial === statsRequest.current && currentWorkspace.current === workspaceId) setRecordingStats(rows);
+    } catch (reason) {
+      if (serial === statsRequest.current && currentWorkspace.current === workspaceId) {
+        setRecordingStatsError(reason instanceof Error ? reason.message : String(reason));
+      }
+    } finally {
+      if (serial === statsRequest.current && currentWorkspace.current === workspaceId) setRecordingStatsLoading(false);
+    }
+  }, [workspaceId]);
+
+  // Browsing stored frames must not wait for savepoints, disk-statistics scans,
+  // a game catalog, or an active engine session.
+  useEffect(() => {
+    void loadRecordingDirs();
+    return () => { catalogRequest.current += 1; statsRequest.current += 1; };
+  }, [loadRecordingDirs]);
+  useContextReset(workspaceId, () => {
+    setRecordingStats([]);
+    setRecordingStatsError("");
+    setRecordingStatsLoading(false);
+    setSequenceLoading(false);
+    setLoadedSequence(null);
+    enterStoredFrameView();
+  });
+  useEffect(() => {
+    if (!showSequencePlayer || !selectedSequence) return;
+    const location = visualSequenceLocationForEntry(selectedSequence);
+    if (location) window.history.replaceState(window.history.state, "", urlWithVisualSequence(window.location.href, location));
+  }, [showSequencePlayer, selectedSequence]);
 
   const loadSavepoints = useCallback(async () => {
     try {
@@ -526,6 +582,8 @@ export function Arc3PlayPage({
 
   const startGame = (gameId: string) =>
     perform(async () => {
+      setLoadedSequence(null);
+      setShowSequencePlayer(false);
       if (session && !session.closed) {
         if (session.moveCount > 0) {
           // Jumping to another game: save the abandoned position first.
@@ -701,6 +759,8 @@ export function Arc3PlayPage({
         method: "POST",
         body: JSON.stringify({ workspaceId, gameId: full.game_id || full.game_directory }),
       });
+      setLoadedSequence(null);
+      setShowSequencePlayer(false);
       setArmedAction(null);
       setSession(payload.session as PlaySessionSnapshot);
       setReplayScript(script);
@@ -710,7 +770,7 @@ export function Arc3PlayPage({
 
   const stepReplay = () =>
     perform(async () => {
-      if (!session || !replayScript || replayPos >= replayScript.length) return;
+      if (storedViewActive.current || !session || !replayScript || replayPos >= replayScript.length) return;
       const op = replayScript[replayPos];
       let payload;
       if (op.op === "reset") {
@@ -730,6 +790,10 @@ export function Arc3PlayPage({
   // after each move lands (via the busy/replayPos deps), so Pause always
   // freezes at the current position and Play resumes from right there.
   useEffect(() => {
+    if (showSequencePlayer) {
+      setReplayPlaying(false);
+      return;
+    }
     if (!replayPlaying || !replayScript || busy) return;
     const suspensionEpoch = pageLifecycle.suspensionEpoch;
     if (pageLifecycle.paused || replayIntentEpoch.current !== suspensionEpoch) {
@@ -741,12 +805,13 @@ export function Arc3PlayPage({
       return;
     }
     const timer = window.setTimeout(() => {
-      if (pageLifecycle.paused || pageLifecycle.suspensionEpoch !== suspensionEpoch) return;
+      if (storedViewActive.current || pageLifecycle.paused || pageLifecycle.suspensionEpoch !== suspensionEpoch
+          || replayIntentEpoch.current !== suspensionEpoch) return;
       void stepReplay();
     }, replaySpeedMs);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [replayPlaying, replayPos, busy, replayScript, replaySpeedMs]);
+  }, [replayPlaying, replayPos, busy, replayScript, replaySpeedMs, showSequencePlayer]);
 
   // Chapter markers: tick index -> level label, at every position where the
   // move's directory crosses into a new attempt directory (a fresh
@@ -949,6 +1014,9 @@ export function Arc3PlayPage({
 
   const resumeRecordingDir = (dir: RecordingDirInfo) =>
     perform(async () => {
+      if (!recordingCanReplay(dir, games)) throw new Error("This sequence can be viewed with Load; no compatible game is available to resume.");
+      setLoadedSequence(null);
+      setShowSequencePlayer(false);
       const savepoint = await ensureMovelistForDir(dir);
       if (session && !session.closed) {
         await request(`/workbench/arc3-play/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" }).catch(() => undefined);
@@ -965,8 +1033,11 @@ export function Arc3PlayPage({
       return `resumed ${dir.name} · ${resumed.moveCount} move(s)`;
     }, `Resume ${dir.name}`);
 
-  const loadRecordingDirForStepping = (dir: RecordingDirInfo) =>
+  const replayRecordingInGame = (dir: RecordingDirInfo) =>
     perform(async () => {
+      if (!recordingCanReplay(dir, games)) throw new Error("This sequence can be viewed with Load; no compatible game is available to replay.");
+      setLoadedSequence(null);
+      setShowSequencePlayer(false);
       const full = await ensureMovelistForDir(dir);
       const script = (full.replay_log || []).filter((op) => op.op === "step" || op.op === "reset");
       if (session && !session.closed) {
@@ -984,8 +1055,30 @@ export function Arc3PlayPage({
       return `loaded ${script.length} move(s) for step-through replay`;
     }, `Load ${dir.name}`);
 
+  const loadRecordingDirForStepping = async (dir: RecordingDirInfo) => {
+    const entry = dir.sequence;
+    if (!visualSequenceLocationForEntry(entry)) {
+      setRecordingCatalogError("The Visual Sequence identifier is invalid.");
+      return;
+    }
+    if (requiresVisualSequenceConfirmation(entry, false) && !window.confirm(visualSequenceConfirmationMessage(entry))) return;
+    setSequenceLoading(true);
+    setRecordingCatalogError("");
+    try {
+      const saved = await sharedSequence.select(entry.id);
+      if (!saved || currentWorkspace.current !== workspaceId) return;
+      setArmedAction(null);
+      setReplayPlaying(false);
+      setLoadedSequence(entry);
+      enterStoredFrameView();
+    } finally {
+      if (currentWorkspace.current === workspaceId) setSequenceLoading(false);
+    }
+  };
+
   const duplicateRecordingDir = (dir: RecordingDirInfo) =>
     perform(async () => {
+      if (!dir.canManage) throw new Error("This Visual Sequence is browse-only here; it cannot be duplicated as a game recording.");
       const payload = await request("/workbench/arc3-play/recording-dirs/duplicate", {
         method: "POST",
         body: JSON.stringify({ workspaceId, path: dir.path }),
@@ -996,6 +1089,7 @@ export function Arc3PlayPage({
 
   const deleteRecordingDir = (dir: RecordingDirInfo) =>
     perform(async () => {
+      if (!dir.canManage) throw new Error("This Visual Sequence is browse-only here; it cannot be deleted as a game recording.");
       if (!window.confirm(`Delete recording directory ${dir.path}? This cannot be undone.`)) return "cancelled";
       await request("/workbench/arc3-play/recording-dirs/delete", {
         method: "POST",
@@ -1249,9 +1343,7 @@ export function Arc3PlayPage({
   const newestFirst = [...movesNumeric].reverse();
   const filteredSavepoints = filterGameId ? savepoints.filter((point) => point.game_directory === filterGameId) : savepoints;
   const filteredRecordings = filterGameId ? recordings.filter((recording) => recording.gameId === filterGameId) : recordings;
-  const filteredRecordingDirs = filterGameId
-    ? recordingDirs.filter((dir) => dir.gameDirectory === filterGameId || dir.gameId === filterGameId)
-    : recordingDirs;
+  const filteredRecordingDirs = filterRecordingRows(recordingDirs, recordingQuery);
   const savepointPathOf = (point: PlaySavepoint) =>
     point.level_directory || `data/recordings/${point.game_directory}/savepoints.json`;
   // Shared sort machinery for the three tab listboxes. "Frames; Average
@@ -1401,8 +1493,22 @@ export function Arc3PlayPage({
         />
 
         <section className="arc3-play-board-column">
-          {!session && <div className="arc3-play-empty">Pick a game on the left to start playing and recording.</div>}
-          {session && (
+          {!showSequencePlayer && <button type="button" onClick={enterStoredFrameView}>View selected recording</button>}
+          {showSequencePlayer && (playerSequence
+            ? <Arc3VisualSequencePlayer key={`${workspaceId}:${playerSequence.id}`} workspaceId={workspaceId}
+                sequence={playerSequence} onClose={() => { setLoadedSequence(null); setShowSequencePlayer(false); }} />
+            : <div className="arc3-play-empty" role="status">
+                {recordingCatalogLoading ? "Loading shared Visual Sequences..." : "Load a Visual Sequence from Recordings to view its frames."}
+                {selectedSequence && <button onClick={() => {
+                  const row = recordingDirs.find(item => item.sequence.id === selectedSequence.id);
+                  if (row) void loadRecordingDirForStepping(row);
+                }}>Load selected sequence</button>}
+              </div>)}
+          {!session && !showSequencePlayer && <div className="arc3-play-empty">
+            Load any Visual Sequence from Recordings to step through its saved frames. No game is required.
+            Start a game only for live play.
+          </div>}
+          {session && !showSequencePlayer && (
             <>
               <div className="arc3-play-status">
                 <b>{session.gameDirectory}</b>
@@ -1777,7 +1883,8 @@ export function Arc3PlayPage({
                 className={`arc3-play-tab${recordingTab === "recordings" ? " active" : ""}`}
                 onClick={() => setRecordingTab("recordings")}
               >
-                Recordings ({filteredRecordingDirs.length})
+                Recordings ({recordingCatalogLoading && !recordingDirs.length ? "loading..." : recordingCatalogError && !recordingDirs.length
+                  ? "unavailable" : recordingDirs.length})
               </button>
               <button
                 className={`arc3-play-tab${recordingTab === "movelists" ? " active" : ""}`}
@@ -1801,11 +1908,16 @@ export function Arc3PlayPage({
             <span className="arc3-play-section-actions">
               <button
                 className="arc3-play-rescan"
-                disabled={busy}
-                title="Rescan recording directories on disk"
-                onClick={() => void loadRecordingDirs()}
+                disabled={recordingCatalogLoading}
+                title="Refresh all shared Visual Sequences"
+                onClick={() => void loadRecordingDirs(true)}
               >
                 Rescan
+              </button>
+              <button className="arc3-play-rescan" disabled={recordingStatsLoading}
+                title="Load optional disk sizes and full paths without blocking the sequence list"
+                onClick={() => void loadRecordingStats()}>
+                {recordingStatsLoading ? "Loading disk stats..." : "Load disk stats"}
               </button>
               <button
                 className="arc3-play-rescan"
@@ -1868,31 +1980,51 @@ export function Arc3PlayPage({
             </span>
           </div>
               <div className="arc3-play-mini-header">
-                <small>{sortedRecordingDirs.length} recording dir(s) on disk (live saved_&lt;NNN&gt; + imported + legacy image sets)</small>
-                {sortSelect(dirSortMode, setDirSortMode)}
+                <small>{filteredRecordingDirs.length} of {recordingDirs.length} shared Visual Sequences.
+                  No game is required to load frames.</small>
+                {sortSelect(dirSortMode, mode => {
+                  setDirSortMode(mode);
+                  if ((mode === "size" || mode === "framesAvgSubdirs") && !recordingStats.length && !recordingStatsLoading) {
+                    void loadRecordingStats();
+                  }
+                })}
               </div>
+              <label className="arc3-play-recording-search">Find a sequence
+                <input type="search" value={recordingQuery} placeholder="Name, family or recording path"
+                  onChange={event => setRecordingQuery(event.target.value)} />
+              </label>
+              {filterGameId && <div className="arc3-play-empty">All sequences remain visible.
+                The game filter applies only to move-lists, importables and game cleanup actions.</div>}
+              {recordingCatalogLoading && <p role="status">Loading shared Visual Sequences...</p>}
+              {(recordingCatalogError || sharedSequence.error) && <p className="arc3-play-error" role="alert">
+                {recordingCatalogError || sharedSequence.error} Use Rescan to retry.
+              </p>}
+              {recordingStatsError && <p role="alert">Disk statistics unavailable: {recordingStatsError}.
+                Sequence browsing is still available.</p>}
               {sortedRecordingDirs.length > 0 ? (
                 <div className="arc3-play-chip-list">
                   {sortedRecordingDirs.map((dir) => (
                     <div key={dir.path} className="arc3-play-chip">
                       <b>
-                        {dir.gameDirectory}/{dir.name}
+                        {dir.sequence.label || `${dir.gameDirectory}/${dir.name}`}
                         {dir.imported ? " · imported" : ""}
                         {dir.hasManifest === false ? " · no manifest" : ""}
+                        {dir.readOnly ? " · read-only" : ""}
                       </b>
                       <small>
                         L{dir.level || "?"} · {dir.moveTotal ?? dir.moveDirCount ?? "?"} frame(s) ·{" "}
-                        {Math.round((dir.sizeBytes || 0) / 1024)} KB · ø{dir.avgMoveDirFiles ?? 0} files/frame
+                        {dir.sizeBytes == null ? "disk stats not loaded" : `${Math.round(dir.sizeBytes / 1024)} KB`}
+                        {dir.avgMoveDirFiles == null ? "" : ` · ${dir.avgMoveDirFiles} files/frame`}
                         {dir.updatedAt ? ` · ${dir.updatedAt}` : ""}
                       </small>
                       <code>{dir.path}</code>
                       <div className="arc3-play-chip-buttons">
                         <button
                           className="resume"
-                          disabled={busy || dir.hasManifest === false}
+                          disabled={busy || !recordingCanReplay(dir, games)}
                           title={
-                            dir.hasManifest === false
-                              ? "No recording.json manifest to replay"
+                            !recordingCanReplay(dir, games)
+                              ? "No compatible installed game; use Load to view saved frames"
                               : "Replay this recording into a fresh session"
                           }
                           onClick={() => void resumeRecordingDir(dir)}
@@ -1901,19 +2033,18 @@ export function Arc3PlayPage({
                         </button>
                         <button
                           className="load"
-                          disabled={busy || dir.hasManifest === false}
-                          title={
-                            dir.hasManifest === false
-                              ? "No recording.json manifest to replay"
-                              : "Load at move 1 to step through it move by move"
-                          }
+                          disabled={sequenceLoading || sharedSequence.writing || !sharedSequence.selection}
+                          title="View and advance the actual saved frames without loading a game"
                           onClick={() => void loadRecordingDirForStepping(dir)}
                         >
                           Load
                         </button>
+                        <button className="load" disabled={busy || !recordingCanReplay(dir, games)}
+                          title="Create a compatible live game and replay the recorded action recipe"
+                          onClick={() => void replayRecordingInGame(dir)}>Replay in game</button>
                         <button
                           className="dup"
-                          disabled={busy}
+                          disabled={busy || !dir.canManage}
                           title="Copy this recording directory"
                           onClick={() => void duplicateRecordingDir(dir)}
                         >
@@ -1921,7 +2052,7 @@ export function Arc3PlayPage({
                         </button>
                         <button
                           className="del"
-                          disabled={busy}
+                          disabled={busy || !dir.canManage}
                           title="Delete this recording directory"
                           onClick={() => void deleteRecordingDir(dir)}
                         >
@@ -1932,7 +2063,7 @@ export function Arc3PlayPage({
                         </button>
                         <button
                           disabled={!dir.absolutePath}
-                          title="Copy the absolute filesystem path"
+                          title={dir.absolutePath ? "Copy the absolute filesystem path" : "Load disk stats to resolve the full path"}
                           onClick={() => dir.absolutePath && void copyListPath(dir.absolutePath)}
                         >
                           {dir.absolutePath && listPathCopied === dir.absolutePath ? "Copied" : "Copy Full Path"}
@@ -1941,10 +2072,9 @@ export function Arc3PlayPage({
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="arc3-play-empty">No recording directories on disk yet.</div>
-              )}
-              {!session && <div className="arc3-play-empty">Recording paths sometimes only appear once a game starts.</div>}
+              ) : !recordingCatalogLoading && !recordingCatalogError ? (
+                <div className="arc3-play-empty">{recordingQuery ? "No Visual Sequences match this search." : "No Visual Sequences are available in the shared catalog."}</div>
+              ) : null}
               {session && (
                 <>
                   <div className="arc3-play-target">

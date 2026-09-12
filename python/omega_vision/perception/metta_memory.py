@@ -22,6 +22,7 @@ DATABASE_FILES = {
     "deduction": "deduction_rules.metta", "induction": "induction_rules.metta",
     "induced": "induced_rules.metta",
     "hypothesis": "abduced_events.metta",
+    "observation": "visual_observations.metta",
 }
 PLANNED_DATABASE_FILES = {
     "shape_group": "shape_groups_db.metta", "object_group": "object_groups_db.metta",
@@ -119,6 +120,11 @@ class MeTTaMemoryDatabase:
             raise PermissionError("Not a registered physical Omega memory area")
         if role == "hypothesis" and not (initial or (len(parts) == 5 and parts[0] == "recordings" and parts[4] == "memory")):
             raise PermissionError("Abduced event hypotheses belong only to current frame memory")
+        if role == "observation" and not (
+            initial or (len(parts) == 5 and parts[4] == "memory")
+            or (len(parts) == 4 and parts[3].startswith("memory_level_") and parts[3].endswith("_stm"))
+        ):
+            raise PermissionError("Visual observations belong only to frame or recording STM memory")
         self.role = role
         self.initial = initial
         self.path = self._safe(self.area / DATABASE_FILES[role])
@@ -214,3 +220,14 @@ class MeTTaMemoryDatabase:
             finally:
                 temporary.unlink(missing_ok=True)
         return document
+
+    def initialize_empty(self) -> None:
+        """Explicitly provision a new empty store without replacing existing history."""
+        with self.transaction():
+            self._read()
+            if self.path.exists():
+                return
+            with memory_catalog_mutation(self.root):
+                with self._safe(self.path).open("x", encoding="utf-8") as stream:
+                    stream.flush()
+                    os.fsync(stream.fileno())

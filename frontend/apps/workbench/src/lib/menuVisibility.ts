@@ -93,14 +93,18 @@ export function menuItemForRoute(items: ReadonlyArray<VisibilityMenuItem>, route
   return item || {
     id: view === "pluginPage" ? pluginMenuId(route.pluginId || "", route.pluginPageId || "") : pageMenuId(view, subview),
     view, subview, label: view,
-    family: view === "setup" || view === "changeWorkspace" ? "common" : view === "videoImport" ? "omega" : "workbench",
+    family: view === "setup" || view === "changeWorkspace" ? "common" : view === "videoImport" || view === "visualSequences" ? "omega" : "workbench",
     group: "",
   };
 }
 
 export function isMenuRouteVisible(items: ReadonlyArray<VisibilityMenuItem>, route: MenuRoute, preferences: MenuVisibilityPreferences): boolean {
   // Recovery is not hideable, even when its ordinary navigation entry is.
-  return route.view === "setup" || route.view === "changeWorkspace" || isMenuItemVisible(menuItemForRoute(items, route), preferences);
+  if (route.view === "setup" || route.view === "changeWorkspace") return true;
+  if (!isMenuItemVisible(menuItemForRoute(items, route), preferences)) return false;
+  // Both routes host the same rich Recognition surface; the new name is not a visibility bypass.
+  return route.view !== "visualSequences"
+    || isMenuItemVisible(menuItemForRoute(items, { view: "videoImport", subview: "recognition" }), preferences);
 }
 
 export function parseMenuVisibility(candidate: unknown): MenuVisibilityPreferences {

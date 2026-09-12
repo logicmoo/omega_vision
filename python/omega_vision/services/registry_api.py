@@ -10,8 +10,10 @@ import sys
 from pathlib import Path
 
 from fastapi import APIRouter, Body, HTTPException, Query, WebSocket, WebSocketDisconnect
+from .recording_tests import router as recording_tests_router
 
 router = APIRouter()
+router.include_router(recording_tests_router)
 
 _PY_DIR = Path(__file__).resolve().parents[3] / "python"
 if str(_PY_DIR) not in sys.path:

@@ -1,5 +1,8 @@
 import {useEffect,useState} from "react";
 import {MarkdownDocument} from "./MarkdownDocument";
+import {RecordingTests} from "@omega_vision_ui/components/RecordingTests";
+import {useSharedVisualSequenceSelection} from "@omega_vision_ui/components/useSharedVisualSequenceSelection";
+import {canonicalRecognitionNavigationTab,navigationPathFromUrl,resolveRecognitionNavigation,SEQUENCE_VIEW_CHANGED_EVENT} from "@omega_vision_ui/components/VideoImportNavigationUrl";
 import "../styles/help_tabs.css";
 
 type HelpTab={id:string;label:string;path?:string;repositoryPath?:string;plugin?:boolean};
@@ -60,19 +63,37 @@ function resolveMarkdownPath(currentPath:string,href:string){
  return parts.join("/");
 }
 
-export function HelpDocumentTabs({preferred,context,onOpenDocs,pluginDocId,pluginDocLabel}:{preferred?:string;context?:string;onOpenDocs?:(filter:string)=>void;pluginDocId?:string;pluginDocLabel?:string}){
+function currentSequenceTab(){
+ let fallback=canonicalRecognitionNavigationTab(null);
+ try{fallback=canonicalRecognitionNavigationTab(window.localStorage.getItem("videoImport.reduceTab"))}catch{/* URL/default still works */}
+ return resolveRecognitionNavigation(navigationPathFromUrl(window.location.href),[],fallback||"extractions").target.tab;
+}
+
+export function HelpDocumentTabs({preferred,context,onOpenDocs,pluginDocId,pluginDocLabel,sequenceWorkspaceId}:{preferred?:string;context?:string;onOpenDocs?:(filter:string)=>void;pluginDocId?:string;pluginDocLabel?:string;sequenceWorkspaceId?:string}){
+ const sequenceSelection=useSharedVisualSequenceSelection(sequenceWorkspaceId||"",Boolean(sequenceWorkspaceId));
+ const[sequenceTab,setSequenceTab]=useState(currentSequenceTab);
+ useEffect(()=>{
+  if(!sequenceWorkspaceId)return;
+  const update=(event?:Event)=>setSequenceTab(canonicalRecognitionNavigationTab((event as CustomEvent<{tab?:unknown}>)?.detail?.tab)||currentSequenceTab());
+  update();
+  window.addEventListener(SEQUENCE_VIEW_CHANGED_EVENT,update);
+  window.addEventListener("popstate",update);
+  return()=>{window.removeEventListener(SEQUENCE_VIEW_CHANGED_EVENT,update);window.removeEventListener("popstate",update)};
+ },[sequenceWorkspaceId]);
+ const sequenceDemoActive=Boolean(sequenceWorkspaceId)&&sequenceTab==="test-demo";
  const pluginTab:HelpTab[]=pluginDocId?[{id:"pluginDoc",label:pluginDocLabel?`${pluginDocLabel} Docs`:"Plugin Docs",plugin:true}]:[];
- const tabs:HelpTab[]=[...pluginTab,{id:"contents",label:"Contents",path:"docs/contents.md"},{id:"context",label:"Context"},...docTabs];
+ const sequenceTabs:HelpTab[]=sequenceWorkspaceId?[{id:"selectedSequence",label:"Selected Sequence"}]:[];
+ const tabs:HelpTab[]=[...sequenceTabs,...pluginTab,{id:"contents",label:"Contents",path:"docs/contents.md"},{id:"context",label:"Context"},...docTabs];
  const pageView=new URLSearchParams(window.location.search).get("view");
  const effectivePreferred=preferred==="overview"&&(pageView===null||pageView==="canvas")?"workflows":preferred;
- const initial=effectivePreferred&&tabs.some(tab=>tab.id===effectivePreferred)?effectivePreferred:(pluginDocId?"pluginDoc":"context");
+ const initial=sequenceDemoActive?"selectedSequence":effectivePreferred&&tabs.some(tab=>tab.id===effectivePreferred)?effectivePreferred:(pluginDocId?"pluginDoc":"context");
  const[active,setActive]=useState(initial),[docs,setDocs]=useState<Record<string,string>>({}),[errors,setErrors]=useState<Record<string,string>>({});
  const[opened,setOpened]=useState<OpenedDocument|null>(null),[history,setHistory]=useState<OpenedDocument[]>([]);
  // A plugin doc tab reuses one id ("pluginDoc"); drop its cache when the viewed plugin changes so it refetches.
  useEffect(()=>{setDocs(current=>{const{pluginDoc,...rest}=current;return rest});setErrors(current=>{const{pluginDoc,...rest}=current;return rest})},[pluginDocId]);
- useEffect(()=>{if(!tabs.some(tab=>tab.id===active))setActive(pluginDocId?"pluginDoc":"context")},[pluginDocId,active]);
- useEffect(()=>{if(active==="context"||docs[active]||errors[active])return;const requested=tabs.find(tab=>tab.id===active);if(!requested)return;let cancelled=false;const pending=requested.plugin?(pluginDocId?readPluginDoc(pluginDocId).then(result=>result.content):Promise.reject(new Error("no plugin selected"))):requested.repositoryPath?readRepository(requested.repositoryPath).then(document=>document.content):readShared(requested.path!);void pending.then(content=>{if(!cancelled)setDocs(current=>({...current,[requested.id]:content}))}).catch(reason=>{if(!cancelled)setErrors(current=>({...current,[requested.id]:String(reason)}))});return()=>{cancelled=true}},[active,pluginDocId]);
- useEffect(()=>{if(effectivePreferred&&tabs.some(tab=>tab.id===effectivePreferred)){setActive(effectivePreferred);setOpened(null);setHistory([])}},[effectivePreferred,pluginDocId]);
+ useEffect(()=>{if(!tabs.some(tab=>tab.id===active))setActive(pluginDocId?"pluginDoc":"context")},[pluginDocId,active,sequenceWorkspaceId]);
+ useEffect(()=>{if(active==="context"||active==="selectedSequence"||docs[active]||errors[active])return;const requested=tabs.find(tab=>tab.id===active);if(!requested)return;let cancelled=false;const pending=requested.plugin?(pluginDocId?readPluginDoc(pluginDocId).then(result=>result.content):Promise.reject(new Error("no plugin selected"))):requested.repositoryPath?readRepository(requested.repositoryPath).then(document=>document.content):readShared(requested.path!);void pending.then(content=>{if(!cancelled)setDocs(current=>({...current,[requested.id]:content}))}).catch(reason=>{if(!cancelled)setErrors(current=>({...current,[requested.id]:String(reason)}))});return()=>{cancelled=true}},[active,pluginDocId]);
+ useEffect(()=>{const next=sequenceDemoActive?"selectedSequence":effectivePreferred;if(next&&tabs.some(tab=>tab.id===next)){setActive(next);setOpened(null);setHistory([])}},[effectivePreferred,pluginDocId,sequenceDemoActive]);
  const tab=tabs.find(item=>item.id===active)||tabs.find(item=>item.id==="context")!;
  const baseDocument:OpenedDocument={path:tab.plugin?`plugins/${pluginDocId}/documentation`:tab.repositoryPath||(tab.path?repositoryPath(tab.path):""),content:active==="context"?(context?`\`\`\`json\n${context}\n\`\`\``:"No contextual inspector data is available for this page."):errors[active]?`> **Documentation failed to load:** ${errors[active]}`:(docs[active]||"Loading documentation…")};
  const document=opened||baseDocument;
@@ -80,7 +101,15 @@ export function HelpDocumentTabs({preferred,context,onOpenDocs,pluginDocId,plugi
  const back=()=>setHistory(current=>{const next=[...current];setOpened(next.pop()||null);return next});
  return <div className="help-doc-inspector">
   <div className="help-doc-tabs">{history.length>0&&<button onClick={back}>← Back</button>}{tabs.map(item=><button key={item.id} className={active===item.id&&!opened?"active":""} onClick={()=>{setActive(item.id);setOpened(null);setHistory([])}}>{item.label}</button>)}</div>
-  <div className="inspect-section relationship-guide"><MarkdownDocument content={document.content} onOpenDocs={onOpenDocs} onNavigateMarkdown={(href)=>void navigate(href).catch(reason=>setErrors(current=>({...current,[active]:String(reason)})))}/></div>
-  <div className="provenance-foot">{active==="context"&&!opened?<><span>INSPECTOR SOURCE</span><code>current workspace state</code><span className="verified">✓ live data</span></>:<><span>DOCUMENTATION SOURCE</span><code>{document.path}</code><span className={errors[active]?"":"verified"}>{errors[active]?"load error":"✓ filesystem backed"}</span></>}</div>
+  <div className="inspect-section relationship-guide">{active==="selectedSequence"&&sequenceWorkspaceId
+   ? <div style={{flex:1,minHeight:0,overflow:"auto"}}>
+     {sequenceSelection.error&&<p role="alert">{sequenceSelection.error} <button type="button" onClick={()=>void sequenceSelection.refresh()}>Retry selection</button></p>}
+     {sequenceSelection.visualSequenceId
+      ? <RecordingTests key={`${sequenceWorkspaceId}:${sequenceSelection.visualSequenceId}`} workspaceId={sequenceWorkspaceId}
+        visualSequenceId={sequenceSelection.visualSequenceId} presentation="documentation" controlsVisible={false} showRecordingPreview={false}/>
+      : <p role="status">{sequenceSelection.loading?"Loading the shared Visual Sequence selection…":"No shared Visual Sequence is selected."}</p>}
+    </div>
+   : <MarkdownDocument content={document.content} onOpenDocs={onOpenDocs} onNavigateMarkdown={(href)=>void navigate(href).catch(reason=>setErrors(current=>({...current,[active]:String(reason)})))}/>}</div>
+  <div className="provenance-foot">{active==="selectedSequence"?<><span>DOCUMENTATION SOURCE</span><code>Recording-test documentation API</code><code>{sequenceSelection.visualSequenceId}</code></>:active==="context"&&!opened?<><span>INSPECTOR SOURCE</span><code>current workspace state</code><span className="verified">✓ live data</span></>:<><span>DOCUMENTATION SOURCE</span><code>{document.path}</code><span className={errors[active]?"":"verified"}>{errors[active]?"load error":"✓ filesystem backed"}</span></>}</div>
  </div>;
 }

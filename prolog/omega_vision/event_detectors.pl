@@ -24,8 +24,43 @@ motion_event(Input, Event) :-
 motion_event(Input, Event) :-
     member(M, Input.motion), M.reappeared == false,
     M.confidence >= Input.minimumConfidence, M.maskIou < Input.shapeChangeIou,
+    member(G, Input.geometry), G.entity == M.entity, G.usable == true,
+    \+ (G.affineIou >= Input.rotationIou, (G.uniformScale == true; G.nonuniformScale == true)),
     term(shape_changed, [M.entity], T),
     event(T, authored_geometry, M.confidence, M.evidence, Event).
+
+geometry_event(Input, Event) :-
+    member(G, Input.geometry), G.usable == true,
+    G.confidence >= Input.minimumConfidence,
+    geometry_predicate(G, Input, Predicate),
+    term(Predicate, [G.entity], T),
+    event(T, authored_geometry, G.confidence, G.evidence, Event).
+geometry_predicate(G, Input, scaled) :- G.affineIou >= Input.rotationIou, G.uniformScale == true.
+geometry_predicate(G, Input, deformed) :-
+    G.affineIou >= Input.rotationIou, G.nonuniformScale == true, G.maskIou < 1.
+geometry_predicate(G, Input, color_changed) :- G.colorChanged == true, G.maskIou >= Input.rotationIou.
+geometry_predicate(G, Input, area_changed) :-
+    G.areaDelta =\= 0,
+    \+ (G.affineIou >= Input.rotationIou, (G.uniformScale == true; G.nonuniformScale == true)).
+geometry_predicate(G, _, hole_opened) :- G.outerShapeUnchanged == true, G.holeDelta > 0, G.colorChanged == false.
+geometry_predicate(G, _, hole_closed) :- G.outerShapeUnchanged == true, G.holeDelta < 0, G.colorChanged == false.
+
+derivative_event(Input, Event) :-
+    member(D, Input.derivatives), D.confidence >= Input.minimumConfidence,
+    derivative_predicate(D, Input, Predicate), term(Predicate, [D.entity], T),
+    event(T, authored_derivatives, D.confidence, D.evidence, Event).
+derivative_predicate(D, Input, turned) :- number(D.headingDelta), abs(D.headingDelta) > Input.headingTolerance.
+derivative_predicate(D, Input, accelerated) :- number(D.speedDelta), D.speedDelta > Input.speedTolerance.
+derivative_predicate(D, Input, decelerated) :- number(D.speedDelta), D.speedDelta < -Input.speedTolerance.
+
+response_event(Input, Event) :-
+    member(R, Input.responses), R.confidence >= Input.minimumConfidence,
+    R.incoming > Input.motionTolerance, R.outgoing < -Input.motionTolerance,
+    response_term(R, T),
+    event(T, authored_response, R.confidence, R.evidence, Event).
+response_term(R, T) :- R.leftReversed == true, R.rightReversed == true, term(collision, R.subjects, T).
+response_term(R, T) :- R.leftReversed == true, R.rightStationary == true, R.subjects = [A,_], term(bounce, [A], T).
+response_term(R, T) :- R.rightReversed == true, R.leftStationary == true, R.subjects = [_,B], term(bounce, [B], T).
 
 visibility_event(Input, Event) :-
     member(V, Input.visibility), V.ambiguous == false,
@@ -43,7 +78,9 @@ visibility_predicate(V, _, missing) :-
 
 relation_event(Input, Event) :-
     member(R, Input.relations),
-    relation_phase(R, Input.continuations, Phase),
+    ( R.detector == authored_input_response -> Continue = Input.receiptContinuations
+    ; Continue = Input.continuations ),
+    relation_phase(R, Continue, Phase),
     phase(Phase, R.term, T),
     event(T, R.detector, R.confidence, R.evidence, Event).
 
@@ -73,7 +110,10 @@ authored(Input, Output) :-
     findall(Event,
             (motion_event(Input, Event); visibility_event(Input, Event);
              relation_event(Input, Event); occlusion_event(Input, Event)),
-            Raw),
+            RawBase),
+    findall(Event, (geometry_event(Input, Event); derivative_event(Input, Event); response_event(Input, Event)),
+            RawMeasured),
+    append(RawBase, RawMeasured, Raw),
     sort(Raw, Events),
     Output = _{events:Events}.
 

@@ -107,9 +107,9 @@ def test_concurrent_refreshes_serialize_and_share_one_publication(tmp_path, monk
     original = cache.writer_lock
     entered = threading.Barrier(4)
     @contextmanager
-    def concurrent_lock(path):
+    def concurrent_lock(path, **kwargs):
         entered.wait(timeout=5)
-        with original(path):
+        with original(path, **kwargs):
             yield
     monkeypatch.setattr(cache, "writer_lock", concurrent_lock)
     calls = []
@@ -230,3 +230,83 @@ def test_managed_source_images_and_manifests_invalidate_but_previews_do_not(tmp_
     api._atomic_json_write(home / "runtime" / "executions" / "receipt.json", {"state": "done"})
     assert cache.visual_sequence_options(tmp_path, build)[2] == "disk"
     assert len(calls) == 3
+
+
+def test_fresh_readers_do_not_wait_behind_an_explicit_slow_refresh(tmp_path):
+    first = cache.visual_sequence_options(tmp_path, lambda: [option()])
+    entered, release = threading.Event(), threading.Event()
+
+    def slow():
+        entered.set()
+        assert release.wait(5), "clean readers should not block on the builder lock"
+        return [option(802)]
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        refresh = executor.submit(cache.visual_sequence_options, tmp_path, slow, refresh=True)
+        assert entered.wait(5)
+        try:
+            current = cache.visual_sequence_options(tmp_path, lambda: pytest.fail("clean reader rebuilt"))
+            assert current == (first[0], first[1], "disk")
+        finally:
+            release.set()
+        assert refresh.result()[0][0]["imageCount"] == 802
+
+
+def test_slow_cold_builder_has_its_own_wait_budget_instead_of_journal_default(tmp_path, monkeypatch):
+    import time
+    original = cache.writer_lock
+
+    @contextmanager
+    def short_default(path, timeout=0.02):
+        with original(path, timeout=timeout):
+            yield
+
+    monkeypatch.setattr(cache, "writer_lock", short_default)
+    calls = []
+
+    def slow():
+        calls.append(1)
+        time.sleep(0.1)
+        return [option()]
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(lambda _: cache.visual_sequence_options(tmp_path, slow), range(4)))
+    assert len(calls) == 1
+    assert len({result[1] for result in results}) == 1
+
+
+def test_catalog_ordering_avoids_per_frame_provenance_for_recordings(tmp_path, monkeypatch):
+    directory = tmp_path / "data" / "omega_vision" / "recordings" / "game" / "run"
+    directory.mkdir(parents=True)
+    (directory / "recording.json").write_text('{"moves":[]}')
+    monkeypatch.setattr(api, "_sequence_ordering", lambda *args: pytest.fail("recording ordering read frame sidecars"))
+    assert api._catalog_sequence_ordered(directory, [directory / str(index) / "image.png" for index in range(1000)])
+
+
+def test_unordered_catalog_collection_stops_at_first_unsupported_provenance(tmp_path, monkeypatch):
+    seen = []
+
+    def ordering(directory, images):
+        seen.extend(images)
+        return False, [{} for _ in images]
+
+    monkeypatch.setattr(api, "_sequence_ordering", ordering)
+    images = [tmp_path / f"frame_{index}.png" for index in range(1000)]
+    assert not api._catalog_sequence_ordered(tmp_path, images)
+    assert seen == images[:1]
+
+
+def test_busy_catalog_returns_retryable_error_not_internal_server_error(tmp_path, monkeypatch):
+    monkeypatch.setattr(api, "_workspace_root", lambda _: tmp_path)
+
+    def busy(*args, **kwargs):
+        raise TimeoutError("builder still owns choices.lock")
+
+    monkeypatch.setattr(api, "visual_sequence_options", busy)
+    app = FastAPI()
+    app.include_router(api.router)
+    with TestClient(app) as client:
+        response = client.get(f"{api.router.prefix}/visual-sequences", params={"workspaceId": "w"})
+    assert response.status_code == 503
+    assert response.headers["retry-after"] == "2"
+    assert "selected-source access is independent" in response.json()["detail"]

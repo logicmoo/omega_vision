@@ -17,18 +17,20 @@ from .event_records import PHASES, PREDICATES, identifiers, normalize_assessment
 from .observation_identity import _prolog_atom, content_hash
 from .object_evidence import validate_object_result
 from .object_tracking import measure_composition_input
+from .measured_event_features import directional_contact, heading_delta, is_exact_mask_source
 from .temporal_correspondence import (
     TemporalFrame, frame_to_dict, initial_temporal_state, measure_frame_relations,
     validate_checkpoint, validate_temporal_result,
 )
 
-VERSION = "authored-event-deduction-v1"
+VERSION = "authored-event-deduction-v2"
 RULES = Path(__file__).resolve().parents[3] / "prolog" / "omega_vision" / "event_detectors.pl"
 ADAPTER_HASH = content_hash(Path(__file__).read_bytes())
 COMPOSITION_ADAPTER_HASH = content_hash(Path(measure_composition_input.__code__.co_filename).read_bytes())
 DETECTOR_IDS = (
     "authored_motion", "authored_geometry", "authored_visibility",
     "authored_topology", "authored_occlusion", "authored_attachment",
+    "authored_derivatives", "authored_response", "authored_input_response", "authored_trajectory",
 )
 ATTACHMENT_FACT_FAMILIES = (
     "regions", "shared_edges", "adjacency", "enclosure", "borders", "holes", "probes",
@@ -44,6 +46,10 @@ class DetectorConfig:
     occlusion_fraction: float = 0.2
     exit_fraction: float = 0.85
     continuations: bool = True
+    heading_tolerance_degrees: float = 15.0
+    speed_tolerance: float = 0.25
+    blocked_attempts: int = 3
+    follow_minimum_matches: int = 2
 
     def __post_init__(self) -> None:
         if isinstance(self.motion_tolerance, bool) or not math.isfinite(self.motion_tolerance) or self.motion_tolerance < 0:
@@ -52,6 +58,14 @@ class DetectorConfig:
             probability(getattr(self, field), field)
         if type(self.continuations) is not bool:
             raise ValidationError("continuations must be boolean")
+        if (
+            type(self.heading_tolerance_degrees) not in (int, float)
+            or not math.isfinite(self.heading_tolerance_degrees) or not 0 < self.heading_tolerance_degrees <= 180
+            or type(self.speed_tolerance) not in (int, float) or not math.isfinite(self.speed_tolerance)
+            or self.speed_tolerance < 0 or type(self.blocked_attempts) is not int or self.blocked_attempts < 3
+            or type(self.follow_minimum_matches) is not int or self.follow_minimum_matches < 2
+        ):
+            raise ValidationError("derivative thresholds and at least three blocked attempts are required")
 
 
 def implementation_version(config: DetectorConfig | None = None) -> str:
@@ -59,6 +73,8 @@ def implementation_version(config: DetectorConfig | None = None) -> str:
         "version": VERSION, "config": asdict(config or DetectorConfig()),
         "rules": content_hash(RULES.read_bytes()), "adapter": ADAPTER_HASH,
         "composition_adapter": COMPOSITION_ADAPTER_HASH,
+        "measurements": content_hash(Path(__file__).with_name("measured_event_features.py").read_bytes()),
+        "term_schema": content_hash(Path(__file__).with_name("event_records.py").read_bytes()),
     })
 
 
@@ -273,6 +289,7 @@ def initial_event_state(
         if record["truth"] is True and not record["prediction"]
     )
     baseline.extend(_term("attached", *pair) for pair in attachment_state["attachment_pairs"])
+    baseline.extend(_term("inside", *reversed(term["args"])) for term in list(baseline) if term["predicate"] == "contain")
     baseline = list({render_term(term, entity_ids=known): term for term in baseline}.values())
     return _sealed({
         "version": VERSION, "detector_version": implementation_version(config),
@@ -280,6 +297,9 @@ def initial_event_state(
         "frame_id": frame.uid, "frame_order": frame.order,
         "temporal_checkpoint_id": temporal["checkpointUid"], "previous_state_id": None,
         "active_relations": baseline, "observed_relations": baseline, "motion": {},
+        "blocked_history": {}, "seen_input_receipts": [],
+        "follow_history": {},
+        "positions": {observation_tracks[group.uid]: list(group.centroid) for group in frame.groups if group.points},
         "observation_tracks": observation_tracks,
         **attachment_state,
         "visibility": {track["trackUid"]: track["visibility"] for track in temporal["tracks"]},
@@ -367,6 +387,12 @@ def deduce_pair_events(
     ambiguous = bool(temporal["ambiguities"])
     uncertainty = ["ambiguous_correspondence"] if ambiguous else []
     motion_rows, relations, facts, known_absent = [], [], [], []
+    derivative_rows, geometry_rows, response_rows, contact_rows, follow_rows = [], [], [], [], []
+    unsupported_measurements = []
+    geometry_by_track = {item["trackUid"]: item for item in temporal["geometry"]}
+    interval = temporal["interval"]
+    if interval["seconds"] is not None:
+        facts.append(_term("measured_interval", interval["seconds"], interval["clockId"]))
     current_motion: dict[str, Any] = {}
 
     def add_relation(term: dict[str, Any], old: bool | None, new: bool | None, detector: str, confidence: float, evidence: list[str]) -> None:
@@ -410,7 +436,54 @@ def deduce_pair_events(
         current_motion[entity] = {
             "state": "moving" if is_moving else "stationary", "displacement": displacement,
             "rigid_motion": rigid_motion.get(match["toUid"], []), "transforms": match["transforms"],
+            "interval": interval, "confidence": confidence,
+            "translation_supported": row["maskIou"] >= config.rotation_iou and "identity" in match["transforms"],
+            "spatial_references": [
+                (before.observation_metadata or {}).get("coordinate_frame_id"),
+                (after.observation_metadata or {}).get("coordinate_frame_id"),
+            ],
         }
+        geometry = geometry_by_track[entity]
+        geometric_evidence = [evidence_ref, pair_ref, before.uid, after.uid,
+                              geometry["before"]["maskHash"], geometry["after"]["maskHash"]]
+        confounded = any(item["occludedTrackUid"] == entity for item in temporal["occlusions"])
+        source_group = next(group for group in before.groups if group.uid == match["fromUid"])
+        target_group = next(group for group in after.groups if group.uid == match["toUid"])
+        lost = set(source_group.points) - set(target_group.points)
+        gained = set(target_group.points) - set(source_group.points)
+        confounded = confounded or any(
+            lost & set(group.points) for group in after.groups if group.uid != target_group.uid
+        ) or any(gained & set(group.points) for group in before.groups if group.uid != source_group.uid)
+        usable_geometry = geometry["exact"] and not geometry["borderClipped"] and not confounded
+        if not usable_geometry and (
+            geometry["areaDelta"] or geometry["holeDelta"] or geometry["colorChanged"]
+            or row["maskIou"] < config.shape_change_iou
+        ):
+            unsupported_measurements.append({
+                "entity": entity, "measurement": "geometry_change",
+                "reason": "inexact_clipped_or_occlusion_confounded_pixels",
+            })
+        geometry_rows.append({
+            **geometry, "entity": entity, "usable": bool(usable_geometry), "confidence": confidence,
+            "evidence": geometric_evidence, "maskIou": row["maskIou"],
+        })
+        if (
+            usable_geometry and row["maskIou"] == 1
+            and geometry["nonuniformScale"] and geometry["affineIou"] >= config.rotation_iou
+        ):
+            geometry_rows[-1]["explanationAlternatives"] = ["rigid_transform", "axis_aligned_deformation"]
+            uncertainty.append(f"ambiguous_rigid_or_nonuniform_transform:{entity}")
+        if usable_geometry:
+            facts.extend([
+                _term("area_delta", entity, geometry["areaDelta"]),
+                _term("hole_count_delta", entity, geometry["holeDelta"]),
+                _term("scale_axes", entity, *geometry["scale"]),
+                _term("affine_iou", entity, geometry["affineIou"]),
+            ])
+            if geometry["colorChanged"]:
+                facts.append(_term("appearance_transition", entity, str(geometry["beforeColors"]), str(geometry["afterColors"])))
+            if geometry["uniformScale"] and geometry["affineIou"] >= config.rotation_iou:
+                facts.append(_term("scale_ratio", entity, geometry["scale"][0]))
         if old is not None:
             facts.append(_term("move" if old["state"] == "moving" else "stationary", entity))
             known_absent.append(_term("stationary" if old["state"] == "moving" else "move", entity))
@@ -418,6 +491,52 @@ def deduce_pair_events(
                 _term("move", entity), old["state"] == "moving", is_moving,
                 "authored_motion", confidence, [evidence_ref, pair_ref],
             )
+            derivative_supported = (
+                old["translation_supported"] and current_motion[entity]["translation_supported"]
+                and old["interval"]["toFrame"] == before.uid and not confounded
+            )
+            spatial_references = [*old["spatial_references"], *current_motion[entity]["spatial_references"]]
+            declared_references = {reference for reference in spatial_references if reference is not None}
+            # Missing time does not erase a spatial-reference contradiction.
+            # Retain legacy per-frame image measurements only when all references
+            # are unspecified, or every endpoint explicitly shares one reference.
+            spatially_comparable = not declared_references or (
+                len(declared_references) == 1 and all(reference is not None for reference in spatial_references)
+            )
+            if derivative_supported and not spatially_comparable:
+                unsupported_measurements.append({
+                    "entity": entity, "measurement": "motion_derivatives",
+                    "reason": "incompatible_spatial_references", "coordinateFrameIds": spatial_references,
+                })
+                uncertainty.append(f"incompatible_spatial_references:{entity}")
+            if derivative_supported and spatially_comparable:
+                prior_magnitude = math.hypot(*old["displacement"])
+                heading = heading_delta(old["displacement"], displacement) if (
+                    prior_magnitude > config.motion_tolerance and magnitude > config.motion_tolerance
+                ) else None
+                delta = None
+                old_interval = old["interval"]
+                if (
+                    interval["seconds"] is not None and old_interval["seconds"] is not None
+                    and old_interval["clockId"] == interval["clockId"]
+                    and old_interval["coordinateFrameId"] == interval["coordinateFrameId"]
+                ):
+                    delta = magnitude / interval["seconds"] - prior_magnitude / old_interval["seconds"]
+                    facts.append(_term("speed_delta", entity, delta))
+                elif abs(magnitude - prior_magnitude) > config.motion_tolerance:
+                    unsupported_measurements.append({
+                        "entity": entity, "measurement": "physical_speed_delta",
+                        "reason": interval["unsupported"] or old_interval["unsupported"] or "measurement_reference_changed",
+                    })
+                facts.append(_term("frame_displacement_delta", entity, magnitude - prior_magnitude))
+                if heading is not None:
+                    facts.append(_term("heading_delta", entity, heading))
+                derivative_rows.append({
+                    "entity": entity, "headingDelta": heading, "speedDelta": delta,
+                    "headingUnit": "degrees", "speedUnit": "pixels_per_second" if delta is not None else None,
+                    "confidence": min(confidence, old["confidence"]),
+                    "evidence": sorted(set([evidence_ref, pair_ref, *interval["evidence"], *old_interval["evidence"]])),
+                })
     for left_index, left in enumerate(sorted(current_motion)):
         for right in sorted(current_motion)[left_index + 1:]:
             def co_moving(movement: Mapping[str, Any]) -> bool | None:
@@ -484,6 +603,11 @@ def deduce_pair_events(
             raise ValidationError("topology truth must be true, false, or unknown")
         relation = _term(measured["relation"], *measured["subjects"])
         add_relation(relation, measured["before"], measured["after"], "authored_topology", 1.0, [evidence_ref, pair_ref])
+        if measured["relation"] == "contain":
+            add_relation(
+                _term("inside", *reversed(measured["subjects"])), measured["before"], measured["after"],
+                "authored_topology", 1.0, [evidence_ref, pair_ref],
+            )
         if measured["before"] is True:
             facts.append(relation)
         elif measured["before"] is False:
@@ -493,6 +617,206 @@ def deduce_pair_events(
                 measured["relation"] + "_delta", *measured["subjects"],
                 int(measured["after"]) - int(measured["before"]),
             ))
+    # Contact at the previous frame is evidence time; the current response is
+    # decision time. Neither a contact nor an approaching prediction is recoil.
+    for measured in temporal["topology"]:
+        if measured["relation"] != "contact" or measured["prediction"] or measured["before"] is not True:
+            continue
+        left, right = measured["subjects"]
+        if any(entity not in current_motion or entity not in previous_state["motion"] for entity in (left, right)):
+            continue
+        old_left, old_right = (previous_state["motion"][entity] for entity in (left, right))
+        new_left, new_right = (current_motion[entity] for entity in (left, right))
+        if not all(row["translation_supported"] for row in (old_left, old_right, new_left, new_right)):
+            continue
+        first = next(group for group in before.groups if group.uid == matches[left]["fromUid"])
+        second = next(group for group in before.groups if group.uid == matches[right]["fromUid"])
+        if not all(is_exact_mask_source(group.mask_source) for group in (first, second)):
+            continue
+        normal = [b - a for a, b in zip(first.centroid, second.centroid)]
+        norm = math.hypot(*normal)
+        if not norm:
+            continue
+        normal = [value / norm for value in normal]
+        def along(movement: Mapping[str, Any]) -> float:
+            return sum(a * b for a, b in zip(movement["displacement"], normal))
+        incoming = along(old_left) - along(old_right)
+        outgoing = along(new_left) - along(new_right)
+        evidence = sorted(set([before.uid, after.uid, evidence_ref, pair_ref,
+                               *old_left["interval"]["evidence"], *old_right["interval"]["evidence"]]))
+        response_rows.append({
+            "subjects": [left, right], "incoming": incoming, "outgoing": outgoing,
+            "leftReversed": along(old_left) > config.motion_tolerance and along(new_left) < -config.motion_tolerance,
+            "rightReversed": along(old_right) < -config.motion_tolerance and along(new_right) > config.motion_tolerance,
+            "leftStationary": old_left["state"] == new_left["state"] == "stationary",
+            "rightStationary": old_right["state"] == new_right["state"] == "stationary",
+            "confidence": min(row["confidence"] for row in (old_left, old_right, new_left, new_right)),
+            "evidence": evidence,
+        })
+
+    for actor, actor_match in matches.items():
+        if actor_match["reappeared"] or actor not in current_motion:
+            continue
+        actor_before = next(group for group in before.groups if group.uid == actor_match["fromUid"])
+        actor_after = next(group for group in after.groups if group.uid == actor_match["toUid"])
+        for other, other_match in matches.items():
+            if actor == other or other_match["reappeared"] or other not in current_motion:
+                continue
+            other_before = next(group for group in before.groups if group.uid == other_match["fromUid"])
+            other_after = next(group for group in after.groups if group.uid == other_match["toUid"])
+            if not all(is_exact_mask_source(group.mask_source) for group in (actor_before, actor_after, other_before, other_after)):
+                continue
+            for direction in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                old_contact = directional_contact(actor_before.points, other_before.points, direction)
+                new_contact = directional_contact(actor_after.points, other_after.points, direction)
+                facts.append(_term("directional_contact", actor, other, *direction, new_contact))
+                if direction == (0, 1):
+                    facts.append(_term("image_down_contact_delta", actor, other, new_contact - old_contact))
+                if old_contact or new_contact:
+                    contact_rows.append({
+                        "subjects": [actor, other], "direction": list(direction),
+                        "beforePixels": old_contact, "afterPixels": new_contact,
+                        "evidence": [before.uid, after.uid, pair_ref, evidence_ref],
+                        "interpretation": "image_boundary_occupancy_not_physical_support",
+                    })
+
+    follow_history = {}
+    positions = {
+        track["trackUid"]: list(next(group for group in after.groups if group.uid == track["observationUid"]).centroid)
+        for track in current_tracks.values() if track["trackUid"] in visibly_measured and track["points"]
+    }
+    for follower in sorted(current_motion):
+        for leader in sorted(current_motion.keys() - {follower}):
+            if leader not in previous_state["positions"] or not all(
+                current_motion[entity]["translation_supported"] for entity in (follower, leader)
+            ):
+                continue
+            relation = _term("follow", follower, leader)
+            key = _relation_key(relation, known)
+            old = previous_state["follow_history"].get(key, {
+                "count": 0, "truth": True if key in active else None, "evidence": [],
+            })
+            distance = math.dist(positions[follower], previous_state["positions"][leader])
+            facts.append(_term("lagged_path_distance", follower, leader, distance))
+            moving = all(current_motion[entity]["state"] == "moving" for entity in (follower, leader))
+            matched = moving and distance <= config.motion_tolerance
+            count = old["count"] + 1 if matched else 0
+            truth = True if count >= config.follow_minimum_matches else (None if matched else False)
+            evidence = sorted(set([before.uid, after.uid, pair_ref, evidence_ref, *old["evidence"]]))
+            follow_history[key] = {
+                "count": count, "truth": truth if truth is not None else old["truth"], "evidence": evidence,
+            }
+            if truth is not None:
+                add_relation(relation, old["truth"], truth, "authored_trajectory",
+                             min(current_motion[entity]["confidence"] for entity in (follower, leader)), evidence)
+            if count:
+                facts.append(_term("lagged_path_matches", follower, leader, count))
+            if count or old["count"]:
+                follow_rows.append({
+                    "subjects": [follower, leader], "sampleLag": 1, "matchedPositions": count,
+                    "distance": distance, "truth": truth, "evidence": evidence,
+                    "interpretation": "observed_lagged_path_not_intent",
+                })
+
+    blocked_history = {}
+    seen_receipts = set(previous_state["seen_input_receipts"])
+    attempted_pairs = set()
+    source_tracks = previous_state["observation_tracks"]
+    receipt_actor_counts = {}
+    for receipt in temporal["inputReceipts"]:
+        receipt_actor_counts[receipt["actor_uid"]] = receipt_actor_counts.get(receipt["actor_uid"], 0) + 1
+    for receipt in temporal["inputReceipts"]:
+        if receipt["receipt_id"] in seen_receipts:
+            raise ValidationError("input receipt was already consumed by an earlier transition")
+        seen_receipts.add(receipt["receipt_id"])
+        if receipt_actor_counts[receipt["actor_uid"]] != 1:
+            unsupported_measurements.append({"measurement": "input_response", "reason": "multiple_inputs_without_individual_observations"})
+            continue
+        actor = source_tracks.get(receipt["actor_uid"])
+        if actor not in current_motion:
+            unsupported_measurements.append({"measurement": "input_response", "reason": "actor_correspondence_unknown"})
+            continue
+        direction = receipt["direction"]
+        norm = math.hypot(*direction)
+        direction = [value / norm for value in direction]
+        facts.extend([_term("user_input", actor, receipt["action"]), _term("action_direction", actor, *direction)])
+        actor_group = next(group for group in after.groups if group.uid == matches[actor]["toUid"])
+        before_actor = next(group for group in before.groups if group.uid == receipt["actor_uid"])
+        for barrier in sorted(current_motion.keys() - {actor}):
+            if not current_motion[barrier]["translation_supported"] or current_motion[barrier]["state"] != "stationary":
+                continue
+            barrier_group = next(group for group in after.groups if group.uid == matches[barrier]["toUid"])
+            before_barrier = next(group for group in before.groups if group.uid == matches[barrier]["fromUid"])
+            if not all(is_exact_mask_source(group.mask_source) for group in (before_actor, actor_group, before_barrier, barrier_group)):
+                unsupported_measurements.append({
+                    "entity": actor, "measurement": "input_response",
+                    "reason": "exact_boundary_pixels_unavailable",
+                })
+                continue
+            contact = directional_contact(actor_group.points, barrier_group.points, direction)
+            facts.append(_term("directed_contact_pixels", actor, barrier, contact))
+            key = _relation_key(_term("blocked", actor, barrier), known)
+            old = previous_state["blocked_history"].get(key)
+            old_count = old["count"] if old is not None else 0
+            old_truth = old["truth"] if old is not None else (True if key in active else None)
+            if old is not None and math.dist(old["direction"], direction) > 1e-9:
+                old_count = 0
+                old_truth = None
+            evidence = [receipt["receipt_id"], receipt["source_ref"], receipt["source_hash"],
+                        receipt["actor_binding_ref"], evidence_ref, pair_ref, before.uid, after.uid]
+            failed = current_motion[actor]["state"] == "stationary" and contact > 0
+            if failed:
+                # Multiple receipts within one image interval cannot count as
+                # independently observed failed attempts.
+                if key in attempted_pairs:
+                    continue
+                attempted_pairs.add(key)
+                count = old_count + 1
+                history = sorted(set([*evidence, *((old or {}).get("evidence", []) if old_truth is not None or old_count else [])]))
+                current_truth = True if count >= config.blocked_attempts else None
+                blocked_history[key] = {
+                    "count": count, "direction": direction, "evidence": history,
+                    "truth": current_truth if current_truth is not None else old_truth,
+                }
+                facts.append(_term("failed_attempts", actor, barrier, count))
+                add_relation(_term("blocked", actor, barrier), old_truth,
+                             current_truth, "authored_input_response", 1.0, history)
+                if current_truth is True and old_truth is None and key not in active:
+                    uncertainty.append(f"blocked_initial_boundary_unestablished:{actor}:{barrier}")
+            elif sum(
+                value * component for value, component in zip(current_motion[actor]["displacement"], direction)
+            ) > config.motion_tolerance:
+                blocked_history[key] = {
+                    "count": 0, "truth": False, "direction": direction, "evidence": evidence,
+                }
+                add_relation(_term("blocked", actor, barrier), old_truth, False if contact == 0 or key not in active else None,
+                             "authored_input_response", 1.0, evidence)
+        for key, relation in active.items():
+            if relation["predicate"] != "blocked" or relation["args"][0] != actor:
+                continue
+            barrier = relation["args"][1]
+            if barrier in current_motion:
+                continue
+            previous_barrier = next((
+                group for group in before.groups if source_tracks.get(group.uid) == barrier
+            ), None)
+            if (
+                previous_barrier is not None
+                and all(is_exact_mask_source(group.mask_source) for group in (before_actor, actor_group, previous_barrier))
+                and directional_contact(before_actor.points, previous_barrier.points, direction) > 0
+                and set(actor_group.points) & set(previous_barrier.points)
+                and sum(value * component for value, component in zip(current_motion[actor]["displacement"], direction)) > config.motion_tolerance
+            ):
+                # The actor is now observed occupying the old obstruction, not
+                # merely failing to find the obstacle elsewhere in the image.
+                add_relation(relation, True, False, "authored_input_response", current_motion[actor]["confidence"], [
+                    receipt["receipt_id"], receipt["source_ref"], receipt["source_hash"],
+                    receipt["actor_binding_ref"], evidence_ref, pair_ref, before.uid, after.uid,
+                ])
+    # A no-input pause is unknown attempted motion; it never closes blocked.
+    for key, old in previous_state["blocked_history"].items():
+        if key not in blocked_history and key not in {_relation_key(row["term"], known) for row in relations}:
+            blocked_history[key] = {**old, "count": 0}
     occlusions = []
     for measured in temporal["occlusions"]:
         occluder, occluded = measured["occluderTrackUid"], measured["occludedTrackUid"]
@@ -588,6 +912,9 @@ def deduce_pair_events(
         "rotationIou": config.rotation_iou, "shapeChangeIou": config.shape_change_iou,
         "occlusionFraction": config.occlusion_fraction, "exitFraction": config.exit_fraction,
         "continuations": config.continuations and temporal["assessment"] != "no_material_change",
+        "receiptContinuations": config.continuations,
+        "geometry": geometry_rows, "derivatives": derivative_rows, "responses": response_rows,
+        "headingTolerance": config.heading_tolerance_degrees, "speedTolerance": config.speed_tolerance,
     }
     output = run_prolog(input_data, swipl_executable=swipl_executable, timeout=timeout)
     if not isinstance(output.get("events"), list):
@@ -686,6 +1013,8 @@ def deduce_pair_events(
         "active_relations": [active[key] for key in sorted(active)],
         "observed_relations": [observed_relations[key] for key in sorted(observed_relations)],
         "motion": current_motion,
+        "blocked_history": blocked_history, "seen_input_receipts": sorted(seen_receipts),
+        "follow_history": follow_history, "positions": positions,
         "observation_tracks": observation_tracks,
         **attachment_state,
         "visibility": {track["trackUid"]: track["visibility"] for track in current_tracks.values()},
@@ -700,6 +1029,11 @@ def deduce_pair_events(
         },
         "source_order": before.order, "target_order": after.order,
         "facts": facts, "entity_ids": sorted(known), "checkpoint": state,
+        "measurements": {
+            "interval": interval, "geometry": geometry_rows, "derivatives": derivative_rows,
+            "responses": response_rows, "directionalContacts": contact_rows, "laggedPaths": follow_rows,
+            "unsupported": unsupported_measurements,
+        },
         "attachment_comparison": {
             "before": previous_state["attachment_snapshot"], "after": snapshot,
             "requires_replay": attachment_state["attachment_requires_replay"],

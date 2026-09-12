@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useContext, useEffect, useId, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { MenuVisibilityBoundary, useMenuSurfaceLifecycle } from "@app/components/MenuVisibilityBoundary";
 import { VisibilityMenuContext } from "@app/components/MenuVisibilitySettings";
 import { isMenuRouteVisible, pageMenuId } from "@app/lib/menuVisibility";
@@ -10,13 +10,16 @@ import { SpriteViewerPage } from "@app/components/SpriteViewerPage";
 import { memoryRequest, memorySessionId, NOWHERE_LIMITS_NOTICE } from "@app/components/MemorySession";
 import { MemorySetupHost } from "@app/components/MemorySetupHost";
 import { SemanticEventsPanel } from "./SemanticEventsPanel";
+import { VisualSequenceDemoView } from "./VisualSequenceDemoView";
 import { RecognitionTemporalCanvas } from "./RecognitionTemporalCanvas";
 import { createSemanticExecutionApi } from "./SemanticExecutionApi";
 import { SuperControl } from "@app/components/UniversalArtifactEditor";
 import type { WorkflowPageDefinition } from "@app/components/WorkflowPageHost";
 import type { ModelChoice as Arc3ModelChoice, WorkspaceFileRecord } from "./Arc3B1B2PipelinePage";
 import { PrologDataInspector } from "./PrologDataInspector";
-import { loadVisualSequenceCatalog } from "./VisualSequenceCatalog";
+import { loadVisualSequenceCatalog, loadVisualSequenceEntry } from "./VisualSequenceCatalog";
+import { directCompositeDescription, type DirectComposite } from "./DirectCompositePickerModel";
+import { RecognitionRowStageCall } from "./RecognitionRowStageCall";
 import { useSharedVisualSequenceSelection } from "./useSharedVisualSequenceSelection";
 import {
   preprocessingSequenceId,
@@ -37,13 +40,18 @@ import {
   navigationPathFromUrl,
   navigationSlug,
   resolveRecognitionNavigation,
+  canonicalRecognitionNavigationTab,
+  SEQUENCE_VIEW_CHANGED_EVENT,
   resolveVideoImportShellDestination,
   videoImportUrlForSubview,
+  videoImportSurfaceFromUrl,
+  visualSequencesUrlForNavigation,
   urlWithNavigation,
   type RecognitionNavigationTab,
   type RecognitionNavigationTransform,
   type VideoImportIntegratedFocus,
   type VideoImportShellSubview,
+  type VideoImportSurface,
 } from "./VideoImportNavigationUrl";
 import {
   requiresVisualSequenceConfirmation,
@@ -121,7 +129,6 @@ type FilterEntry = {
 };
 type FilterSpec = Record<string, unknown>;
 type ChainStep = { entryId: string; params: Record<string, string>; stepId?: string };
-type DirectComposite = { id: string; available: boolean; type?: string };
 type DirectCallState = { jobId: string; active: boolean; note: string; error?: string; retry?: boolean; path?: string };
 type JobState = {
   id: string; kind: string; state: "running" | "done" | "error";
@@ -1962,6 +1969,7 @@ export function VideoImportPage({
   arc3B1B2Files,
   onArc3B1B2PageDefinitionSaved,
   onChainSummaryChange,
+  surface = "intake",
 }: {
   workspaceId: string;
   workspaceLabel?: string;
@@ -1974,8 +1982,11 @@ export function VideoImportPage({
    * live "what we've built so far" summary elsewhere (e.g. the right-side
    * panel) without needing to lift the whole chain/filters state up. */
   onChainSummaryChange?: (steps: VideoImportChainSummaryStep[]) => void;
+  surface?: VideoImportSurface;
 }) {
-  const initialShellDestination = useRef(resolveVideoImportShellDestination(window.location.href));
+  const initialShellDestination = useRef(surface === "sequences"
+    ? { subview: "recognition" as const, focus: null }
+    : resolveVideoImportShellDestination(window.location.href));
   const pageLifecycle = useMenuSurfaceLifecycle();
   const pageRoot = useRef<HTMLElement>(null);
   const menuItems = useContext(VisibilityMenuContext);
@@ -1990,23 +2001,28 @@ export function VideoImportPage({
   );
   const selectSubview = (subview: string) => {
     const nextUrl = videoImportUrlForSubview(window.location.href, subview);
-    const destination = resolveVideoImportShellDestination(nextUrl);
-    window.history.replaceState(window.history.state, "", nextUrl);
+    const targetUrl = surface === "sequences" && subview === "recognition"
+      ? visualSequencesUrlForNavigation(window.location.href) : nextUrl;
+    const destination = resolveVideoImportShellDestination(targetUrl);
+    window.history.replaceState(window.history.state, "", targetUrl);
     setActiveSubview(destination.subview);
     setIntegratedFocusRequest(destination.focus);
     if (destination.subview === "recognition") {
       recognitionNavigationAppliedRef.current = "";
-      setRecognitionNavigationPath(navigationPathFromUrl(nextUrl));
+      setRecognitionNavigationPath(navigationPathFromUrl(targetUrl));
     }
     // Keep the app nav rail/topbar highlight in sync with the page's own tabs.
     window.dispatchEvent(new CustomEvent("workbench:subview-changed", { detail: destination.subview }));
   };
   useEffect(() => {
     const destination = resolveVideoImportShellDestination(window.location.href);
-    const canonical = canonicalVideoImportShellUrl(
-      window.location.href,
-      destination,
-    );
+    if (surface === "sequences") {
+      destination.subview = "recognition";
+      destination.focus = null;
+    }
+    const canonical = surface === "sequences"
+      ? visualSequencesUrlForNavigation(window.location.href)
+      : canonicalVideoImportShellUrl(window.location.href, destination);
     if (canonical !== window.location.href) {
       window.history.replaceState(window.history.state, "", canonical);
     }
@@ -2019,10 +2035,12 @@ export function VideoImportPage({
     // Stage pages in the app nav address this component through ?subview=;
     // honor switches and legacy destinations while the page is already mounted.
     const onExternal = (event: Event) => {
+      if (videoImportSurfaceFromUrl(window.location.href) !== surface) return;
       const detail = String((event as CustomEvent).detail || "").toLowerCase();
       selectSubview(detail);
     };
     const onHistory = () => {
+      if (videoImportSurfaceFromUrl(window.location.href) !== surface) return;
       const destination = resolveVideoImportShellDestination(window.location.href);
       setActiveSubview(destination.subview);
       setIntegratedFocusRequest(destination.focus);
@@ -2037,7 +2055,13 @@ export function VideoImportPage({
       window.removeEventListener("workbench:set-subview", onExternal);
       window.removeEventListener("popstate", onHistory);
     };
-  }, []);
+  }, [surface]);
+  const openVisualSequences = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    window.history.pushState(window.history.state, "", visualSequencesUrlForNavigation(window.location.href));
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
   const hoveredImageRef = useRef<Element | null>(null);
   const [altImageZoom, setAltImageZoom] = useState<AltImageZoom | null>(null);
   const [pinnedAltImageZoom, setPinnedAltImageZoom] = useState<AltImageZoom | null>(null);
@@ -2476,24 +2500,27 @@ export function VideoImportPage({
     setArcRecordingsLoaded(true);
   }, [workspaceId]);
   useEffect(() => {
-    void loadVideos();
-    void api(`catalog?workspaceId=${encodeURIComponent(workspaceId)}`).then((payload) => setCatalog((payload.entries as Array<{ title: string; url: string }>) || [])).catch(() => undefined);
-    void api(`importables?workspaceId=${encodeURIComponent(workspaceId)}`).then((payload) => {
-      const files = ((payload.files as Array<{ path: string; name?: string }>) || []).map((entry) => ({ path: String(entry.path), name: String(entry.name || entry.path) }));
-      setImportables(files);
-    }).catch(() => undefined);
-    void refreshArcRecordings().catch(() => undefined);
-    void api(`curated-image-sources?workspaceId=${encodeURIComponent(workspaceId)}`)
-      .then((payload) => setCuratedSources((payload.sources as typeof curatedSources) || []))
-      .catch(() => undefined);
+    if (surface === "intake") {
+      void loadVideos();
+      void api(`catalog?workspaceId=${encodeURIComponent(workspaceId)}`).then((payload) => setCatalog((payload.entries as Array<{ title: string; url: string }>) || [])).catch(() => undefined);
+      void api(`importables?workspaceId=${encodeURIComponent(workspaceId)}`).then((payload) => {
+        const files = ((payload.files as Array<{ path: string; name?: string }>) || []).map((entry) => ({ path: String(entry.path), name: String(entry.name || entry.path) }));
+        setImportables(files);
+      }).catch(() => undefined);
+      void refreshArcRecordings().catch(() => undefined);
+      void api(`curated-image-sources?workspaceId=${encodeURIComponent(workspaceId)}`)
+        .then((payload) => setCuratedSources((payload.sources as typeof curatedSources) || []))
+        .catch(() => undefined);
+    }
     void api(`filters?workspaceId=${encodeURIComponent(workspaceId)}`).then((payload) => { setFilters((payload.filters as FilterEntry[]) || []); setLedger((payload.votes as Record<string, number>) || {}); }).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId]);
+  }, [workspaceId, surface]);
   useEffect(() => {
-    void refreshStreamRouter().catch(() => undefined);
-  }, [refreshStreamRouter]);
+    if (surface === "intake") void refreshStreamRouter().catch(() => undefined);
+  }, [refreshStreamRouter, surface]);
   useEffect(() => {
     const restoreVisualSequenceFromHistory = () => {
+      if (videoImportSurfaceFromUrl(window.location.href) !== surface) return;
       const parsed = visualSequenceLocationFromUrl(window.location.href);
       setVisualSequenceLocation(parsed.location);
       selectedRecordingRef.current = "";
@@ -2506,7 +2533,7 @@ export function VideoImportPage({
     };
     window.addEventListener("popstate", restoreVisualSequenceFromHistory);
     return () => window.removeEventListener("popstate", restoreVisualSequenceFromHistory);
-  }, []);
+  }, [surface]);
 
   // ---- intake -------------------------------------------------------------
   const [source, setSource] = useState("");
@@ -3427,13 +3454,38 @@ export function VideoImportPage({
   const OBJECTS_LIVE_SET = "objects_live";
   const DEFAULT_IMAGE_SET = "curated/recognition_reduce";
   const sharedSelection = useSharedVisualSequenceSelection(workspaceId);
-  const [imageSetList, setImageSetList] = useState<VisualSequenceCatalogEntry[]>([]);
+  const [imageSetCatalog, setImageSetList] = useState<VisualSequenceCatalogEntry[]>([]);
+  const [selectedSequenceEntry, setSelectedSequenceEntry] = useState<VisualSequenceCatalogEntry | null>(null);
+  const [selectedSequenceError, setSelectedSequenceError] = useState("");
+  const [selectedSequenceReload, setSelectedSequenceReload] = useState(0);
+  const imageSetList = useMemo(() => {
+    if (!selectedSequenceEntry) return imageSetCatalog;
+    const withoutSelected = imageSetCatalog.filter(entry => entry.id !== selectedSequenceEntry.id);
+    const previous = imageSetCatalog.find(entry => entry.id === selectedSequenceEntry.id);
+    return [...withoutSelected, { ...previous, ...selectedSequenceEntry,
+      reducedCount: previous?.reducedCount ?? selectedSequenceEntry.reducedCount }];
+  }, [imageSetCatalog, selectedSequenceEntry]);
   const [imageSetsLoaded, setImageSetsLoaded] = useState(false);
+  const [imageSetsLoading, setImageSetsLoading] = useState(false);
   const [imageSetsError, setImageSetsError] = useState("");
   const [imageSetsReload, setImageSetsReload] = useState(0);
   const [sequenceValidated, setVisualSequenceReady] = useState(false);
   const [activatedSequenceId, setActivatedSequenceId] = useState("");
   const selectedImageSet = sharedSelection.visualSequenceId;
+  useEffect(() => {
+    const controller = new AbortController();
+    setSelectedSequenceEntry(null);
+    setSelectedSequenceError("");
+    setVisualSequenceReady(false);
+    if (workspaceId && selectedImageSet) {
+      void loadVisualSequenceEntry(workspaceId, selectedImageSet, controller.signal).then(entry => {
+        if (!controller.signal.aborted) setSelectedSequenceEntry(entry);
+      }).catch(reason => {
+        if (!controller.signal.aborted) setSelectedSequenceError(reason instanceof Error ? reason.message : String(reason));
+      });
+    }
+    return () => controller.abort();
+  }, [workspaceId, selectedImageSet, selectedSequenceReload, imageSetsReload]);
   const visualSequenceReady = sequenceValidated && activatedSequenceId === selectedImageSet && Boolean(selectedImageSet);
   const selectedImageSetRoot = visualSequenceProviderRef(
     imageSetList.find((entry) => entry.id === selectedImageSet) ?? { id: selectedImageSet },
@@ -3788,13 +3840,12 @@ export function VideoImportPage({
   // Reduce section shows a collapsible char-grouped grid above a flat
   // one-row-per-image list (all 200); "reduceListQuery" filters the list.
   const [reduceListQuery, setReduceListQuery] = useState("");
-  // Two tab views: "inputs" = the 20x10 input-image grid; "extractions" = the
-  // per-image reduction list.
-  const [reduceTab, setReduceTab] = useState<"inputs" | "extractions">(() => {
+  // All tabs inspect the same selected Visual Sequence; extraction stays rich.
+  const [reduceTab, setReduceTab] = useState<RecognitionNavigationTab>(() => {
     let restored: RecognitionNavigationTab = "extractions";
     try {
       const stored = window.localStorage.getItem("videoImport.reduceTab");
-      if (stored === "inputs" || stored === "extractions") restored = stored;
+      restored = canonicalRecognitionNavigationTab(stored) || restored;
     } catch { /* use default */ }
     return resolveRecognitionNavigation(initialRecognitionNavigation.current, [], restored).target.tab;
   });
@@ -4620,7 +4671,8 @@ export function VideoImportPage({
     return true;
   };
   useEffect(() => {
-    if (restoreStartedRef.current) return;
+    // Sequence views read their own manifests; visiting them must not restore or autosave intake payloads.
+    if (surface === "sequences" || restoreStartedRef.current) return;
     restoreStartedRef.current = true;
     void (async () => {
       // The image repository's own state file is the source of truth; the
@@ -4647,7 +4699,7 @@ export function VideoImportPage({
       restoredRef.current = true; // saving may begin only now
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [surface]);
   useEffect(() => {
     if (!restoredRef.current) return;
     const timer = setTimeout(() => {
@@ -5144,7 +5196,10 @@ export function VideoImportPage({
   useEffect(() => {
     if (activeSubview !== "recognition") return;
     const items = Array.isArray(recognitionReduce?.items) ? recognitionReduce.items : [];
-    if (!visualSequenceReady || items.length === 0) return;
+    if (!visualSequenceReady || items.length === 0) {
+      setReduceTab(resolveRecognitionNavigation(recognitionNavigationPath, [], reduceTab).target.tab);
+      return;
+    }
     const requestedKey = `${selectedImageSet}|${recognitionNavigationPath.join(",")}`;
     if (recognitionNavigationAppliedRef.current === requestedKey) return;
     const resolved = resolveRecognitionNavigation(
@@ -5414,13 +5469,12 @@ export function VideoImportPage({
     if (!workspaceId) {
       setImageSetList([]);
       setImageSetsLoaded(false);
-      setVisualSequenceReady(false);
+      setImageSetsLoading(false);
       return;
     }
     let cancelled = false;
-    setImageSetsLoaded(false);
+    setImageSetsLoading(true);
     setImageSetsError("");
-    setVisualSequenceReady(false);
     void (async () => {
       try {
         const sets = await loadVisualSequenceCatalog(workspaceId, imageSetsReload > 0);
@@ -5429,22 +5483,18 @@ export function VideoImportPage({
         setImageSetsLoaded(true);
       } catch (reason) {
         if (!cancelled) {
-          setImageSetList([]);
           setImageSetsError(`Visual Sequence catalog failed: ${reason instanceof Error ? reason.message : String(reason)}`);
         }
+      } finally {
+        if (!cancelled) setImageSetsLoading(false);
       }
     })();
     return () => { cancelled = true; };
   }, [workspaceId, imageSetsReload]);
+  // Activate the individually validated selected source independently of catalog enumeration.
   useEffect(() => {
-    if (!imageSetsLoaded || !selectedImageSet) return;
-    const entry = imageSetList.find(candidate => candidate.id === selectedImageSet);
-    if (!entry) {
-      setPendingVisualSequence(null);
-      setVisualSequenceReady(false);
-      setRecordingSelectionError(`Shared Visual Sequence "${selectedImageSet}" is unavailable. No substitute selected.`);
-      return;
-    }
+    if (!selectedImageSet || selectedSequenceEntry?.id !== selectedImageSet) return;
+    const entry = selectedSequenceEntry;
     if (pendingVisualSequence?.historyMode === "push") return;
     if (pendingVisualSequence && pendingVisualSequence.entry.id !== selectedImageSet) setPendingVisualSequence(null);
     if (declinedVisualSequenceRef.current === selectedImageSet) return;
@@ -5453,8 +5503,7 @@ export function VideoImportPage({
       && !requiresVisualSequenceConfirmation(entry, isVisualSequenceConfirmed(entry))) return;
     selectVisualSequence(entry, "none");
   }, [
-    imageSetList,
-    imageSetsLoaded,
+    selectedSequenceEntry,
     pendingVisualSequence,
     selectVisualSequence,
     selectedImageSet,
@@ -5467,6 +5516,7 @@ export function VideoImportPage({
   }, [objectsShowLive]);
   useEffect(() => {
     try { window.localStorage.setItem("videoImport.reduceTab", reduceTab); } catch { /* ignore */ }
+    window.dispatchEvent(new CustomEvent(SEQUENCE_VIEW_CHANGED_EVENT, { detail: { tab: reduceTab } }));
   }, [reduceTab]);
   useEffect(() => {
     try { window.localStorage.setItem("videoImport.reduceRowView", reduceRowView); } catch { /* ignore */ }
@@ -8653,13 +8703,13 @@ export function VideoImportPage({
                       return (
                       <div key={slot} className="video-import-direct-call" data-direct-slot={slot}>
                         <label>Process / doer {slot + 1}
-                          <select aria-label={`Direct process/doer ${slot + 1}`} value={directChoices[slot]}
-                            disabled={directCalls[slot].active} onChange={(event) => chooseDirectComposite(slot, event.target.value)}>
-                            {!directComposites.length && <option value={directChoices[slot]}>Loading registered pairs...</option>}
-                            {directComposites.length > 0 && !directComposites.some((entry) => entry.id === directChoices[slot])
-                              && <option value={directChoices[slot]} disabled>Unavailable: {directChoices[slot]}</option>}
-                            {directComposites.map((entry) => <option key={entry.id} value={entry.id} disabled={!entry.available}>{entry.id}</option>)}
-                          </select>
+                          <ColoredTagCombobox ariaLabel={`Direct process/doer ${slot + 1}`} value={directChoices[slot]}
+                            ids={directComposites.map(entry => entry.id)} allowNone={false}
+                            noneLabel={directCatalogError ? "Registered stages unavailable" : "Loading registered pairs..."}
+                            disabled={directCalls[slot].active || !directComposites.length}
+                            describe={id => directCompositeDescription(id, directComposites)}
+                            closedWidth="100%" openWidth="min(70ch, 90vw)"
+                            onChange={id => chooseDirectComposite(slot, id)} />
                         </label>
                         <button type="button" disabled={call.active ? !call.jobId : !call.retry && (!visualSequenceReady || !preprocContextReady || !available || (activeSubview === "objects" && objectsShowLive))}
                           onClick={() => void callDirect(slot)}
@@ -9063,6 +9113,12 @@ export function VideoImportPage({
                                 );
                               })()}
                         </div>
+                        <RecognitionRowStageCall workspaceId={workspaceId} sequenceId={preprocSequenceId}
+                          unitId={it.unitId} composites={directComposites} catalogError={directCatalogError}
+                          disabledReason={!visualSequenceReady || !preprocContextReady ? "Wait for this Visual Sequence and its preprocessing chain."
+                            : selectedSequenceEntry?.readOnly ? "This historical Visual Sequence is read-only."
+                            : activeSubview === "objects" && objectsShowLive ? "Select a stored Visual Sequence row, not the live Objects feed." : undefined}
+                          beforeRequest={flushPreprocSave} onCompleted={refreshReduceManifest} />
                         {prologInspector?.rowKey === String(it.id || inputRel) && (
                           <PrologDataInspector
                             workspaceId={workspaceId}
@@ -9169,7 +9225,7 @@ export function VideoImportPage({
           ids={ids}
           ariaLabel="Visual Sequence"
           describe={describeImageSet}
-          disabled={!sharedSelection.selection || sharedSelection.writing || !imageSetsLoaded}
+          disabled={!sharedSelection.selection || sharedSelection.writing || (!imageSetsLoaded && !imageSetList.length)}
           openWidth="30ch"
           onChange={(v) => {
             if (scope === "objects" && v === OBJECTS_LIVE_SET) { setObjectsShowLive(true); return; }
@@ -9188,7 +9244,7 @@ export function VideoImportPage({
       {scope === "objects" && <label><input type="checkbox" checked={objectsShowLive}
         onChange={event => setObjectsShowLive(event.target.checked)} /> Show live pipeline</label>}
       {sharedSelection.error && <span role="alert">{sharedSelection.error}</span>}
-      {selectedImageSet && !imageSetsLoaded && <span role="status">Loading catalog for {selectedImageSet}…</span>}
+      {selectedImageSet && imageSetsLoading && <span role="status">Refreshing available Visual Sequences...</span>}
       </div>
     );
   };
@@ -9417,35 +9473,54 @@ export function VideoImportPage({
       </div>
     </Section>
   ) : null;
+  const sequenceViewTabs = (
+    <div className="video-import-reduce-tabs" role="tablist" aria-label="Visual Sequence views">
+      <button type="button" role="tab" aria-selected={reduceTab === "inputs"} className={reduceTab === "inputs" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("inputs")}>Inputs · {isRecognitionMatrix ? "20 × 10" : recognitionReduce?.items?.length ?? 0}</button>
+      <button type="button" role="tab" aria-selected={reduceTab === "extractions"} className={reduceTab === "extractions" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("extractions")}>Extractions · {(recognitionReduce?.items || []).filter((it: any) => ((it.transformsTotal || 0) > 0 ? it.transformsDone === it.transformsTotal : (it.rows || []).length > 0)).length}/{recognitionReduce?.items?.length ?? 0}</button>
+      <button type="button" role="tab" aria-selected={reduceTab === "test-demo"} className={reduceTab === "test-demo" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("test-demo")}>Demo/Test</button>
+      {subviewVisible("sprite-view") && <button type="button" role="tab" aria-selected={reduceTab === "sprites"} className={reduceTab === "sprites" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("sprites")}>Sprite View</button>}
+    </div>
+  );
   return (
-    <section ref={pageRoot} className="resource-view video-import-page vi2" data-subview={activeSubview} onClickCapture={handleImageContextClick} onPointerMove={handleImageZoomPointer} onPointerLeave={() => { hoveredImageRef.current = null; setAltImageZoom(null); setHoverImageContext(null); }}>
+    <section ref={pageRoot} className="resource-view video-import-page vi2" data-surface={surface} data-subview={activeSubview} onClickCapture={handleImageContextClick} onPointerMove={handleImageZoomPointer} onPointerLeave={() => { hoveredImageRef.current = null; setAltImageZoom(null); setHoverImageContext(null); }}>
       <div className="video-import-topbar">
         <div className="video-import-topbar-head">
           <div className="video-import-topbar-name">
-            <span className="video-import-topbar-kicker">KNOWLEDGE INTAKE · GENERATION 2</span>
-            <span className="video-import-topbar-sep">·</span>
-            <span className="video-import-topbar-title">Video Import 2</span>
+            {surface === "intake" && <><span className="video-import-topbar-kicker">KNOWLEDGE INTAKE · GENERATION 2</span>
+            <span className="video-import-topbar-sep">·</span></>}
+            <span className="video-import-topbar-title">{surface === "sequences" ? "Visual Sequences" : "Video Import 2"}</span>
           </div>
-          <span className="video-import-topbar-desc">Rebuilt from its own build prompt: import → timeline → the preview stack for building filter chains → probes and entity strips → materialize. A Visual Sequence may contain one image or many from standalone imports, collections, movies, or games. Every gallery collapses, every step interrupts.</span>
+          <span className="video-import-topbar-desc">{surface === "sequences"
+            ? "Select a shared Visual Sequence, then choose a view below. Inputs, Extractions, Demo/Test, Game Player and Sprite View use the same source; no game is required. Add new sources through Video Import."
+            : "Rebuilt from its own build prompt: import → timeline → the preview stack for building filter chains → probes and entity strips → materialize. A Visual Sequence may contain one image or many from standalone imports, collections, movies, or games. Every gallery collapses, every step interrupts."}</span>
         </div>
+        {surface === "intake" && (
         <nav className="video-import-human-nav" aria-label="Video Import steps">
           {VIDEO_IMPORT_SUBVIEWS.filter(entry => subviewVisible(entry.id)).map((entry) => (
             <button key={entry.id} type="button" className={activeSubview === entry.id ? "is-active" : ""} aria-current={activeSubview === entry.id ? "page" : undefined} onClick={() => selectSubview(entry.id)}>{entry.label}</button>
           ))}
           {activeSubview === "recognition" && temporalEventsVisible && <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("workbench:open-temporal-events"))}>Temporal events &amp; learned rules</button>}
+          {activeSubview === "sources" && imageSetList.length > 0
+            && isMenuRouteVisible(menuItems, { view: "visualSequences" }, menuPreferences)
+            && <a href={visualSequencesUrlForNavigation(window.location.href)} onClick={openVisualSequences}>Open Visual Sequences</a>}
         </nav>
+        )}
       </div>
 
       {["recognition", "objects", "sources"].includes(activeSubview) && (
         <div className="video-import-sequence-setup">
           <div className="video-import-imageset-bar">
             {renderImageSetSelector(activeSubview === "objects" ? "objects" : "recognition")}
-            <span className="video-import-imageset-hint">shared across windows · switching keeps reduced work · drives Inputs + Extractions</span>
+            <span className="video-import-imageset-hint">shared across windows · switching keeps reduced work · one sequence across all views</span>
           </div>
-          {preprocessingSection}
+          {surface === "sequences" && sequenceViewTabs}
+          {(surface === "intake" || reduceTab === "inputs" || reduceTab === "extractions") && preprocessingSection}
         </div>
       )}
       {imageSetsError && <div role="alert">{imageSetsError} <button onClick={() => setImageSetsReload((value) => value + 1)}>Retry catalog</button></div>}
+      {selectedSequenceError && <div role="alert">{selectedSequenceError}
+        <button onClick={() => setSelectedSequenceReload(value => value + 1)}>Retry selected sequence</button>
+      </div>}
 
       {serverJobs.filter((j) => j.state === "running" || j.state === "starting").length > 0 && (
         <div className="video-import-jobs-banner" role="status" aria-live="polite">
@@ -9462,6 +9537,7 @@ export function VideoImportPage({
         </div>
       )}
 
+      {(surface === "intake" || reduceTab === "extractions") && <>
       {statusPanelHidden && (
         <div className="video-import-activity-collapsed">
           <button type="button" className="video-import-activity-restore" title="Restore the STATUS panel" onClick={() => setStatusPanelHidden(false)}>▸ Show STATUS</button>
@@ -9549,6 +9625,7 @@ export function VideoImportPage({
           );
         })}
       </div>
+      </>}
       {error && <div className="backend-error"><b>Video import error</b><span>{error}</span></div>}
       {recordingSelectionError && <div className="backend-error"><b>Visual Sequence unavailable</b><span>{recordingSelectionError}</span></div>}
       {recognitionNavigationWarning && <div className="backend-error"><b>Navigation adjusted</b><span>{recognitionNavigationWarning}</span></div>}
@@ -9584,7 +9661,7 @@ export function VideoImportPage({
           </section>
         </div>
       )}
-      <MenuVisibilityBoundary visible={subviewVisible("sprite-view")}>
+      <MenuVisibilityBoundary visible={surface === "intake" && subviewVisible("sprite-view")}>
       <div
         className={`video-import-sprite-view${activeSubview === "sprite-view" ? " is-active" : ""}`}
         aria-hidden={activeSubview === "sprite-view" ? undefined : "true"}
@@ -9624,6 +9701,7 @@ export function VideoImportPage({
           onUpdated={() => { void refreshReduceManifest(); }}
         />
       </RecognitionTemporalCanvas>
+      {surface === "intake" && <>
       <Section {...section("intake", "INTAKE", `${videos.length} video(s) in the library`)}>
         <div className="vi2-body">
           <div className="video-import-row">
@@ -10174,6 +10252,7 @@ export function VideoImportPage({
         </Section>
       )}
 
+      </>}
       {activeSubview === "objects" && (
       <div className="video-import-scene-object-workspace">
       <div className="video-import-reduce-tabs" role="tablist" aria-label="Objects views">
@@ -10759,14 +10838,15 @@ export function VideoImportPage({
       )}
       {activeSubview === "recognition" && (
         <section className="video-import-recognition">
+          {surface === "intake" && <>
           <div className="video-import-recognition-headbar">
             <button type="button" className="video-import-reduce-foldbtn" onClick={() => setRecogHeadCollapsed((v) => !v)}>{recogHeadCollapsed ? "▸ Recognition setup" : "▾ Recognition setup"}</button>
             {recogHeadCollapsed && (
               <span className="video-import-recognition-headbar-actions">
-                <label className="video-import-recognition-upload">
+                {surface === "intake" && <label className="video-import-recognition-upload">
                   <input type="file" accept="image/*" multiple style={{ display: "none" }} disabled={recognitionUploading} onChange={(e) => { uploadRecognitionImages(e.target.files); e.currentTarget.value = ""; }} />
                   <span className="video-import-toggle" role="button">{recognitionUploading ? "… uploading" : "＋ load images"}</span>
-                </label>
+                </label>}
                 <span className="video-import-toggle">server: {pipelineRunStatus}</span>
                 <span className="video-import-toggle">{recognitionInputs.length} loaded · {recognitionMembers.length} cut · {Object.keys(recognitionMatches).length} matched</span>
               </span>
@@ -10777,12 +10857,12 @@ export function VideoImportPage({
             <h2>Recognition</h2>
             <p>Load images, then run the four discrete stage rows below. <b>TWO-SHOT</b>: make outlines, then make a turtle program from each cutout. <b>ONE SHOT</b>: get objects + a turtle program per object in a single call. <b>FOR UI</b>: render each turtle program to a PNG (local). Everything runs server-side and is reconnect-safe.</p>
             <div className="video-import-recognition-actions">
-              <label className="video-import-recognition-upload">
+              {surface === "intake" && <label className="video-import-recognition-upload">
                 <input type="file" accept="image/*" multiple style={{ display: "none" }}
                   disabled={recognitionUploading}
                   onChange={(e) => { uploadRecognitionImages(e.target.files); e.currentTarget.value = ""; }} />
                 <span className="video-import-toggle" role="button">{recognitionUploading ? "… uploading" : "＋ load images"}</span>
-              </label>
+              </label>}
               {pipelineRunStatus === "running" && <button onClick={() => void stopServerPipeline()}>■ stop</button>}
               <button disabled={pipelineRunStatus === "running" || !recognitionMembers.length || !members.length} onClick={() => startServerStage("recognizeMatch")}>🔗 Match against objects</button>
               <button disabled={pipelineRunStatus === "running" || !isRunnableVisionModel(recOnepassModel || allCallsModel) || !(recognitionInputs.length || memberInputPaths.size)} onClick={() => startServerStage("recognize")}>🔎 Name characters</button>
@@ -10807,13 +10887,26 @@ export function VideoImportPage({
               <span>Each image is reduced to a compact <b>symbolic part-graph</b> before any matching: <i>original pixels → parts located (outline boxes) → each part re-expressed as a turtle/logo program (one-shot &amp; two-shot) → a labeled part-graph (parts · colors · sizes · positions · above/left-of relations)</i>. Recognition then becomes symbolic comparison of these graphs — not pixel matching, not an LLM.</span>
             </div>
           )}
+          </>}
+          {surface === "intake" && sequenceViewTabs}
 
-
-          {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && (
-            <div className="video-import-reduce-tabs" role="tablist" aria-label="Reduction views">
-              <button type="button" role="tab" aria-selected={reduceTab === "inputs"} className={reduceTab === "inputs" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("inputs")}>Inputs · {isRecognitionMatrix ? "20 × 10" : recognitionReduce.items.length}</button>
-              <button type="button" role="tab" aria-selected={reduceTab === "extractions"} className={reduceTab === "extractions" ? "is-active" : ""} onClick={() => selectRecognitionNavigationTab("extractions")}>Extractions · {recognitionReduce.items.filter((it: any) => ((it.transformsTotal || 0) > 0 ? it.transformsDone === it.transformsTotal : (it.rows || []).length > 0)).length}/{recognitionReduce.items.length}</button>
+          {reduceTab === "test-demo" && (
+            <div role="tabpanel" aria-label="Demo/Test">
+              {visualSequenceReady && selectedSequenceEntry?.id === selectedImageSet
+                ? <VisualSequenceDemoView key={`${workspaceId}:${selectedImageSet}`} workspaceId={workspaceId}
+                    sequence={selectedSequenceEntry} onClose={() => selectRecognitionNavigationTab("extractions")} />
+                : <p role="status">Select and confirm a Visual Sequence to browse its stored frames. No game is required.</p>}
             </div>
+          )}
+          {reduceTab === "sprites" && subviewVisible("sprite-view") && (
+            <div role="tabpanel" aria-label="Sprite View">
+              <SpriteViewerPage memorySetup={<MemorySetupHost workspaceId={workspaceId}
+                sequenceId={preprocSequenceId} frameId={executionFrameForRow(recognitionReduce?.items || [], expandedReduceId || "")}
+                sequenceReady={visualSequenceReady && Boolean(preprocSequenceId)} active={activeSubview === "recognition"} />} />
+            </div>
+          )}
+          {reduceTab === "sprites" && !subviewVisible("sprite-view") && (
+            <p role="status">Sprite View is hidden in menu settings. Choose another sequence view or re-enable Sprite View.</p>
           )}
 
           {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && reduceTab === "inputs" && (
@@ -10986,6 +11079,7 @@ export function VideoImportPage({
 
           {recognitionReduce && Array.isArray(recognitionReduce.items) && recognitionReduce.items.length > 0 && reduceTab === "extractions" && renderReduceExtractions()}
 
+          {surface === "intake" && <>
           {recognitionGallery.length > 0 && (
             <div className="video-import-reco-enrolled">
               <h3 className="video-import-recognition-subhead">Enrolled — the learned {recognitionGallery.length} (prepass, once)</h3>
@@ -11067,11 +11161,13 @@ export function VideoImportPage({
             </>
           )}
 
-          {recognitionInputs.length === 0 && recognitionMembers.length === 0 && Object.values(recognitions).length === 0 && (
+          {surface === "intake" && recognitionInputs.length === 0 && recognitionMembers.length === 0 && Object.values(recognitions).length === 0 && (
             <p className="video-import-games-todo-note">No recognition images yet. Click “load images”, then “Recognize (one pass)”.</p>
           )}
+          </>}
         </section>
       )}
+      {surface === "intake" && (
       <Section {...section("config", "ADVANCED CONTROLS · JSON CONFIG", `the page's exact state as editable JSON${configDraft === null ? " · live" : configValid ? " · editing (applies live)" : " · INVALID JSON — keep typing"}`,
         <>
           <button disabled={busy || configDraft === null} title="Force-apply now and resume tracking the live config" onClick={applyConfigDraft}>⏎ Apply</button>
@@ -11111,6 +11207,7 @@ export function VideoImportPage({
           />
         </div>
       </Section>
+      )}
       {visibleAltImageZoom && (
         <div
           className={`video-import-alt-image-zoom${pinnedAltImageZoom ? " is-pinned" : ""}`}

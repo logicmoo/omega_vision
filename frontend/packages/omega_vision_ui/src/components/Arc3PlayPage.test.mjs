@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { createRequire, stripTypeScriptTypes } from "node:module";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
+import { filterRecordingRows, parseRecordingStats, recordingCanReplay, recordingRows } from "./Arc3RecordingCatalog.ts";
 
 const require = createRequire(new URL("../../../../apps/workbench/package.json", import.meta.url));
 const { parse } = await import(pathToFileURL(require.resolve("@babel/parser")).href);
@@ -93,6 +94,7 @@ test("mount/context effects cannot invoke mutators; timed replay requires explic
   const scope = {
     replayPlaying: false, replayScript: [{ op: "step" }], busy: false, replayPos: 0,
     replaySpeedMs: 300, setReplayPlaying: noop, stepReplay: () => { steps += 1; },
+    showSequencePlayer: false, storedViewActive: { current: false },
     pageLifecycle: { paused: false, suspensionEpoch: 0 }, replayIntentEpoch: { current: 0 },
     window: { setTimeout: callback => { timer = callback; return 1; }, clearTimeout: () => { timer = undefined; } },
   };
@@ -116,6 +118,17 @@ test("mount/context effects cannot invoke mutators; timed replay requires explic
   evaluate(replayEffect, { ...scope, replayPlaying: playing })();
   timer(); // A fresh explicit Watch action may continue at the retained position.
   assert.equal(steps, 2);
+  const delayed = timer;
+  let mode = false;
+  evaluate(definitions.get("enterStoredFrameView"), {
+    ...scope, setReplayPlaying: value => { playing = value; }, setShowSequencePlayer: value => { mode = value; },
+  })();
+  delayed();
+  assert.equal(steps, 2, "A pending callback cannot advance the game after switching to stored frames");
+  assert.equal(playing, false);
+  assert.equal(mode, true);
+  evaluate(replayEffect, { ...scope, showSequencePlayer: true, replayPlaying: true })();
+  assert.match(source, /onClick=\{enterStoredFrameView\}>View selected recording/);
 });
 
 function actions(failure = "") {
@@ -132,6 +145,7 @@ function actions(failure = "") {
     },
     setArmedAction: noop, setReplayScript: value => scripts.push(value), setReplayPlaying: noop,
     setReplayPos: noop, setImportNote: noop, loadSavepoints: async () => {},
+    setLoadedSequence: noop, setShowSequencePlayer: noop,
   };
   scope.perform = evaluate(definitions.get("perform"), scope);
   return { requests, errors, sessions, scripts,
@@ -177,6 +191,76 @@ test("explicit action errors retain the existing visible error path", async () =
   assert.equal(h.requests.length, 1);
   assert.equal(h.errors.at(-1), "import failed");
   assert.equal(h.sessions.length, 0);
+});
+
+test("Recordings lists every shared sequence independently of game and savepoint loading", () => {
+  const catalog = [
+    { id: "recordings/events_tests/color_band_cycle_train_a", imageCount: 12, kind: "arc-recording", gameId: "events_tests", game: "events_tests" },
+    { id: "curated/scene", imageCount: 3 },
+    { id: "recordings/ls20/run", imageCount: 14, kind: "arc-recording", gameId: "ls20-9607627b", game: "ls20" },
+    { id: "recordings/events_tests", imageCount: 3000 },
+    { id: "video/legacy", imageCount: 8, readOnly: true },
+  ];
+  const rows = recordingRows(catalog);
+  assert.equal(rows.length, catalog.length);
+  assert.deepEqual(rows.map(row => row.path), catalog.map(entry => `data/${entry.id}`));
+  assert.deepEqual(rows.map(row => row.canManage), [true, false, true, false, false]);
+  assert.deepEqual(rows.map(row => recordingCanReplay(row, [{ game_id: "ls20-9607627b", short_id: "ls20" }])),
+    [false, false, true, false, false]);
+  assert.equal(filterRecordingRows(rows, "color band").length, 1);
+  assert.equal(filterRecordingRows(rows, "").length, catalog.length);
+  assert.match(text(definitions.get("loadRecordingDirs")), /loadVisualSequenceCatalog\(workspaceId, refresh\)/);
+  assert.doesNotMatch(text(definitions.get("loadRecordingDirs")), /savepoints|recording-dirs|games|session/);
+  assert.match(text(definitions.get("loadRecordingDirs")), /setRecordingCatalogError/);
+  assert.doesNotMatch(text(definitions.get("filteredRecordingDirs")), /filterGameId|selectedGameId/);
+  const effects = calls(component).filter(call => call.callee?.name === "useEffect");
+  assert.ok(effects.some(effect => calls(effect.arguments[0]).some(call => call.callee?.name === "loadRecordingDirs")));
+  assert.doesNotMatch(source, /Recording paths sometimes only appear once a game starts/);
+  assert.match(source, /recordingCatalogLoading.*!recordingDirs\.length/);
+});
+
+test("disk statistics enrich rows but cannot replace sequence identity, counts or access", () => {
+  const catalog = [{ id: "recordings/game/run", imageCount: 4, readOnly: true }];
+  const stats = parseRecordingStats({ recordingDirs: [{
+    path: "data/recordings/game/run", absolutePath: "C:\\shared\\run", hasManifest: true, sizeBytes: 2048,
+    imageCount: 99, readOnly: false,
+  }] });
+  const row = recordingRows(catalog, stats)[0];
+  assert.equal(row.sizeBytes, 2048);
+  assert.equal(row.moveTotal, 4);
+  assert.equal(row.readOnly, true);
+  assert.equal(row.canManage, false);
+  assert.throws(() => parseRecordingStats({}), /invalid/);
+  assert.throws(() => parseRecordingStats({ recordingDirs: [{ path: "data/one", sizeBytes: -1 }] }), /invalid/);
+});
+
+test("explicit stored-frame Load selects the source but never creates, closes or steps a game", async () => {
+  const row = recordingRows([{ id: "curated/scene", imageCount: 3 }])[0];
+  const calls = [], loaded = [], modes = [];
+  const scope = {
+    visualSequenceLocationForEntry: () => ({ recording: "curated/scene" }),
+    requiresVisualSequenceConfirmation: () => false, visualSequenceConfirmationMessage: () => "",
+    window: { confirm: () => { throw new Error("Small sequence should not require confirmation"); } },
+    sharedSequence: { select: async id => { calls.push(id); return true; } },
+    currentWorkspace: { current: "arc3_random_player" }, workspaceId: "arc3_random_player",
+    setSequenceLoading: noop, setRecordingCatalogError: noop, setArmedAction: noop,
+    setReplayPlaying: noop, setLoadedSequence: value => loaded.push(value),
+    setShowSequencePlayer: value => modes.push(value),
+    enterStoredFrameView: () => modes.push(true),
+    request: () => { throw new Error("Stored-frame loading must not call the game API"); },
+    perform: () => { throw new Error("Stored-frame loading must not start a game task"); },
+  };
+  await evaluate(definitions.get("loadRecordingDirForStepping"), scope)(row);
+  assert.deepEqual(calls, ["curated/scene"]);
+  assert.deepEqual(loaded, [row.sequence]);
+  assert.deepEqual(modes, [true]);
+  loaded.length = 0;
+  await evaluate(definitions.get("loadRecordingDirForStepping"), {
+    ...scope, sharedSequence: { select: async () => false },
+  })(row);
+  assert.deepEqual(loaded, []);
+  assert.match(source, /<Arc3VisualSequencePlayer/);
+  assert.match(source, /session && !showSequencePlayer/);
 });
 
 test("deferred workflow initialization retains children on reveal but reinitializes real definition changes", () => {

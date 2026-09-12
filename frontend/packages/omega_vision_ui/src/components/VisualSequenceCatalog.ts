@@ -17,6 +17,24 @@ function validOptions(value: unknown): value is VisualSequenceCatalogEntry[] {
     && (entry.providerRef === undefined || entry.providerRef === `data/${entry.id}`));
 }
 
+export async function loadVisualSequenceEntry(
+  workspaceId: string, sequenceId: string, signal?: AbortSignal, transport: typeof fetch = fetch,
+): Promise<VisualSequenceCatalogEntry> {
+  if (!sequenceId || /[\\:\u0000-\u001f]/.test(sequenceId)
+      || sequenceId.split("/").some(part => !part || part === "." || part === "..")) {
+    throw new Error("Invalid selected Visual Sequence identifier.");
+  }
+  const response = await transport(
+    `/workbench/video-import/visual-sequences/resolve?workspaceId=${encodeURIComponent(workspaceId)}&sequenceId=${encodeURIComponent(sequenceId)}`,
+    { cache: "no-store", signal },
+  );
+  if (!response.ok) throw new Error(`Selected Visual Sequence request failed: HTTP ${response.status}`);
+  const payload = await response.json();
+  const entry = payload && typeof payload === "object" ? payload.visualSequence : undefined;
+  if (!validOptions([entry]) || entry.id !== sequenceId) throw new Error("Selected Visual Sequence response does not match its requested identity.");
+  return entry;
+}
+
 export function loadVisualSequenceCatalog(workspaceId: string, refresh = false): Promise<VisualSequenceCatalogEntry[]> {
   const key = "videoImport.optionList.v1";
   // Only transport deduplication retains caller context; choices are shared.

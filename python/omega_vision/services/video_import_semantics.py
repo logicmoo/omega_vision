@@ -8,7 +8,7 @@ Only server-resolved workspaces/sequences and typed peer-core inputs are used.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from functools import wraps
 import json
 from pathlib import Path
@@ -214,7 +214,7 @@ def _result(unit: Mapping[str, Any], step: str) -> dict[str, Any]:
     return result
 
 
-def _frame(unit: dict[str, Any]):
+def _frame(unit: dict[str, Any], *, single_observation: bool = False):
     from omega_vision.perception.temporal_correspondence import temporal_frame_from_bundle
 
     prepared = _prepare(unit)
@@ -226,8 +226,9 @@ def _frame(unit: dict[str, Any]):
             raise ValidationError(f"{step} has a failed latest attempt; replay observation dependencies")
     bundle = _json(_artifact(unit, IDENTITY, "observations.json"))
     expected = bundle["frame"]
+    unordered_singleton = single_observation and not unit["sequenceOrdered"]
     if (expected["sequenceId"], expected["frameOrder"], expected["sourceKey"]) != (
-        unit["sequenceId"], unit["frameOrder"], unit["frameSourceKey"],
+        unit["sequenceId"], None if unordered_singleton else unit["frameOrder"], unit["frameSourceKey"],
     ):
         raise ValidationError("Observation identity belongs to a different frame/order/sequence")
     artifacts = {
@@ -245,17 +246,29 @@ def _frame(unit: dict[str, Any]):
         digest = content_hash(path.read_bytes())
         if role in bundle["artifactHashes"] and digest != bundle["artifactHashes"][role]:
             raise ValidationError(f"Stale observation {role}; replay observation_identity_0")
-    if expected["imageHash"] != content_hash(prepared["image"].read_bytes()):
+    image_bytes = prepared["image"].read_bytes()
+    if expected["imageHash"] != content_hash(image_bytes):
         raise ValidationError("Observation pixels differ from the effective preprocessed image")
     lineage = _api()._read_image_provenance(prepared["image"])
     if prepared["image"] != prepared["sourceImage"] and not lineage:
         raise ValidationError("Preprocessed temporal input is missing coordinate lineage")
-    return temporal_frame_from_bundle(
+    observation_metadata, input_hashes = _observation_metadata(unit)
+    if unordered_singleton:
+        # A singleton computation has a local ordinal, not a claimed sequence
+        # order. Preserve the verified source/G identities and bind the projection.
+        input_hashes["singleObservationProjection"] = content_hash({
+            "sourceBundleUid": bundle["bundleUid"], "sourceOrder": None, "localOrder": 0,
+        })
+        bundle = {**bundle, "frame": {**bundle["frame"], "frameOrder": 0}}
+    frame = temporal_frame_from_bundle(
         bundle, provider_id=unit["providerId"],
         geometry=_json(artifacts["geometry"]),
         extraction_text=artifacts["partsFacts"].read_text(encoding="utf-8"),
         lineage=lineage,
+        observation_metadata=observation_metadata,
+        image_bytes=image_bytes,
     )
+    return replace(frame, source_hashes={**frame.source_hashes, **input_hashes})
 
 
 def _attachment_context(unit: Mapping[str, Any], frame, objects: Mapping[str, Any]):
@@ -333,14 +346,25 @@ def run_temporal(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -
     )
     _, units, index = _context(unit)
     frame = _frame(units[index])
+    input_status = None
     if index == 0:
         result = {"assessment": "initial_observation", "reason": "no_predecessor",
                   "checkpoint": initial_temporal_state(frame)}
     else:
+        before = _frame(units[index - 1])
         result = compare_frames(
-            _frame(units[index - 1]), frame,
+            before, frame,
             previous_state=_result(units[index - 1], TEMPORAL)["checkpoint"],
+            input_receipts=(),
         )
+        paths = _recording_input_paths(units[index])
+        state = _json(paths["state"]) if "state" in paths else {}
+        if state.get("incoming_action") is not None and not _sample_advance(state, state["incoming_action"]):
+            input_status = {
+                "status": "unbound_actual_input",
+                "reason": "Recorded input channel has no independently established source final-G actor binding",
+                "sourceRef": _api()._workspace_relative(Path(unit["workspaceRoot"]), paths["state"]),
+            }
     out_dir.mkdir(parents=True, exist_ok=True)
     atomic_json(out_dir / "frame.json", frame_to_dict(frame))
     facts = [
@@ -353,6 +377,7 @@ def run_temporal(unit: dict[str, Any], out_dir: Path, options: dict[str, Any]) -
                      "assessment": result["assessment"], "matchCount": len(result.get("matches", [])),
                      "ambiguityCount": len(result.get("ambiguities", [])),
                      "authority": "advisory_measurements",
+                     "inputReceiptStatus": input_status,
                  })
 
 
@@ -697,7 +722,51 @@ def _recording_input_paths(unit: Mapping[str, Any]) -> dict[str, Path]:
     # A flat image pool's shared state.json does not identify any individual frame.
     if source.name == "image.png":
         paths["state"] = _safe(directory, source.parent / "state.json")
+        metadata_path = source.parent / "observation_metadata.json"
+        resolved = _safe(directory, metadata_path)
+        if resolved != metadata_path:
+            raise PermissionError("Observation metadata path was redirected")
+        paths["observationMetadata"] = resolved
     return {kind: path for kind, path in paths.items() if path.is_file()}
+
+
+def _observation_metadata(unit: Mapping[str, Any]) -> tuple[dict[str, Any] | None, dict[str, str]]:
+    """Only explicit acquisition attestations, never fixture roles or world state."""
+    from omega_vision.perception.measured_event_features import validate_observation_metadata
+
+    paths = _recording_input_paths(unit)
+    if not paths:
+        return None, {}
+    values, hashes, references = {}, {}, {}
+    state = {}
+    allowed = {"at_seconds", "clock_id", "coordinate_frame_id", "viewport_complete"}
+    for kind, path in paths.items():
+        raw = path.read_bytes()
+        document = json.loads(raw)
+        if not isinstance(document, dict):
+            raise ValidationError("Recorded observation metadata must contain an object")
+        hashes["recordingInput:" + kind] = content_hash(raw)
+        reference = _api()._workspace_relative(Path(unit["workspaceRoot"]), path)
+        references[kind] = reference
+        if kind == "state":
+            state = document
+        attestation = document if kind == "observationMetadata" else document.get("observation_metadata")
+        if attestation is None:
+            continue
+        if not isinstance(attestation, dict) or set(attestation) - allowed:
+            raise ValidationError("Only acquisition timing, coordinate-frame and viewport attestations are accepted")
+        for key, value in attestation.items():
+            if key in values and values[key] != value:
+                raise ValidationError("Conflicting recorded acquisition attestations")
+            values[key] = value
+    if "clock_id" in values and "at_seconds" not in values and "at_seconds" in state:
+        values["at_seconds"] = state["at_seconds"]
+    if "at_seconds" in values and "at_seconds" in state and values["at_seconds"] != state["at_seconds"]:
+        raise ValidationError("Acquisition attestation disagrees with the recorded frame time")
+    primary = "observationMetadata" if "observationMetadata" in paths else "state" if "state" in paths else "provenance"
+    metadata = {**values, "source_ref": references[primary], "source_hash": hashes["recordingInput:" + primary]}
+    validate_observation_metadata(metadata)
+    return metadata, hashes
 
 
 def _imported_source(unit: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -709,6 +778,10 @@ def _imported_source(unit: Mapping[str, Any]) -> dict[str, Any] | None:
             or not source["arcRecording"] or type(source.get("frameIndex")) is not int):
         raise ValidationError("Imported ARC provenance requires its recording identity and original frame index")
     return source
+
+
+def _sample_advance(state: Mapping[str, Any], action: Any) -> bool:
+    return state.get("kind") == "synthetic_event_test_frame" and action == "FRAME"
 
 
 def _recorded_actions(units: list[dict[str, Any]], frames: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
@@ -750,7 +823,7 @@ def _recorded_actions(units: list[dict[str, Any]], frames: list[dict[str, Any]])
         for direction in ("incoming", "outgoing"):
             field = f"{direction}_action"
             raw = state.get(field)
-            if raw is None or state.get("kind") in {"video_import_frame", "image_set_frame"}:
+            if raw is None or _sample_advance(state, raw) or state.get("kind") in {"video_import_frame", "image_set_frame"}:
                 continue
             if direction == "incoming" and imported is not None and imported.get("incomingAction") is not None:
                 continue
@@ -1173,6 +1246,12 @@ def register_transforms(registry: dict, metadata: dict) -> None:
             "dependsOn": dependencies, "firstFrameDependsOn": bootstrap, "skipFirstFrame": skip,
             "orderedOnly": True, "type": kind, "priority": priority, "options": {},
         }
+    from .recording_test_observers import register_transforms as register_observers
+    register_observers(registry, metadata)
+    from .two_frame_x_duction import register_transforms as register_parent
+    register_parent(registry, metadata)
+    from .recognition_object_resolution import register_transforms as register_resolvers
+    register_resolvers(registry, metadata)
 
 
 def _implementation_revision(step: str) -> dict[str, Any]:
@@ -1188,7 +1267,8 @@ def _implementation_revision(step: str) -> dict[str, Any]:
     if step == TEMPORAL:
         from omega_vision.perception import temporal_correspondence
         return {"version": temporal_correspondence.VERSION,
-                "sources": temporal_correspondence.implementation_hashes()}
+                "sources": temporal_correspondence.implementation_hashes(),
+                "frameAdapter": content_hash(Path(__file__).read_bytes())}
     if step == OBJECTS:
         from omega_vision.perception import object_evidence, object_tracking
         return {
@@ -1196,21 +1276,38 @@ def _implementation_revision(step: str) -> dict[str, Any]:
             "sources": {module.__name__: content_hash(Path(module.__file__).read_bytes())
                         for module in (object_tracking, object_evidence)},
             "rules": object_tracking._rule_hashes(),
+            "frameAdapter": content_hash(Path(__file__).read_bytes()),
         }
     if step == EVENTS:
         from omega_vision.perception import event_deduction
-        return {"authoredDetectors": event_deduction.implementation_version()}
+        return {"authoredDetectors": event_deduction.implementation_version(),
+                "frameAdapter": content_hash(Path(__file__).read_bytes())}
     return {}
 
 
 def runtime_revision(unit: Mapping[str, Any], step: str | tuple[str, str]) -> str | None:
     """Read the mutable rule/selection inputs before task staleness and confirmation checks."""
     composite = "/".join(step) if isinstance(step, tuple) else step
+    from omega_vision.services import recognition_object_resolution
+    if recognition_object_resolution.is_resolver(composite):
+        return recognition_object_resolution.runtime_revision(unit, composite)
+    from omega_vision.services import two_frame_x_duction
+    if two_frame_x_duction.is_parent(composite):
+        return two_frame_x_duction.runtime_revision(unit, composite)
     from omega_vision.services import video_import_abduction
     if composite == video_import_abduction.STEP:
         return video_import_abduction.runtime_revision(unit)
+    if composite == INDUCTION:
+        from omega_vision.perception.event_induction import engine_version
+        return content_hash({"stage": composite, "engine": engine_version(),
+                             "adapter": content_hash(Path(__file__).read_bytes())})
     if composite in {PARTS, TEMPORAL}:
-        return content_hash({"stage": composite, "implementation": _implementation_revision(composite)})
+        revision = {"stage": composite, "implementation": _implementation_revision(composite)}
+        if composite == TEMPORAL:
+            revision["recordedInputs"] = {
+                kind: content_hash(path.read_bytes()) for kind, path in _recording_input_paths(unit).items()
+            }
+        return content_hash(revision)
     if composite not in {EVENTS, GROUPING, OBJECTS}:
         return None
     root = _workspace(str(unit.get("workspaceId") or ""))
@@ -1763,6 +1860,10 @@ def _memory(workspace_id: str, sequence_id: str | None, frame_id: str | None = N
             return result
 
         def load_preferences(self, context):
+            from .recording_test_memory import execution_preferences
+            explicit = execution_preferences(self, context)
+            if explicit is not None:
+                return explicit
             # Preserve old selection IDs as unavailable rather than silently
             # replacing a historical Save To with a new canonical destination.
             _, current = self._preference_path(context)
@@ -2175,3 +2276,8 @@ def memory_inspect_reference(response: Response, body: dict[str, Any] = Body(...
                 "areaId": body["areaId"], "kind": body["reference"].get("targetKind"),
                 "records": [], "sources": [], "authorizedSources": [],
                 "errors": [{"code": error.code, "message": str(error)}], "cachePolicy": "no-store"}
+
+
+from .two_frame_x_duction import router as two_frame_router
+
+router.include_router(two_frame_router)

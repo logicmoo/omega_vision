@@ -1,0 +1,41 @@
+.recording-tests {
+  margin: 24px 0 32px;
+  min-width: 0;
+}
+.recording-tests > h3 { margin: 0 0 8px; }
+.recording-tests > p { max-width: 78ch; line-height: 1.5; }
+.recording-tests-toolbar,
+.recording-test-recording-picker,
+.recording-test-frame-controls,
+.recording-test-open {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.recording-tests-toolbar { margin: 16px 0 8px; }
+.recording-tests-toolbar input { min-width: 12ch; width: min(32ch, 100%); }
+.recording-tests select { max-width: 100%; min-width: 0; }
+.recording-tests button { cursor: pointer; padding: 5px 9px; }
+.recording-tests button:disabled { cursor: not-allowed; }
+.recording-tests button:focus-visible,
+.recording-tests select:focus-visible,
+.recording-tests input:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.recording-test { padding: 14px 0; border-top: 1px solid #384354; }
+.recording-test-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.recording-test-heading > button { text-align: left; display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+.recording-test-heading > span, .recording-test-heading button > span { font-size: 12px; }
+.recording-test > p { margin: 8px 0; max-width: 78ch; line-height: 1.5; }
+.recording-test-detail { padding: 12px 0; min-width: 0; }
+.recording-test-preview { margin: 16px 0 24px; }
+.recording-test-preview figure { margin: 0 0 10px; }
+.recording-test-preview img { display: block; width: 320px; max-width: 100%; height: auto; image-rendering: pixelated; border: 1px solid #384354; }
+.recording-test-preview figcaption { margin-top: 6px; font-size: 12px; }
+.recording-test-frame-controls input { width: 160px; max-width: 100%; }
+.recording-test-open { margin: 12px 0 8px; }
+.recording-test-open span { max-width: 60ch; font-size: 12px; line-height: 1.5; }
+.recording-test-path { display: block; overflow-wrap: anywhere; font-size: 12px; }
+.recording-test-documentation { max-width: 90ch; overflow-x: auto; min-width: 0; }
+.recording-test-documentation .markdown-body { overflow-wrap: anywhere; }
+.recording-test-documentation pre { max-width: 100%; overflow-x: auto; }
+.recording-tests [role="alert"] { color: #ff8b81; }

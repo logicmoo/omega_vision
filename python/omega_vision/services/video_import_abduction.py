@@ -49,6 +49,10 @@ def _exact_path(root: Path, path: Path) -> Path:
 def _preference_revision(unit):
     from omega_vision.perception.memory_locations import NOWHERE
     semantics = _semantics()
+    from .recording_test_memory import _BINDING
+    if _BINDING.get() is not None:
+        locations, context = semantics._memory(unit["workspaceId"], unit["sequenceId"], frame_id=unit["id"])
+        return {"status": "persistent", "preferences": locations.load_preferences(context)}
     locations, context = semantics._memory(unit["workspaceId"], unit["sequenceId"], frame_id=unit["id"])
     # Default discovery may populate a disk catalog. Do not perform it merely
     # to discover that Nowhere was selected, nor substitute a historical choice.
@@ -195,6 +199,11 @@ def _verify_observation(unit, frame):
         geometry=content_hash(semantics._json(paths["geometry"])), lineage=content_hash(lineage or {}),
         temporalPartsFacts=content_hash(paths["partsFacts"].read_text(encoding="utf-8")),
     )
+    observation_metadata, input_hashes = semantics._observation_metadata(unit)
+    if observation_metadata is not None:
+        hashes.update(observationMetadata=content_hash(observation_metadata),
+                      observationSource=observation_metadata["source_hash"])
+    hashes.update(input_hashes)
     if (frame["input_hash"] != content_id("frame-input", hashes)
             or frame["provenance"].get("artifact_hashes") != hashes
             or frame["evidence"] != [bundle["bundleUid"]]):

@@ -3,6 +3,7 @@ import { VisualSequenceSelector } from "./VisualSequenceSelector";
 import { useSharedVisualSequenceSelection, useVisualSequenceCatalog } from "./useSharedVisualSequenceSelection";
 import { requiresVisualSequenceConfirmation, visualSequenceConfirmationMessage } from "./VisualSequenceLoadGate";
 import { visualSequenceLocationForEntry } from "./VideoImportRecordingUrl";
+import { RecordingTests } from "./RecordingTests";
 
 /**
  * Recognition Demos — runs the symbolic_arc Phase-2 acceptance behaviours
@@ -585,6 +586,8 @@ export function RecognitionDemosPage({ workspaceId = "" }: { workspaceId?: strin
         {sourceAllowed && connected && <button type="button" onClick={() => {
           sentSource.current = ""; setConnection(value => value + 1);
         }}>Retry source selection</button>}</p>}
+      <RecordingTests workspaceId={workspaceId} />
+      <h3>Built-in demos</h3>
       <p style={{ fontSize: 12, opacity: 0.7, marginTop: 0 }}>
         The server runs each real symbolic_arc Phase-2 acceptance behaviour (TODO Exhibit A Phase 2); this page only
         observes and animates the results. Legend: solid = visible/object,{" "}

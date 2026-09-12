@@ -6,6 +6,7 @@ metadata implicitly. Coordinates are original-image pixels, not bounding boxes.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from io import BytesIO
 import json
 import math
 import os
@@ -26,9 +27,13 @@ from omega_vision.perception.group_acceptance import (
 from omega_vision.perception.observation_identity import content_hash
 from omega_vision.perception.pixels_to_regions_cv import _pixel_runs
 from omega_vision.perception.symbolic_arc import _D4, _norm
+from omega_vision.perception.measured_event_features import (
+    affine_mask_comparison, measured_geometry_change, observed_interval,
+    validate_observation_metadata, exact_region_masks, is_exact_mask_source,
+)
 
 
-VERSION = "temporal-correspondence-v1"
+VERSION = "temporal-correspondence-v2"
 Point = tuple[int, int]
 
 
@@ -70,6 +75,31 @@ class TemporalFrame:
     groups: tuple[GroupObservation, ...]
     source_hashes: Mapping[str, str]
     region_evidence: Mapping[str, Any]
+    observation_metadata: Mapping[str, Any] | None = None
+
+    def __post_init__(self) -> None:
+        validate_observation_metadata(self.observation_metadata)
+        if self.observation_metadata and self.observation_metadata["source_hash"] not in self.source_hashes.values():
+            raise ValueError("observation metadata source hash is not bound to the frame")
+
+
+@dataclass(frozen=True)
+class InputReceipt:
+    """Actual delivered input, independently bound to a visible source G.
+
+    This is not an expected displacement. The producer must establish the actor
+    binding independently; a generic input channel cannot identify a visual G.
+    """
+
+    receipt_id: str
+    source_frame_uid: str
+    target_frame_uid: str
+    actor_uid: str
+    action: str
+    direction: tuple[float, float]
+    source_ref: str
+    source_hash: str
+    actor_binding_ref: str
 
 
 @dataclass(frozen=True)
@@ -178,6 +208,8 @@ def temporal_frame_from_bundle(
     geometry: Mapping[str, Any] | None = None,
     extraction_text: str = "",
     lineage: Mapping[str, Any] | None = None,
+    observation_metadata: Mapping[str, Any] | None = None,
+    image_bytes: bytes | None = None,
 ) -> TemporalFrame:
     """Adapt real ``build_observation_bundle`` output without changing its IDs.
 
@@ -199,6 +231,15 @@ def temporal_frame_from_bundle(
     parsed = parse_current_frame_evidence(extraction_text, "", dict(geometry))
     regions = {record["uid"]: record for record in bundle["regions"]}
     aliases = {record["alias"]: record for record in bundle["regions"]}
+    exact_masks = {}
+    if image_bytes is not None:
+        if content_hash(image_bytes) != frame["imageHash"]:
+            raise ValueError("pixel measurement bytes differ from the observation image hash")
+        with Image.open(BytesIO(image_bytes)) as image:
+            if image.size != (int(geometry["width"]), int(geometry["height"])):
+                raise ValueError("pixel measurement image and extraction dimensions differ")
+            if image.convert("RGBA").getextrema()[3][0] == 255:
+                exact_masks = exact_region_masks(np.asarray(image.convert("RGB")), list(regions.values()))
     evidence_regions = []
     for record in sorted(regions.values(), key=lambda item: item["uid"]):
         details = _member_polygon(record["alias"], dict(geometry))
@@ -235,7 +276,10 @@ def temporal_frame_from_bundle(
         holes = 0
         for alias in member_aliases:
             details = _member_polygon(alias, dict(geometry))
-            region_mask, source = _mask(details, union.shape[1], union.shape[0])
+            if alias in exact_masks:
+                region_mask, source = exact_masks[alias], "exact_image_components"
+            else:
+                region_mask, source = _mask(details, union.shape[1], union.shape[0])
             union |= region_mask
             sources.add(source)
             holes += len(details.get("holes") or [])
@@ -256,10 +300,15 @@ def temporal_frame_from_bundle(
     hashes = dict(bundle["artifactHashes"])
     hashes.update(geometry=content_hash(dict(geometry)), lineage=content_hash(dict(lineage or {})),
                   temporalPartsFacts=content_hash(extraction_text))
+    validate_observation_metadata(observation_metadata)
+    if observation_metadata is not None:
+        hashes.update(observationMetadata=content_hash(dict(observation_metadata)),
+                      observationSource=observation_metadata["source_hash"])
     return TemporalFrame(
         uid=frame["uid"], bundle_uid=bundle["bundleUid"], provider_id=provider_id,
         sequence_id=frame["sequenceId"], order=int(frame["frameOrder"]), width=width, height=height,
         groups=tuple(groups), source_hashes=hashes, region_evidence=evidence,
+        observation_metadata=observation_metadata,
     )
 
 
@@ -299,6 +348,9 @@ def _track(frame: TemporalFrame, group: GroupObservation) -> dict[str, Any]:
         "observationUid": group.uid, "alias": group.alias,
         "memberUids": list(group.member_uids), "points": _points(group),
         "colors": list(group.colors), "symbols": json.loads(canonical_json(group.symbols)),
+        "maskSource": group.mask_source,
+        "lastObservedPoints": _points(group), "lastObservedFrameUid": frame.uid,
+        "lastObservedSourceHashes": dict(frame.source_hashes), "pointsStatus": "observed",
         "velocity": None, "velocityEvidence": None,
         "lastObservedOrder": frame.order, "visibility": "visible",
     }
@@ -313,6 +365,7 @@ def implementation_hashes() -> dict[str, str]:
     return {name: content_hash((directory / name).read_bytes()) for name in (
         "temporal_correspondence.py", "observation_identity.py", "group_acceptance.py",
         "pixels_to_regions_cv.py", "symbolic_arc.py",
+        "measured_event_features.py",
     )}
 
 
@@ -424,6 +477,7 @@ def compare_frames(
     before: TemporalFrame, after: TemporalFrame, *,
     previous_state: Mapping[str, Any] | None = None,
     action_hint: ActionHint | None = None,
+    input_receipts: Sequence[InputReceipt] = (),
     depth_evidence: Sequence[Mapping[str, Any]] = (),
     config: TemporalConfig = TemporalConfig(),
 ) -> dict[str, Any]:
@@ -441,6 +495,28 @@ def compare_frames(
         raise ValueError("original coordinate dimensions differ; explicit common lineage is required")
     state = dict(previous_state) if previous_state is not None else initial_temporal_state(before)
     _validate_previous(before, state)
+    interval = observed_interval(before, after)
+    receipt_ids = set()
+    for receipt in input_receipts:
+        if not isinstance(receipt, InputReceipt):
+            raise ValueError("actual input requires typed InputReceipt records")
+        if (receipt.source_frame_uid, receipt.target_frame_uid) != (before.uid, after.uid):
+            raise ValueError("input receipt targets a different transition")
+        if receipt.actor_uid not in {group.uid for group in before.groups}:
+            raise ValueError("input receipt actor must reference an independently bound source final G")
+        for name in ("receipt_id", "action", "source_ref", "source_hash", "actor_binding_ref"):
+            value = getattr(receipt, name)
+            if not isinstance(value, str) or not value.strip() or any(ord(c) < 32 for c in value):
+                raise ValueError(f"input receipt requires {name}")
+        if receipt.source_hash not in after.source_hashes.values():
+            raise ValueError("input receipt source hash is not bound to the target frame")
+        if receipt.receipt_id in receipt_ids:
+            raise ValueError("duplicate input receipt")
+        receipt_ids.add(receipt.receipt_id)
+        if len(receipt.direction) != 2 or any(
+            type(v) not in (int, float) or not math.isfinite(v) for v in receipt.direction
+        ) or math.hypot(*receipt.direction) == 0:
+            raise ValueError("input receipt direction requires two finite nonzero vector components")
     for record in depth_evidence:
         if not record.get("sourceRef") or not isinstance(record.get("compatible"), bool):
             raise ValueError("depth evidence needs sourceRef and signed compatible bool")
@@ -458,6 +534,7 @@ def compare_frames(
     max_distance = diagonal * config.maximum_displacement_fraction
     scores = np.full((len(tracks), len(visible)), -1e6)
     candidates: dict[tuple[int, int], dict[str, Any]] = {}
+    reappearance_alternatives = []
     for i, track in enumerate(tracks):
         if not track["points"] or after.order - track["lastObservedOrder"] > config.max_hidden_frames:
             continue
@@ -472,6 +549,20 @@ def compare_frames(
             center = np.array(group.centroid)
             displacement = center - old_center
             residual = float(np.linalg.norm(center - predicted))
+            if track["lastObservedOrder"] != before.order:
+                similarity = shape_comparison(track["lastObservedPoints"], group.points)["iou"]
+                if similarity >= 0.99 and list(group.colors) == track["colors"]:
+                    reappearance_alternatives.append({
+                        "trackUid": track["trackUid"], "observationUid": group.uid,
+                        "lastObservedFrameUid": track["lastObservedFrameUid"],
+                        "hiddenFrames": after.order - track["lastObservedOrder"] - 1,
+                        "observedDisplacement": (center - np.mean(track["lastObservedPoints"], axis=0)).tolist(),
+                        "predictionResidual": residual, "maskIou": similarity,
+                        "alternatives": ["accelerated_continuation", "teleport", "different_object"],
+                        "authority": "unresolved_hypotheses", "observedIdentity": False,
+                        "evidence": [track["lastObservedFrameUid"], after.uid,
+                                     *track["lastObservedSourceHashes"].values(), *after.source_hashes.values()],
+                    })
             if residual > max_distance:
                 continue
             if track["lastObservedOrder"] != before.order:
@@ -488,13 +579,32 @@ def compare_frames(
                 if hint.displacement and residual > max(1.0, math.hypot(*hint.displacement) * 0.25):
                     continue
             shape = shape_comparison(track["points"], group.points)
-            if shape["iou"] < config.minimum_shape_iou:
+            affine = affine_mask_comparison(track["points"], group.points)
+            local_transform = (
+                track["lastObservedOrder"] == before.order and residual <= 1.5
+                and list(group.colors) == track["colors"]
+                and is_exact_mask_source(group.mask_source)
+                and is_exact_mask_source(track["maskSource"])
+                and all(0.25 <= value <= 4 for value in affine["scale"])
+            )
+            local_shape_change = local_transform and len(track["points"]) == len(group.points)
+            correspondence_iou = max(
+                shape["iou"], affine["iou"] if local_transform else 0,
+                0.99 if local_shape_change else 0,
+            )
+            if correspondence_iou < config.minimum_shape_iou:
                 continue
             # Spatial/motion evidence is pixel evidence too. Color/topology are
             # deliberately too weak to override a meaningful mask difference.
             symbolic = (list(group.colors) == track["colors"]) + (
                 json.loads(canonical_json(group.symbols)) == track["symbols"])
-            pixel_score = 0.72 * shape["iou"] + 0.28 * math.exp(-residual / max(1., diagonal * 0.08))
+            observed_distance = float(np.linalg.norm(displacement))
+            scale = max(1., diagonal * 0.08)
+            # A velocity extrapolation is not an observed pose. Balance it with
+            # last-position continuity so contact/reversal is not forced into
+            # a pass-through identity swap before comparing appearance.
+            pixel_score = 0.72 * correspondence_iou + 0.14 * (
+                math.exp(-residual / scale) + math.exp(-observed_distance / scale))
             pixel_score += 0.5 if hint else 0.0
             score = pixel_score + 0.004 * symbolic
             scores[i, j] = score
@@ -507,6 +617,8 @@ def compare_frames(
                 "maskSource": group.mask_source,
                 "sourceArea": len(track["points"]), "targetArea": len(group.points),
                 "areaRatio": len(group.points) / len(track["points"]),
+                "correspondenceIou": correspondence_iou,
+                "geometryCorrespondence": "local_mask_transform" if correspondence_iou > shape["iou"] else "rigid_mask",
             }
     track_index = {track["trackUid"]: index for index, track in enumerate(tracks)}
     for episode in state["occlusionEpisodes"]:
@@ -553,6 +665,7 @@ def compare_frames(
         "previousCheckpointUid": state["checkpointUid"], "config": asdict(config),
         "implementationHashes": implementation_hashes(),
         "action": asdict(action_hint) if action_hint else None,
+        "inputReceipts": [asdict(receipt) for receipt in input_receipts],
         "depthEvidence": sorted((dict(item) for item in depth_evidence), key=canonical_json),
     }
     pair_uid = stable_id("temporal-pair", pair_payload)
@@ -567,16 +680,34 @@ def compare_frames(
     for i, j in accepted.items():
         track, group = tracks[i], visible[j]
         match = dict(candidates[i, j])
-        displacement = np.array(group.centroid) - np.mean(track["points"], axis=0)
+        displacement = np.array(group.centroid) - np.mean(track["lastObservedPoints"], axis=0)
         reappeared = track["lastObservedOrder"] != before.order
+        independent_appearance = (
+            list(group.colors) == track["colors"] and match["maskIou"] >= 0.99
+            and sum(
+                list(candidate.colors) == track["colors"] and (i, column) in candidates
+                for column, candidate in enumerate(visible)
+            ) == 1
+            and sum(
+                source["colors"] == list(group.colors) and (row, j) in candidates
+                for row, source in enumerate(tracks)
+            ) == 1
+        )
+        confidence = match["correspondenceIou"] * (0.5 + min(0.5, margins[i]))
+        if independent_appearance:
+            # A unique, unchanged appearance may strengthen an already accepted
+            # exact-shape match. It never changes the pixel-based assignment.
+            confidence = max(confidence, 0.95 * match["maskIou"])
         match.update(displacement=displacement.tolist(), reappeared=reappeared,
-                     confidence=min(1.0, match["maskIou"] * (0.5 + min(0.5, margins[i]))))
+                     independentAppearance=independent_appearance, confidence=min(1.0, confidence))
         matches.append(match)
         motion.append({
             "trackUid": track["trackUid"], "fromUid": track["observationUid"], "toUid": group.uid,
             "displacement": displacement.tolist(), "transforms": match["transforms"],
             "state": "stationary" if np.linalg.norm(displacement) <= config.motion_tolerance else "moving",
             "observationStatus": "measured", "reappeared": reappeared,
+            "sourceObservationFrameUid": track["lastObservedFrameUid"], "targetObservationFrameUid": after.uid,
+            "observationIntervalFrames": after.order - track["lastObservedOrder"],
         })
         next_track = _track(after, group)
         next_track.update(trackUid=track["trackUid"],
@@ -589,7 +720,8 @@ def compare_frames(
     for i, track in enumerate(tracks):
         if i not in accepted:
             prediction = _project(track["points"], track["velocity"] or (0, 0))
-            next_track = {**track, "points": [list(p) for p in sorted(prediction)], "visibility": "missing"}
+            next_track = {**track, "points": [list(p) for p in sorted(prediction)],
+                          "pointsStatus": "predicted", "visibility": "missing"}
             next_tracks.append(next_track)
     used = set(accepted.values())
     for j, group in enumerate(visible):
@@ -736,6 +868,19 @@ def compare_frames(
         "sourceOrder": before.order, "targetOrder": after.order, "assessment": assessment,
         "sourceHashes": dict(before.source_hashes), "targetHashes": dict(after.source_hashes),
         "actionHint": asdict(action_hint) if action_hint else None,
+        "inputReceipts": [asdict(receipt) for receipt in input_receipts],
+        "reappearanceAlternatives": reappearance_alternatives,
+        "interval": interval,
+        "geometry": [
+            {
+                "trackUid": match["trackUid"], "fromUid": match["fromUid"], "toUid": match["toUid"],
+                **measured_geometry_change(
+                    next(group for group in before.groups if group.uid == match["fromUid"]),
+                    next(group for group in after.groups if group.uid == match["toUid"]),
+                    after.width, after.height,
+                ),
+            } for match in matches if not match["reappeared"]
+        ],
         "matches": matches, "ambiguities": ambiguous,
         "candidates": sorted(candidates.values(), key=lambda item: (item["trackUid"], item["toUid"])),
         "motion": motion, "visibility": visibility, "occlusions": occlusions,

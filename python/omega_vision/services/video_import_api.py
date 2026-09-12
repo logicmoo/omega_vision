@@ -2654,6 +2654,16 @@ _FRAME_SET_FAMILIES = (
 )
 
 
+def _catalog_sequence_ordered(directory: Path, images: list[Path]) -> bool:
+    if (directory / "recording.json").is_file():
+        return True
+    # Most unsequenced collections have no provenance on their first input.
+    # Do not open thousands of unrelated per-frame sidecars just to say so.
+    if not images or not _sequence_ordering(directory, images[:1])[0]:
+        return False
+    return _sequence_ordering(directory, images)[0]
+
+
 def _list_image_sets(root: Path) -> list[dict[str, Any]]:
     token = _catalog_image_cache.set({})
     try:
@@ -2701,21 +2711,22 @@ def _enumerate_image_sets(root: Path) -> list[dict[str, Any]]:
         if image_count == 0 and reduced_count == 0:
             return
         seen.add(set_id)
+        writable = _sequence_writable(root, d)
         entry: dict[str, Any] = {
             "id": set_id,
             "visualSequenceId": set_id,
             "label": (label or _IMAGE_SET_LABELS.get(set_id, set_id.replace("_", " ")))
-            + (" · Read-only; migration required" if not _sequence_writable(root, d) else ""),
+            + (" · Read-only; migration required" if not writable else ""),
             "dir": rel_dir,
             "providerRef": rel_dir,
             "imageCount": image_count,
             "reducedCount": reduced_count,
-            "ordered": _sequence_ordering(d, sequence_images)[0],
+            "ordered": _catalog_sequence_ordered(d, sequence_images),
             "canonical": set_id == _CANONICAL_IMAGE_SET,
             "group": group,
             "groupKey": group_key,
-            "readOnly": not _sequence_writable(root, d),
-            "migrationRequired": not _sequence_writable(root, d),
+            "readOnly": not writable,
+            "migrationRequired": not writable,
         }
         if extras:
             entry.update(extras)
@@ -3001,9 +3012,13 @@ from omega_vision.perception.visual_sequence_list_cache import (
 
 def _cached_visual_catalog(workspace_id: str, request: Request, response: Response, refresh: bool) -> Any:
     root = _workspace_root(workspace_id)
-    entries, revision, cache_state = visual_sequence_options(
-        root, lambda: _list_image_sets(root), refresh=refresh,
-    )
+    try:
+        entries, revision, cache_state = visual_sequence_options(
+            root, lambda: _list_image_sets(root), refresh=refresh,
+        )
+    except TimeoutError as error:
+        raise HTTPException(503, "Visual Sequence catalog rebuild is busy. Retry shortly; selected-source access is independent.",
+                            headers={"Retry-After": "2"}) from error
     etag = f'W/"vsc-{revision}"'
     headers = {"ETag": etag, "Cache-Control": "private, no-cache", "X-Catalog-Cache": cache_state}
     if response is not None:
@@ -3039,6 +3054,68 @@ def visual_sequences(workspaceId: str, request: Request = None, response: Respon
         return sequences
     return {"visualSequences": sequences, "sets": sequences,
             "unavailableStorage": unavailable_legacy_storage(_workspace_root(workspaceId))}
+
+
+@router.get("/visual-sequences/resolve")
+def resolve_visual_sequence(workspaceId: str, sequenceId: str, response: Response) -> dict[str, Any]:
+    """Validate only the named source, even while the full option list rebuilds."""
+    from omega_vision.perception.visual_sequence_selection import _identifier
+
+    root = _workspace_root(workspaceId)
+    try:
+        identifier = _identifier(sequenceId)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+    directory = _sequence_root_for(root, f"data/{identifier}")
+    home = _vision_data_root(root).resolve()
+    if directory != home.joinpath(*identifier.split("/")):
+        raise HTTPException(403, "The selected Visual Sequence was redirected to another physical path")
+    parts = identifier.split("/")
+    family = next((item for item in _FRAME_SET_FAMILIES if identifier.startswith(item[0] + "/")), None)
+    manifest_path = directory / "recording.json"
+    if family is not None:
+        depth = len(parts) - len(family[0].split("/"))
+        registered = depth == 1 or (
+            depth == 2 and family[0] in {"recordings", "arc3_games/recordings"} and manifest_path.is_file()
+        )
+    else:
+        registered = identifier in {"recognition_inputs", "vision_frames/recognition_inputs", "recognition_reduce"} or (
+            len(parts) == 3 and parts[0] in {"video_import", "VideoImports"} and parts[2] == "frames"
+        ) or (
+            len(parts) == 1 and parts[0] not in {"workspaces", "runtime", "preferences", ".cache", "logs", "locks", "knowledge"}
+            and ((directory / "pool").is_dir() or (directory / "manifest.json").is_file())
+        )
+    if not registered:
+        raise HTTPException(422, "The selected source is not a registered Visual Sequence family")
+    images = _resolve_set_images(directory)
+    if not images:
+        raise HTTPException(404, "The selected Visual Sequence contains no input images")
+    writable = _sequence_writable(root, directory)
+    entry: dict[str, Any] = {
+        "id": identifier, "visualSequenceId": identifier,
+        "dir": f"data/{identifier}", "providerRef": f"data/{identifier}",
+        "label": identifier, "imageCount": len(images), "reducedCount": 0,
+        "ordered": _catalog_sequence_ordered(directory, images),
+        "canonical": identifier == _CANONICAL_IMAGE_SET,
+        "group": family[1] if family else "Loaded sources",
+        "groupKey": family[2] if family else "4-loaded",
+        "readOnly": not writable, "migrationRequired": not writable,
+    }
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            raise HTTPException(422, f"The selected recording manifest is unreadable: {error}") from error
+        if not isinstance(manifest, dict):
+            raise HTTPException(422, "The selected recording manifest must be an object")
+        if manifest.get("level") is not None and type(manifest["level"]) not in {str, int}:
+            raise HTTPException(422, "The selected recording level is invalid")
+        entry.update(kind="recording", recording=directory.name, level=manifest.get("level"))
+        if manifest.get("game_id") and identifier.startswith("recordings/") and len(identifier.split("/")) == 3:
+            entry.update(kind="arc-recording", gameId=str(manifest["game_id"]), game=directory.parent.name,
+                         label=f"{directory.parent.name} · {directory.name}")
+    response.headers["Cache-Control"] = "no-store"
+    return {"visualSequence": entry}
 
 
 @router.get("/transform-composites")
@@ -7617,7 +7694,15 @@ _SEQUENCE_TRANSFORMS: dict[tuple[str, str], Any] = {
     ("observation_identity_0", "content_hash"): _transform_observation_identity,
     ("turtle_programs", "turtle_programs_prolog"): _transform_turtle_programs,
 }
-_TRANSFORM_METADATA: dict[tuple[str, str], dict[str, Any]] = {}
+_TRANSFORM_METADATA: dict[tuple[str, str], dict[str, Any]] = {
+    key: {"inputContract": {"frameInputCount": 1, "usesSTM": False}}
+    for key in (
+        ("parts_extraction_0", "python_opencv"),
+        ("parts_grouping_0", "group_regions_prolog"),
+        ("group_acceptance_0", "group_acceptance_prolog"),
+        ("observation_identity_0", "content_hash"),
+    )
+}
 
 
 _CLAIM_STALE_SECONDS = 30 * 60
@@ -7640,6 +7725,12 @@ def _registered_transform_composites() -> list[dict[str, Any]]:
             "available": callable(runner),
             "type": definitions[f"{transformation}/{doer}"].get("type", "py_pl"),
             "dependsOn": definitions[f"{transformation}/{doer}"].get("dependsOn", []),
+            "firstFrameDependsOn": definitions[f"{transformation}/{doer}"].get("firstFrameDependsOn", []),
+            "orderedOnly": definitions[f"{transformation}/{doer}"].get("orderedOnly", False),
+            "skipFirstFrame": definitions[f"{transformation}/{doer}"].get("skipFirstFrame", False),
+            **{key: definitions[f"{transformation}/{doer}"][key]
+               for key in ("family", "implementation", "resultCategory", "leafComposite", "label", "description", "inputContract")
+               if key in definitions[f"{transformation}/{doer}"]},
         }
         for (transformation, doer), runner in _SEQUENCE_TRANSFORMS.items()
     ]
@@ -8684,6 +8775,13 @@ def _direct_specs(root: Path) -> dict[str, dict[str, Any]]:
     return specs
 
 
+def _execution_context_for_step(root, sequence_id, workspace_id, step):
+    from .recognition_object_resolution import execution_context, is_resolver
+    if is_resolver(step):
+        return execution_context(root, sequence_id, workspace_id)
+    return _sequence_execution_context(root, sequence_id, workspace_id)
+
+
 def _direct_run_path(root: Path, job_id: str) -> Path:
     if not re.fullmatch(r"[0-9a-f]{32}", job_id):
         raise HTTPException(status_code=400, detail="Invalid direct-call ID")
@@ -8736,25 +8834,63 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     sequence_id = str(body.get("sequenceId") or "")
     output = str(body.get("composite") or "")
     first_n = body.get("firstN", 0)
+    target_frame = body.get("frameId") if "frameId" in body else None
     options = body.get("options", {})
     if not workspace_id or not sequence_id:
         raise HTTPException(status_code=400, detail="workspaceId and sequenceId are required")
     if isinstance(first_n, bool) or not isinstance(first_n, int) or first_n < 0:
         raise HTTPException(status_code=400, detail="First N must be a nonnegative integer")
+    if "frameId" in body and (not isinstance(target_frame, str) or not target_frame or first_n):
+        raise HTTPException(status_code=400, detail="frameId must identify one actual row and cannot be combined with First N")
     if not isinstance(options, dict):
         raise HTTPException(status_code=400, detail="options must be an object")
     root = _workspace_root(workspace_id)
-    directory, units, catalog = _sequence_execution_context(root, sequence_id, workspace_id)
+    directory, units, catalog = _execution_context_for_step(root, sequence_id, workspace_id, output)
     _require_sequence_write(root, directory)
     _attach_memory_session(units, body)
     specs = _direct_specs(root)
     if output not in specs:
         raise HTTPException(status_code=400, detail=f"Unknown registered pair: {output}")
     specs[output] = {**specs[output], "options": {**specs[output].get("options", {}), **options}}
-    selected = units[:first_n] if first_n else units
+    target_context = None
+    if target_frame is not None:
+        positions = [index for index, unit in enumerate(units) if unit["id"] == target_frame]
+        if len(positions) != 1:
+            raise HTTPException(status_code=400, detail="frameId is not an actual unit in this Visual Sequence")
+        selected = units[:positions[0] + 1] if catalog["ordered"] else [units[positions[0]]]
+        target_context = {
+            "currentFrameId": target_frame, "currentFrameOrder": positions[0],
+            "previousFrameId": units[positions[0] - 1]["id"] if catalog["ordered"] and positions[0] else None,
+            "status": ("pair" if positions[0] else "initial_observation") if catalog["ordered"] else "unordered_input",
+        }
+    else:
+        selected = units[:first_n] if first_n else units
     selected_ids = [unit["id"] for unit in selected]
+    requested_ids = [target_frame] if target_frame is not None else selected_ids
     try:
+        from omega_vision.services import two_frame_x_duction
+        from omega_vision.services import recognition_object_resolution
+        if two_frame_x_duction.is_parent(output):
+            for unit in selected:
+                if unit["id"] in requested_ids:
+                    two_frame_x_duction.preflight(unit, output, specs[output]["options"])
+        if recognition_object_resolution.is_resolver(output):
+            for unit in selected:
+                if unit["id"] in requested_ids:
+                    recognition_object_resolution.preflight(unit, output, specs[output]["options"])
         plan = plan_direct_call(output, specs, catalog["frame_ids_in_order"], selected_ids, ordered=catalog["ordered"])
+        if target_frame is not None:
+            plan = (two_frame_x_duction.target_plan(plan, target_frame, output)
+                    if any(node.frame_id == target_frame and node.output == output for node in plan) else [])
+            required_frames = {node.frame_id for node in plan}
+            selected = [unit for unit in selected if unit["id"] in required_frames]
+            selected_ids = [unit["id"] for unit in selected]
+        if recognition_object_resolution.is_resolver(output):
+            recognition_object_resolution.validate_plan(plan, units, output)
+    except PermissionError as error:
+        raise HTTPException(status_code=403, detail=str(error)) from error
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     blocked = [f"{node.frame_id}: {reason}" for node in plan for reason in node.blocked]
@@ -8792,6 +8928,7 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             ]
         confirmation_key = hashlib.sha256(json.dumps({
             "workspace": workspace_id, "sequence": sequence_id,
+            "targetFrameId": target_frame,
             "memorySession": body.get("memorySessionId"),
             "memorySnapshotHash": hashlib.sha256(body["memorySnapshot"].encode()).hexdigest()
             if isinstance(body.get("memorySnapshot"), str) else None,
@@ -8805,6 +8942,8 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=f"Invalid execution options: {error}") from error
     planned = {
         "composite": output, "sequenceId": sequence_id, "workspaceId": workspace_id,
+        "targetFrameId": target_frame, "requestedFrameIds": requested_ids,
+        "targetContext": target_context, "supportFrameIds": selected_ids,
         "imageCount": len(selected), "pairCount": max(0, len(selected) - 1) if catalog["ordered"] else 0,
         "llmCallCount": sum(node.output in llm_steps for node in plan),
         "llmSteps": llm_steps, "confirmationKey": confirmation_key,
@@ -8868,12 +9007,16 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         "id": job_id, "kind": "direct-transform", "workspaceId": workspace_id,
         "storageRoot": str(_storage_path(root)),
         "sequenceId": sequence_id, "composite": output, "firstN": first_n,
+        "targetFrameId": target_frame, "requestedFrameIds": requested_ids,
+        "targetContext": target_context, "supportFrameIds": selected_ids,
         "label": f"Direct {output}", "state": "running", "done": 0, "total": len(plan),
         "imageCount": len(selected), "startedAt": _utc_now(), "ownerPid": os.getpid(),
         "ownerStartedAt": psutil.Process().create_time(), "recent": [], "counts": {},
         "definitions": {node.output: specs[node.output] for node in plan},
         "authorization": {"confirmationKey": confirmation_key, "confirmed": body.get("confirmed") is True,
-                          "imageCount": len(selected), "firstN": first_n, "modelId": model_id,
+                          "imageCount": len(selected), "firstN": first_n,
+                          **({"targetFrameId": target_frame} if target_frame is not None else {}),
+                          "modelId": model_id,
                           "llmCallCount": planned["llmCallCount"], "llmSteps": llm_steps},
         "path": _workspace_relative(root, path), "eventsPath": _workspace_relative(root, events_path),
     }
@@ -8882,7 +9025,7 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     _atomic_json_write(path, job)
     _direct_jobs[job_id] = job
     by_id = {unit["id"]: unit for unit in units}
-    roots = {(frame_id, output) for frame_id in selected_ids
+    roots = {(frame_id, output) for frame_id in requested_ids
              if not (by_id[frame_id]["frameOrder"] == 0 and specs[output].get("skipFirstFrame"))
              and not (specs[output].get("orderedOnly") and not catalog["ordered"])}
     if not roots:
@@ -9278,14 +9421,17 @@ def _semantic_stage_ids() -> set[str]:
     return {f"{transformation}/{doer}" for (transformation, doer), runner in _SEQUENCE_TRANSFORMS.items()
             if getattr(runner, "__module__", "") in {
                 "omega_vision.services.video_import_semantics", "omega_vision.services.video_import_abduction",
+                "omega_vision.services.two_frame_x_duction",
+                "omega_vision.services.recognition_object_resolution",
             }}
 
 
 @router.get("/semantic/execution")
 def semantic_execution(workspaceId: str, sequenceId: str, response: Response, firstN: int = 0,
-                       memorySessionId: str | None = None) -> dict[str, Any]:
+                       memorySessionId: str | None = None, frameId: str | None = None) -> dict[str, Any]:
     return _semantic_execution(workspaceId, sequenceId, response, firstN,
-                               {"memorySessionId": memorySessionId})
+                               {"memorySessionId": memorySessionId,
+                                **({"frameId": frameId} if frameId is not None else {})})
 
 
 @router.post("/semantic/execution/read")
@@ -9304,7 +9450,15 @@ def _semantic_execution(workspaceId: str, sequenceId: str, response: Response, f
     root = _workspace_root(workspaceId)
     sequence_directory, units, catalog = _sequence_execution_context(root, sequenceId, workspaceId)
     _attach_memory_session(units, memory_body)
-    selected = units[:firstN] if firstN else units
+    target_frame = memory_body.get("frameId")
+    if "frameId" in memory_body:
+        if not isinstance(target_frame, str) or not target_frame or firstN:
+            raise HTTPException(400, "frameId must identify one actual row and cannot be combined with First N")
+        selected = [unit for unit in units if unit["id"] == target_frame]
+        if len(selected) != 1:
+            raise HTTPException(400, "frameId is not an actual unit in this Visual Sequence")
+    else:
+        selected = units[:firstN] if firstN else units
     stages = _semantic_stage_ids()
     definitions = _transform_definitions()
     chain = _load_preprocessing_chain_at(sequence_directory)
@@ -9341,11 +9495,20 @@ def _semantic_execution(workspaceId: str, sequenceId: str, response: Response, f
             if meta or failure:
                 definition = definitions[stage]
                 spec = _step_for_unit(definition, unit) or definition
-                stale, reason = _step_meta_is_stale(
-                    directory / "meta.json", _resolve_step_deps(unit, spec.get("dependsOn", []), None),
-                    _pp_chain_signature(_preprocessing_source_signature(unit["image"]), chain, registry_versions=versions),
-                    _runtime_transform_options(unit, stage, meta.get("options", {})),
-                ) if meta else (False, None)
+                try:
+                    if stage in {_semantic_stages.OBJECTS, _semantic_stages.GROUPING}:
+                        locations, context = _semantic_stages._memory(workspaceId, sequenceId, frame_id=unit["id"])
+                        _, preference_path = locations._preference_path(context)
+                        if not preference_path.is_file():
+                            raise ValueError("No saved memory selections; read-only inspection will not choose defaults")
+                    stale, reason = _step_meta_is_stale(
+                        directory / "meta.json", _resolve_step_deps(unit, spec.get("dependsOn", []), None),
+                        _pp_chain_signature(_preprocessing_source_signature(unit["image"]), chain, registry_versions=versions),
+                        _runtime_transform_options(unit, stage, meta.get("options", {})),
+                    ) if meta else (False, None)
+                except (OSError, ValueError, RuntimeError) as error:
+                    stale, reason = True, f"Current execution context unavailable: {error}"
+                    errors.append({"path": _workspace_relative(root, directory / "meta.json"), "error": reason})
                 outputs.append({
                     "frameId": frame_uid, "composite": stage, "summary": read(directory / "summary.json") or meta,
                     "path": _workspace_relative(root, directory / "meta.json"),
@@ -9369,14 +9532,20 @@ def _semantic_execution(workspaceId: str, sequenceId: str, response: Response, f
                        key=lambda path: path.stat().st_mtime, reverse=True):
         record = read(path)
         if record.get("sequenceId") == sequenceId and record.get("composite") in stages:
+            requested = record.get("requestedFrameIds")
+            if target_frame is not None and isinstance(requested, list) and target_frame not in requested:
+                continue
             jobs.append(direct_call_status(record["id"], workspaceId))
             if len(jobs) >= 30:
                 break
     response.headers["Cache-Control"] = "no-store"
     return {
-        "ordered": catalog["ordered"], "frameCount": len(selected), "frames": frames,
+        "ordered": catalog["ordered"], "frameCount": len(selected), "frames": frames, "targetFrameId": target_frame,
         "stages": [{"id": stage, "label": definitions[stage].get("label") or stage.replace("_0/", " / ").replace("_", " "),
                     "description": definitions[stage].get("description") or "Explicit registered stage; dependencies stay within First N.",
+                    **{key: definitions[stage][key]
+                       for key in ("family", "implementation", "resultCategory", "leafComposite", "inputContract")
+                       if key in definitions[stage]},
                     "llm": definitions[stage].get("type") in {"llm", "p_shot"}} for stage in sorted(stages)],
         "todos": todos, "jobs": jobs, "outputs": outputs, "artifacts": artifacts, "errors": errors,
         "unavailableStorage": unavailable_legacy_storage(root),
@@ -9394,7 +9563,7 @@ def semantic_execution_plan(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     raw = start_direct_call(request)
     model, backend, model_revision = str(body.get("modelId") or ""), "", None
     blocked = []
-    if not raw["ordered"]:
+    if not raw["ordered"] and _transform_definitions()[stage].get("orderedOnly"):
         blocked.append("Temporal evidence requires an explicitly ordered Visual Sequence.")
     if not raw["steps"]:
         blocked.append("No applicable pairs in First N; the first frame cannot invoke a pair model.")
@@ -9413,6 +9582,8 @@ def semantic_execution_plan(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     }, sort_keys=True).encode()).hexdigest()
     return {
         "stageId": stage, "label": stage, "frameCount": raw["imageCount"], "pairCount": raw["pairCount"],
+        "targetFrameId": raw["targetFrameId"], "targetContext": raw["targetContext"],
+        "requestedFrameIds": raw["requestedFrameIds"], "supportFrameIds": raw["supportFrameIds"],
         "llmCallCount": raw["llmCallCount"], "modelId": model, "backendId": backend,
         "cost": None, "blockedReasons": blocked, "confirmationKey": confirmation, "raw": raw,
     }
@@ -9434,16 +9605,16 @@ def semantic_execution_commit(body: dict[str, Any] = Body(...)) -> dict[str, Any
             "confirmationKey": raw["confirmationKey"],
         })
     root = _workspace_root(body["workspaceId"])
-    directory, units, catalog = _sequence_execution_context(root, body["sequenceId"], body["workspaceId"])
+    directory, units, catalog = _execution_context_for_step(root, body["sequenceId"], body["workspaceId"], current["stageId"])
     _require_sequence_write(root, directory)
     _attach_memory_session(units, body)
-    selected = units[:body["firstN"]] if body.get("firstN") else units
+    selected = [unit for unit in units if unit["id"] in raw["supportFrameIds"]]
     frame_steps: dict[str, set[str]] = {}
     for step in raw["steps"]:
         frame_steps.setdefault(step["frameId"], set()).add(step["output"])
-    for unit in units:
+    for unit in selected:
         _ensure_queue_memory_destinations(unit, frame_steps.get(unit["id"], ()))
-    for unit in units:
+    for unit in selected:
         _persist_execution_memory_defaults(unit, frame_steps.get(unit["id"], ()))
     chain = _load_preprocessing_chain_at(directory)
     index = _filter_catalog_index(root) if not _pp_is_effectively_original(chain) else {}
@@ -9469,12 +9640,16 @@ def semantic_execution_commit(body: dict[str, Any] = Body(...)) -> dict[str, Any
                                            "modelId": current["modelId"]},
                         "authorization": {"confirmationKey": current["confirmationKey"], "confirmed": True,
                                           "firstN": body.get("firstN", 0), "imageCount": len(selected),
+                                          **({"targetFrameId": raw["targetFrameId"]}
+                                             if raw["targetFrameId"] is not None else {}),
                                           "modelId": current["modelId"], "backendId": current["backendId"],
                                           "llmCallCount": current["llmCallCount"]}}
             merged[output] = spec
         counts += write_unit_todos(unit, list(merged.values()), catalog=catalog)
     return {
         "state": "stamped", "stageId": current["stageId"], "imageCount": len(selected),
+        "targetFrameId": raw["targetFrameId"], "targetContext": raw["targetContext"],
+        "requestedFrameIds": raw["requestedFrameIds"], "supportFrameIds": raw["supportFrameIds"],
         "pendingTotal": counts, "message": "TODOs merged. The pooler was not started or retargeted.",
     }
 

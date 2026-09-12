@@ -24,7 +24,7 @@ test("all pickers use backend selection, not localStorage restoration or first-a
 test("history and shared synchronization never PUT or import", () => {
   const history = video.slice(video.indexOf("const restoreVisualSequenceFromHistory"), video.indexOf("// ---- intake"));
   assert.doesNotMatch(history, /\.select\(|importArcRecording\(/);
-  const sync = video.slice(video.indexOf("if (!imageSetsLoaded || !selectedImageSet)"), video.indexOf("// Prefetch the per-tier"));
+  const sync = video.slice(video.indexOf("// Activate the individually validated selected source"), video.indexOf("// Prefetch the per-tier"));
   assert.match(sync, /selectVisualSequence\(entry, "none"\)/);
   assert.doesNotMatch(sync, /\.select\(|importArcRecording\(|seedTodos|cmd: "run"/);
   assert.doesNotMatch(video, /void importArcRecording\(selectedRecording, "none"\)/);

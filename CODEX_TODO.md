@@ -148,6 +148,451 @@ No automatic ingestion of documentary roles into recognition classes/rules.
 
 ## Current recovery state
 
+### Executable tests and Visual Sequences page (2026-09-12, fog case complete)
+
+**Current priority:** the user chose the fog-of-war/spotlight test as the first
+end-to-end case. The shared selection was explicitly changed, with revision
+checking, to `recordings/events_tests/spotlight_scene_train_a` (35 frames).
+No game or test execution was started by that selection. The first end-to-end
+fog case is now complete: current-frame versus native accumulated-known-scene
+display, causal frame/STM persistence, explicit stepping/autoplay and honest
+scoring. Broader mechanism/producer gaps below remain separate unfinished work.
+
+The user chose **prerecorded positions**, not arbitrary free directional play,
+then requested two variants using the same frames: movement and clicking.
+Created `spotlight_action_modes_move` and `spotlight_action_modes_click`, each
+with the exact same 35 RGBA images as `spotlight_scene_train_a`. The first has
+actual RIGHT/LEFT/DOWN receipts along the existing serpentine waypoint grid;
+the second has CLICK x/y receipts for the same positions. Frame zero has no
+input in either. Step means the next recorded push and resulting observation;
+backward frame inspection is not a physical LEFT action. The learner cannot
+infer the input interface from identical images.
+
+The additive `fog_action_tests.json` indexes `spotlight_action_modes`; its own
+online document is `documentation/spotlight_action_modes.md`. Both evaluator
+files share a visual fingerprint and explicitly deny independent visual-trial
+status. The paired copies must not inflate independent promotion support.
+Three focused regressions passed and 146 files were added without changing
+existing records. Backend registration now includes the fixed fog index and
+explicit spotlight observer/scoring mappings. Both 35-frame action variants
+passed isolated native runs with identical reconstructed pixels/fingerprints;
+these are not live acceptance. The public contrast policy rejects `learn:true`
+before writes and makes these duplicate visual traces ineligible for promotion.
+Current/next recorded inputs expose queued/executed status separately from
+outcome evidence. Published IDs are `spotlight_action_modes_move` and
+`spotlight_action_modes_click`; earlier shortened draft names were not published.
+
+Fog UI implementation is ready: the combined middle-board view has explicit
+native-STM confirmation, Start/Step/Stop/report controls, current/next recorded
+actions and coordinates, and separate current-observation versus native-memory
+display. It never synthesizes reconstruction from evaluator data. Integration
+uses the bound native-checkpoint endpoint
+`GET /workbench/recognition/recording-tests/runs/{id}/frames/{frameId}` with the
+actual workspace and Visual Sequence query parameters. Ordinary frozen observer
+results intentionally omit internal checkpoint state and are not a raster API.
+The frontend checks the returned run/source/checkpoint, coverage, write
+references and exact earlier read receipt before rendering `rememberedScene`.
+Missing or mismatched native output remains unavailable, never reconstructed
+from client history or substituted from grading. The service and native-image
+adapter were activated for the completed live scan described below.
+The UI covers both paired action IDs and preserves the distinction between
+timeline inspection and executing a recorded input. No live run was started
+while the implementation/version binding remained in flight.
+
+Later display/control refinements are implemented: the complete intrinsic
+viewport is fit with preserved aspect ratio and a visible border, and the real
+pixel dimensions are shown. Checkerboard is confined to that viewport, not the
+surrounding letterbox, for both source PNGs and native-memory canvases.
+Actual fog display reports 48x32 pixels and its full rectangle fits the board.
+Explicit Play/Pause/Replay frames and paced Play/Pause test controls are
+separate; native autoplay requires a confirmed, explicitly created run and
+awaits each revision-bound step. Both pause on hidden/suspended contexts,
+source changes, errors and completion. Documentation/boilerplate below the board
+was removed; only compact input/status information remains near controls.
+The right-hand Documentation panel retains the selected test's full content.
+
+Process/doer selectors now use the existing colored combobox. Scope groups are
+ordered Single frame, Single frame + STM, Two frames, Two frames + STM, based
+only on registered `inputContract.frameInputCount` and `usesSTM`. Unannotated
+stages remain explicitly scope-not-declared rather than inferred from their
+names. Deduction/induction/abduction result categories are separate tags.
+Four focused picker tests plus navigation coverage and TypeScript passed.
+
+The user requested explicit `VALIDATE_MUST_BE_KNOWN` on the native memory image
+to prevent answer leakage. Added the read-only
+`perception/native_memory_validation.py`: exact observed prefix, source hashes,
+fixed-camera RGBA visibility, known-black distinction, and full required-pixel
+coverage. It rejects invented known pixels even if their guessed values happen
+to be right, wrong values, future/foreign/missing evidence and contradictory
+static observations. It never fills memory, calls an observer or reads an
+evaluator/teacher image. Six focused regressions passed.
+
+The first actual native fog run, `bd868fd8-f282-4f06-a365-245d58e663bf`, completed
+frame 0 through the real registered native observer and persisted frame/STM
+memory: **58 known / 1,478 unknown pixels**. The new validation correctly failed
+full coverage without modifying memory. Its actual RGBA image and small proof
+report are preserved at
+`data\omega_vision\runtime\executions\recording-tests\bd868fd8-f282-4f06-a365-245d58e663bf\validation\frame-000000.png`
+and `.json`. Frame 1 was safely rejected as stale because an implementation
+file changed during active helper work. Do not weaken that guard, reuse the
+stale run as a fresh execution, or use it as proof of full fog completion.
+
+**Final current-version live case:** `e37131be-414e-41b4-ba67-ba09005a3125`, revision 71,
+processed all 35 frames of `spotlight_scene_train_a` and scored `passed` for the
+selected clip. In the authorized diagnostic window, the unchecked native-memory
+confirmation was explicitly checked, Start created the run, and Step observed
+frame 0. The actual memory image showed 58 known / 1,478 unknown and the explicit
+assertion failed as incomplete. Native Play then advanced the rest of the scan
+sequentially while the window was genuinely visible and stopped at completion.
+The final native image contained 1,536 known / 0 unknown pixels and the explicit
+assertion passed as complete and justified. A historical frame-0 assertion after
+completion still failed at 58 / 1,478; run revision and native frame/STM file
+hashes were unchanged by that assertion. No game, learning, LTM promotion, saved
+memory-preference change or source-selection change was needed.
+
+The earlier completed run `5c49a382-773e-461d-a131-a042bad26521` was subsequently
+marked stale when the final FIRST_PASS registry metadata changed implementation
+hashes. It remains preserved as historical output. The final run above was
+created after the last backend activation and after all backend helpers became
+idle; both initial and final assertions report `currentImplementationMatches:true`.
+Its final validation proof ID is
+`e62c44a31fec41d88f19770ec5bdc16176dec20f4e655c6b8eef971349c9985c`.
+The service's final active instance is `6e7f474b274f446dad39533c4bad2036`.
+
+The UI calls the separate read-only
+`POST /workbench/recognition/recording-tests/runs/{id}/frames/{frameId}/validate`
+with `workspaceId`, `visualSequenceId`, `action:"VALIDATE_MUST_BE_KNOWN"`,
+`expectedRevision`, `expectedSourceHash` and `expectedNativeCheckpointUid`.
+It never sends pixels, gold images or a simulated input. Outcome, not `complete`
+alone, controls the displayed result. Failed invalid/unsupported claims are not
+repaired. Assertions are browser-held results, not saved server payload/audit
+copies; source/checkpoint/prefix and validator hashes remain in the proof.
+
+Historical image/assertion reads now name the frozen producing implementation
+and explicitly do not establish execution eligibility. Old v1 missing read
+receipts are marked unavailable, not synthesized. The UI displays a historical
+warning and withholds Step/Play when producer mismatch is reported; backend
+Step continues to reject stale runs. The old v1 baseline above stays preserved.
+
+Desktop/narrow captures are `fog-native-complete-desktop.png` and
+`fog-native-complete-narrow.png` in session artifacts. Both actual 48x32
+rectangles fit their viewports; documentation remains in the right panel on the
+desktop layout. Hidden-page autoplay was also observed refusing to advance.
+Foregrounding only the authorized Chrome window made it genuinely visible;
+no visibility override was used. These results do not claim a full-family pass
+or live acceptance of the two action-contrast variants.
+
+Recognition rows now have a registry-backed colored picker and explicit
+Plan / Confirm & call / status / Stop controls. They pass only the actual
+`unitId` as `frameId`, never a display ID, index, `moves`, or a sequence-wide
+`firstN`. Missing unit identities disable execution. Both requests bind the same
+source/frame/stage and flush preprocessing first; source changes discard stale
+plans and interrupted calls are not retried automatically. LLM stages retain
+their existing rich confirmation flow. The helper reported 33 focused frontend
+checks and a build; parent native-image/playback coverage passed separately.
+This row UI is code-ready, not yet live-accepted. Opening its picker explicitly
+discovers `semantic/execution/read` eligibility and intersects those actual stage
+IDs with the registry; mount does not discover or execute. FIRST_PASS stages
+declare their real single-frame/no-STM scope but are not yet permitted confirmed
+row roots, so they are disabled with an explicit reason. The seven new parent
+and resolver roots are eligible. No fallback or authorization expansion was added.
+
+Final focused coverage: 30 Python fog/validation/action-fixture regressions,
+133 frontend sequence/picker/row/fog/navigation regressions, and the active
+frontend build passed. Existing warnings were retained. The scoped local-main
+commit excludes tracked runtime/preferences/selection data and the three
+unregistered composition/visibility leaf files; no push or PR is authorized.
+Broader actor-binding, accepted composition criteria, domain-specific scoring,
+explicit STM-to-LTM transfer and learned simulation remain unfinished.
+
+The user explicitly authorized the seven remaining implementation tasks:
+executable/scored tests, real frame/STM integration, causal fixture corrections,
+missing detectors/representations, controlled induction with explicit promotion,
+competing hidden-motion explanations, and a scoped local-main commit.
+Do not treat those tasks as completed merely because the input recordings exist.
+The separately deferred LS20 duplication cleanup is not resumed.
+
+Subsequent user clarifications define the active UI scope:
+
+- `view=arc3Play` must list **all shared Visual Sequences** under Recordings,
+  independent of game availability or a loaded game. The old list waited behind
+  a savepoint scan and silently retained zero on errors.
+- **Load** means read-only frame-by-frame playback; it must not try to create an
+  `events_tests` ARC engine instance. Actual game replay/resume remain separate
+  explicit capabilities. An existing live session is not destroyed to view data.
+- Game Player, Test/Demo and Sprite View are peers of **Inputs and Extractions**
+  in the per-sequence tab row shown in the user's screenshot. They are not a new
+  top-level page-tab row. A provisional top-level change was removed.
+- Split intake from consumption: Video Import creates Visual Sequences;
+  a dedicated **Visual Sequences** page selects a sequence and exposes the
+  peer views. Reuse the current rich extraction/recognition editors, preserve
+  old links, selected identity and unrelated URL/editor state.
+- The Game Player implementation now uses the shared catalog independently,
+  explicit loading/errors, a bounded paged image player and no automatic game
+  actions. Actual `arc3_random_player` acceptance showed Recordings (807), loaded
+  and advanced the selected `rotated` recording, and confirmed no game sessions.
+  Native browser fetch needed a receiver-safe wrapper; its regression is covered.
+  Explicitly read-only legacy catalog entries remain browsable, not writable.
+- The dedicated `view=visualSequences` route is implemented, reusing the rich
+  editor with its source selection and old-link compatibility. The user's final
+  tab order is **Inputs, Extractions, Demo/Test, Game Player, Sprite View**.
+  Demo/Test content is scoped to the selected sequence. Its controls are hidden
+  until **Add controls** is clicked; hiding/showing controls does not start work.
+  Standalone Sanity Tests retains its existing default controls.
+- Actual browser acceptance verified the dedicated page, peer order, source
+  preservation, scoped `rotated` docs, and Add/Hide controls. The 52 frontend
+  player/navigation regressions and build passed before the final opt-in
+  adjustment; 27 targeted tests and TypeScript passed after it. Screenshots are
+  `arc3-all-sequences-player.png` and `visual-sequences-peer-tabs.png` in the
+  session artifacts. Only the separately authorized temporary browser navigated.
+- Review found and fixed two UI integration issues: entering the stored-frame
+  view now synchronously invalidates pending live-replay intent and guards the
+  timer/step path, so hidden live controls cannot leave automatic game actions
+  running. The sequence-scoped Demo/Test Sprite action now stays on the dedicated
+  `visualSequences` surface at `nav=sprites`; standalone legacy navigation remains
+  compatible. All 38 focused regressions and TypeScript passed after these fixes.
+- The user's later refinement supersedes the five-tab arrangement above:
+  **combine Game Player with Demo/Test**, using the ARC3 Player's **middle board
+  area**, not its B1/B2 and recordings side panels. Demo/Test remains immediately
+  after Extractions and supports stepping without a game. Its controls remain
+  opt-in through Add controls. Old `nav=game-player` must stay a compatible alias.
+  Put the selected test's documentation in the **existing right-hand
+  Documentation panel**, not a new peer Docs tab. This final combined-view
+  refinement and the first fog execution are being completed by the UI/backend
+  owners; do not claim the earlier standalone layout is the final requested UI.
+
+#### Catalog HTTP 500 and independent selected-source recovery
+
+The user supplied a screenshot of catalog HTTP 500 blocking even selected
+`rotated`. Cold discovery profiling took about 37 seconds, exceeding the old
+shared writer lock's 30-second wait. Catalog metadata now avoids per-frame
+provenance scans where recording order is already established, computes
+writability once per entry, permits fresh atomic reads without waiting behind
+an explicit rebuild, and uses a bounded catalog-build wait with an explicit
+retryable 503 rather than an unexplained 500 if busy.
+
+Added read-only `visual-sequences/resolve` for one exact authorized source. It
+rejects unsafe, redirected, retired, missing or unregistered sources and never
+depends on the full catalog. Frontend selected-source validation and activation
+are now independent of catalog success; no fallback source is invented, and
+source retry/error is separate from list retry/error. Twenty-five Python and
+fourteen frontend regressions and a build passed. Activated through the existing
+supervisor after no active games/demos: the then-selected `push_chain_train_a`
+resolved 16 frames in 0.084 seconds while a forced complete scan returned all 807
+entries in 35.945 seconds. Vite and selection were preserved during activation.
+
+Added nine non-destructive causal-history recordings under `events_tests`,
+indexed separately by `causal_event_tests.json`: measured-motion warm-ups for
+move/co_move, later collision/group-formation decision times, observable
+prehistory for dissolution/member changes, and confirmed follow/carry episodes.
+They have 44 frames and their own online docs/evaluator expectations. The three
+focused fixture regressions passed; the 116 files were published additively.
+Original shorter recordings/oracles remain unchanged. Grouping baselines still
+require independent detector evidence; the added annotations cannot approve a
+group or turn a prediction into a fact.
+
+File ownership while implementation is active: `recording-tests-backend` owns
+scored execution API/native runner and consumer integration; `causal-event-detectors`
+owns the temporal/event core and Prolog detector module; `arc-sequence-player`
+owns the dedicated sequence route/profile adaptation and its player component.
+The coordinator alone owns shared Git staging/commit and service activation.
+No final commit for these seven tasks has been made yet.
+
+#### Confirmed first-pass and reasoning-stage contracts
+
+The user confirmed a per-frame first pass followed by parent stage
+`two_frame_x_duction`, with **separate deduction, induction and abduction
+implementations**. They explicitly requested that it be callable on a Recognition
+row, not merely described in documentation or offered only as a whole-sequence
+toolbar command. Calls bind the row's actual execution unit and its validated
+predecessor. Frame zero has no predecessor; no duplicate/self pair is invented.
+Existing leaf stage identities and persisted histories must remain compatible.
+
+The user also confirmed these four "look at" configurations as **separate stages**:
+
+| Exact requested stage | Allowed evidence |
+|---|---|
+| `resolve_objects_via_one_frame_and_stm` | Here + eligible earlier recording-level STM |
+| `resolve_objects_via_two_frames_and_stm` | Here + immediate predecessor + eligible earlier recording-level STM |
+| `resolve_objects_via_two_frames` | Here + immediate predecessor only |
+| `resolve_objects_via_one_frame` | Here only |
+
+Evidence scope and reasoning method are independent axes. Non-STM stages must
+not silently consume older history through a cumulative checkpoint. STM-enabled
+stages enforce frame/publication cutoffs and preserve source identity; selecting
+a stage does not rewrite Save To/Look In. Object correspondence can compare
+overlapping/shared Shapes, Groups and part structure after alignment, but shared
+appearance is evidence of similarity rather than proof of the same Object.
+Keep identical-looking instances distinct and hidden parts hypothetical.
+
+Upward level STM -> LTM publication requires a **separate explicit call** with
+selected source, destination and records/rules. Never run it automatically after
+a frame, level change, induction pass or look-at stage. Preserve STM/history and
+provenance; do not silently add LTM to the four evidence configurations. This
+architectural decision did not authorize an actual transfer of live memory.
+
+#### Later learned-simulation direction
+
+The user described an eventual Demo/Test mode that generates controls and can
+make inferred objects move: an executable learned world model, not only recorded
+playback. This is future work, not permission to run arbitrary generated code
+or treat it as already implemented. Generating/running it must be explicit.
+Recorded frames remain immutable evidence; generated trajectories/frames remain
+predictions and cannot become independent confirmation or training labels for
+the rules that produced them.
+
+### Additional visual-memory scenarios (2026-09-12, delivered)
+
+The user requested these additions as ordinary recordings with their own online
+Sanity Tests documentation, continuing the same `events_tests` layout:
+
+| Test family | Accepted behavior and evidence boundary |
+|---|---|
+| `color_band_cycle` | Clicking anywhere on the colored target advances through the visibly ordered side band. The user explicitly selected wrapping from the last color to the first. Vary click positions and palette order; outside/side-band clicks are controls. Predict from visible pixels and earlier observed transitions, not a hidden palette/index or an oracle's next-color answer. |
+| `spotlight_scene` | A moving spotlight exposes pieces of a static scene. Accumulate observed pixels until coverage is complete; retain earlier observations after the light moves away. Unseen areas stay unknown, including distinguishing unknown from genuinely observed black. Partial scans/revisits must not claim full reconstruction. |
+| `occlusion_pole` | A moving asymmetric object passes behind a slender vertical pole, including exactly four consecutive completely hidden frames, partial entry/exit, and reappearance consistent with its observed speed. Remembered/predicted hidden positions are not observed pixels. |
+| `occlusion_large_object` | The same kind of temporal identity test behind an occluder substantially larger than the actor, again with an exactly four-frame fully hidden interval justified by the measured speed and geometry. |
+| `teleporter` | Use distinctive paired line gates. Include a two-phase contrast: normal four-frame occlusion fitting remembered speed, followed by a remote/too-fast reappearance that violates that constant-speed expectation. Retain unseen acceleration/fast travel and teleportation as alternatives; visible lines and learned portal associations support the latter but do not prove it from one jump. Include no-entry/decorative-line controls. |
+| `stairs_gravity` | An object descends stairs whose treads vary between two and three cells, with right-arrow input only. Gravity acts when support is lost; no down command or fixed click-count trajectory. End at a visible right-hand barrier, then record at least three further RIGHT attempts without movement. Distinguish blocked-right from a no-input pause using prior action response, visible obstruction and current evidence. |
+
+The six recording families and their individual online documents are published.
+New fixtures use additive
+`visual_memory_tests.json` and `action_mechanism_tests.json` catalog supplements;
+the original `tests.json`, previously delivered recordings and documentation are
+not rewritten. The reader now aggregates only those three explicitly registered
+index filenames, validates duplicate IDs/references across them, and rejects
+corrupt or redirected supplements instead of silently falling back. Twelve
+focused catalog/shared-read regressions passed.
+
+The active test index now exposes 60 documented tests and 168 recording links.
+These six additions account for 32 current clips / 778 frames: color band 6/70,
+spotlight 6/154, pole occlusion 4/64, large-object occlusion 4/48, teleporter
+6/236 and stairs/gravity 6/206. Six earlier outline-portal recordings remain
+preserved and loadable as history; current test references use the striped
+`_lines_v2` recordings. Prior portal index/doc versions were archived before
+the explicitly requested refinements. Existing recording inputs were not
+renamed, migrated or overwritten.
+
+Executable constrained baselines are `ColorBandMemory` (pixel-derived band and
+target, frozen before-click predictions, observed step evidence),
+`SpotlightMemory` (observation-only RGBA accumulation, including known black),
+and `PortalAssociationMemory` (conditional destinations from earlier witnessed
+gate associations). They are not full Workbench semantic-stage integration or
+automatic test passes. Execution status remains `not_run`; no memory/rule
+promotion or tracker-lifetime/access weakening is implied.
+
+The sequential contrast is
+`teleporter_train_delayed_lines_v2`: phase 1 hides the actor completely at
+frames 7-10 and matches the prior +8 px/s; phase 2 reappears at frame 23 with
++43 px displacement versus +10 px expected. The first supported conclusion is
+constant-speed model mismatch; unseen acceleration/fast travel and teleportation
+remain competing explanations. The per-test doc and evaluator-only
+`observer_assessment.json` make the decision-time boundary explicit.
+`stairs_gravity_train_a` ends with identical visible frames 37-40 but actual
+RIGHT attempts at 38-40, with the barrier and ground support still visible.
+The no-input pause/fall control is explicitly different evidence.
+
+All 71 combined visual-memory/mechanism/catalog regressions passed; independent
+focused review found no significant issues. Activated the additive catalog
+through the existing API supervisor with no active games/demo playback; Vite
+remained running. Actual `arc3_random_player` frontend API parsers loaded all six
+documents, 32 current clips and 778 frames, and representative frame PNGs were
+served through the normal asset route. The user's then-current
+`recordings/events_tests/push_inertial_test_control_a` selection was preserved.
+No user browser navigation or Workbench recognition/learning job was started.
+
+### Per-test online documentation and recordings (2026-09-12)
+
+The user clarified that the memory plan belongs in each test's online
+documentation and that pressure-plate/pushing tests need actual recordings.
+They explicitly chose individual entries on Sanity Tests with documentation
+and recording controls, rather than a standalone plan or Help-only integration.
+
+- Added a file-backed Recording-based tests section to the active Sanity Tests
+  page, preserving the existing demo cards and run controls. Each test expands
+  to its own rich Markdown documentation, recording choices, real frame preview,
+  previous/next/scrubber controls, and explicit Load recording in Sprite View.
+  Search and group filters cover Events, Pressure plates and Pushing.
+- Published 54 test entries: 38 original event tests plus eight pressure-plate
+  and eight pushing families. There are 136 recordings / 2,216 frames, including
+  98 new induction clips with independently varied training, controls,
+  validation and final-test examples. The original 321 fixture files remain
+  unchanged. All recording inputs remain under
+  `data\omega_vision\recordings\events_tests`; documents are real saved files in
+  its `documentation` directory and `tests.json` indexes the test entries.
+- Added read-only `/workbench/recognition/recording-tests` list/detail routes.
+  They validate workspace context without partitioning data, enforce fixed
+  shared-root resources and numbered recording paths, and report unavailable or
+  corrupt inputs. They never run a detector, learner or generator on GET.
+- The new test entries remain **Not run**, not automatically passed. Opening
+  docs, switching a test's preview recording and stepping frames do not change
+  shared selection or execute recognition/training. Loading explicitly uses
+  the existing revisioned shared selection and canonical Sprite View routing.
+  The new input fixtures do not implement the remaining domain detectors or
+  prove learned-rule accuracy.
+- Backend focused coverage passed 79 cases and 28 documentation-refinement
+  checks; frontend coverage passed 36 cases, with 14 rerun after the final
+  cached-catalog load adjustment, and the active frontend build completed.
+  Independent generator review found no significant issues.
+- Activated the API through the existing supervisor after confirming no active
+  game sessions or demo playback; Vite remained running. Live APIs resolve all
+  54 online documents and 136 recording references. The user's then-current
+  shared source, `recordings/events_tests/color_changed`, was preserved.
+- User authorized a separate temporary Chrome window. Actual
+  `workspace=arc3_random_player` acceptance exercised pressure-plate docs,
+  training/control recording selection, pushing frames, search, narrow/desktop
+  scrolling and the Load recording control. The load used the already-selected
+  `color_changed` source to avoid replacing the user's selection; only the
+  temporary tab navigated to Sprite View. No test run or training was started.
+  The existing Sprite View initialization issued its ordinary memory-setup and
+  page-state requests; those are not a claim of zero application writes.
+- Acceptance found and corrected an inaccurate generated paragraph describing
+  positive induction clips as no-intervention controls. The generator now gives
+  variant-specific descriptions tied to actual trace activity. Corrected 16
+  induction Markdown documents and 98 `evaluation.json` descriptions only,
+  after verifying all 4,760 generated baseline files. The exact 114 previous
+  versions are preserved at
+  `data\omega_vision\runtime\documentation-repairs\20260912-clip-descriptions-v1`.
+  Other 4,646 files, including images/states/manifests and the original 38
+  examples, retained their bytes and timestamps. All 39 repair-focused tests
+  passed; ordinary generation remained idempotent with zero new files.
+- The real frontend API parsers loaded all 54 documents, 136 recordings and
+  2,216 frames from the running API. The corrected online plate documentation
+  distinguishes positive occupation/release trials from no-occupation controls.
+  Screenshots are retained in the session artifacts as
+  `recording-tests-plate-desktop.png` and `recording-tests-push-narrow.png`.
+  This completes the documentation/recording delivery, not implementation or
+  successful execution of the remaining induction/detection mechanisms.
+
+### Local-memory detection and induction plan (2026-09-12)
+
+The user requested a plan for how each miniature recording uses local memory to
+detect its event, plus pressure-plate and pushing-object induction tests.
+Saved the plan in
+[Event recordings: local-memory detection and induction](docs/design/EVENT_TEST_RECORDINGS_LOCAL_MEMORY_PLAN.md).
+
+The document covers all 38 existing cases individually, their necessary
+predecessor/window/episode memory, event timing, ambiguity and implementation
+gaps. It identifies insufficient initial motion history, delayed collision/carry/
+following evidence, oracle-only attempted inputs, and pending grouping/lineage
+contracts rather than pretending the fixture labels are working detections.
+Existing recordings and expected files are preserved; proposed corrections are
+versioned additions, not automatic replacements.
+
+It also specifies eight pressure-plate and eight pushing induction scenario
+families, including momentary/latching/toggle/delayed plates, causal controls,
+free/directional/blocked/chain pushing and pushing a crate onto a plate.
+Training, independent validation, frozen final tests, signed negative evidence,
+explicit approval, later recording-local STM reuse and separate abduction are
+planned. New domain predicates/measurements and stronger mechanism-learning
+capabilities are explicitly identified as work, not assumed available.
+
+This checkpoint is documentation only: no new induction recordings, detectors,
+memory payloads, learned rules or preferences were created by the planning task.
+The immediately preceding user-authorized API restart completed through the
+existing supervisor; Vite remained running and all 38 event recordings remained
+available. No further service restart or browser navigation was performed.
+
 ### Miniature event recordings (2026-09-12)
 
 Created the user's requested loadable examples at
