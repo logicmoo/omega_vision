@@ -1,0 +1,23 @@
+.recording-execution { min-width: 0; margin-block: 12px; padding-block: 10px; border-block: 1px solid var(--line, #384354); }
+.recording-execution h4 { margin: 0 0 8px; font-size: 14px; }
+.recording-execution p { margin-block: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+.recording-execution code { overflow-wrap: anywhere; font-size: .92em; }
+.recording-execution-controls,
+.recording-execution-status,
+.recording-execution-history { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-block: 10px; }
+.recording-execution-confirm { display: flex; align-items: start; gap: 8px; line-height: 1.5; }
+.recording-execution-confirm input { flex-shrink: 0; margin-top: 4px; }
+.recording-execution button { padding: 5px 9px; cursor: pointer; }
+.recording-execution button:disabled { cursor: not-allowed; }
+.recording-execution button:focus-visible,
+.recording-execution input:focus-visible,
+.recording-execution select:focus-visible,
+.recording-execution summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.recording-execution-history label { display: grid; gap: 6px; min-width: 0; max-width: 100%; }
+.recording-execution select { max-width: 100%; min-width: 0; }
+.recording-execution-note { color: var(--muted, #b4becb); font-size: 12px; }
+.recording-execution [role="alert"] { color: var(--error, #ff8b81); overflow-wrap: anywhere; }
+.recording-execution summary { cursor: pointer; padding-block: 5px; }
+.recording-execution-evidence { max-height: 360px; overflow: auto; margin-block: 10px; }
+.recording-execution-evidence details { margin: 4px 0 4px 12px; }
+.recording-execution pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; font-size: 12px; }

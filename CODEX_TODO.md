@@ -148,6 +148,129 @@ No automatic ingestion of documentary roles into recognition classes/rules.
 
 ## Current recovery state
 
+### TODO follow-through accepted batch (2026-09-12)
+
+The user asked to take care of this ledger's remaining work. Continue in the
+existing local `main` checkout. The completed recording/fog slice is committed
+as `9a5044512`; the older statement below that no commit existed is historical.
+Do not resume the separately paused ARC vocabulary research or deferred LS20
+duplication cleanup, and do not publish live STM into LTM merely to demonstrate
+the new command.
+
+Completed file-scoped implementation in this batch:
+
+- Coordinator: enabled the four already registered, single-frame FIRST_PASS
+  stages through the confirmed row plan/commit route. The implementation uses
+  exact stage IDs, not broad runner-module authorization. Recording-backed
+  calls discover frame identity/order without reading other observation payloads;
+  legacy provenance-ordered sources keep their existing ordering behavior.
+  The first-pass/parent/resolver batch passed 77 cases. Final focused first-pass
+  coverage passed 18 cases, including rejection of injected cross-frame or
+  non-first-pass dependencies before runtime memory lookup. Service activation
+  and live row-plan acceptance are complete.
+- `recording-tests-backend`: explicit typed STM-to-LTM discovery, revision-bound
+  planning and confirmed publication. Source/history and causal provenance stay
+  intact, Nowhere is not a persistent publication source, and the four look-at
+  contracts gain no implicit LTM reads. No live publication is authorized.
+- `causal-event-detectors`: grounded hidden-motion/occlusion observer and scoring
+  integration. Normal reappearance versus constant-speed mismatch must retain
+  fast-unseen-travel/acceleration and teleport hypotheses as alternatives.
+  Evaluator labels, hidden positions and claimed actor roles are not observations.
+  The three preserved composition/visibility leaf files remain unregistered.
+- The four Super Control / Resource Source editor tasks are implemented and
+  browser-accepted below. `arc-sequence-player` also completed the explicitly
+  opened STM-to-LTM publication UI and its small memory-host integration,
+  against the typed backend contract. No live publication is authorized.
+
+Helpers report only to the coordinator, not to each other. The coordinator owns
+all Git, ledger and service activation. Finish the atomic implementations before
+one coordinated activation; do not repeat live runs while source hashes change.
+Remaining unsupported producer/causal claims must remain explicit rather than
+being checked off because fixtures or isolated leaf tests exist.
+
+The user resolved the plugin-reload policy: keep restarts explicit. The current
+announced launcher already uses the explicit restart supervisor with
+`uvicorn.run(..., reload=False)`, so no new watcher or automatic restart was
+introduced. Documentation and the older unchecked follow-up are reconciled.
+
+The first-pass row work is now accepted against the actual shared fog selection:
+all four roots produce read-only plans for actual frame `0`, one support frame
+and zero model calls. The browser's colored row picker selected OpenCV and showed
+the same initial-observation plan; no row execution or pooler retargeting was
+needed for this live check.
+
+Explicit publication is implemented at `/workbench/memory/publications` with
+`options`, `plan`, and `commit`, plus the memory-host panel. Only native Shapes,
+Objects and already-approved deduction-rule references have typed publication
+support. Plans bind source/destination revisions, selected immutable entry IDs,
+cutoff, approval and implementation. Commit appends one atomic native batch,
+preserves STM/history and adds no evidence, confidence or automatic activation.
+Physical version addresses remain destination-specific; logical identities and
+original references are retained. Unsupported observation/hypothesis/group
+publication and cross-recording inference eligibility remain explicit.
+Actual browser options used `arc3_random_player` and the unchanged shared source:
+no automatic request before opening, no publication, no LTM creation, and no
+selection/preference mutation. A second real workspace returned identical
+source identities. Isolated publication/hidden-model coverage passed 69 cases;
+66 focused publication/memory-host frontend cases passed.
+
+Generic selected-recording Start/Step/Stop/background-run/history/report controls
+are now wired into Sanity Tests and non-fog Demo/Test, not left as an unused
+render callback. Native confirmation gates new observation work; Stop never
+requires renewed consent to write more memory or a successful status refresh.
+Reading history does not execute, learn or promote. The existing pole run loaded
+read-only in the browser with honest historical status and conditional-evidence
+labels after source revisions changed. Specialized fog controls remain separate.
+
+Hidden-motion acceptance revealed two blockers, now corrected.
+Run `01213007-62f6-4bf5-885f-5fa2ece00167` finished 16 pole
+frames under the initial grader. Run `7b4cb42e-bc31-44ef-a329-61b77c43b1b8` stopped
+at 30/44 frames when Windows denied atomic replacement of the memory-catalog
+dirty marker. Its partial history remains intact. The cache fix now serializes
+writers per shared store and retries only replace-time WinError 5/32/33 within
+10 attempts; persistent errors still surface and unsafe paths remain rejected.
+It passed 100 focused cases including the prior 53 publication regressions;
+the coordinator also reran all 36 Windows cache cases successfully.
+
+Independent review also found that the initial hidden-motion grader trusted
+self-reported hidden-pixel counts and did not check projected coordinates or
+evaluator hash/time alignment. The corrections independently check claimed
+pixels, recompute projections from bound earlier observations/times, and verify
+evaluator identity/order/hash/time against the frozen receipts and actual PNGs.
+The owner reported 97 passing cases; independent re-review reproduced rejection
+of the fabricated hidden pixels, `[999,999]` projections, substituted evaluator
+hashes and shifted timestamps, with the normal baseline still passing.
+No further high-confidence issue was found in that correction.
+Fresh live runs followed final activation of instance
+`3baf08ac5a804d0683c636f968875508`:
+
+- `d58b64c0-d8d2-4374-9df3-cf72ef61a341`: 16/16 pole-occlusion frames, completed
+  and passed at revision 33.
+- `ba131823-3167-4f01-8dab-c4d30fb2bbcc`: 44/44 delayed portal-contrast frames,
+  completed and passed at revision 89; 230 conditional-model/visibility checks.
+  Frame 13 is constant-speed-consistent. Frame 23 observes displacement `[43,0]`
+  against `[10,0]` projected from earlier evidence and reports model mismatch.
+  Unseen acceleration/fast motion, teleportation, and identity mismatch/another
+  unobserved cause remain three unresolved, non-authoritative alternatives.
+  Physical cause, identity across the gap, and the hidden path are not established.
+- `a1b8c410-eff4-4f05-a197-cf92104f3b97`: the actual generic UI created a step
+  cursor, processed frame 0, then stopped at 1/16 after native-memory consent
+  was unchecked. Stop succeeded without renewed permission to observe.
+
+The fresh jobs ran concurrently under the corrected shared Windows writer.
+The generic UI loaded the completed pole run and its actual frozen report.
+Shared selection remained unchanged and no LTM publication was performed.
+Earlier partial/error runs and historical grades are retained, not repaired or
+relabeled as current. Screenshots are retained in session artifacts.
+
+This batch does not finish every historical TODO. Independent actor-binding and
+accepted composition producers, remaining plate/push/stairs mechanism scoring,
+domain-specific induction/acceptance contracts, cross-recording LTM ordering,
+learned simulation, and specialization-priority policies remain open. Paused ARC
+vocabulary work and deferred recording cleanup remain paused. Only reviewed
+source/docs/tests belong in the local-main commit; runtime data and the three
+unregistered composition/visibility files stay untouched.
+
 ### Executable tests and Visual Sequences page (2026-09-12, fog case complete)
 
 **Current priority:** the user chose the fog-of-war/spotlight test as the first
@@ -2991,11 +3114,12 @@ implementation resumption was requested by this planning handoff.
   to end: configure page opened from the Plugins card, initialization checks,
   target probe, and a save that persisted to `plugin.json` and re-rendered.
 
-- [ ] Known follow-up: the API dev server reloads only on `python/workbench_api_server`
-  Python changes, so editing a plugin entrypoint under `plugins`
-  needs an API restart. Widening `reload_dirs` conflicts with the deliberate
-  guard in `tests/test_windows_dependency_bootstrap.py`; decide the intended
-  policy before changing it.
+- [x] Keep plugin Python restarts explicit, as selected by the user on
+  2026-09-12. The current native launcher uses the explicit restart supervisor
+  with `reload=False`, not the old directory watcher. Backend/plugin Python
+  edits require an intentional API restart; do not widen `reload_dirs` or
+  silently interrupt active work. The maintained guard is
+  `tests/workbench_api/test_windows_dependency_bootstrap.py::test_api_server_uses_explicit_batched_restarts`.
 
 - [x] Harden plugin discovery so every entry whose name begins with `hide_`
   (case-insensitive) is skipped before manifest parsing, and only directories
@@ -4513,7 +4637,7 @@ Preserve the user's canonical checkout and its `main` branch.
 - [x] Make embedded Super Control import and own the Models-style toolbar,
   editor-tab, source-border, scrollbar, and responsive CSS so hosts do not need
   to load component styling.
-- [ ] Implement the documented Super Control display contract: Tabs, Stacked,
+- [x] Implement the documented Super Control display contract: Tabs, Stacked,
   Single, SplitV, and SplitH, with independently selected panes where required.
   ALL must expose every registered content-backed tab; CTX must use the
   content-backed subset of the selector API result. Registered controls without
@@ -4527,13 +4651,13 @@ Preserve the user's canonical checkout and its `main` branch.
   through `ResourceSourceEditor`. Put the switcher in the Super Control header
   action slot currently occupied by the one-off Split view button; do not add a
   separate control row or absorb host-level document comparison.
-- [ ] Make parsed JSON identity displays consistently include the stable `id`
+- [x] Make parsed JSON identity displays consistently include the stable `id`
   plus available `kind`, `type`, `subkind`, or equivalent role metadata. A
   human label may supplement but must not hide resource identity, and parse
   failures must be explicit. For one JSON object, derive the Super Control
   header as `KIND - Label (id)`, omit `(id)` when it equals the label, and use
   `KIND - id` when no separate label exists.
-- [ ] Make `ResourceSourceEditor` choose a CodeMirror syntax mode from the source
+- [x] Make `ResourceSourceEditor` choose a CodeMirror syntax mode from the source
   format, resource metadata, and filename extension. Normal source views remain
   editable; explicitly resolved/inherited views remain read-only. MeTTa must use
   a Lisp- or Clojure-compatible lexer when no dedicated MeTTa lexer is present.
@@ -4543,11 +4667,27 @@ Preserve the user's canonical checkout and its `main` branch.
   opened source through file-type detection using content, path/extension,
   shebang markers, and resource metadata, then load the best CodeMirror language
   extension; use plain text only when no language is confidently identified.
-- [ ] Base the JSON Tree presentation on CodeMirror's parsed JSON structure and
+- [x] Base the JSON Tree presentation on CodeMirror's parsed JSON structure and
   folding state. Give every object/array node a clickable expand/collapse
   disclosure and add persistent overlaid Expand/Collapse controls for the whole
   tree and selected branch. Tree, JSON, and MeTTa views must remain synchronized
   and folding must never mutate source.
+
+  Accepted on 2026-09-12 in the authorized separate browser using
+  `workspace=arc3_random_player`: an invalid JSON draft survived Tabs, Stacked,
+  Single, SplitV and SplitH with Save disabled; ALL/CTX retained actual
+  content-backed tabs. Native MeTTa used the Clojure lexer, JSON used JSON,
+  and tree disclosure/fold state round-tripped through the real CodeMirror
+  editor without changing document bytes. A uniquely named temporary Operation
+  was edited, saved through Super Control, reloaded clean, and then deleted;
+  the original shared Echo Operation retained its exact hash.
+  Narrow acceptance found clipped source-format buttons and unreadable split
+  widths. Headers/format controls now wrap, identity remains visible, and
+  SplitV/SplitH retain their chosen orientation with usable minimum pane sizes
+  and internal scrolling. The final focused batch passed 40 Node and 34 Python
+  UI-contract cases. Screenshots `super-control-todo-desktop.png` and
+  `super-control-todo-narrow.png` are in session artifacts. No operation/model
+  execution or original-resource save was used for this acceptance.
 
 ## Recovery note (preprocessing option-a refinement, in progress)
 - Committed + unpushed on local main (origin/main..HEAD): 60be96cc2 A, c74ea6150 B, e4003b75d C, 4b8153c2a D, 9fb772823 E, 73335fc53 C-recording-key, 126b89595 + 84031c75b process-viewer hot-loop fix (psutil + single-flight cache).

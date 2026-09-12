@@ -231,3 +231,55 @@ class MeTTaMemoryDatabase:
                 with self._safe(self.path).open("x", encoding="utf-8") as stream:
                     stream.flush()
                     os.fsync(stream.fileno())
+
+    def append_batch(self, values: list[Mapping[str, Any]], *, _locked: bool = False) -> list[dict[str, Any]]:
+        """Publish one preflighted batch atomically, preserving the existing text."""
+        prepared = []
+        for value in values:
+            document = json_copy({**value, "schemaVersion": 1, "databaseRole": self.role})
+            document.pop("entryUid", None)
+            document["entryUid"] = content_hash(document)
+            serialized = _metta(document) + "\n"
+            if metta_document_to_json(serialized) != document:
+                raise ValueError("Memory value is not losslessly representable by the MeTTa codec")
+            prepared.append((document, serialized))
+        with (nullcontext() if _locked else self.transaction()):
+            text, records = self._read()
+            by_uid = {entry["entryUid"]: entry for entry in records}
+            by_record = {entry["record"]["recordUid"]: entry for entry in records
+                         if entry.get("entryType") == "memory_version"}
+            result, additions = [], []
+            for document, serialized in prepared:
+                existing = by_uid.get(document["entryUid"])
+                record_uid = document.get("record", {}).get("recordUid")
+                if existing is None and record_uid in by_record:
+                    existing = by_record[record_uid]
+                    if existing != document:
+                        raise ValueError("Conflicting native memory record identity; no merge or overwrite")
+                if existing is not None:
+                    result.append(existing)
+                    continue
+                result.append(document)
+                additions.append(serialized)
+                by_uid[document["entryUid"]] = document
+                if record_uid:
+                    by_record[record_uid] = document
+            if not additions:
+                return result
+            original = self._safe(self.path).read_bytes() if self.path.is_file() else b""
+            temporary = self._safe(self.path.with_name(f".{self.path.name}.{uuid4().hex}.tmp"))
+            try:
+                with temporary.open("xb") as stream:
+                    stream.write(original)
+                    if original and not original.endswith(b"\n"):
+                        stream.write(b"\n")
+                    stream.write("".join(additions).encode("utf-8"))
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                self._safe(self.path)
+                self._safe(temporary)
+                with memory_catalog_mutation(self.root):
+                    os.replace(temporary, self.path)
+            finally:
+                temporary.unlink(missing_ok=True)
+            return result

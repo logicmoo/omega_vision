@@ -126,6 +126,11 @@
 .json-tree-fold-overlay button{border:1px solid #344d58;border-radius:3px;background:#11212a;color:#9fb3bc;padding:4px 7px;font:700 7px ui-monospace,monospace;cursor:pointer}
 .json-tree-fold-overlay button:hover{border-color:#4e6d78;background:#162a34;color:#d1dde2}
 .json-tree-fold-overlay button:disabled{opacity:.4;cursor:default}
+.json-tree-fold-overlay{position:sticky;top:0;right:auto;margin:0 0 8px auto;width:max-content;max-width:100%;flex-wrap:wrap}
+.json-tree-toolbar{flex-wrap:wrap;flex:0 0 auto}
+.json-tree-toolbar>div{min-width:0;flex-wrap:wrap}
+.json-tree-toolbar code{overflow-wrap:anywhere}
+.resource-source-readonly{flex:0 0 auto;padding:5px 10px;color:var(--muted);font:11px ui-monospace,monospace}
 
 
 /* Collapsing header contract: the page root is a scroller that only

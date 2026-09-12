@@ -8776,8 +8776,10 @@ def _direct_specs(root: Path) -> dict[str, dict[str, Any]]:
 
 
 def _execution_context_for_step(root, sequence_id, workspace_id, step):
-    from .recognition_object_resolution import execution_context, is_resolver
+    from .recognition_object_resolution import FIRST_PASS, execution_context, is_resolver
     if is_resolver(step):
+        return execution_context(root, sequence_id, workspace_id)
+    if step in FIRST_PASS and (_sequence_root_for(root, sequence_id) / "recording.json").is_file():
         return execution_context(root, sequence_id, workspace_id)
     return _sequence_execution_context(root, sequence_id, workspace_id)
 
@@ -8887,6 +8889,11 @@ def start_direct_call(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             selected_ids = [unit["id"] for unit in selected]
         if recognition_object_resolution.is_resolver(output):
             recognition_object_resolution.validate_plan(plan, units, output)
+        if output in recognition_object_resolution.FIRST_PASS:
+            if any(node.output not in recognition_object_resolution.FIRST_PASS
+                   or any(frame_id != node.frame_id for frame_id, _ in node.dependencies)
+                   for node in plan):
+                raise ValueError("FIRST_PASS dependencies must remain in the same frame and the verified first-pass stages.")
     except PermissionError as error:
         raise HTTPException(status_code=403, detail=str(error)) from error
     except FileNotFoundError as error:
@@ -9418,8 +9425,11 @@ def sequence_set_transform(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
 
 def _semantic_stage_ids() -> set[str]:
+    from .recognition_object_resolution import FIRST_PASS
+
     return {f"{transformation}/{doer}" for (transformation, doer), runner in _SEQUENCE_TRANSFORMS.items()
-            if getattr(runner, "__module__", "") in {
+            if (f"{transformation}/{doer}" in FIRST_PASS and callable(runner))
+            or getattr(runner, "__module__", "") in {
                 "omega_vision.services.video_import_semantics", "omega_vision.services.video_import_abduction",
                 "omega_vision.services.two_frame_x_duction",
                 "omega_vision.services.recognition_object_resolution",

@@ -72,6 +72,14 @@ receipts do not establish live acceptance of the current launch path; see
 
 ## Fast path for a fresh Windows machine
 
+### API and plugin reload policy
+
+The native API launcher uses its explicit restart supervisor with Uvicorn
+`reload=False`. Editing backend or plugin Python files does not automatically
+restart the API. Request an intentional API restart through the existing
+Workbench controls when ready; reloading only the browser does not reload Python
+modules. Keep plugin restarts explicit so file edits do not interrupt active work.
+
 ### 1. Enable long paths as Administrator
 
 Open **Command Prompt as Administrator** and run:

@@ -5,6 +5,7 @@ import { createMemoryPreferenceRequestGuard, NOWHERE } from "./MemorySetupModel"
 import { memoryRequest, NOWHERE_LIMITS_NOTICE, rotateMemorySession, useMemoryError, useMemoryRevision, useMemorySessionId } from "./MemorySession";
 import { ResourceSourceEditor } from "./ResourceSourceEditor";
 import { ShapeObjectInspectorBrowser } from "./ShapeObjectInspectorBrowser";
+import { NativeMemoryPublication } from "./NativeMemoryPublication";
 import type { InspectorAreasResponse, InspectorAreaReadResult } from "./ShapeObjectInspector.model";
 import { VisualSequenceSelector } from "@omega_vision_ui/components/VisualSequenceSelector";
 import { useSharedVisualSequenceSelection } from "@omega_vision_ui/components/useSharedVisualSequenceSelection";
@@ -287,6 +288,8 @@ function MemorySetupContext({ workspaceId, sequenceId, pageSequenceId, frameId, 
         Save copy to selected {record.memoryKind} destination
       </button>{recordError && <p role="alert">{recordError}</p>}</>}
     />}
+    <NativeMemoryPublication workspaceId={workspaceId} sequenceId={recordingContext?.sequenceId}
+      frameId={recordingContext?.selectedFrameId} active={active} />
     {active && sequenceReady && <details className="memory-setup" open={recordsOpen}
       onToggle={(event) => setRecordsOpen(event.currentTarget.open)}>
       <summary>Selected Shape / Object memory · records and history</summary>

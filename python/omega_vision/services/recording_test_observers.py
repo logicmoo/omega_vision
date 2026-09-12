@@ -15,6 +15,9 @@ from omega_vision.evaluation.action_mechanism_recordings import (
     ObservedActor, ObservedGate, PortalAssociationMemory, PortalEvidence, _portal_pixels,
 )
 from omega_vision.perception.observation_identity import content_hash
+from omega_vision.perception.hidden_motion_observer import (
+    HiddenMotionIntegrityError, observe_hidden_motion, validate_portal_history,
+)
 
 from .recording_test_memory import ObservationMemory, _BINDING
 
@@ -166,8 +169,37 @@ def _portal(frame: ObservationInput, prior: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _hidden_motion(frame: ObservationInput, prior: dict[str, Any]) -> dict[str, Any]:
+    source = {key: frame.source_ref[key] for key in ("frameId", "order", "imageHash", "stateHash")}
+    if frame.source_ref["receipt"]["atSeconds"] != frame.at_seconds:
+        raise HiddenMotionIntegrityError("Acquisition time disagrees with the verified source receipt")
+    result = observe_hidden_motion(
+        frame.png, at_seconds=frame.at_seconds, source=source,
+        previous_image_hash=content_hash(frame.previous_png) if frame.previous_png is not None else None,
+        prior=prior.get("hiddenMotion"),
+    )
+    return {**result, "state": {"hiddenMotion": result["state"]}}
+
+
+def _hidden_motion_portal(frame: ObservationInput, prior: dict[str, Any]) -> dict[str, Any]:
+    result = _hidden_motion(frame, prior)
+    validate_portal_history(prior)
+    try:
+        association = _portal(frame, prior)
+    except ValueError as error:
+        # The old association reader deliberately rejects ambiguous full actors.
+        # Its unavailable capability must not select an identity for this model.
+        result["limitations"].append("Conditional gate association unavailable: " + str(error))
+        return result
+    result["state"].update(association["state"])
+    result["observed"].extend(row for row in association["observed"] if row["kind"] == "line_gate_observation")
+    result["predictions"].extend(association["predictions"])
+    return result
+
+
 OBSERVERS: dict[str, Callable[[ObservationInput, dict[str, Any]], dict[str, Any]]] = {
     "color_band": _color, "spotlight": _spotlight, "portal": _portal,
+    "hidden_motion": _hidden_motion, "hidden_motion_portal": _hidden_motion_portal,
     "core": lambda frame, prior: {"state": {}, "observed": [], "predictions": [], "hypotheses": [], "limitations": []},
 }
 
@@ -220,6 +252,8 @@ def run_observation_step(unit, out_dir, options):
                              request["source"], request["learn"])
     try:
         result = observe(request["observer"], frame, prior)
+    except HiddenMotionIntegrityError:
+        raise
     except ValueError as error:
         result = {"state": prior, "observed": [], "predictions": [], "hypotheses": [],
                   "supported": False, "limitations": [str(error)]}

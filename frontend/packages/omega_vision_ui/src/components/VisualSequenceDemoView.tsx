@@ -40,8 +40,9 @@ function VisualSequenceDemoSession({ workspaceId, sequence, onClose, renderTestR
         frameIndex={spotlight.frameIndex} onFrameIndexChange={spotlight.setFrameIndex}
         comparison={spotlight.registered ? <SpotlightMemoryBoard demo={spotlight} controlsVisible={controlsVisible} /> : undefined} />
     </div>
-    {renderTestResults && <RecordingTests workspaceId={workspaceId} visualSequenceId={sequence.id}
-      controlsVisible={false} showRecordingPreview={false}
-      presentation="runtime" renderResults={renderTestResults} />}
+    <RecordingTests workspaceId={workspaceId} visualSequenceId={sequence.id}
+      controlsVisible={controlsVisible} showRecordingPreview={false}
+      previewFrameKey={String(spotlight.frameIndex)} beforeExecution={() => playbackCoordinator.pauseAll()}
+      presentation="runtime" renderResults={renderTestResults} />
   </section>;
 }

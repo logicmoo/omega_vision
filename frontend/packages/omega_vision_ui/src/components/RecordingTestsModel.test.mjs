@@ -117,7 +117,8 @@ test("the combined demo leads with one player and compact runtime output, leavin
   assert.match(demo, /useState\(false\)/);
   assert.match(demo, /aria-expanded=\{controlsVisible\} aria-controls=\{playerId\}/);
   assert.match(demo, /<Arc3VisualSequencePlayer[\s\S]*?controlsVisible=\{controlsVisible\}/);
-  assert.match(demo, /renderTestResults && <RecordingTests[\s\S]*?showRecordingPreview=\{false\}[\s\S]*?presentation="runtime"/);
+  assert.match(demo, /<RecordingTests[\s\S]*?controlsVisible=\{controlsVisible\}[\s\S]*?showRecordingPreview=\{false\}[\s\S]*?presentation="runtime"/);
+  assert.doesNotMatch(demo, /renderTestResults && <RecordingTests/);
   assert.equal((demo.match(/<Arc3VisualSequencePlayer /g) || []).length, 1);
   assert.doesNotMatch(demo, /MarkdownDocument|fetch\(|setInterval|\.select\(|localStorage|\/arc3\/|method:\s*["']POST/);
   assert.doesNotMatch(demo, /presentation="summary"/);

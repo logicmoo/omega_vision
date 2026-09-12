@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useContextReset } from "../lib/useContextReset";
 import type { CSSProperties, ReactNode } from "react";
 import CodeMirror from "@uiw/react-codemirror";
-import type { Extension } from "@codemirror/state";
-import { foldAll, foldCode, unfoldAll, unfoldCode } from "@codemirror/language";
+import { RangeSet, type Extension } from "@codemirror/state";
+import { foldedRanges } from "@codemirror/language";
 import { EditorView } from "@codemirror/view";
-import { json, jsonLanguage } from "@codemirror/lang-json";
+import { json } from "@codemirror/lang-json";
+import { createJsonTreeState, updateJsonTreeDocument, jsonTreeNodes, expandedJsonPaths, changeJsonFolds, restoreJsonFolds, jsonChildPath, jsonPathTokens, jsonBranchAt } from "../lib/resourceJsonTree";
 import { markdown } from "@codemirror/lang-markdown";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -45,7 +46,7 @@ import { standardSQL } from "@codemirror/legacy-modes/mode/sql";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { prolog } from "../lib/prologMode";
 import { prologClauseFolding } from "../lib/prologFolding";
-import { jsonDocumentToMetta, mettaDocumentToJson } from "../lib/mettaResourceCodec";
+import { jsonDocumentToMetta, mettaDocumentToJson, mettaToJsonValue } from "../lib/mettaResourceCodec";
 import { useUserUiPreferences } from "../lib/uiPreferences";
 import { WorkspaceResourceFileControls, type WorkspaceResourceFileControlsProps } from "./WorkspaceResourceFileControls";
 import { MarkdownDocument } from "./MarkdownDocument";
@@ -141,7 +142,7 @@ const EXTENSION_TEXT_LANGUAGE: Record<string, string> = {
   groovy: "groovy", gradle: "groovy",
   jl: "julia",
   clj: "clojure", cljs: "clojure", cljc: "clojure", edn: "clojure",
-  scm: "scheme", ss: "scheme", lisp: "scheme", el: "scheme",
+  scm: "scheme", ss: "scheme", lisp: "scheme", el: "scheme", metta: "clojure",
   erl: "erlang", hrl: "erlang",
   elm: "elm",
   coffee: "coffeescript",
@@ -225,7 +226,7 @@ function isJsonContent(value: string): boolean {
 }
 
 function looksLikeMarkdown(value: string): boolean {
-  return /^(?: {0,3}#{1,6}\s+\S| {0,3}(?:[-*+]|\d+\.)\s+\S| {0,3}>\s+\S|```|~~~|---\s*$)/m.test(value)
+  return /^(?: {0,3}#{1,6}\s+\S| {0,3}(?:[-*+]|\d+\.)\s+\S| {0,3}>\s+\S|```|~~~)/m.test(value)
     || /\[[^\]]+\]\([^)]+\)|\*\*[^*\n]+\*\*|__[^_\n]+__/.test(value);
 }
 
@@ -242,21 +243,24 @@ function shebangLanguage(value: string): string {
 }
 
 function contentLanguage(value: string): string {
-  const trimmed = value.trim();
+  const trimmed = value.replace(/^\s*(```|~~~)[\s\S]*?^\s*\1\s*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*(?:%|\/\/|#(?!\!)).*$/gm, "").trim();
   if (/^<!doctype\s+html|^<html[\s>]/i.test(trimmed)) return "html";
   if (/^<\?xml\b/i.test(trimmed)) return "xml";
   if (/^(?:select|insert|update|delete|create|alter)\b[\s\S]*\b(?:from|into|table)\b/im.test(trimmed)) return "sql";
-  if (/^(?:from\s+\S+\s+import|import\s+\S+|def\s+\w+\s*\(|class\s+\w+\s*[:(])/m.test(trimmed)) return "python";
+  if (/^(?:from\s+[\w.]+\s+import|import\s+[\w.]+(?:\s+as\s+\w+)?\s*$|(?:async\s+)?def\s+\w+\s*\(|class\s+\w+[^;\n]*:)/m.test(trimmed)) return "python";
   if (/^(?:const|let|var|function|export|import)\s+[\w{*]|=>/m.test(trimmed)) return "javascript";
+  if (/^(?:\s*:-\s*\w|\s*[a-z]\w*(?:\([^;\n]*\))?\s*:-|\s*[a-z]\w*\([^;\n]*\)\.\s*$)/m.test(trimmed)) return "prolog";
+  if (/^\s*\((?:=|!|:|defn|define|import!|let|match|bind!)(?:\s|\()/m.test(trimmed)) return "clojure";
   if (/^(?:package\s+main|func\s+\w+\s*\()/m.test(trimmed)) return "go";
   if (/^(?:fn\s+\w+|use\s+\w+::|impl(?:<[^>]+>)?\s+\w+)/m.test(trimmed)) return "rust";
-  if (/^---\s*$[\s\S]*^\w[\w.-]*:\s+/m.test(trimmed)) return "yaml";
+  if (/^---\s*$[\s\S]*^\w[\w.-]*:\s+/m.test(trimmed) && !looksLikeMarkdown(value.replace(/^---[\s\S]*?^---\s*$/m, ""))) return "yaml";
   return "";
 }
 
 function metadataLanguage(metadata?: Record<string, unknown>): string {
   if (!metadata) return "";
-  for (const key of ["language", "syntax", "lexer", "format", "mimeType", "mime_type"]) {
+  for (const key of ["language", "syntax", "lexer", "format", "mimeType", "mime_type", "contentType", "type", "kind"]) {
     const value = metadata[key];
     if (typeof value !== "string") continue;
     const detected = normalizedLanguage(value);
@@ -272,28 +276,23 @@ export function detectResourceSourceMode(
   defaultFormat?: SourceFormat,
   defaultTextLanguage?: string,
 ): SourceMode {
-  if (defaultFormat === "text") {
-    const explicitLanguage = normalizedLanguage(defaultTextLanguage || "");
-    const pathLanguage = textLanguageForFilename(sourcePath);
-    return {
-      format: "text",
-      textLanguage: explicitLanguage !== "plain" ? explicitLanguage : pathLanguage,
-    };
+  if (isJsonContent(value)) {
+    if (defaultFormat === "text") return { format: "text", textLanguage: "json" };
+    return { format: "metta", textLanguage: "clojure" };
   }
-  if (isJsonContent(value)) return { format: "metta", textLanguage: "clojure" };
   const pathLanguage = textLanguageForFilename(sourcePath);
-  // A known file extension is a stronger, more reliable signal than sniffing
-  // the content, so it is checked before looksLikeMarkdown(): a well-commented
-  // source file (a Prolog docstring with bullet points, say) can otherwise
-  // look enough like Markdown to override its real, known language.
+  // Executable markers outrank Markdown-looking comments; real Markdown
+  // content still outranks a misleading filename or resource annotation.
   const detectedLanguage = shebangLanguage(value)
-    || metadataLanguage(metadata)
-    || (pathLanguage !== "plain" ? pathLanguage : "")
-    || (looksLikeMarkdown(value) ? "markdown" : "")
     || contentLanguage(value)
-    || normalizedLanguage(defaultTextLanguage || "");
+    || (looksLikeMarkdown(value) ? "markdown" : "")
+    || metadataLanguage(metadata)
+    || normalizedLanguage(defaultTextLanguage || "").replace(/^plain$/, "")
+    || (pathLanguage !== "plain" ? pathLanguage : "")
+    || "plain";
   if (detectedLanguage === "markdown") return { format: "text", textLanguage: "markdown" };
-  if (/\.metta$/i.test(sourcePath)) return { format: "metta", textLanguage: "clojure" };
+  if (defaultFormat === "text") return { format: "text", textLanguage: detectedLanguage };
+  if (/\.metta$/i.test(sourcePath) && detectedLanguage === "clojure") return { format: "metta", textLanguage: "clojure" };
   return {
     format: defaultFormat || "text",
     textLanguage: detectedLanguage || "plain",
@@ -324,6 +323,7 @@ function jsonObjectField(value: JsonValue, field: string): string | null {
   const map = value as JsonObject;
   const direct = map[field];
   if (typeof direct === "string" && direct.trim()) return direct.trim();
+  if (typeof direct === "number" && Number.isFinite(direct)) return String(direct);
   const target = field.toLowerCase();
   for (const [key, raw] of Object.entries(map)) {
     if (key.toLowerCase() === target && typeof raw === "string" && raw.trim()) return raw.trim();
@@ -360,6 +360,7 @@ function jsonObjectKinds(value: JsonValue): string[] {
   };
   pushUnique("subkind");
   pushUnique("kind");
+  pushUnique("type");
   pushUnique("role");
   for (const item of keysMatchingSuffix(value, /(kind|role)$/i)) {
     const text = jsonObjectField(value, item);
@@ -424,13 +425,8 @@ function longestStringInDict(value: JsonValue): { text: string; keyed: boolean }
 }
 
 function jsonNodeSummary(value: JsonValue): string {
-  const parts = jsonNodeSummaryParts(value);
-  const tags = [
-    parts.id ? `id:${parts.id}` : "",
-    parts.kind ? `kind:${parts.kind}` : "",
-    parts.name ? `name:${parts.name}` : "",
-  ].filter(Boolean);
-  return tags.length ? `${tags.join(" · ")} · ${parts.type}` : parts.type;
+  const tags = jsonNodePromotedTokens(value).map(token => token.text);
+  return tags.length ? `${tags.join(" · ")} · ${jsonTypeLabel(value)}` : jsonTypeLabel(value);
 }
 
 function jsonNodeSummaryParts(value: JsonValue): { id: string | null; kind: string | null; name: string | null; type: string } {
@@ -450,8 +446,8 @@ function jsonObjectTokenGroup(value: JsonValue, exactKeys: string[], suffixPatte
   const seen = new Set<string>();
   const tokens: Array<{ label: string; value: string }> = [];
   for (const [rawKey, rawValue] of Object.entries(map)) {
-    if (typeof rawValue !== "string") continue;
-    const trimmed = rawValue.trim();
+    const trimmed = typeof rawValue === "string" ? rawValue.trim()
+      : typeof rawValue === "number" && Number.isFinite(rawValue) ? String(rawValue) : "";
     if (!trimmed) continue;
     const key = rawKey.toLowerCase();
     if (!exact.has(key) && !suffixPattern.test(rawKey)) continue;
@@ -466,7 +462,7 @@ function jsonObjectTokenGroup(value: JsonValue, exactKeys: string[], suffixPatte
 function jsonNodePromotedTokens(value: JsonValue): Array<{ className: string; text: string }> {
   const idTokens = jsonObjectTokenGroup(value, ["id", "key"], /(^|[_-])(id|key)$/i)
     .map((item) => ({ className: "json-tree-token-id", text: `${item.label}:${item.value}` }));
-  const kindTokens = jsonObjectTokenGroup(value, ["kind", "type", "role"], /(^|[_-])(kind|type|role)$/i)
+  const kindTokens = jsonObjectTokenGroup(value, ["kind", "type", "subkind", "role"], /(^|[_-])(kind|type|subkind|role)$/i)
     .map((item) => ({ className: "json-tree-token-kind", text: `${item.label}:${item.value}` }));
   const nameTokens = jsonObjectTokenGroup(value, ["name", "label"], /(^|[_-])(name|label)$/i)
     .map((item) => ({ className: "json-tree-token-name", text: `${item.label}:${item.value}` }));
@@ -514,41 +510,17 @@ function arrayPreviewInfo(value: JsonValue, suppressValue: string | null = null)
 function collectExpandablePaths(value: JsonValue, path: string, out: Set<string>) {
   if (Array.isArray(value)) {
     out.add(path);
-    value.forEach((entry, index) => collectExpandablePaths(entry, `${path}[${index}]`, out));
+    value.forEach((entry, index) => collectExpandablePaths(entry, jsonChildPath(path, index), out));
     return;
   }
   if (value && typeof value === "object") {
     out.add(path);
-    Object.entries(value).forEach(([key, entry]) => collectExpandablePaths(entry, path === "$" ? `$.${key}` : `${path}.${key}`, out));
+    Object.entries(value).forEach(([key, entry]) => collectExpandablePaths(entry, jsonChildPath(path, key), out));
   }
 }
 
 function parseJsonPath(path: string): JsonPathToken[] {
-  if (!path.startsWith("$")) return [];
-  const tokens: JsonPathToken[] = [];
-  let index = 1;
-  while (index < path.length) {
-    const char = path[index];
-    if (char === ".") {
-      index += 1;
-      const start = index;
-      while (index < path.length && path[index] !== "." && path[index] !== "[") index += 1;
-      const key = path.slice(start, index);
-      if (key) tokens.push(key);
-      continue;
-    }
-    if (char === "[") {
-      const end = path.indexOf("]", index);
-      if (end <= index + 1) break;
-      const numberText = path.slice(index + 1, end);
-      const parsed = Number.parseInt(numberText, 10);
-      if (!Number.isNaN(parsed)) tokens.push(parsed);
-      index = end + 1;
-      continue;
-    }
-    index += 1;
-  }
-  return tokens;
+  return jsonPathTokens(path);
 }
 
 function getNodeAtPath(root: JsonValue, path: string): JsonValue | null {
@@ -560,16 +532,16 @@ function getNodeAtPath(root: JsonValue, path: string): JsonValue | null {
       current = current[token];
       continue;
     }
-    if (!current || typeof current !== "object" || Array.isArray(current) || !(token in current)) return null;
+    if (!current || typeof current !== "object" || Array.isArray(current) || !Object.prototype.hasOwnProperty.call(current, token)) return null;
     current = (current as JsonObject)[token];
   }
   return current;
 }
 
-function updateJsonAtPath(root: JsonObject, path: string, updater: (target: JsonValue, parent: JsonValue | null, key: JsonPathToken | null) => JsonValue | null): JsonObject | null {
+function updateJsonAtPath(root: JsonValue, path: string, updater: (target: JsonValue, parent: JsonValue | null, key: JsonPathToken | null) => JsonValue | null): JsonValue | null {
   const tokens = parseJsonPath(path);
-  const cloned = JSON.parse(JSON.stringify(root)) as JsonObject;
-  if (tokens.length === 0) return null;
+  const cloned = JSON.parse(JSON.stringify(root)) as JsonValue;
+  if (tokens.length === 0) return updater(cloned, null, null);
   let parent: JsonValue | null = null;
   let current: JsonValue = cloned;
   let currentKey: JsonPathToken | null = null;
@@ -580,7 +552,7 @@ function updateJsonAtPath(root: JsonObject, path: string, updater: (target: Json
       if (!Array.isArray(current) || token < 0 || token >= current.length) return null;
       current = current[token];
     } else {
-      if (!current || typeof current !== "object" || Array.isArray(current) || !(token in current)) return null;
+      if (!current || typeof current !== "object" || Array.isArray(current) || !Object.prototype.hasOwnProperty.call(current, token)) return null;
       current = (current as JsonObject)[token];
     }
   }
@@ -630,18 +602,31 @@ export function ResourceSourceEditor({
   const editingLocked = disabled || contentReadOnly;
   const initialMode = detectResourceSourceMode(value, sourcePath || label, resourceMetadata, defaultFormat, defaultTextLang);
   const [format, setFormat] = useState<SourceFormat>(initialMode.format);
+  const formatChosen = useRef(false);
+  const chooseFormat = (next: SourceFormat) => { formatChosen.current = true; setFormat(next); };
   const [textLang, setTextLang] = useState<string>(initialMode.textLanguage);
   const [metta, setMetta] = useState("");
   const [jsonDraft, setJsonDraft] = useState(value);
   const [error, setError] = useState("");
-  const [treeExpandedPaths, setTreeExpandedPaths] = useState<Set<string>>(new Set(["$"]));
+  const [jsonState] = useState(() => ({ current: createJsonTreeState(value) }));
+  const [, refreshTree] = useState(0);
   const [selectedTreePath, setSelectedTreePath] = useState("$");
   const [treeRenderNormal, setTreeRenderNormal] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
   const emittedJson = useRef<string | null>(null);
   const sourceModel = useRef<"json" | "raw">(isJsonContent(value) ? "json" : "raw");
+  const rawMettaProjection = useRef(false);
   const codeMirrorView = useRef<EditorView | null>(null);
-  const foldPreference = useRef<"expanded" | "collapsed" | null>(null);
+  const invalidDraft = useRef(false);
+  const sourceContext = sourcePath || label;
+  const previousSourceContext = useRef(sourceContext);
+  const [externalConflict, setExternalConflict] = useState(false);
+  const sourceMettaToJson = (source: string) => sourceModel.current === "raw"
+    ? mettaDocumentToJson(source) : JSON.stringify(mettaToJsonValue(source), null, 2);
+  const validDraft = (valid: boolean) => {
+    invalidDraft.current = !valid;
+    onValidityChange?.(valid);
+  };
 
   const revealRequestedLine = (view: EditorView) => {
     if (!revealLine || revealLine < 1 || view.state.doc.lines === 0) return;
@@ -652,46 +637,70 @@ export function ResourceSourceEditor({
     });
   };
 
-  useContextReset(value, () => {
+  useContextReset(JSON.stringify([sourceContext, value]), () => {
+    const changedDocument = previousSourceContext.current !== sourceContext;
+    previousSourceContext.current = sourceContext;
+    if (changedDocument) {
+      invalidDraft.current = false;
+      setExternalConflict(false);
+      setFormat(initialMode.format);
+      setTextLang(initialMode.textLanguage);
+      formatChosen.current = false;
+      jsonState.current = createJsonTreeState(value);
+      setSelectedTreePath("$");
+    } else if (invalidDraft.current && value !== emittedJson.current) {
+      setExternalConflict(true);
+      return;
+    }
+    const currentFormat = changedDocument || !formatChosen.current ? initialMode.format : format;
     if (value === emittedJson.current) {
       emittedJson.current = null;
-      if (sourceModel.current === "raw" && format === "metta") {
+      if (sourceModel.current === "raw" && (currentFormat === "metta" || rawMettaProjection.current)) {
         setMetta(value);
-        try { setJsonDraft(mettaDocumentToJson(value)); } catch { setJsonDraft(value); }
+        try { setJsonDraft(sourceMettaToJson(value)); } catch { setJsonDraft(value); }
       } else {
         setJsonDraft(value);
       }
       return;
     }
+    rawMettaProjection.current = false;
+    if (!formatChosen.current) {
+      setFormat(initialMode.format);
+      setTextLang(initialMode.textLanguage);
+    }
     setJsonDraft(value);
-    if (!value) { setMetta(""); setError(""); onValidityChange?.(true); return; }
+    if (!value) { setMetta(""); setError(""); validDraft(true); return; }
     try {
       setMetta(jsonDocumentToMetta(value));
       sourceModel.current = "json";
       setError("");
-      onValidityChange?.(true);
+      validDraft(true);
     }
     catch (reason) {
-      if (format === "metta") {
+      setMetta(value);
+      sourceModel.current = "raw";
+      if (currentFormat === "metta" || currentFormat === "json" || currentFormat === "tree") {
         try {
-          const converted = mettaDocumentToJson(value);
+          const converted = sourceMettaToJson(value);
           setMetta(value);
           setJsonDraft(converted);
           sourceModel.current = "raw";
+          rawMettaProjection.current = true;
           setError("");
-          onValidityChange?.(true);
+          validDraft(true);
           return;
         } catch {
           // The source remains editable below with the original parse error.
         }
       }
-      if (format === "text" || format === "markdown") {
+      if (initialMode.textLanguage !== "json") {
         sourceModel.current = "raw";
         setError("");
-        onValidityChange?.(true);
+        validDraft(true);
       } else {
+        sourceModel.current = "json";
         setError(reason instanceof Error ? reason.message : String(reason));
-        onValidityChange?.(false);
+        validDraft(false);
       }
     }
   });
@@ -713,41 +722,62 @@ export function ResourceSourceEditor({
   }, [format, revealLine, textLang, value]);
 
   const editMetta = (next: string) => {
+    if (editingLocked) return;
     setMetta(next);
     try {
-      const json = mettaDocumentToJson(next);
+      const json = sourceMettaToJson(next);
+      rawMettaProjection.current = sourceModel.current === "raw";
       setJsonDraft(json);
       const emitted = sourceModel.current === "raw" ? next : json;
       emittedJson.current = emitted;
       onChange(emitted);
       setError("");
-      onValidityChange?.(true);
+      setExternalConflict(false);
+      validDraft(true);
     }
-    catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); onValidityChange?.(false); }
+    catch (reason) {
+      if (sourceModel.current === "raw") {
+        rawMettaProjection.current = false;
+        setJsonDraft(next);
+        emittedJson.current = next;
+        onChange(next);
+        setError("");
+        validDraft(true);
+      } else {
+        setError(reason instanceof Error ? reason.message : String(reason));
+        validDraft(false);
+      }
+    }
   };
   const editJson = (next: string) => {
+    if (editingLocked) return;
     setJsonDraft(next);
     try {
-      const parsed = JSON.parse(next);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("A resource document must be a JSON object");
+      JSON.parse(next);
       const nextMetta = jsonDocumentToMetta(next);
       setMetta(nextMetta);
-      const emitted = sourceModel.current === "raw" && /\.metta$/i.test(sourcePath || label) ? nextMetta : next;
+      const emitted = rawMettaProjection.current ? nextMetta : next;
+      if (!rawMettaProjection.current) sourceModel.current = "json";
       emittedJson.current = emitted;
       onChange(emitted);
       setError("");
-      onValidityChange?.(true);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); onValidityChange?.(false); }
+      setExternalConflict(false);
+      validDraft(true);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); validDraft(false); }
   };
   const editText = (next: string) => {
+    if (editingLocked) return;
+    if (sourceModel.current === "json" || rawMettaProjection.current) { editJson(next); return; }
     setJsonDraft(next);
     emittedJson.current = next;
     onChange(next);
     setError("");
-    onValidityChange?.(true);
-    try { setMetta(jsonDocumentToMetta(next)); } catch { /* plain text need not be valid JSON */ }
+    validDraft(true);
+    try { setMetta(jsonDocumentToMetta(next)); } catch { setMetta(next); }
   };
   const loadClientContent = (content: string) => {
+    if (editingLocked) return;
+    if (sourceModel.current === "raw") { onChange(content); return; }
     try {
       const parsed = JSON.parse(content);
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("A resource document must be a JSON object");
@@ -759,36 +789,24 @@ export function ResourceSourceEditor({
   let resource: Record<string, unknown> | null = null;
   try { const parsed = JSON.parse(value); if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) resource = parsed; } catch { /* Invalid source remains editable. */ }
   const resourceEnabled = resource?.enabled !== false;
-  const setEnabled = (enabled: boolean) => { if (!disabled && resource) onChange(JSON.stringify({ ...resource, enabled }, null, 2)); };
-  const codeMirrorJsonTree = useMemo(() => {
-    const tree = jsonLanguage.parser.parse(jsonDraft);
-    let valid = tree.length === jsonDraft.length;
-    tree.iterate({
-      enter(node) {
-        if (node.type.isError) valid = false;
-      },
-    });
-    return valid ? tree : null;
-  }, [jsonDraft]);
+  const setEnabled = (enabled: boolean) => { if (!editingLocked && resource) onChange(JSON.stringify({ ...resource, enabled }, null, 2)); };
+  jsonState.current = updateJsonTreeDocument(jsonState.current, jsonDraft);
+  const codeMirrorJsonTree = jsonTreeNodes(jsonState.current);
+  const treeExpandedPaths = expandedJsonPaths(jsonState.current);
   const parsedTreeRoot = useMemo(() => {
     if (!codeMirrorJsonTree) return null;
     try {
       const parsed = JSON.parse(jsonDraft);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
-      return parsed as JsonObject;
+      return parsed as JsonValue;
     } catch {
       return null;
     }
   }, [codeMirrorJsonTree, jsonDraft]);
-  const allExpandablePaths = useMemo(() => {
-    const paths = new Set<string>();
-    if (parsedTreeRoot) collectExpandablePaths(parsedTreeRoot, "$", paths);
-    return paths;
-  }, [parsedTreeRoot]);
+  const allExpandablePaths = new Set((codeMirrorJsonTree ?? []).filter(node => node.fold).map(node => node.path));
   const treeSelectionType = useMemo(() => {
-    if (!parsedTreeRoot) return "";
+    if (!codeMirrorJsonTree) return "";
     const selected = getNodeAtPath(parsedTreeRoot, selectedTreePath);
-    return selected === null ? "missing" : treeRenderNormal ? jsonTypeLabel(selected) : jsonNodeSummary(selected);
+    return !codeMirrorJsonTree.some(node => node.path === selectedTreePath) ? "missing" : treeRenderNormal ? jsonTypeLabel(selected) : jsonNodeSummary(selected);
   }, [parsedTreeRoot, selectedTreePath, treeRenderNormal]);
 
   useEffect(() => {
@@ -805,85 +823,35 @@ export function ResourceSourceEditor({
     };
   }, [contextMenu]);
 
-  const togglePath = (path: string) => {
-    setTreeExpandedPaths((previous) => {
-      const next = new Set(previous);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
-  };
-
-  const expandSelectedBranch = () => {
-    if (!parsedTreeRoot) return;
-    setTreeExpandedPaths((previous) => {
-      const next = new Set(previous);
-      const prefixDot = `${selectedTreePath}.`;
-      const prefixBracket = `${selectedTreePath}[`;
-      for (const candidate of allExpandablePaths) {
-        if (candidate === selectedTreePath || candidate.startsWith(prefixDot) || candidate.startsWith(prefixBracket)) {
-          next.add(candidate);
-        }
-      }
-      return next;
-    });
-  };
-
-  const collapseSelectedBranch = () => {
-    setTreeExpandedPaths((previous) => {
-      const next = new Set(previous);
-      const prefixDot = `${selectedTreePath}.`;
-      const prefixBracket = `${selectedTreePath}[`;
-      for (const candidate of Array.from(next)) {
-        if (candidate !== selectedTreePath && (candidate.startsWith(prefixDot) || candidate.startsWith(prefixBracket))) {
-          next.delete(candidate);
-        }
-      }
-      if (selectedTreePath !== "$") {
-        next.delete(selectedTreePath);
-      }
-      next.add("$");
-      return next;
-    });
-  };
-
-  const collapseSelectedChildren = () => {
-    setTreeExpandedPaths((previous) => {
-      const next = new Set(previous);
-      const prefixDot = `${selectedTreePath}.`;
-      const prefixBracket = `${selectedTreePath}[`;
-      for (const candidate of Array.from(next)) {
-        if (candidate.startsWith(prefixDot) || candidate.startsWith(prefixBracket)) {
-          next.delete(candidate);
-        }
-      }
-      next.add("$");
-      next.add(selectedTreePath);
-      return next;
-    });
-  };
-
-  const runCodeMirrorFold = (command: (view: EditorView) => boolean) => {
+  const changeTreeFolds = (path: string, expand: boolean, descendants = true, childrenOnly = false) => {
+    jsonState.current = changeJsonFolds(jsonState.current, path, expand, descendants, childrenOnly);
     const view = codeMirrorView.current;
-    if (view) command(view);
+    if (format === "json" && view) view.dispatch({ effects: restoreJsonFolds(view.state, jsonState.current) });
+    refreshTree(value => value + 1);
+  };
+  const togglePath = (path: string) => changeTreeFolds(path, !treeExpandedPaths.has(path), false);
+  const expandSelectedBranch = () => {
+    changeTreeFolds(selectedTreePath, true);
+  };
+  const collapseSelectedBranch = () => {
+    changeTreeFolds(selectedTreePath, false);
+  };
+  const collapseSelectedChildren = () => {
+    changeTreeFolds(selectedTreePath, false, true, true);
+    changeTreeFolds(selectedTreePath, true, false);
   };
 
   const expandWholeTree = () => {
-    foldPreference.current = "expanded";
-    setTreeExpandedPaths(new Set(allExpandablePaths));
-    runCodeMirrorFold(unfoldAll);
+    changeTreeFolds("$", true);
   };
 
   const collapseWholeTree = () => {
-    foldPreference.current = "collapsed";
-    setTreeExpandedPaths(new Set(["$"]));
-    runCodeMirrorFold(foldAll);
+    changeTreeFolds("$", false);
   };
 
-  const writeTreeDocument = (nextRoot: JsonObject) => {
+  const writeTreeDocument = (nextRoot: JsonValue) => {
     const nextText = `${JSON.stringify(nextRoot, null, 2)}\n`;
-    emittedJson.current = nextText;
-    onChange(nextText);
+    editJson(nextText);
   };
 
   const addKeyAtPath = (path: string) => {
@@ -923,7 +891,7 @@ export function ResourceSourceEditor({
         const entryKind = jsonObjectKinds(entry)[0] || null;
         const entryName = jsonObjectNameLike(entry);
         const preferredLabel = treeRenderNormal ? `[${index}]` : (entryName || entryId || entryKind || `[${index}]`);
-        return [`${path}[${index}]`, entry, preferredLabel];
+        return [jsonChildPath(path, index), entry, preferredLabel];
       })
       : isObject
         ? (() => {
@@ -951,10 +919,10 @@ export function ResourceSourceEditor({
           }
           return Object.entries(mapNode)
             .filter(([key]) => !suppressMetadataKeys.has(key))
-            .map(([key, entry]) => [path === "$" ? `$.${key}` : `${path}.${key}`, entry, key]);
+            .map(([key, entry]) => [jsonChildPath(path, key), entry, key]);
         })()
         : [];
-    const hasChildren = children.length > 0;
+    const hasChildren = isArray || isObject;
     const expanded = treeExpandedPaths.has(path);
     const selected = selectedTreePath === path;
 
@@ -973,7 +941,7 @@ export function ResourceSourceEditor({
         setSelectedTreePath(path);
         setContextMenu({ x: event.clientX, y: event.clientY, path });
       }}>
-        <button type="button" className="json-tree-toggle" disabled={disabled || !hasChildren} onClick={() => togglePath(path)}>{hasChildren ? (expanded ? "▾" : "▸") : "·"}</button>
+        <button type="button" className="json-tree-toggle" aria-label={`${expanded ? "Collapse" : "Expand"} ${path}`} aria-expanded={hasChildren ? expanded : undefined} disabled={disabled || !hasChildren} onClick={() => togglePath(path)}>{hasChildren ? (expanded ? "▾" : "▸") : "·"}</button>
         <button type="button" className="json-tree-label" title={tooltip?.text || undefined} disabled={disabled} onClick={() => setSelectedTreePath(path)}>
           <span className="json-tree-main">
             <code>{labelText}</code>
@@ -1014,18 +982,47 @@ export function ResourceSourceEditor({
         ? "markdown"
         : textLang;
   const selectCodeMirrorLanguage = (language: string) => {
+    formatChosen.current = true;
     if (format === "text") {
       setTextLang(language);
       return;
     }
     if (language === codeMirrorLanguage) return;
     setTextLang(language);
-    setError("");
     setFormat("text");
+  };
+  const reloadCurrentSource = () => {
+    sourceModel.current = isJsonContent(value) ? "json" : "raw";
+    rawMettaProjection.current = false;
+    let nextJson = value;
+    if (sourceModel.current === "raw" && initialMode.format === "metta") {
+      try {
+        nextJson = mettaDocumentToJson(value);
+        rawMettaProjection.current = true;
+      } catch { /* Native programs remain editable in their original language. */ }
+    }
+    setJsonDraft(nextJson);
+    try { setMetta(jsonDocumentToMetta(value)); } catch { setMetta(value); }
+    emittedJson.current = null;
+    jsonState.current = createJsonTreeState(nextJson);
+    setFormat(initialMode.format);
+    setTextLang(initialMode.textLanguage);
+    setError("");
+    setExternalConflict(false);
+    validDraft(true);
   };
 
   return <div className="operation-json-block resource-source-editor">
-    <div className="llm-subhead"><div><span>RESOURCE SOURCE</span><b>{label}</b></div><div className="source-format-tabs">{showEnablement&&resource&&<button disabled={disabled} className={`resource-enable-action ${resourceEnabled?"disable-resource":"enable-resource"}`} onClick={()=>setEnabled(!resourceEnabled)}>{resourceEnabled?"Disable Resource":"Enable Resource"}</button>}<button disabled={disabled} className={format === "metta" ? "active" : ""} onClick={() => setFormat("metta")}>MeTTa</button><button disabled={disabled} className={format === "json" ? "active" : ""} onClick={() => setFormat("json")}>JSON</button><button disabled={disabled} className={format === "tree" ? "active" : ""} onClick={() => setFormat("tree")}>Tree</button><button disabled={disabled} className={format === "text" ? "active" : ""} onClick={() => { setError(""); setFormat("text"); }}>Text</button><button disabled={disabled} className={format === "markdown" ? "active" : ""} onClick={() => { setError(""); setFormat("markdown"); }}>Markdown</button>{format !== "tree" ? <select className="rse-text-lang" aria-label="CodeMirror language" disabled={disabled} value={codeMirrorLanguage} onChange={event => selectCodeMirrorLanguage(event.target.value)} title="CodeMirror syntax highlighting; choosing another lexer opens Text view">{TEXT_LANGUAGES.map(entry => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select> : null}</div></div>
+    <div className="llm-subhead"><div><span>RESOURCE SOURCE</span><b>{label}</b></div><div className="source-format-tabs">
+      {showEnablement && resource && <button disabled={editingLocked} className={`resource-enable-action ${resourceEnabled ? "disable-resource" : "enable-resource"}`} onClick={() => setEnabled(!resourceEnabled)}>{resourceEnabled ? "Disable Resource" : "Enable Resource"}</button>}
+      <button disabled={disabled} className={format === "metta" ? "active" : ""} onClick={() => chooseFormat("metta")}>MeTTa</button>
+      <button disabled={disabled} className={format === "json" ? "active" : ""} onClick={() => chooseFormat("json")}>JSON</button>
+      <button disabled={disabled} className={format === "tree" ? "active" : ""} onClick={() => chooseFormat("tree")}>Tree</button>
+      <button disabled={disabled} className={format === "text" ? "active" : ""} onClick={() => chooseFormat("text")}>Text</button>
+      <button disabled={disabled} className={format === "markdown" ? "active" : ""} onClick={() => chooseFormat("markdown")}>Markdown</button>
+      {format !== "tree" ? <select className="rse-text-lang" aria-label="CodeMirror language" disabled={disabled} value={codeMirrorLanguage} onChange={event => selectCodeMirrorLanguage(event.target.value)} title="CodeMirror syntax highlighting; choosing another lexer opens Text view">{TEXT_LANGUAGES.map(entry => <option key={entry.id} value={entry.id}>{entry.label}</option>)}</select> : null}
+    </div></div>
+    {contentReadOnly && <div className="resource-source-readonly" role="status">Read-only source</div>}
     {resourceSourceFileControlsPlacement === "above" ? renderedFileControls : null}
     {format === "markdown"
       ? <div className="markdown-render operation-visible-editor" style={style}>
@@ -1040,33 +1037,36 @@ export function ResourceSourceEditor({
         <div className="json-tree-toolbar">
           <span>Path <code>{selectedTreePath}</code>{treeSelectionType ? <> · <b>{treeSelectionType}</b></> : null}</span>
           <div>
-            <button type="button" className={treeRenderNormal ? "active" : ""} disabled={disabled || !parsedTreeRoot} onClick={() => setTreeRenderNormal((previous) => !previous)}>
+            <button type="button" className={treeRenderNormal ? "active" : ""} disabled={disabled || !codeMirrorJsonTree} onClick={() => setTreeRenderNormal((previous) => !previous)}>
               {treeRenderNormal ? "Enhanced labels" : "Normal labels"}
             </button>
-            <button type="button" disabled={disabled || !parsedTreeRoot} onClick={() => expandSelectedBranch()}>Expand branch</button>
-            <button type="button" disabled={disabled || !parsedTreeRoot} onClick={() => collapseSelectedBranch()}>Collapse branch</button>
-            <button type="button" disabled={disabled || !parsedTreeRoot} onClick={() => collapseSelectedChildren()}>Collapse children</button>
+            <button type="button" disabled={disabled || !allExpandablePaths.has(selectedTreePath)} onClick={() => collapseSelectedChildren()}>Collapse children</button>
           </div>
         </div>
+        <div className="json-tree-root">
         <div className="json-tree-fold-overlay" aria-label="JSON tree fold controls">
-          <button type="button" disabled={disabled || !parsedTreeRoot} onClick={expandWholeTree}>Expand All</button>
-          <button type="button" disabled={disabled || !parsedTreeRoot} onClick={collapseWholeTree}>Collapse All</button>
+          <button type="button" disabled={disabled || !allExpandablePaths.has("$")} onClick={expandWholeTree}>Expand All</button>
+          <button type="button" disabled={disabled || !allExpandablePaths.has("$")} onClick={collapseWholeTree}>Collapse All</button>
+          <button type="button" disabled={disabled || !allExpandablePaths.has(selectedTreePath)} onClick={expandSelectedBranch}>Expand branch</button>
+          <button type="button" disabled={disabled || !allExpandablePaths.has(selectedTreePath)} onClick={collapseSelectedBranch}>Collapse branch</button>
         </div>
-        {parsedTreeRoot ? <div className="json-tree-root">{renderTreeNode(parsedTreeRoot, "$", "$")}</div> : <div className="validation bad">Tree mode needs valid JSON object source. Fix syntax in JSON or MeTTa mode first.</div>}
+        {codeMirrorJsonTree ? renderTreeNode(parsedTreeRoot, "$", "$") : <div className="validation bad">Tree is unavailable until valid JSON has been parsed by CodeMirror. Fix syntax in JSON or MeTTa mode first.</div>}
+        </div>
         {contextMenu && parsedTreeRoot ? <div className="json-tree-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
-          <button type="button" onClick={() => { addKeyAtPath(contextMenu.path); setContextMenu(null); }}>Add key</button>
-          <button type="button" disabled={contextMenu.path === "$"} onClick={() => { deleteAtPath(contextMenu.path); setContextMenu(null); }}>Delete element</button>
+          <button type="button" disabled={editingLocked} onClick={() => { addKeyAtPath(contextMenu.path); setContextMenu(null); }}>Add key</button>
+          <button type="button" disabled={editingLocked || contextMenu.path === "$"} onClick={() => { deleteAtPath(contextMenu.path); setContextMenu(null); }}>Delete element</button>
           <button type="button" onClick={() => setContextMenu(null)}>Cancel</button>
         </div> : null}
       </div>
       : <div className={`raw-json-editor operation-visible-editor ${className}`.trim()} style={style} aria-invalid={Boolean(error)}>
          {format === "json" && <div className="codemirror-fold-overlay" aria-label="JSON fold controls">
-           <button type="button" onMouseDown={event => event.preventDefault()} onClick={() => runCodeMirrorFold(unfoldCode)}>Expand</button>
-           <button type="button" onMouseDown={event => event.preventDefault()} onClick={() => runCodeMirrorFold(foldCode)}>Collapse</button>
+           <button type="button" onMouseDown={event => event.preventDefault()} disabled={disabled} onClick={expandSelectedBranch}>Expand branch</button>
+           <button type="button" onMouseDown={event => event.preventDefault()} disabled={disabled} onClick={collapseSelectedBranch}>Collapse branch</button>
            <button type="button" onMouseDown={event => event.preventDefault()} onClick={expandWholeTree}>Expand all</button>
            <button type="button" onMouseDown={event => event.preventDefault()} onClick={collapseWholeTree}>Collapse all</button>
          </div>}
          <CodeMirror
+            key={`${format}:${codeMirrorLanguage}`}
            value={format === "metta" ? metta : jsonDraft}
            height="100%"
             theme="dark"
@@ -1076,13 +1076,20 @@ export function ResourceSourceEditor({
             extensions={format === "metta" ? streamLang(clojure) : format === "json" ? [json()] : format === "text" ? textLanguageExtension(textLang) : []}
             onCreateEditor={view => {
               codeMirrorView.current = view;
-              revealRequestedLine(view);
-              if (format === "json" && foldPreference.current) {
-                window.requestAnimationFrame(() => {
-                  if (foldPreference.current === "collapsed") foldAll(view);
-                  else unfoldAll(view);
-                });
+              if (format === "json") {
+                const selected = jsonTreeNodes(view.state)?.find(node => node.path === selectedTreePath);
+                view.dispatch({ effects: restoreJsonFolds(view.state, jsonState.current),
+                  ...(selected && selected.path !== "$" ? { selection: { anchor: selected.from, head: selected.to } } : {}) });
+                jsonState.current = view.state;
               }
+              revealRequestedLine(view);
+            }}
+            onUpdate={update => {
+              if (format !== "json" || !(update.docChanged || update.selectionSet
+                || !RangeSet.eq([foldedRanges(update.state)], [foldedRanges(update.startState)]))) return;
+              jsonState.current = update.state;
+              if (update.selectionSet) setSelectedTreePath(jsonBranchAt(update.state, update.state.selection.main.head));
+              refreshTree(value => value + 1);
             }}
             onChange={value => format === "metta" ? editMetta(value) : format === "text" ? editText(value) : editJson(value)}
           />
@@ -1090,7 +1097,11 @@ export function ResourceSourceEditor({
     {stacked && format !== "markdown" ? <div className="markdown-render operation-visible-editor" style={style}>
       <MarkdownDocument content={jsonDraft} onChange={editText} editable={!editingLocked} />
     </div> : null}
-    {error && (format === "metta" || format === "json") && <div className="validation bad">Invalid {format === "metta" ? "MeTTa" : "JSON"} syntax: {error}. Draft preserved; synchronization and saving are paused until this is fixed.</div>}
+    {error && <div className="validation bad" role="alert">Invalid source syntax: {error}. Draft preserved; synchronization and saving are paused until this is fixed.</div>}
+    {!error && format === "json" && !codeMirrorJsonTree && <div className="validation bad" role="status">No valid JSON representation is available for this source. Edit its original language or correct the JSON draft.</div>}
+    {externalConflict && <div className="validation bad" role="alert">Source changed in another view. Your invalid draft is retained.
+      <button type="button" onClick={reloadCurrentSource}>Use latest source (discard this draft)</button>
+    </div>}
     {resourceSourceFileControlsPlacement === "below" ? renderedFileControls : null}
   </div>;
 }

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Activity, useEffect, useMemo, useState, type ReactNode } from "react";
+import { resourceHeader, superControlPaneIds, type SuperControlDisplayMode } from "../lib/superControlDisplayModel";
 import { useCollapsingHeaderWheel } from "../lib/collapsingHeaderWheel";
 import { ArtifactTreeCommandContext, type ArtifactTreeCommand } from "./ArtifactTreeBranch";
 import { TreeViewControls } from "./TreeViewControls";
@@ -103,7 +104,6 @@ export type UniversalArtifactEditorProps = SuperControlProps;
 
 type StandardControlId = "file" | "markdown" | "resource" | "runner";
 type StandardResource = { kind: string; id: string; label?: string; enabled?: boolean; [key: string]: unknown };
-type SuperControlDisplayMode = "tabs" | "stacked" | "single" | "split-v" | "split-h";
 type SuperControlTabSet = "all" | "ctx";
 export type StandardSuperControlAction = {
   id: string;
@@ -287,28 +287,6 @@ function parsedJsonObject(source: string): Record<string, unknown> | null {
   }
 }
 
-function metadataText(resource: Record<string, unknown>, key: string): string {
-  const value = resource[key];
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function resourceHeader(source: string, fallback: string) {
-  const resource = parsedJsonObject(source);
-  if (!resource) return { title: fallback, resolved: false };
-  const id = metadataText(resource, "id");
-  const label = metadataText(resource, "label");
-  const discriminator = metadataText(resource, "kind")
-    || metadataText(resource, "type")
-    || metadataText(resource, "subkind")
-    || metadataText(resource, "role")
-    || "resource";
-  const kind = discriminator.replace(/[_-]+/g, " ").toUpperCase();
-  const identity = label
-    ? `${label}${id && id !== label ? ` (${id})` : ""}`
-    : id || fallback;
-  return { title: `${kind} - ${identity}`, resolved: true };
-}
-
 function EmbeddedSuperControl({
   control,
   className = "",
@@ -327,7 +305,9 @@ function EmbeddedSuperControl({
     ? { ...resource, kind: resource.kind, id: resource.id }
     : null;
   const fallbackTitle = operationMetadata?.title || (!isOperation ? control.title : control.path);
-  const header = resourceHeader(control.source, fallbackTitle);
+  const header = resourceHeader(control.source, fallbackTitle, control.path);
+  const draftScope = JSON.stringify([control.workspaceId, control.path]);
+  const [invalidDrafts, setInvalidDrafts] = useState<{ scope: string; entries: Record<string, boolean> }>({ scope: draftScope, entries: {} });
   const [availableControls, setAvailableControls] = useState<SubControlDescriptor[]>(() => builtinSubControls());
   const [displayMode, setDisplayMode] = useState<SuperControlDisplayMode>("tabs");
   const [tabSet, setTabSet] = useState<SuperControlTabSet>("ctx");
@@ -343,7 +323,9 @@ function EmbeddedSuperControl({
     wantedTabFor(-1, addressNamesFor(control.path), builtinSubControls())
     || (control.kind === "operation" ? OPERATION_DOCUMENT_CONTROL_ID : control.initialControlId || "file"),
   );
-  const [singleControlId, setSingleControlId] = useState<string>("file");
+  const [singleControlId, setSingleControlId] = useState<string>(() =>
+    wantedTabFor(-1, addressNamesFor(control.path), builtinSubControls())
+    || (control.kind === "standard" ? control.initialControlId || "file" : "file"));
   const [secondaryControlId, setSecondaryControlId] = useState<string>("resource");
   useEffect(() => {
     let cancelled = false;
@@ -380,7 +362,7 @@ function EmbeddedSuperControl({
     const defaultId = ids.includes("file") ? "file" : ids[0];
     if (!ids.includes(activeControlId)) setActiveControlId(defaultId);
     if (!ids.includes(singleControlId)) setSingleControlId(defaultId);
-    if (!ids.includes(secondaryControlId) || secondaryControlId === singleControlId) {
+    if (!ids.includes(secondaryControlId)) {
       setSecondaryControlId(ids.find(id => id !== singleControlId) || defaultId);
     }
   }, [activeControlId, secondaryControlId, selectedControls, singleControlId]);
@@ -402,10 +384,13 @@ function EmbeddedSuperControl({
   const sourceEditor = ({
     readOnly = false,
     label = control.path,
+    draftKey = "file",
   }: {
     readOnly?: boolean;
     label?: string;
+    draftKey?: string;
   } = {}) => <ResourceSourceEditor
+        key={draftScope}
         value={control.source}
         onChange={readOnly ? () => {} : control.onChange}
         contentReadOnly={readOnly}
@@ -413,6 +398,10 @@ function EmbeddedSuperControl({
         label={label}
         sourcePath={control.path}
         resourceMetadata={resource || undefined}
+        onValidityChange={valid => {
+          if (!readOnly) setInvalidDrafts(current => current.scope === draftScope && current.entries[draftKey] === !valid
+            ? current : { scope: draftScope, entries: { ...(current.scope === draftScope ? current.entries : {}), [draftKey]: !valid } });
+        }}
       />;
   const inheritedImplementation = control.kind === "operation" ? control.implementedOperation : null;
   const implementedIds = resource
@@ -427,7 +416,7 @@ function EmbeddedSuperControl({
     params.set("resource", id);
     return `?${params.toString()}`;
   };
-  const resourceAndInheritance = resource
+  const resourceAndInheritance = (pane: string) => resource
     ? <div className="operation-editor-scroll super-control-resource-inheritance">
         <ResourceFieldsEditor
           resource={resource}
@@ -459,20 +448,20 @@ function EmbeddedSuperControl({
           />}
         </section>
         <section className="super-control-resource-source">
-          {sourceEditor({ label: "Resource source" })}
+          {sourceEditor({ label: "Resource source", draftKey: `${pane}:resource` })}
         </section>
       </div>
     : <div className="studio-empty">Fix the resource source before editing its fields or inheritance.</div>;
-  const renderControl = (id: string): ReactNode => {
+  const renderControl = (id: string, pane: string): ReactNode => {
     switch (id) {
       case OPERATION_DOCUMENT_CONTROL_ID:
         return isOperation
           ? <OperationDocumentControl request={control} />
           : <div className="studio-empty">This operation editor is not available for the current resource.</div>;
       case "file":
-        return sourceEditor();
+        return sourceEditor({ draftKey: `${pane}:file` });
       case "resource":
-        return resourceAndInheritance;
+        return resourceAndInheritance(pane);
       case "markdown":
         return <div className="markdown-render operation-editor-scroll">
           <MarkdownDocument content={control.source} onChange={control.onChange} editable />
@@ -489,23 +478,9 @@ function EmbeddedSuperControl({
   const controlOptions = selectedControls.map(entry =>
     <option key={entry.id} value={entry.id}>{entry.label}</option>,
   );
-  const singleBody = displayMode === "single"
-    ? <div className="super-control-body super-control-single">{renderControl(singleControlId)}</div>
-    : null;
-  const splitBody = displayMode === "split-v" || displayMode === "split-h"
-    ? <div className={`super-control-body super-control-split ${displayMode}`}>
-        <div className="super-control-pane" data-pane="primary">{renderControl(singleControlId)}</div>
-        <div className="super-control-pane" data-pane="secondary">{renderControl(secondaryControlId)}</div>
-      </div>
-    : null;
-  const stackedBody = displayMode === "stacked"
-    ? <div className="super-control-body super-control-stack">
-        {selectedControls.map(entry => <section className="super-control-stack-section" key={entry.id}>
-          <h3>{entry.label}</h3>
-          <div className="super-control-stack-section-body">{renderControl(entry.id)}</div>
-        </section>)}
-      </div>
-    : null;
+  const panes = superControlPaneIds(displayMode, selectedControls.map(entry => entry.id), activeControlId, singleControlId, secondaryControlId);
+  const mountedControls = uniqueControls([...(specialControl ? [specialControl] : []), ...availableControls.filter(hasControlRenderer)]);
+  const hasInvalidDraft = invalidDrafts.scope === draftScope && Object.values(invalidDrafts.entries).some(Boolean);
 
   return <section
     className={`super-control super-control-embedded ${control.secondary ? "secondary" : "primary"} ${className}`.trim()}
@@ -517,9 +492,12 @@ function EmbeddedSuperControl({
         <span>SUPER CONTROL{reverseOrdinal >= 0 ? <i
           className="super-control-state"
           title={`Addressable in the URL as tab${reverseOrdinal}=<TabName>${addressNames[0] ? ` or tab=${addressNames[0]}:<TabName>` : ""}; plain tab=<TabName> targets every Super Control.`}
-        > · #{reverseOrdinal}</i> : null}{control.dirty ? <i className="super-control-state"> · UNSAVED</i> : null}</span>
-        <h2>{header.title}</h2>
+        > · #{reverseOrdinal}</i> : null}{control.dirty || hasInvalidDraft ? <i className="super-control-state"> · UNSAVED</i> : null}</span>
+        <h2 title={header.metadata || undefined}>{header.title}</h2>
         <small>{control.sourceScope} · {control.path}{!header.resolved ? " · identity unresolved" : ""}</small>
+        {header.metadata && <small>{header.metadata}</small>}
+        {header.error && <small role="status">{header.error}</small>}
+        {hasInvalidDraft && <small role="alert">Invalid source draft preserved — fix its syntax before saving.</small>}
       </div>
       <div className="operation-editor-actions">
         {control.kind === "operation" && operationMetadata?.document && control.onToggleEnabled && <button
@@ -545,6 +523,7 @@ function EmbeddedSuperControl({
             <option value="split-h">SplitH</option>
           </select>
         </label>
+        {displayMode !== "tabs" && <button type="button" onClick={() => setDisplayMode("tabs")}>Tabs</button>}
         {(displayMode === "single" || displayMode === "split-v" || displayMode === "split-h") && <label className="super-control-pane-selector">
           <span>{displayMode === "single" ? "TAB" : displayMode === "split-v" ? "LEFT" : "TOP"}</span>
           <select aria-label="Primary Super Control tab" value={singleControlId} onChange={event => { setSingleControlId(event.target.value); recordTabInLocation(registrationToken, addressNames, event.target.value); }}>{controlOptions}</select>
@@ -553,7 +532,7 @@ function EmbeddedSuperControl({
           <span>{displayMode === "split-v" ? "RIGHT" : "BOTTOM"}</span>
           <select aria-label="Secondary Super Control tab" value={secondaryControlId} onChange={event => setSecondaryControlId(event.target.value)}>{controlOptions}</select>
         </label>}
-        <button className="primary" onClick={control.onSave} disabled={control.busy || (control.kind === "operation" && !resource)}>{control.kind === "standard" ? control.saveLabel || "Save" : "Save"}</button>
+        <button className="primary" onClick={control.onSave} disabled={control.busy || hasInvalidDraft || (control.kind === "operation" && !resource)}>{control.kind === "standard" ? control.saveLabel || "Save" : "Save"}</button>
         {control.kind === "standard" && control.actions?.map(action => <button
           key={action.id}
           disabled={action.disabled}
@@ -571,10 +550,19 @@ function EmbeddedSuperControl({
         onClick={() => { setActiveControlId(entry.id); recordTabInLocation(registrationToken, addressNames, entry.id); }}
       >{entry.label}{entry.id === OPERATION_DOCUMENT_CONTROL_ID && control.dirty ? <i className="dirty">●</i> : null}</button>)}
     </nav>}
-    {displayMode === "tabs" && <div className="super-control-body super-control-tabbed">{renderControl(activeControlId)}</div>}
-    {stackedBody}
-    {singleBody}
-    {splitBody}
+    <div className={`super-control-body super-control-persistent ${displayMode === "stacked" ? "super-control-stack"
+      : displayMode === "split-v" || displayMode === "split-h" ? `super-control-split ${displayMode}` : "super-control-single"}`}>
+      {(["primary", "secondary"] as const).map(pane => <Activity key={pane} mode={panes[pane].length ? "visible" : "hidden"}>
+        <div className="super-control-pane" data-pane={pane}>
+          {mountedControls.map(entry => <Activity key={entry.id} mode={panes[pane].includes(entry.id) ? "visible" : "hidden"}>
+            <section className="super-control-retained-editor" data-control-id={entry.id}>
+              {displayMode === "stacked" && <h3>{entry.label}</h3>}
+              <div className="super-control-pane">{renderControl(entry.id, pane)}</div>
+            </section>
+          </Activity>)}
+        </div>
+      </Activity>)}
+    </div>
   </section>;
 }
 

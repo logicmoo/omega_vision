@@ -24,7 +24,9 @@ def test_active_resource_editors_share_metta_json_source_editor() -> None:
 
 def test_resource_source_editor_defaults_to_metta_and_keeps_json_available() -> None:
     source = (FRONTEND / "components/ResourceSourceEditor.tsx").read_text(encoding="utf-8")
-    assert 'if (isJsonContent(value)) return { format: "metta", textLanguage: "clojure" };' in source
+    json_default = source.split("if (isJsonContent(value)) {", 1)[1].split("const pathLanguage", 1)[0]
+    assert 'return { format: "metta", textLanguage: "clojure" };' in json_default
+    assert 'if (defaultFormat === "text") return { format: "text", textLanguage: "json" };' in json_default
     assert "useState<SourceFormat>(initialMode.format)" in source
     assert '>MeTTa</button>' in source
     assert '>JSON</button>' in source
@@ -32,7 +34,8 @@ def test_resource_source_editor_defaults_to_metta_and_keeps_json_available() -> 
     assert "mettaDocumentToJson" in source
     assert "jsonDocumentToMetta" in source
     assert "setJsonDraft(next)" in source
-    assert "onValidityChange?.(false)" in source
+    assert "onValidityChange?.(valid)" in source
+    assert "validDraft(false)" in source
     assert "Draft preserved; synchronization and saving are paused" in source
     assert 'onChange("")' not in source
     assert 'aria-label="CodeMirror language"' in source

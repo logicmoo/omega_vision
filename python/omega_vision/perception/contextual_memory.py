@@ -319,6 +319,11 @@ class ContextualMemory:
                 source["memoryLocationId"], record.get("conceptUid"), record["revision"],
             ]):
                 raise ValueError("Memory record identity mismatch")
+            if "publication" in entry:
+                from omega_vision.perception.native_memory_publication import validate_publication
+                if not validate_publication(entry, self.root, area, kind, context=context,
+                                            before=before if before is not None else exact):
+                    continue
             if before is not None or exact is not None:
                 causal = record.get("causal")
                 if not isinstance(causal, dict) or context is None:
@@ -335,6 +340,7 @@ class ContextualMemory:
                     continue
             records.append({
                 **record,
+                **({"publication": entry["publication"]} if "publication" in entry else {}),
                 "source": {**record["source"], "format": "memory_metta", "pathLabel": str(db.path)},
                 "originalSource": {"format": "metta", "path": str(db.path), "text": original,
                                    "entryUid": entry["entryUid"], "readOnly": True},

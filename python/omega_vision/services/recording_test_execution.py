@@ -33,7 +33,8 @@ _OWNER = {"pid": os.getpid(), "started": psutil.Process().create_time(), "token"
 _THREADS: dict[str, threading.Thread] = {}
 _OBSERVER = {
     "color_band_cycle": "color_band", "spotlight_scene": "spotlight",
-    "spotlight_action_modes": "spotlight", "teleporter": "portal",
+    "spotlight_action_modes": "spotlight", "teleporter": "hidden_motion_portal",
+    "occlusion_pole": "hidden_motion", "occlusion_large_object": "hidden_motion",
 }
 _TERMINAL = {"completed", "stopped", "stale", "error"}
 
@@ -107,6 +108,7 @@ def _versions():
     from omega_vision.perception.event_induction import engine_version
     from omega_vision.perception.event_deduction import implementation_version
     from omega_vision.perception import metta_memory, contextual_rules, candidate_rules
+    from omega_vision.perception import hidden_motion_observer
     from omega_vision.evaluation import visual_memory_baselines, action_mechanism_recordings
     from . import recording_test_memory, recording_test_scoring, recording_test_learning
     modules = [Path(__file__), Path(semantics.__file__), Path(observers.__file__),
@@ -114,7 +116,8 @@ def _versions():
                Path(recording_test_learning.__file__), Path(two_frame_x_duction.__file__),
                Path(video_import_api.__file__), Path(video_import_abduction.__file__),
                Path(metta_memory.__file__), Path(contextual_rules.__file__), Path(candidate_rules.__file__),
-               Path(visual_memory_baselines.__file__), Path(action_mechanism_recordings.__file__)]
+               Path(visual_memory_baselines.__file__), Path(action_mechanism_recordings.__file__),
+               Path(hidden_motion_observer.__file__)]
     values = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in modules}
     return {"version": VERSION, "observerVersion": observers.VERSION,
             "modules": values, "perception": implementation_hashes(),
@@ -190,6 +193,8 @@ def _source(home, reference):
 def _configuration(workspace_id, observer):
     if observer == "spotlight":
         return content_hash({"pixelPolicy": "original_rgba", "core": "not_applicable"})
+    if observer in {"hidden_motion", "hidden_motion_portal"}:
+        return content_hash({"pixelPolicy": "original_opaque", "core": "bounded_motion_hypotheses_not_events"})
     from . import video_import_api as api
     try:
         return content_hash(api._direct_specs(api._workspace_root(workspace_id)))
@@ -329,7 +334,7 @@ def _prepare_seed(home, state, index):
     return {"colorEvidence": [evidence[key] for key in sorted(evidence)]}, refs
 
 
-def _core_frame(workspace_id, reference, index, *, rgba_visibility=False):
+def _core_frame(workspace_id, reference, index, *, rgba_visibility=False, native_hidden_motion=False):
     from . import video_import_api as api, video_import_semantics as semantics
     from omega_vision.perception.direct_transform_plan import plan_direct_call
     root, units = semantics._units(workspace_id, "data/" + reference)
@@ -338,6 +343,11 @@ def _core_frame(workspace_id, reference, index, *, rgba_visibility=False):
     unit["sourceImage"] = unit.get("sourceImage", unit["image"])
     if rgba_visibility:
         return unit, {"status": "not_applicable", "reason": "Visibility-aware static-scene observation; do not infer object appearance from unknown alpha pixels."}
+    if native_hidden_motion:
+        return unit, {
+            "status": "not_applicable",
+            "reason": "Original-pixel/earlier-STM motion hypotheses, not accepted temporal identity or physical events.",
+        }
     if index == 0:
         from omega_vision.perception.metta_memory import MeTTaMemoryDatabase
         home = api._vision_data_root(root)
@@ -400,7 +410,8 @@ def _compute_frame(home, state, recording_index, frame_index):
                        "decisionSeconds": current["receipt"]["atSeconds"]}
     with native_execution(home, "data/" + record["visualSequenceId"]):
         unit, core = _core_frame(state["workspaceId"], record["visualSequenceId"], frame_index,
-                                 rgba_visibility=state["observer"] == "spotlight")
+                                 rgba_visibility=state["observer"] == "spotlight",
+                                 native_hidden_motion=state["observer"] in {"hidden_motion", "hidden_motion_portal"})
         unit["_recordingTestObservation"] = {
             "observer": state["observer"], "sourceBinding": source["binding"],
             "implementationBinding": record["observerBinding"], "inputPrefixHash": prefix_hash,
@@ -446,7 +457,7 @@ def _finish_recording(home, state, position):
                      gradingHash=content_hash(score))
     state["score"] = summary([{"outcome": recording["outcome"]} for recording in state["recordings"]
                               if recording["status"] == "completed"])
-    if state["learn"] and state["observer"] != "spotlight":
+    if state["learn"] and state["observer"] not in {"spotlight", "hidden_motion", "hidden_motion_portal"}:
         from .recording_test_learning import update_learning
         update_learning(home, state, position)
 

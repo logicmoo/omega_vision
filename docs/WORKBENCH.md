@@ -65,8 +65,10 @@ You do not need to deploy anything. The workbench disables broad component HMR:
 only CSS/TS/TSX changes under `workbench\frontend\src` and `index.html` enter
 the debounced surgical UI-restart lifecycle, which flushes page session state
 before one full reload. Runtime, workspace, test, build-output, and log changes
-do not reload the UI. Changes under `workbench\server` restart the FastAPI
-backend through Uvicorn. Close the two server windows for an instance when done.
+do not reload the UI. Backend and plugin Python changes require an explicit API
+restart through the existing Workbench controls. The native API launcher uses
+its explicit restart supervisor with Uvicorn `reload=False`; file edits must not
+silently restart active work. Close the two server windows for an instance when done.
 
 Requirements:
 

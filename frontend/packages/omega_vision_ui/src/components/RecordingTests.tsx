@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { MarkdownDocument } from "@app/components/MarkdownDocument";
+import { RecordingTestExecution } from "./RecordingTestExecution";
+import { isSpotlightTestId } from "./SpotlightDemoModel";
 import { loadVisualSequenceCatalog } from "./VisualSequenceCatalog";
 import { useSharedVisualSequenceSelection } from "./useSharedVisualSequenceSelection";
 import { requiresVisualSequenceConfirmation, visualSequenceConfirmationMessage } from "./VisualSequenceLoadGate";
@@ -11,8 +13,8 @@ import {
 } from "./RecordingTestsModel";
 import "../styles/recording_tests.css";
 
-function RecordingPreview({ workspaceId, recording, controlsVisible }: {
-  workspaceId: string; recording: TestRecording; controlsVisible: boolean;
+function RecordingPreview({ workspaceId, recording, controlsVisible, onFrameChange }: {
+  workspaceId: string; recording: TestRecording; controlsVisible: boolean; onFrameChange?: (path: string) => void;
 }) {
   const [frames, setFrames] = useState<TestFrame[]>([]);
   const [index, setIndex] = useState(0);
@@ -44,6 +46,7 @@ function RecordingPreview({ workspaceId, recording, controlsVisible }: {
     });
     return () => controller.abort();
   }, [workspaceId, recording, revision]);
+  useEffect(() => { onFrameChange?.(frames[index]?.path ?? ""); }, [frames, index, onFrameChange]);
 
   const openRecording = async () => {
     setOpening(true);
@@ -102,6 +105,7 @@ function TestDocumentation({ workspaceId, test, visualSequenceId, controlsVisibl
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   const [recordingId, setRecordingId] = useState(visualSequenceId || test.recordings[0].visualSequenceId);
+  const [previewFrameKey, setPreviewFrameKey] = useState("");
   const selectorId = useId();
   useEffect(() => {
     const controller = new AbortController();
@@ -134,7 +138,9 @@ function TestDocumentation({ workspaceId, test, visualSequenceId, controlsVisibl
         </select>
       </div>}
       {showRecordingPreview && selected && <RecordingPreview key={`${workspaceId}:${selected.visualSequenceId}`} workspaceId={workspaceId}
-        recording={selected} controlsVisible={controlsVisible} />}
+        recording={selected} controlsVisible={controlsVisible} onFrameChange={setPreviewFrameKey} />}
+      {showRecordingPreview && selected && <RecordingTestExecution workspaceId={workspaceId} test={detail}
+        visualSequenceId={selected.visualSequenceId} controlsVisible={controlsVisible} previewFrameKey={previewFrameKey} />}
       <div className="recording-test-documentation" aria-label={`${test.title} documentation`}>
         <MarkdownDocument content={detail.documentation} />
       </div>
@@ -146,6 +152,7 @@ type RecordingTestsProps = {
   workspaceId: string; visualSequenceId?: string; controlsVisible?: boolean; showRecordingPreview?: boolean;
   presentation?: "catalog" | "summary" | "documentation" | "runtime";
   renderResults?: (test: RecordingTest) => ReactNode;
+  previewFrameKey?: string; beforeExecution?: () => void;
 };
 
 export function RecordingTests(props: RecordingTestsProps) {
@@ -153,7 +160,7 @@ export function RecordingTests(props: RecordingTestsProps) {
 }
 
 function RecordingTestsSession({ workspaceId, visualSequenceId, controlsVisible: providedControls,
-  showRecordingPreview = true, presentation = "catalog", renderResults }: RecordingTestsProps) {
+  showRecordingPreview = true, presentation = "catalog", renderResults, previewFrameKey, beforeExecution }: RecordingTestsProps) {
   const [localControls, setControlsVisible] = useState(!visualSequenceId);
   const controlsVisible = presentation === "documentation" ? false : providedControls ?? localControls;
   const [tests, setTests] = useState<RecordingTest[]>([]);
@@ -196,7 +203,12 @@ function RecordingTestsSession({ workspaceId, visualSequenceId, controlsVisible:
   if (presentation === "runtime") return <div className="recording-test-runtime" aria-label="Selected test runtime output">
     {loading && <span role="status">Loading test runtime context…</span>}
     {error && <span role="alert">{error} <button type="button" onClick={() => setRevision(value => value + 1)}>Retry tests</button></span>}
-    {tests.map(test => <div key={test.id}>{renderResults?.(test)}</div>)}
+    {tests.map(test => <div key={test.id}>
+      {visualSequenceId && !isSpotlightTestId(test.id) && <RecordingTestExecution workspaceId={workspaceId} test={test}
+        visualSequenceId={visualSequenceId} controlsVisible={controlsVisible} previewFrameKey={previewFrameKey} beforeWrite={beforeExecution} />}
+      {renderResults?.(test)}
+    </div>)}
+    {controlsVisible && !loading && !error && !tests.length && <span>No test registered for this selected recording; preview remains available.</span>}
   </div>;
   if (presentation === "summary") return <section className="recording-tests recording-tests-summary" aria-label="Selected sequence test results">
     <h3>Tests &amp; results</h3>
@@ -206,7 +218,7 @@ function RecordingTestsSession({ workspaceId, visualSequenceId, controlsVisible:
     {tests.map(test => {
       const results = renderResults?.(test);
       return <article key={test.id} data-recording-test-id={test.id}>
-      <div className="recording-test-summary-heading"><strong>{test.title}</strong><span>{results ? "Execution details below" : "Not run"}</span></div>
+      <div className="recording-test-summary-heading"><strong>{test.title}</strong><span>{results ? "Execution details below" : "Not run (definition metadata, not saved-run status)"}</span></div>
       <p>{test.summary}</p>
       {results}
     </article>;
@@ -217,7 +229,7 @@ function RecordingTestsSession({ workspaceId, visualSequenceId, controlsVisible:
   return <section className="recording-tests" aria-label="Recording-based tests">
     <h3>{documentationOnly ? "Selected sequence" : "Recording-based tests"}</h3>
     {documentationOnly ? <p><code>{visualSequenceId}</code></p> : <p>Each test includes its own online documentation, local-memory requirements and recorded sequences.
-      These are test inputs, not passed results. The built-in demo run controls do not run these fixtures.</p>}
+      These are test inputs, not passed results. Native execution is separate from the read-only recording preview and older built-in demos.</p>}
     {visualSequenceId && !documentationOnly && providedControls === undefined && <button type="button" aria-expanded={controlsVisible}
       onClick={() => setControlsVisible(value => !value)}>{controlsVisible ? "Hide controls" : "Add controls"}</button>}
     {controlsVisible && <div className="recording-tests-toolbar">
@@ -247,7 +259,7 @@ function RecordingTestsSession({ workspaceId, visualSequenceId, controlsVisible:
               ? expanded === test.id ? "Hide documentation" : "Read documentation"
               : expanded === test.id ? "Hide documentation & recordings" : "Documentation & recordings"}</span>
           </button>
-          <span>{test.group} / {test.recordings.length} recording{test.recordings.length === 1 ? "" : "s"} / Not run</span>
+          <span>{test.group} / {test.recordings.length} recording{test.recordings.length === 1 ? "" : "s"} / Definition: {test.executionStatus} (not saved-run status)</span>
         </div>
         <p>{test.summary}</p>
         <div id={`${detailPrefix}-${test.id}`}>

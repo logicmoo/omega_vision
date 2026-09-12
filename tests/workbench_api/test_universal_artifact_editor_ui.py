@@ -224,7 +224,7 @@ def test_every_generic_resource_source_is_enableable() -> None:
     assert "showEnablement = true" in source
     assert 'resource?.enabled !== false' in source
     assert 'enabled }, null, 2' in source
-    assert '"Disable Resource":"Enable Resource"' in source
+    assert 'resourceEnabled ? "Disable Resource" : "Enable Resource"' in source
     assert "showEnablement={false}" in _text("LlmModelsEditor.tsx")
 
 

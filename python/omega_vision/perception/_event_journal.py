@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 import threading
 import time
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator
 import uuid
 
 
@@ -76,15 +76,23 @@ _LOCKS_GUARD = threading.Lock()
 
 
 @contextmanager
-def writer_lock(directory: Path, timeout: float = 30.0) -> Iterator[None]:
+def writer_lock(
+    directory: Path, timeout: float = 30.0, *,
+    validate_path: Callable[[Path], None] | None = None,
+) -> Iterator[None]:
     """OS-owned locks survive neither process exit nor crashes; no stale PID locks."""
-    directory.mkdir(parents=True, exist_ok=True)
     lock_path = directory / ".writer.lock"
+    if validate_path:
+        validate_path(directory)
+        validate_path(lock_path)
+    directory.mkdir(parents=True, exist_ok=True)
     with _LOCKS_GUARD:
         thread_lock = _THREAD_LOCKS.setdefault(str(lock_path.resolve()), threading.Lock())
     if not thread_lock.acquire(timeout=timeout):
         raise TimeoutError(f"timed out waiting for writer: {lock_path}")
     try:
+        if validate_path:
+            validate_path(lock_path)
         with lock_path.open("a+b") as stream:
             if os.fstat(stream.fileno()).st_size == 0:
                 stream.write(b"\0")
@@ -120,17 +128,46 @@ def writer_lock(directory: Path, timeout: float = 30.0) -> Iterator[None]:
         thread_lock.release()
 
 
-def atomic_json(path: Path, value: Any) -> None:
+_WINDOWS_REPLACE_DELAYS = (0.01, 0.02, 0.04, 0.08, 0.16, 0.25, 0.25, 0.25, 0.25)
+_WINDOWS_SHARING_ERRORS = frozenset({5, 32, 33})
+
+
+def atomic_json(
+    path: Path, value: Any, *,
+    retry_windows_sharing: bool = False,
+    validate_path: Callable[[Path], None] | None = None,
+) -> None:
     """Publish a complete file from a same-directory, fsynced staging file."""
     data = canonical_json(value).encode("utf-8")
+    if validate_path:
+        validate_path(path.parent)
+        validate_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     staging = path.with_name(f".{path.name}.pending-{uuid.uuid4().hex}")
+    created, published = False, False
     try:
+        if validate_path:
+            validate_path(staging)
         with staging.open("xb") as stream:
+            created = True
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(staging, path)
+        delays = _WINDOWS_REPLACE_DELAYS if retry_windows_sharing else ()
+        for attempt in range(len(delays) + 1):
+            if validate_path:
+                validate_path(staging)
+                validate_path(path)
+            try:
+                os.replace(staging, path)
+                published = True
+                break
+            except OSError as error:
+                # Only the rename can have this transient Windows sharing race.
+                # Permission failures during mkdir/open/write are never retried.
+                if getattr(error, "winerror", None) not in _WINDOWS_SHARING_ERRORS or attempt == len(delays):
+                    raise
+                time.sleep(delays[attempt])
         if os.name != "nt":
             descriptor = os.open(path.parent, os.O_RDONLY)
             try:
@@ -138,8 +175,10 @@ def atomic_json(path: Path, value: Any) -> None:
             finally:
                 os.close(descriptor)
     finally:
-        if staging.exists():
-            staging.unlink()
+        if created and not published:
+            if validate_path:
+                validate_path(staging)
+            staging.unlink(missing_ok=True)
 
 
 class Journal:

@@ -26,15 +26,45 @@ _LOCATION_KEYS = {
 
 def cache_directory(root: Path) -> Path:
     boundary = resolve_storage_path(root)
-    directory = resolve_storage_path(boundary / ".cache" / "memory-catalog")
-    if not directory.is_relative_to(boundary):
-        raise PermissionError("Memory catalog cache escapes its authorized storage root")
+    lexical = str(root.absolute())
+    if lexical.startswith("\\\\?\\UNC\\"):
+        lexical = "\\\\" + lexical[8:]
+    elif lexical.startswith("\\\\?\\") and len(lexical) >= 7 and lexical[5:7] == ":\\":
+        lexical = lexical[4:]
+    expected = boundary / ".cache" / "memory-catalog"
+    directory = resolve_storage_path(expected)
+    if boundary != Path(lexical) or directory != expected:
+        raise PermissionError("Memory catalog cache root/directory was redirected")
     return directory
+
+
+def _check_path(root: Path, path: Path) -> None:
+    directory = cache_directory(root)
+    if not path.is_relative_to(directory) or resolve_storage_path(path) != path:
+        raise PermissionError("Memory catalog cache path was redirected or escaped its authorized root")
+
+
+def _path(root: Path, *parts: str) -> Path:
+    path = cache_directory(root).joinpath(*parts)
+    _check_path(root, path)
+    return path
+
+
+def _publish(root: Path, path: Path, value: Any) -> None:
+    atomic_json(path, value, retry_windows_sharing=True,
+                validate_path=lambda target: _check_path(root, target))
 
 
 def invalidate_memory_catalog(root: Path) -> None:
     """A fresh token also invalidates snapshots built by other workspace readers."""
-    atomic_json(cache_directory(root) / "dirty.json", {"generation": uuid4().hex})
+    target = _path(root, "dirty.json")
+    lock = _path(root, "generation.lock")
+    _check_path(root, lock / ".writer.lock")
+    # One marker writer per physical store, independent of catalog keys/workspaces.
+    # Readers remain non-writing; short Windows read handles are tolerated at replace.
+    with writer_lock(lock, validate_path=lambda target: _check_path(root, target)):
+        _check_path(root, lock / ".writer.lock")
+        _publish(root, target, {"generation": uuid4().hex})
 
 
 @contextmanager
@@ -48,7 +78,7 @@ def memory_catalog_mutation(root: Path):
 
 def _generation(root: Path) -> str:
     try:
-        raw = (cache_directory(root) / "dirty.json").read_bytes()
+        raw = _path(root, "dirty.json").read_bytes()
     except FileNotFoundError:
         return "initial"
     # Hashing this tiny marker, rather than walking source trees, detects even a
@@ -91,13 +121,16 @@ def catalog_metadata(
     invalidation is retried, never published as clean under the newer token.
     External filesystem edits are seen on explicit refresh or expiry.
     """
-    directory = cache_directory(owner)
     key = content_hash({"version": VERSION, "identity": identity})
-    target = directory / f"{key}.json"
+    target = _path(owner, f"{key}.json")
     def generation_token() -> str:
         return content_hash([_generation(source), _generation(owner)])
 
-    with writer_lock(directory / f"{key}.lock"):
+    lock = _path(owner, f"{key}.lock")
+    _check_path(owner, lock / ".writer.lock")
+    with writer_lock(lock, validate_path=lambda target: _check_path(owner, target)):
+        _check_path(owner, lock / ".writer.lock")
+        _check_path(owner, target)
         generation = generation_token()
         if not refresh:
             try:
@@ -126,7 +159,7 @@ def catalog_metadata(
                 raise ValueError("Memory catalog builder returned invalid metadata or record payloads")
             if generation_token() != generation:
                 continue
-            atomic_json(target, {
+            _publish(owner, target, {
                 "schemaVersion": VERSION, "identity": identity, "generation": generation,
                 "builtAt": time.time(), "metadata": metadata, "metadataHash": content_hash(metadata),
             })
