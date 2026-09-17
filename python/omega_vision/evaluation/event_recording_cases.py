@@ -330,19 +330,41 @@ def event_cases() -> tuple[Case, ...]:
                                    "Contain(container, actor) and inside(actor, container) are inverse directed relations.",
                                    "Use enclosed-interior geometry; black interior pixels are not foreground mask overlap.",
                                )))
-    cases.append(_relation("blocked", "A wall prevents an intended rightward move until the wall is removed.", (
+    cases.append(_relation("blocked", "A wall halts rightward movement; repeated attempts fail until the actor "
+                           "moves another way with the wall still standing.", (
         Frame("Actor approaches wall.", (actor.at(24), wall)),
-        Frame("Actor reaches wall.", (actor.at(30), wall)),
+        Frame("Actor reaches wall and stays against it.", (actor.at(30), wall)),
         Frame("Rightward attempt cannot move actor through wall.", (actor.at(30), wall),
               (Term("user_input", ("actor", "right")),)),
-        Frame("Another rightward attempt is blocked.", (actor.at(30), wall),
+        Frame("Another rightward attempt has no effect; actor stays on the wall.", (actor.at(30), wall),
               (Term("user_input", ("actor", "right")),)),
-        Frame("Wall removed; rightward motion resumes.", (actor.at(36),),
-              (Term("user_input", ("actor", "right")),)),
+        Frame("Downward attempt succeeds; the wall never moves.", (actor.at(30, 26), wall),
+              (Term("user_input", ("actor", "down")),)),
     ), subjects=("actor", "wall"), start=2, continuing=3, end=4, requirements=(
         "Blocked is a causal scenario: intention/attempt evidence is required in addition to stationary contact.",
+        "The wall persists through every frame; blocked ends because the actor's attempts change direction, "
+        "never because the wall disappears.",
         "Authored input is separate oracle metadata, not injected into recording FRAME actions.",
     )))
+    cases.append(Case(
+        "blocked_unobserved",
+        "Blocked with no observed inputs: the actor sits at the wall an extra frame, so a failed attempt "
+        "must be abduced before movement resumes in another direction.",
+        (
+            Frame("Actor approaches wall.", (actor.at(24), wall)),
+            Frame("Actor reaches wall and stays against it.", (actor.at(30), wall)),
+            Frame("Actor sits at the wall an extra frame with no visible cause.", (actor.at(30), wall)),
+            Frame("Actor still sits at the wall; whatever was tried did not work.", (actor.at(30), wall)),
+            Frame("Actor moves down instead; the wall never moves.", (actor.at(30, 26), wall)),
+        ),
+        tuple(Expected(frame, Term(phase, (Term("blocked", ("actor", "wall")),)))
+              for phase, frame in (("start", 2), ("continue", 3), ("end", 4))),
+        requirements=(
+            "No user_input is authored anywhere in this case: attempt evidence must be abduced from the "
+            "unexplained dwell at the wall followed by redirected movement.",
+            "The wall persists through every frame; blocked ends because movement resumes in a new direction.",
+        ),
+    ))
     cases.append(_relation("follow", "Blue follows the red leader around a corner, then takes a different path.", (
         Frame("Leader ahead, follower behind.", (actor.at(12, 12), other.at(20, 12))),
         Frame("Follower visits leader's previous point.", (actor.at(20, 12), other.at(28, 12))),

@@ -20,7 +20,12 @@ def test_cases_cover_each_registered_event_and_relation_phase():
     fixtures.validate_cases(cases)
     events = {name for name, spec in PREDICATES.items() if spec.category == "event" and name not in PHASES}
     relations = {name for name, spec in PREDICATES.items() if spec.category == "relation"}
-    assert {case.name for case in cases} == events | relations | {"no_material_change", "unknown"}
+    names = {case.name for case in cases}
+    required = events | relations | {"no_material_change", "unknown"}
+    assert required <= names
+    # Extra cases must be variants of a registered vocabulary name (e.g. blocked_unobserved).
+    variants = names - required
+    assert all(any(name.startswith(f"{base}_") for base in events | relations) for name in variants)
     for case in cases:
         if case.name in relations:
             assert {event.term.predicate for event in case.expected} == PHASES
